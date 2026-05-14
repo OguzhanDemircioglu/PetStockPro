@@ -1,0 +1,863 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Stok Hareketleri · PetStockPro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/tokens-v2.css">
+<style>
+  .page-head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+  .page-head h1 { margin: 0; font-size: 22px; font-weight: bold; color: var(--cart); letter-spacing: -.4px; }
+  .page-head-spacer { flex: 1; }
+
+  /* Yeni Hareket dropdown */
+  .new-dd { position: relative; }
+  .new-dd-menu {
+    position: absolute; top: calc(100% + 6px); right: 0;
+    min-width: 240px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow-lg);
+    padding: 8px;
+    z-index: 50;
+    display: none;
+  }
+  .new-dd.open .new-dd-menu { display: block; }
+  .new-dd-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .new-dd-item:hover { background: var(--line-soft); }
+  .new-dd-item .ic { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; color: #fff; flex-shrink: 0; }
+  .new-dd-item.in .ic { background: linear-gradient(135deg, var(--arrow), var(--arrow-7)); }
+  .new-dd-item.out .ic { background: linear-gradient(135deg, var(--cat), var(--cat-7)); }
+  .new-dd-item.tr .ic { background: linear-gradient(135deg, var(--bars), var(--bars-7)); }
+  .new-dd-item.sa .ic { background: linear-gradient(135deg, var(--cart), var(--cart-7)); }
+  .new-dd-item .label { font-size: 13px; font-weight: bold; color: var(--cart); }
+  .new-dd-item .sub { font-size: 11px; color: var(--ink-4); }
+
+  /* Filter & summary */
+  .filter-panel {
+    background: var(--paper-glass-strong);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,.65);
+    box-shadow: var(--shadow-sm);
+    border-radius: var(--r-md);
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    display: grid; grid-template-columns: 1.4fr 0.9fr 0.9fr 0.9fr 0.9fr 0.9fr auto; gap: 10px;
+    align-items: end;
+  }
+  .filter-panel .field { margin: 0; }
+
+  .summary-bar {
+    position: sticky; top: 64px; z-index: 20;
+    background: var(--paper-glass-strong);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,.65);
+    border-radius: var(--r-md);
+    padding: 14px 18px;
+    margin-bottom: 14px;
+    display: grid; grid-template-columns: repeat(5, 1fr) auto; gap: 16px;
+    align-items: center;
+    box-shadow: var(--shadow-md);
+  }
+  .summary-cell .label { font-size: 10.5px; color: var(--ink-4); text-transform: uppercase; letter-spacing: .5px; font-weight: bold; }
+  .summary-cell .num {
+    font-size: 20px; font-weight: bold; color: var(--cart);
+    font-family: var(--font);
+    line-height: 1.1;
+  }
+  .summary-cell.in .num { color: var(--arrow-7); }
+  .summary-cell.out .num { color: var(--cat-7); }
+  .summary-cell.tr .num { color: var(--bars-7); }
+  .summary-cell.sa .num { color: var(--cart); }
+  .summary-cell .delta { font-size: 11px; }
+
+  /* Ledger table */
+  .ledger-wrap {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  .ledger { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12.5px; }
+  .ledger thead th {
+    text-align: left; font-weight: bold;
+    color: var(--ink-3); font-size: 11px;
+    text-transform: uppercase; letter-spacing: .4px;
+    padding: 12px;
+    border-bottom: 1px solid var(--line);
+    background: var(--paper-glass);
+    white-space: nowrap;
+  }
+  .ledger tbody td { padding: 11px 12px; border-bottom: 1px solid var(--line-soft); vertical-align: middle; }
+  .ledger tbody tr:hover td { background: rgba(124,184,224,.08); cursor: pointer; }
+  .ledger .right { text-align: right; }
+  .ledger .num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: 12px; }
+
+  .mv-type {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 11.5px; font-weight: bold;
+    padding: 4px 10px;
+    border-radius: 999px;
+  }
+  .mv-type.in { background: var(--arrow-soft); color: var(--arrow-7); }
+  .mv-type.out { background: var(--cat-soft); color: var(--cat-7); }
+  .mv-type.tr { background: var(--bars-soft); color: var(--cart); }
+  .mv-type.sa { background: var(--cart-soft); color: var(--cart); }
+  .mv-type .ic { font-size: 11px; }
+
+  .ledger .reason { font-size: 11px; color: var(--ink-4); }
+  .ledger .ref { font-family: var(--font-mono); color: var(--cart); font-weight: bold; font-size: 11px; }
+  .ledger .hash { font-family: var(--font-mono); color: var(--ink-4); font-size: 10px; }
+
+  .delta-qty { font-family: var(--font-mono); font-weight: bold; font-size: 13px; }
+  .delta-qty.pos { color: var(--arrow-7); }
+  .delta-qty.neg { color: var(--cat-7); }
+
+  .reverse-btn {
+    background: var(--danger-soft);
+    color: var(--danger-7);
+    border: 1px solid rgba(239,68,68,.25);
+    padding: 4px 9px;
+    border-radius: 7px;
+    font-size: 11px; font-weight: bold;
+    cursor: pointer;
+  }
+  .reverse-btn.locked {
+    background: var(--line-soft);
+    color: var(--ink-4);
+    border-color: var(--line);
+    cursor: not-allowed;
+  }
+
+  .branch-arrow {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 12px;
+  }
+  .branch-arrow .arr { color: var(--bars-7); font-weight: bold; }
+
+  /* Compact drawer styles for drawers */
+  .seg-grp {
+    display: inline-flex; padding: 3px;
+    background: var(--line-soft);
+    border-radius: 10px;
+    margin-bottom: 10px;
+  }
+  .seg-grp .seg {
+    padding: 7px 14px;
+    font-size: 12px; font-weight: bold;
+    color: var(--ink-3);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .seg-grp .seg.active { background: var(--paper); color: var(--cart); box-shadow: var(--shadow-sm); }
+
+  /* Audit hash strip */
+  .audit-strip {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    background: linear-gradient(90deg, var(--bars-soft), transparent);
+    border: 1px solid rgba(124,184,224,.25);
+    border-radius: 12px;
+    font-size: 11.5px;
+    color: var(--ink-3);
+    margin-bottom: 12px;
+  }
+  .audit-strip .ic { font-size: 16px; }
+  .audit-strip code {
+    font-family: var(--font-mono);
+    background: var(--paper);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--cart);
+    font-size: 11px;
+  }
+
+  /* Pagination */
+  .pagi { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-top: 1px solid var(--line); background: var(--paper-glass); }
+  .pagi-btns { display: flex; gap: 4px; }
+  .pagi-btn { width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink-2); font-size: 11.5px; font-weight: bold; cursor: pointer; display: grid; place-items: center; }
+  .pagi-btn.active { background: var(--cart); color: #fff; border-color: var(--cart); }
+
+  /* Drawer specific */
+  .row-items {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .row-items .head, .row-items .row-item {
+    display: grid; grid-template-columns: 1fr 80px 90px 30px;
+    gap: 8px; align-items: center;
+    padding: 10px 12px;
+  }
+  .row-items .head {
+    background: var(--line-soft);
+    font-size: 11px; color: var(--ink-3);
+    font-weight: bold; text-transform: uppercase; letter-spacing: .4px;
+  }
+  .row-items .row-item { border-top: 1px solid var(--line-soft); }
+  .row-items .row-item .nm { font-weight: bold; font-size: 13px; }
+  .row-items .row-item .sku { font-size: 10.5px; color: var(--ink-4); font-family: var(--font-mono); }
+  .row-items .add { padding: 10px; }
+
+  /* Transfer drawer — two cards */
+  .tr-cards { display: grid; grid-template-columns: 1fr 24px 1fr; gap: 10px; align-items: center; }
+  .tr-card {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px;
+    background: var(--paper);
+  }
+  .tr-card .label { font-size: 11px; color: var(--ink-4); text-transform: uppercase; letter-spacing: .4px; font-weight: bold; }
+  .tr-arrow {
+    display: grid; place-items: center;
+    color: var(--bars-7);
+    font-size: 20px;
+    font-weight: bold;
+  }
+
+  /* Detail timeline */
+  .timeline { border-left: 2px solid var(--line); margin-left: 8px; padding-left: 16px; }
+  .timeline-item { margin-bottom: 14px; position: relative; }
+  .timeline-item::before {
+    content: ""; position: absolute; left: -22px; top: 4px;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--cart);
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px var(--cart);
+  }
+  .timeline-item .ttl { font-size: 12.5px; font-weight: bold; color: var(--cart); }
+  .timeline-item .sub { font-size: 11px; color: var(--ink-4); }
+</style>
+</head>
+<body data-screen-label="03 Stok Hareketleri">
+
+<div class="app">
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">P</div>
+      <div><div class="brand-name">PetStockPro</div><div class="brand-sub">Mavi Pet Shop</div></div>
+    </div>
+    <div class="nav-group"><div class="nav-group-label">Genel</div>
+      <a class="nav-item" href="pano.html">Pano</a>
+    </div>
+    <div class="nav-group"><div class="nav-group-label">Envanter</div>
+      <a class="nav-item" href="urunler.html">Ürünler<span class="nav-badge">47</span></a>
+      <a class="nav-item active" href="stok-hareketleri.html">Stok Hareketleri</a>
+      <a class="nav-item" href="#">Düşük Stok<span class="nav-badge" style="background:var(--danger)">5</span></a>
+      <a class="nav-item" href="#">Sayım</a>
+    </div>
+    <div class="nav-group"><div class="nav-group-label">Operasyon</div>
+      <a class="nav-item" href="#">Satış</a>
+      <a class="nav-item" href="#">Transferler</a>
+    </div>
+    <div class="nav-group"><div class="nav-group-label">Kaynaklar</div>
+      <a class="nav-item" href="#">Tedarikçiler</a>
+      <a class="nav-item" href="#">Şubeler<span class="nav-badge" style="background:var(--bars-7)">3</span></a>
+      <a class="nav-item" href="#">Kullanıcılar</a>
+    </div>
+    <div class="nav-group"><div class="nav-group-label">Analiz</div><a class="nav-item" href="#">Raporlar</a></div>
+    <div class="nav-group"><div class="nav-group-label">🏪 Vitrin</div>
+      <a class="nav-item vitrin" href="#">Vitrin Profili</a>
+      <a class="nav-item vitrin" href="#">Vitrin Metrikleri</a>
+    </div>
+    <div class="nav-group"><div class="nav-group-label">Sistem</div><a class="nav-item" href="#">Ayarlar</a></div>
+    <div class="plan-card">
+      <div class="plan-row"><div><div class="plan-name">PLAN</div><div class="plan-tier">FREE</div></div></div>
+      <div class="plan-prog-wrap">
+        <div class="plan-prog-label"><span>Ürün limiti</span><span class="tnum">47 / 50</span></div>
+        <div class="plan-prog-bar"><div class="plan-prog-fill" style="width:94%"></div></div>
+      </div>
+      <a href="#" class="plan-cta">PRO'ya Yükselt →</a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div>
+        <div class="topbar-title">Stok Hareketleri</div>
+        <div class="topbar-sub">Append-only ledger · son 30 gün 850 hareket</div>
+      </div>
+      <div class="topbar-spacer"></div>
+      <div class="cmdk">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        Ara: ref no, ürün, kullanıcı...
+        <kbd>⌘K</kbd>
+      </div>
+      <a class="tb-btn vitrin-link" href="#">🏪 Vitrin →</a>
+      <div class="tb-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9"/></svg><span class="dot" style="position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--cat);border:2px solid #fff;"></span></div>
+      <div class="tb-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg></div>
+      <div class="avatar">MK</div>
+    </header>
+
+    <main class="content">
+
+      <div class="page-head">
+        <h1>Stok Hareketleri</h1>
+        <span class="pill blue">850 hareket · 30 gün</span>
+        <span class="pill green">Audit: ✓ Zincir bütün</span>
+        <div class="page-head-spacer"></div>
+        <button class="btn btn-ghost">📤 Dışarı Aktar</button>
+        <div class="new-dd" id="newDd">
+          <button class="btn btn-primary" onclick="document.getElementById('newDd').classList.toggle('open')">+ Yeni Hareket ▾</button>
+          <div class="new-dd-menu">
+            <div class="new-dd-item in" data-open-drawer="#dr-giris-back" onclick="document.getElementById('newDd').classList.remove('open')">
+              <div class="ic">↑</div><div><div class="label">Stok Girişi</div><div class="sub">Tedarikçi alımı, mal kabul</div></div>
+            </div>
+            <div class="new-dd-item out" data-open-drawer="#dr-cikis-back" onclick="document.getElementById('newDd').classList.remove('open')">
+              <div class="ic">↓</div><div><div class="label">Manuel Çıkış</div><div class="sub">Bozulma, hediye, fire</div></div>
+            </div>
+            <div class="new-dd-item tr" data-open-drawer="#dr-transfer-back" onclick="document.getElementById('newDd').classList.remove('open')">
+              <div class="ic">⇄</div><div><div class="label">Transfer</div><div class="sub">Şubeler arası geçiş</div></div>
+            </div>
+            <div class="new-dd-item sa" data-open-drawer="#dr-sayim-back" onclick="document.getElementById('newDd').classList.remove('open')">
+              <div class="ic">✓</div><div><div class="label">Sayım</div><div class="sub">Fiziksel envanter doğrulama</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="audit-strip">
+        <span class="ic">🔐</span>
+        <div>
+          <strong>Append-only ledger</strong> — Her hareket önceki kaydın hash'ini içerir. Zincir bütünlük: <span class="pill green" style="margin:0 4px">Doğrulandı</span>
+          Son hash: <code>0xa7f3…b2e1</code>
+        </div>
+      </div>
+
+      <!-- Filter -->
+      <div class="filter-panel">
+        <div class="field"><label class="field-label">Ara</label><input class="input" placeholder="🔍 Ref no, ürün adı..."/></div>
+        <div class="field"><label class="field-label">Tip</label><select class="select"><option>Tümü</option><option>Giriş</option><option>Çıkış</option><option>Transfer</option><option>Sayım</option></select></div>
+        <div class="field"><label class="field-label">Şube</label><select class="select"><option>Tümü</option><option>Üsküdar</option><option>Kadıköy</option><option>Beykoz</option></select></div>
+        <div class="field"><label class="field-label">Kullanıcı</label><select class="select"><option>Tümü</option><option>Mehmet K.</option><option>Ayşe T.</option><option>Burak S.</option></select></div>
+        <div class="field"><label class="field-label">Başlangıç</label><input class="input" type="date" value="2026-04-14"/></div>
+        <div class="field"><label class="field-label">Bitiş</label><input class="input" type="date" value="2026-05-14"/></div>
+        <button class="btn btn-ghost">⟲</button>
+      </div>
+
+      <!-- Summary bar -->
+      <div class="summary-bar">
+        <div class="summary-cell">
+          <div class="label">Toplam Hareket</div>
+          <div class="num">850</div>
+          <div class="delta small muted">30 gün</div>
+        </div>
+        <div class="summary-cell in">
+          <div class="label">Giriş Adet</div>
+          <div class="num">+ 1.842</div>
+          <div class="delta"><span class="kpi-delta up">↑ 12%</span></div>
+        </div>
+        <div class="summary-cell out">
+          <div class="label">Çıkış Adet</div>
+          <div class="num">− 1.654</div>
+          <div class="delta"><span class="kpi-delta up">↑ 18%</span></div>
+        </div>
+        <div class="summary-cell tr">
+          <div class="label">Transfer</div>
+          <div class="num">42</div>
+          <div class="delta small muted">7 farklı SKU</div>
+        </div>
+        <div class="summary-cell sa">
+          <div class="label">Sayım</div>
+          <div class="num">8</div>
+          <div class="delta small muted">14 fark düzeltildi</div>
+        </div>
+        <div class="seg-grp" style="margin:0">
+          <div class="seg active">Tümü</div>
+          <div class="seg">Bugün</div>
+          <div class="seg">7g</div>
+          <div class="seg">30g</div>
+        </div>
+      </div>
+
+      <!-- LEDGER TABLE -->
+      <div class="ledger-wrap">
+        <table class="ledger">
+          <thead>
+            <tr>
+              <th>Zaman</th>
+              <th>Ref</th>
+              <th>Tip</th>
+              <th>Ürün</th>
+              <th class="right">Adet</th>
+              <th>Şube</th>
+              <th>Kullanıcı / Sebep</th>
+              <th class="right">Tutar</th>
+              <th style="width:90px"></th>
+            </tr>
+          </thead>
+          <tbody>
+
+            <tr data-open-drawer="#dr-detail-back">
+              <td><div class="bold">14:32</div><div class="small muted">14 May</div></td>
+              <td><div class="ref">SAT-2026-0814</div><div class="hash">0xa7f3…b2e1</div></td>
+              <td><span class="mv-type out"><span class="ic">↓</span> Satış</span></td>
+              <td><strong>Royal Canin Kitten 400g</strong></td>
+              <td class="right"><span class="delta-qty neg">−2</span></td>
+              <td>📍 Üsküdar</td>
+              <td><div class="bold">Ayşe T.</div><div class="reason">POS satışı · Müşteri</div></td>
+              <td class="right num bold">240₺</td>
+              <td><button class="reverse-btn">↶ Geri al · 23:58</button></td>
+            </tr>
+
+            <tr>
+              <td><div class="bold">14:20</div><div class="small muted">14 May</div></td>
+              <td><div class="ref">GIR-2026-0451</div><div class="hash">0xb842…c4d7</div></td>
+              <td><span class="mv-type in"><span class="ic">↑</span> Giriş</span></td>
+              <td><strong>Whiskas Konserve 85g</strong></td>
+              <td class="right"><span class="delta-qty pos">+24</span></td>
+              <td>📍 Üsküdar</td>
+              <td><div class="bold">Mehmet K.</div><div class="reason">Dostlar Pet · İR-2451</div></td>
+              <td class="right num bold">444₺</td>
+              <td><button class="reverse-btn">↶ Geri al · 23:48</button></td>
+            </tr>
+
+            <tr>
+              <td><div class="bold">13:58</div><div class="small muted">14 May</div></td>
+              <td><div class="ref">TRF-2026-088</div><div class="hash">0xc012…e44f</div></td>
+              <td><span class="mv-type tr"><span class="ic">⇄</span> Transfer</span></td>
+              <td><strong>Pro Plan Köpek 12kg</strong></td>
+              <td class="right"><span class="delta-qty">±3</span></td>
+              <td><span class="branch-arrow">📍 Üsküdar <span class="arr">→</span> Kadıköy</span></td>
+              <td><div class="bold">Mehmet K.</div><div class="reason">Dengeleme · transfer öneri</div></td>
+              <td class="right num muted">—</td>
+              <td><button class="reverse-btn">↶ Geri al · 23:26</button></td>
+            </tr>
+
+            <tr>
+              <td><div class="bold">13:46</div><div class="small muted">14 May</div></td>
+              <td><div class="ref">SAT-2026-0813</div><div class="hash">0xd1c4…7a93</div></td>
+              <td><span class="mv-type out"><span class="ic">↓</span> Satış</span></td>
+              <td><strong>Trixie Tırmalama Tahtası</strong></td>
+              <td class="right"><span class="delta-qty neg">−1</span></td>
+              <td>📍 Kadıköy</td>
+              <td><div class="bold">Burak S.</div><div class="reason">POS satışı</div></td>
+              <td class="right num bold">185₺</td>
+              <td><button class="reverse-btn">↶ Geri al · 23:14</button></td>
+            </tr>
+
+            <tr>
+              <td><div class="bold">12:58</div><div class="small muted">14 May</div></td>
+              <td><div class="ref">SAY-2026-008</div><div class="hash">0xe6a5…ff20</div></td>
+              <td><span class="mv-type sa"><span class="ic">✓</span> Sayım</span></td>
+              <td><strong>Mama reyonu · 18 ürün</strong></td>
+              <td class="right"><span class="delta-qty">±14</span></td>
+              <td>📍 Üsküdar</td>
+              <td><div class="bold">Mehmet K.</div><div class="reason">Aylık sayım · 2 fark düzeltildi</div></td>
+              <td class="right num muted">—</td>
+              <td><span class="small muted">Sayım onaylandı</span></td>
+            </tr>
+
+            <tr>
+              <td><div class="bold">11:14</div><div class="small muted">14 May</div></td>
+              <td><div class="ref">CIK-2026-014</div><div class="hash">0xf872…11ab</div></td>
+              <td><span class="mv-type out"><span class="ic">↓</span> Manuel Çıkış</span></td>
+              <td><strong>Versele Çamur Banyosu</strong></td>
+              <td class="right"><span class="delta-qty neg">−2</span></td>
+              <td>📍 Beykoz</td>
+              <td><div class="bold">Ayşe T.</div><div class="reason">Bozulma · son kullanma</div></td>
+              <td class="right num muted">160₺</td>
+              <td><button class="reverse-btn">↶ Geri al · 21:42</button></td>
+            </tr>
+
+            <tr>
+              <td><div class="bold">10:32</div><div class="small muted">14 May</div></td>
+              <td><div class="ref">SAT-2026-0812</div><div class="hash">0x2a91…d3b8</div></td>
+              <td><span class="mv-type out"><span class="ic">↓</span> Satış</span></td>
+              <td><strong>Royal Canin Adult 2kg</strong></td>
+              <td class="right"><span class="delta-qty neg">−1</span></td>
+              <td>📍 Üsküdar</td>
+              <td><div class="bold">Mehmet K.</div><div class="reason">POS satışı · Web sipariş</div></td>
+              <td class="right num bold">180₺</td>
+              <td><button class="reverse-btn">↶ Geri al · 21:00</button></td>
+            </tr>
+
+            <tr>
+              <td><div class="bold">09:18</div><div class="small muted">14 May</div></td>
+              <td><div class="ref">GIR-2026-0450</div><div class="hash">0x4cd0…918e</div></td>
+              <td><span class="mv-type in"><span class="ic">↑</span> Giriş</span></td>
+              <td><strong>Royal Canin Kitten 400g</strong></td>
+              <td class="right"><span class="delta-qty pos">+12</span></td>
+              <td>📍 Üsküdar</td>
+              <td><div class="bold">Mehmet K.</div><div class="reason">Dostlar Pet · İR-2450</div></td>
+              <td class="right num bold">720₺</td>
+              <td><button class="reverse-btn">↶ Geri al · 19:46</button></td>
+            </tr>
+
+            <tr style="background:rgba(124,184,224,.04)">
+              <td><div class="bold">18:42</div><div class="small muted">13 May</div></td>
+              <td><div class="ref">SAT-2026-0808</div><div class="hash">0x5ef2…4a01</div></td>
+              <td><span class="mv-type out"><span class="ic">↓</span> Satış</span></td>
+              <td><strong>Kong Classic L</strong></td>
+              <td class="right"><span class="delta-qty neg">−1</span></td>
+              <td>📍 Kadıköy</td>
+              <td><div class="bold">Burak S.</div><div class="reason">POS satışı</div></td>
+              <td class="right num bold">240₺</td>
+              <td><button class="reverse-btn locked" disabled>🔒 24s doldu</button></td>
+            </tr>
+
+            <tr>
+              <td><div class="bold">17:24</div><div class="small muted">13 May</div></td>
+              <td><div class="ref">TRF-2026-087</div><div class="hash">0x6f03…2bdc</div></td>
+              <td><span class="mv-type tr"><span class="ic">⇄</span> Transfer</span></td>
+              <td><strong>Friskies 1.5kg</strong></td>
+              <td class="right"><span class="delta-qty">±6</span></td>
+              <td><span class="branch-arrow">📍 Üsküdar <span class="arr">→</span> Beykoz</span></td>
+              <td><div class="bold">Mehmet K.</div><div class="reason">Stok dengeleme</div></td>
+              <td class="right num muted">—</td>
+              <td><button class="reverse-btn locked" disabled>🔒 24s doldu</button></td>
+            </tr>
+
+            <tr>
+              <td><div class="bold">14:10</div><div class="small muted">13 May</div></td>
+              <td><div class="ref">GIR-2026-0449</div><div class="hash">0x7194…58fa</div></td>
+              <td><span class="mv-type in"><span class="ic">↑</span> Giriş</span></td>
+              <td><strong>Pedigree Adult 3kg · 4 variant</strong></td>
+              <td class="right"><span class="delta-qty pos">+48</span></td>
+              <td>📍 Üsküdar</td>
+              <td><div class="bold">Mehmet K.</div><div class="reason">Bayındır Yem · İR-2449</div></td>
+              <td class="right num bold">4.560₺</td>
+              <td><button class="reverse-btn locked" disabled>🔒 24s doldu</button></td>
+            </tr>
+
+            <tr>
+              <td><div class="bold">11:52</div><div class="small muted">13 May</div></td>
+              <td><div class="ref">SAT-2026-0801</div><div class="hash">0x82a5…71b6</div></td>
+              <td><span class="mv-type out"><span class="ic">↓</span> Satış</span></td>
+              <td><strong>Frontline Combo Tasma · M</strong></td>
+              <td class="right"><span class="delta-qty neg">−1</span></td>
+              <td>📍 Üsküdar</td>
+              <td><div class="bold">Ayşe T.</div><div class="reason">POS satışı</div></td>
+              <td class="right num bold">180₺</td>
+              <td><button class="reverse-btn locked" disabled>🔒 24s doldu</button></td>
+            </tr>
+
+            <tr>
+              <td><div class="bold">09:34</div><div class="small muted">13 May</div></td>
+              <td><div class="ref">CIK-2026-013</div><div class="hash">0x9436…ad97</div></td>
+              <td><span class="mv-type out"><span class="ic">↓</span> Manuel Çıkış</span></td>
+              <td><strong>Catit Senses Çeşme</strong></td>
+              <td class="right"><span class="delta-qty neg">−1</span></td>
+              <td>📍 Kadıköy</td>
+              <td><div class="bold">Burak S.</div><div class="reason">Hediye · Müşteri loyalty</div></td>
+              <td class="right num muted">420₺</td>
+              <td><button class="reverse-btn locked" disabled>🔒 24s doldu</button></td>
+            </tr>
+
+            <tr>
+              <td><div class="bold">19:20</div><div class="small muted">12 May</div></td>
+              <td><div class="ref">SAY-2026-007</div><div class="hash">0xa6b8…ee42</div></td>
+              <td><span class="mv-type sa"><span class="ic">✓</span> Sayım</span></td>
+              <td><strong>Aksesuar reyonu · 12 ürün</strong></td>
+              <td class="right"><span class="delta-qty">±3</span></td>
+              <td>📍 Kadıköy</td>
+              <td><div class="bold">Burak S.</div><div class="reason">Haftalık · 1 fark düzeltildi</div></td>
+              <td class="right num muted">—</td>
+              <td><span class="small muted">Sayım onaylandı</span></td>
+            </tr>
+
+            <tr>
+              <td><div class="bold">15:48</div><div class="small muted">12 May</div></td>
+              <td><div class="ref">GIR-2026-0448</div><div class="hash">0xb1f7…0e23</div></td>
+              <td><span class="mv-type in"><span class="ic">↑</span> Giriş</span></td>
+              <td><strong>Tetra Goldfish 100g</strong></td>
+              <td class="right"><span class="delta-qty pos">+36</span></td>
+              <td>📍 Üsküdar</td>
+              <td><div class="bold">Mehmet K.</div><div class="reason">Akva Dünyası · İR-2448</div></td>
+              <td class="right num bold">1.080₺</td>
+              <td><button class="reverse-btn locked" disabled>🔒 24s doldu</button></td>
+            </tr>
+
+          </tbody>
+        </table>
+
+        <div class="pagi">
+          <span class="small muted">15 / 850 hareket gösteriliyor</span>
+          <div class="pagi-btns">
+            <button class="pagi-btn">‹</button>
+            <button class="pagi-btn active">1</button>
+            <button class="pagi-btn">2</button>
+            <button class="pagi-btn">3</button>
+            <button class="pagi-btn">…</button>
+            <button class="pagi-btn">57</button>
+            <button class="pagi-btn">›</button>
+          </div>
+          <div class="row gap-8">
+            <span class="small muted">Sayfa başına:</span>
+            <select class="select" style="width:auto;padding:4px 8px;font-size:11px"><option>15</option><option>25</option><option>50</option></select>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ============ DRAWER: Stok Girişi ============ -->
+<div class="drawer-back" id="dr-giris-back"></div>
+<div class="drawer" id="dr-giris">
+  <div class="drawer-head">
+    <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--arrow),var(--arrow-7));display:grid;place-items:center;color:#fff;font-size:18px">↑</div>
+    <div>
+      <div class="drawer-title">Stok Girişi</div>
+      <div class="small muted">Yeni ref: GIR-2026-0452</div>
+    </div>
+    <button class="drawer-close" data-close-drawer>✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="row gap-12">
+      <div class="field" style="flex:1"><label class="field-label">Tedarikçi *</label><select class="select"><option>Dostlar Pet Tedarik</option><option>Royal Pet</option></select></div>
+      <div class="field" style="flex:1"><label class="field-label">Şube *</label><select class="select"><option>Üsküdar Merkez</option><option>Kadıköy</option></select></div>
+    </div>
+    <div class="row gap-12">
+      <div class="field" style="flex:1"><label class="field-label">İrsaliye No</label><input class="input" placeholder="İR-2026-0452"/></div>
+      <div class="field" style="flex:1"><label class="field-label">Tarih</label><input class="input" type="date" value="2026-05-14"/></div>
+    </div>
+    <div class="field">
+      <label class="field-label">Ürünler</label>
+      <div class="row-items">
+        <div class="head"><span>Ürün</span><span class="right">Adet</span><span class="right">Birim ₺</span><span></span></div>
+        <div class="row-item">
+          <div><div class="nm">Royal Canin Adult Kedi 2kg</div><div class="sku">RC-AK-2</div></div>
+          <input class="input" value="20" style="text-align:right"/>
+          <input class="input" value="142,00" style="text-align:right"/>
+          <button class="drawer-close" style="border-color:var(--line-soft);color:var(--danger)">✕</button>
+        </div>
+        <div class="row-item">
+          <div><div class="nm">Whiskas Konserve 85g</div><div class="sku">WH-K-85</div></div>
+          <input class="input" value="48" style="text-align:right"/>
+          <input class="input" value="14,80" style="text-align:right"/>
+          <button class="drawer-close" style="border-color:var(--line-soft);color:var(--danger)">✕</button>
+        </div>
+        <div class="add"><button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center">+ Ürün Ekle</button></div>
+      </div>
+    </div>
+    <div class="row gap-12 mt-12" style="padding:12px;background:var(--arrow-soft);border-radius:10px">
+      <div style="flex:1"><div class="small muted">Toplam adet</div><div class="bold tnum" style="font-size:16px;color:var(--arrow-7)">68</div></div>
+      <div style="flex:1"><div class="small muted">Toplam tutar</div><div class="bold tnum" style="font-size:16px;color:var(--arrow-7)">3.550,40 ₺</div></div>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn btn-ghost" data-close-drawer>İptal</button>
+    <button class="btn btn-dark">Taslak</button>
+    <button class="btn btn-primary">Onayla →</button>
+  </div>
+</div>
+
+<!-- ============ DRAWER: Manuel Çıkış ============ -->
+<div class="drawer-back" id="dr-cikis-back"></div>
+<div class="drawer" id="dr-cikis">
+  <div class="drawer-head">
+    <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--cat),var(--cat-7));display:grid;place-items:center;color:#fff;font-size:18px">↓</div>
+    <div><div class="drawer-title">Manuel Çıkış</div><div class="small muted">Stok dışı çıkışlar — satışlar burada açılmaz</div></div>
+    <button class="drawer-close" data-close-drawer>✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="field">
+      <label class="field-label">Sebep *</label>
+      <div class="seg-grp" style="display:grid;grid-template-columns:repeat(4,1fr);width:100%">
+        <div class="seg active">Bozulma</div>
+        <div class="seg">Fire</div>
+        <div class="seg">Hediye</div>
+        <div class="seg">Diğer</div>
+      </div>
+    </div>
+    <div class="row gap-12">
+      <div class="field" style="flex:1"><label class="field-label">Şube *</label><select class="select"><option>Üsküdar</option></select></div>
+      <div class="field" style="flex:1"><label class="field-label">Tarih</label><input class="input" type="date" value="2026-05-14"/></div>
+    </div>
+    <div class="field">
+      <label class="field-label">Ürün *</label>
+      <input class="input" placeholder="🔍 Ürün ara veya barkod okut..."/>
+    </div>
+    <div class="field">
+      <label class="field-label">Adet</label>
+      <input class="input" placeholder="0"/>
+    </div>
+    <div class="field">
+      <label class="field-label">Açıklama (zorunlu — audit için)</label>
+      <textarea class="textarea" rows="3" placeholder="ör: 2 adet konserve son kullanma tarihi geçti, atıldı..."></textarea>
+    </div>
+    <div class="banner warn" style="padding:10px 14px;font-size:12px">
+      <div class="banner-ic">⚠</div>
+      <div class="banner-text"><strong>Stok azalır</strong> ve audit log'a düşer. 24 saat içinde geri alınabilir.</div>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn btn-ghost" data-close-drawer>İptal</button>
+    <button class="btn btn-primary">Çıkışı Onayla →</button>
+  </div>
+</div>
+
+<!-- ============ DRAWER: Transfer ============ -->
+<div class="drawer-back" id="dr-transfer-back"></div>
+<div class="drawer" id="dr-transfer" style="width:680px">
+  <div class="drawer-head">
+    <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--bars),var(--bars-7));display:grid;place-items:center;color:#fff;font-size:18px">⇄</div>
+    <div><div class="drawer-title">Transfer</div><div class="small muted">Şubeler arası stok geçişi · ledger'da iki kayıt</div></div>
+    <button class="drawer-close" data-close-drawer>✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="tr-cards">
+      <div class="tr-card">
+        <div class="label">Kaynak şube</div>
+        <select class="select mt-6"><option>📍 Üsküdar Merkez</option><option>📍 Kadıköy</option><option>📍 Beykoz</option></select>
+        <div class="small muted mt-8">Üsküdar'da stok: Royal Canin 2kg <strong>18 adet</strong></div>
+      </div>
+      <div class="tr-arrow">→</div>
+      <div class="tr-card">
+        <div class="label">Hedef şube</div>
+        <select class="select mt-6"><option>📍 Kadıköy</option><option>📍 Üsküdar Merkez</option><option>📍 Beykoz</option></select>
+        <div class="small muted mt-8">Kadıköy'de stok: Royal Canin 2kg <strong>0 adet</strong></div>
+      </div>
+    </div>
+
+    <div class="field mt-16">
+      <label class="field-label">Ürünler</label>
+      <div class="row-items">
+        <div class="head"><span>Ürün</span><span class="right">Kaynak</span><span class="right">Transfer</span><span></span></div>
+        <div class="row-item">
+          <div><div class="nm">Royal Canin Adult 2kg</div><div class="sku">RC-AK-2</div></div>
+          <div class="right num bold">18</div>
+          <input class="input" value="5" style="text-align:right"/>
+          <button class="drawer-close" style="border-color:var(--line-soft);color:var(--danger)">✕</button>
+        </div>
+        <div class="row-item">
+          <div><div class="nm">Pro Plan Köpek 12kg</div><div class="sku">PP-K-12</div></div>
+          <div class="right num bold">8</div>
+          <input class="input" value="3" style="text-align:right"/>
+          <button class="drawer-close" style="border-color:var(--line-soft);color:var(--danger)">✕</button>
+        </div>
+        <div class="add"><button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center">+ Ürün Ekle</button></div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Açıklama (opsiyonel)</label>
+      <input class="input" placeholder="ör: Hafta sonu satışı için dengeleme"/>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn btn-ghost" data-close-drawer>İptal</button>
+    <button class="btn btn-primary">Transfer'i Onayla →</button>
+  </div>
+</div>
+
+<!-- ============ DRAWER: Sayım başlat ============ -->
+<div class="drawer-back" id="dr-sayim-back"></div>
+<div class="drawer" id="dr-sayim">
+  <div class="drawer-head">
+    <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--cart),var(--cart-7));display:grid;place-items:center;color:#fff;font-size:18px">✓</div>
+    <div><div class="drawer-title">Sayım Başlat</div><div class="small muted">Fiziksel envanter doğrulama · yumuşak kilit</div></div>
+    <button class="drawer-close" data-close-drawer>✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="row gap-12">
+      <div class="field" style="flex:1"><label class="field-label">Şube *</label><select class="select"><option>📍 Üsküdar Merkez</option></select></div>
+      <div class="field" style="flex:1"><label class="field-label">Sayım modu</label>
+        <div class="seg-grp" style="display:grid;grid-template-columns:repeat(3,1fr);width:100%">
+          <div class="seg active">Reyon</div>
+          <div class="seg">Tüm şube</div>
+          <div class="seg">Seçim</div>
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">Reyon</label>
+      <select class="select"><option>Mama reyonu (18 ürün)</option><option>Aksesuar reyonu (12 ürün)</option><option>Veteriner reyonu (8 ürün)</option></select>
+    </div>
+    <div class="banner info">
+      <div class="banner-ic">🔒</div>
+      <div class="banner-text">
+        <strong>Yumuşak kilit aktif olacak</strong>
+        Sayım başladıktan sonra bu reyondaki ürünler için satış ve transfer durdurulur (~3-15 dk). Diğer kullanıcılar uyarılır.
+      </div>
+    </div>
+    <div class="checklist mt-12">
+      <h4>Sayım öncesi kontrol</h4>
+      <div class="checklist-item ok"><span class="ic">✓</span> Reyondaki ürünler için açık satış yok</div>
+      <div class="checklist-item ok"><span class="ic">✓</span> Bekleyen transfer yok</div>
+      <div class="checklist-item ok"><span class="ic">✓</span> Tüm önceki sayımlar onaylandı</div>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn btn-ghost" data-close-drawer>İptal</button>
+    <button class="btn btn-primary">Sayıma Başla → tam sayfa</button>
+  </div>
+</div>
+
+<!-- ============ DRAWER: Hareket Detayı ============ -->
+<div class="drawer-back" id="dr-detail-back"></div>
+<div class="drawer" id="dr-detail">
+  <div class="drawer-head">
+    <span class="mv-type out"><span class="ic">↓</span> Satış</span>
+    <div>
+      <div class="drawer-title">SAT-2026-0814</div>
+      <div class="small muted">14 May 2026 · 14:32 · 3 dk önce</div>
+    </div>
+    <button class="drawer-close" data-close-drawer>✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="card" style="padding:16px;border-radius:14px">
+      <div class="row between">
+        <div>
+          <div class="small muted">Ürün</div>
+          <div class="bold" style="font-size:14px">Royal Canin Kitten 400g</div>
+          <div class="small muted">SKU: RC-KT-400 · variant: tek</div>
+        </div>
+        <div class="right">
+          <div class="small muted">Adet</div>
+          <div class="delta-qty neg" style="font-size:24px">−2</div>
+        </div>
+      </div>
+      <div style="height:1px;background:var(--line-soft);margin:12px 0"></div>
+      <div class="row between"><span class="small muted">Birim fiyat</span><span class="num bold">120,00 ₺</span></div>
+      <div class="row between"><span class="small muted">Toplam tutar</span><span class="num bold" style="color:var(--cart);font-size:16px">240,00 ₺</span></div>
+    </div>
+
+    <h4 style="margin:20px 0 10px;font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.4px">Detay</h4>
+    <div class="ts-list">
+      <div class="ts-row"><span class="who">Tip</span><span class="val">Satış (Çıkış)</span></div>
+      <div class="ts-row"><span class="who">Şube</span><span class="val">📍 Üsküdar Merkez</span></div>
+      <div class="ts-row"><span class="who">Kullanıcı</span><span class="val">Ayşe T. (STAFF)</span></div>
+      <div class="ts-row"><span class="who">Önceki stok</span><span class="val">30</span></div>
+      <div class="ts-row"><span class="who">Sonraki stok</span><span class="val">28</span></div>
+      <div class="ts-row"><span class="who">Hash</span><span class="val" style="font-family:var(--font-mono);font-size:10px">0xa7f3…b2e1</span></div>
+      <div class="ts-row"><span class="who">Önceki hash</span><span class="val" style="font-family:var(--font-mono);font-size:10px">0xb842…c4d7</span></div>
+    </div>
+
+    <h4 style="margin:20px 0 10px;font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.4px">Zaman çizgisi</h4>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="ttl">14:32 · Hareket oluşturuldu</div>
+        <div class="sub">Ayşe T. · POS uygulaması · IP 88.243.x.x</div>
+      </div>
+      <div class="timeline-item">
+        <div class="ttl">14:32 · Ledger'a yazıldı</div>
+        <div class="sub">Hash zinciri doğrulandı</div>
+      </div>
+      <div class="timeline-item">
+        <div class="ttl">14:32 · Stok güncellendi</div>
+        <div class="sub">RC-KT-400 · Üsküdar · 30 → 28</div>
+      </div>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <span class="small muted" style="margin-right:auto">Geri alma süresi: <strong>23s 58dk</strong></span>
+    <button class="btn btn-ghost" data-close-drawer>Kapat</button>
+    <button class="btn btn-danger">↶ Hareketi Geri Al</button>
+  </div>
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

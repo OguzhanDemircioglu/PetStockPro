@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Tasarım Sistemi · PetStockPro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/tokens-v2.css">
+<style>
+  body { padding: 24px 32px 32px; }
+  h1 { margin: 0 0 8px; font-size: 24px; color: var(--cart); letter-spacing: -.4px; }
+  .lead { color: var(--ink-3); font-size: 13px; margin: 0 0 24px; max-width: 720px; }
+  .grid { display: grid; gap: 18px; grid-template-columns: 1.4fr 1fr 1fr; }
+  .panel {
+    background: var(--paper-glass-strong);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,.65);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-md);
+    padding: 18px;
+  }
+  .panel h3 { margin: 0 0 12px; font-size: 12px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .5px; font-weight: bold; }
+
+  .swatch-grid { display: grid; gap: 10px; grid-template-columns: repeat(5, 1fr); }
+  .swatch {
+    border-radius: 10px;
+    padding: 14px 12px;
+    color: #fff;
+    box-shadow: var(--shadow-sm);
+    aspect-ratio: 1.1 / 1;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .swatch .name { font-size: 11px; opacity: .85; text-transform: uppercase; letter-spacing: .4px; font-weight: bold; }
+  .swatch .hex { font-family: var(--font-mono); font-size: 11px; opacity: .92; }
+  .swatch .role { font-size: 12.5px; font-weight: bold; }
+
+  .typo-row { padding: 10px 0; border-bottom: 1px dashed var(--line-soft); }
+  .typo-row:last-child { border-bottom: 0; }
+  .typo-row .lbl { font-size: 10.5px; color: var(--ink-4); text-transform: uppercase; letter-spacing: .4px; font-weight: bold; }
+
+  .scale-row { display: grid; grid-template-columns: 60px 1fr; gap: 10px; align-items: center; padding: 6px 0; }
+  .scale-row .v { font-family: var(--font-mono); font-size: 12px; color: var(--cart); font-weight: bold; }
+  .radius-demo { background: linear-gradient(135deg, var(--cat), var(--cart)); height: 32px; }
+
+  .comp-grid { display: grid; gap: 14px; grid-template-columns: repeat(2, 1fr); margin-top: 14px; }
+  .comp-cell { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+  .comp-cell h4 { margin: 0 0 8px; font-size: 11px; color: var(--ink-4); text-transform: uppercase; letter-spacing: .4px; font-weight: bold; }
+
+  .mascot-card {
+    background: linear-gradient(135deg, var(--cat-soft), var(--bars-soft));
+    border-radius: var(--r-md);
+    padding: 18px;
+    text-align: center;
+    margin-top: 14px;
+    position: relative; overflow: hidden;
+  }
+  .mascot-card img { width: 200px; max-width: 100%; }
+</style>
+</head>
+<body data-screen-label="00 Tasarım Sistemi">
+
+<h1>Tasarım Sistemi</h1>
+<p class="lead">PetStockPro için Verdana tabanlı, 5 semantik renk teması (logodan türetilmiş), glass morphism + mesh gradient + paw pattern + hayvan mascot ile zenginleştirilmiş hi-fi sistem.</p>
+
+<div class="grid">
+  <!-- Colors -->
+  <div class="panel" style="grid-column:span 3">
+    <h3>Renk Paleti — 5 Semantik Tema + Sistem</h3>
+    <div class="swatch-grid">
+      <div class="swatch" style="background:var(--cat)">
+        <div>
+          <div class="role">CAT · Turuncu</div>
+          <div class="name">CTA · Accent</div>
+        </div>
+        <div class="hex">#d4621c</div>
+      </div>
+      <div class="swatch" style="background:var(--cart)">
+        <div>
+          <div class="role">CART · Lacivert</div>
+          <div class="name">Primary · Sidebar</div>
+        </div>
+        <div class="hex">#1e3a5f</div>
+      </div>
+      <div class="swatch" style="background:var(--arrow)">
+        <div>
+          <div class="role">ARROW · Yeşil</div>
+          <div class="name">Success · Büyüme</div>
+        </div>
+        <div class="hex">#22c55e</div>
+      </div>
+      <div class="swatch" style="background:var(--bars)">
+        <div>
+          <div class="role" style="color:#103556">BARS · Açık Mavi</div>
+          <div class="name" style="color:#1e3a5f">Info · Chart</div>
+        </div>
+        <div class="hex" style="color:#1e3a5f">#7cb8e0</div>
+      </div>
+      <div class="swatch" style="background:var(--dog)">
+        <div>
+          <div class="role">DOG · Antrasit</div>
+          <div class="name">Neutral Dark</div>
+        </div>
+        <div class="hex">#2c4257</div>
+      </div>
+    </div>
+    <div class="row gap-8 mt-12">
+      <span class="pill">cart-soft</span>
+      <span class="pill cat">cat-soft</span>
+      <span class="pill green">arrow-soft</span>
+      <span class="pill blue">bars-soft</span>
+      <span class="pill dog">dog-soft</span>
+      <span class="pill red">danger-soft</span>
+      <span class="small muted" style="margin-left:auto">Her renk için 5 ton: ana / -2 açık / -7 koyu / -soft arka plan</span>
+    </div>
+  </div>
+
+  <!-- Type -->
+  <div class="panel">
+    <h3>Tipografi · Verdana</h3>
+    <div class="typo-row">
+      <div class="lbl">Hero · 22px bold</div>
+      <div style="font-size:22px;font-weight:bold;color:var(--cart);letter-spacing:-.4px">Hoş geldin, Mehmet</div>
+    </div>
+    <div class="typo-row">
+      <div class="lbl">KPI Büyük · 42px</div>
+      <div style="font-size:42px;font-weight:bold;color:var(--cart);line-height:1">48.620₺</div>
+    </div>
+    <div class="typo-row">
+      <div class="lbl">KPI Standard · 32px</div>
+      <div style="font-size:32px;font-weight:bold;color:var(--cart);line-height:1">1.850₺</div>
+    </div>
+    <div class="typo-row">
+      <div class="lbl">Section · 16px bold</div>
+      <div style="font-size:16px;font-weight:bold;color:var(--cart)">Son Hareketler</div>
+    </div>
+    <div class="typo-row">
+      <div class="lbl">Body · 13px</div>
+      <div style="font-size:13px;color:var(--ink-2)">Royal Canin Adult Kedi 2kg için sipariş ver.</div>
+    </div>
+    <div class="typo-row">
+      <div class="lbl">Small · 11px</div>
+      <div style="font-size:11px;color:var(--ink-4)">SKU RC-AK-2 · 28 adet stokta</div>
+    </div>
+    <div class="typo-row">
+      <div class="lbl">Mono · Consolas 12px</div>
+      <div style="font-family:var(--font-mono);font-size:12px;color:var(--cart)">0xa7f3…b2e1 · +1.842</div>
+    </div>
+  </div>
+
+  <!-- Radius + Shadow -->
+  <div class="panel">
+    <h3>Border Radius · Shadow</h3>
+    <div class="scale-row"><span class="v">8px · xs</span><div class="radius-demo" style="border-radius:8px"></div></div>
+    <div class="scale-row"><span class="v">12px · sm</span><div class="radius-demo" style="border-radius:12px"></div></div>
+    <div class="scale-row"><span class="v">18px · md</span><div class="radius-demo" style="border-radius:18px"></div></div>
+    <div class="scale-row"><span class="v">24px · lg</span><div class="radius-demo" style="border-radius:24px"></div></div>
+    <div class="scale-row"><span class="v">32px · xl</span><div class="radius-demo" style="border-radius:32px"></div></div>
+
+    <h3 style="margin-top:16px">Shadow Renkleri</h3>
+    <div class="row gap-8" style="margin-top:8px">
+      <div style="width:60px;height:40px;border-radius:10px;background:var(--cat);box-shadow:var(--shadow-cat)"></div>
+      <div style="width:60px;height:40px;border-radius:10px;background:var(--cart);box-shadow:var(--shadow-cart)"></div>
+      <div style="width:60px;height:40px;border-radius:10px;background:var(--arrow);box-shadow:var(--shadow-arrow)"></div>
+    </div>
+  </div>
+
+  <!-- Mascot + components -->
+  <div class="panel">
+    <h3>Mascot · Hayvan Sembolü</h3>
+    <div class="mascot-card">
+      <img src="../assets/mascot.svg" alt="Cat + Dog mascot">
+      <div class="small muted mt-8">Logo'dan türeyen kedi + köpek silüetleri. Bento kartlarda watermark, hero görseli, sidebar başlığında kullanılır.</div>
+    </div>
+
+    <h3 style="margin-top:16px">Bileşenler</h3>
+    <div class="comp-grid">
+      <div class="comp-cell">
+        <h4>Pill / Badge</h4>
+        <div class="row gap-6" style="flex-wrap:wrap"><span class="pill">Vitrin'de</span><span class="pill cat">FREE 47/50</span><span class="pill green">↑ Onaylandı</span><span class="pill red">Tükendi</span></div>
+      </div>
+      <div class="comp-cell">
+        <h4>Toggle</h4>
+        <div class="row gap-12 center"><div class="toggle on"></div><div class="toggle"></div><div class="toggle disabled"></div></div>
+      </div>
+      <div class="comp-cell">
+        <h4>Buttons</h4>
+        <div class="row gap-6" style="flex-wrap:wrap"><button class="btn btn-primary btn-sm">Primary</button><button class="btn btn-dark btn-sm">Dark</button><button class="btn btn-ghost btn-sm">Ghost</button></div>
+      </div>
+      <div class="comp-cell">
+        <h4>KPI Ring</h4>
+        <div style="position:relative;width:54px;height:54px">
+          <svg width="54" height="54">
+            <circle cx="27" cy="27" r="22" stroke="var(--line)" stroke-width="4" fill="none"/>
+            <circle cx="27" cy="27" r="22" stroke="var(--cat)" stroke-width="4" fill="none" stroke-dasharray="138" stroke-dashoffset="8" stroke-linecap="round" transform="rotate(-90 27 27)"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:grid;place-items:center;font-size:12px;font-weight:bold;color:var(--cart)">47</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

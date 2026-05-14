@@ -1,0 +1,969 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Ürünler · PetStockPro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/tokens-v2.css">
+<style>
+  /* Ürünler-specific */
+  .page-head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+  .page-head h1 { margin: 0; font-size: 22px; font-weight: bold; color: var(--cart); letter-spacing: -.4px; }
+  .page-head-spacer { flex: 1; }
+
+  .plan-strip {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 18px;
+    background: linear-gradient(90deg, var(--cat-soft), rgba(255,255,255,.6));
+    border: 1px solid rgba(212,98,28,.18);
+    border-radius: var(--r-md);
+    margin-bottom: 16px;
+  }
+  .plan-strip .pill { font-size: 11px; }
+  .plan-prog-strip {
+    flex: 1; max-width: 360px;
+    height: 8px; background: rgba(212,98,28,.15);
+    border-radius: 999px; overflow: hidden; position: relative;
+  }
+  .plan-prog-strip .fill {
+    height: 100%; width: 94%;
+    background: linear-gradient(90deg, var(--cat), var(--cat-2));
+    border-radius: 999px;
+  }
+
+  /* KPI strip */
+  .kpi-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px; }
+  .kpi-tile {
+    background: var(--paper-glass-strong);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,.65);
+    box-shadow: var(--shadow-sm);
+    border-radius: var(--r-md);
+    padding: 14px 18px;
+    position: relative; overflow: hidden;
+  }
+  .kpi-tile .ic {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: inline-grid; place-items: center; color: #fff;
+    font-size: 12px; margin-right: 8px;
+  }
+  .kpi-tile.k1 .ic { background: var(--cart); }
+  .kpi-tile.k2 .ic { background: var(--cat); }
+  .kpi-tile.k3 .ic { background: var(--arrow); }
+  .kpi-tile.k4 .ic { background: var(--danger); }
+
+  /* Filter panel */
+  .filter-panel {
+    background: var(--paper-glass-strong);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,.65);
+    box-shadow: var(--shadow-sm);
+    border-radius: var(--r-md);
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr 1fr auto; gap: 10px;
+    align-items: end;
+  }
+  .filter-panel .field { margin: 0; }
+
+  /* Bulk action bar */
+  .bulk-bar {
+    background: linear-gradient(135deg, var(--cart), var(--cart-7));
+    color: #fff;
+    border-radius: var(--r-md);
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: var(--shadow-cart);
+  }
+  .bulk-bar .count {
+    background: rgba(255,255,255,.18);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 12px;
+  }
+  .bulk-bar .btn {
+    background: rgba(255,255,255,.92);
+    color: var(--cart);
+  }
+  .bulk-bar .btn.btn-primary { background: linear-gradient(135deg,var(--cat),var(--cat-2)); color:#fff; }
+  .bulk-bar .btn-ghost-on-dark { background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.22); }
+
+  /* Product table */
+  .product-wrap {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  .product-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+  .product-table thead th {
+    text-align: left; font-weight: bold;
+    color: var(--ink-3);
+    font-size: 11px;
+    text-transform: uppercase; letter-spacing: .4px;
+    padding: 12px;
+    border-bottom: 1px solid var(--line);
+    background: var(--paper-glass);
+    white-space: nowrap;
+  }
+  .product-table tbody td {
+    padding: 12px;
+    border-bottom: 1px solid var(--line-soft);
+    color: var(--ink-2);
+    vertical-align: middle;
+    font-size: 12.5px;
+  }
+  .product-table tbody tr:hover td { background: rgba(124,184,224,.08); }
+  .product-table .sticky-right { position: sticky; right: 0; background: var(--paper); box-shadow: -8px 0 14px rgba(20,30,55,.06); }
+  .product-table tbody tr:hover .sticky-right { background: #f4f8fc; }
+  .product-table tbody tr.selected td { background: rgba(212,98,28,.06); }
+  .product-table tbody tr.expanded > td { background: rgba(124,184,224,.06); border-bottom: 0; }
+  .product-table .right { text-align: right; }
+  .product-table .num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: 12px; }
+
+  .pthumb {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--cat-soft), var(--bars-soft));
+    display: inline-grid; place-items: center;
+    font-size: 16px;
+    margin-right: 10px;
+    vertical-align: middle;
+  }
+  .pname { display: inline-block; vertical-align: middle; }
+  .pname .nm { display: block; font-weight: bold; color: var(--cart); font-size: 13px; }
+  .pname .sku { display: block; color: var(--ink-4); font-size: 10.5px; font-family: var(--font-mono); }
+
+  .chk {
+    width: 16px; height: 16px;
+    border: 1.5px solid var(--line);
+    border-radius: 4px;
+    display: inline-grid; place-items: center;
+    cursor: pointer;
+    background: var(--paper);
+  }
+  .chk.on { background: var(--cat); border-color: var(--cat); color: #fff; }
+  .chk.on::after { content: "✓"; font-size: 11px; }
+
+  .stock-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11.5px; font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+  }
+  .stock-pill.ok { background: var(--arrow-soft); color: var(--arrow-7); }
+  .stock-pill.low { background: var(--cat-soft); color: var(--cat-7); }
+  .stock-pill.out { background: var(--danger-soft); color: var(--danger-7); }
+
+  /* Validation tooltip */
+  .val-ind {
+    display: inline-grid; place-items: center;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--danger-soft);
+    color: var(--danger-7);
+    font-size: 11px; font-weight: bold;
+    cursor: help;
+    margin-left: 4px;
+  }
+  .val-ind.ok { background: var(--arrow-soft); color: var(--arrow-7); }
+
+  /* Sale toggle column */
+  .sale-cell { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+
+  /* Expand row */
+  .expand-row td { padding: 0 !important; }
+  .expand-body {
+    padding: 16px 16px 16px 60px;
+    background: rgba(124,184,224,.06);
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .expand-body h4 { margin: 0 0 10px; font-size: 12px; color: var(--cart); text-transform: uppercase; letter-spacing: .4px; }
+  .var-grid {
+    display: grid; grid-template-columns: 1fr repeat(4, 80px) 100px;
+    gap: 10px; align-items: center;
+    padding: 8px 10px;
+    font-size: 12px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    margin-bottom: 6px;
+  }
+  .var-grid.head {
+    background: var(--line-soft);
+    color: var(--ink-4);
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: .4px; font-weight: bold;
+  }
+  .var-grid .branch-cell { text-align: center; font-family: var(--font-mono); font-weight: bold; }
+
+  /* Drawer two-column form */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-full { grid-column: span 2; }
+  .img-up {
+    border: 1.5px dashed var(--line);
+    border-radius: 12px;
+    padding: 18px;
+    text-align: center;
+    color: var(--ink-3);
+    font-size: 12px;
+    cursor: pointer;
+    background: var(--line-soft);
+  }
+  .img-up:hover { border-color: var(--cat); color: var(--cat); background: var(--cat-soft); }
+  .checklist {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px;
+  }
+  .checklist h4 { margin: 0 0 8px; font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .4px; }
+  .checklist-item {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px;
+    padding: 5px 0;
+  }
+  .checklist-item.ok { color: var(--arrow-7); }
+  .checklist-item.bad { color: var(--danger-7); }
+  .checklist-item .ic { width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; font-size: 10px; color: #fff; }
+  .checklist-item.ok .ic { background: var(--arrow); }
+  .checklist-item.bad .ic { background: var(--danger); }
+
+  /* Pagination */
+  .pagi { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-top: 1px solid var(--line); background: var(--paper-glass); }
+  .pagi-btns { display: flex; gap: 4px; }
+  .pagi-btn {
+    width: 30px; height: 30px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--paper);
+    color: var(--ink-2);
+    font-size: 11.5px; font-weight: bold;
+    cursor: pointer;
+    display: grid; place-items: center;
+  }
+  .pagi-btn.active { background: var(--cart); color: #fff; border-color: var(--cart); }
+
+  /* Tooltip via title attr — we add visible mini-tip elements */
+  .mini-tip {
+    position: absolute; top: 100%; left: 0;
+    margin-top: 6px;
+    background: var(--ink); color: #fff;
+    padding: 8px 10px; border-radius: 6px;
+    font-size: 11px; white-space: nowrap;
+    z-index: 5; box-shadow: var(--shadow-md);
+    display: none;
+    font-weight: normal;
+  }
+  .val-ind:hover + .mini-tip { display: block; }
+</style>
+</head>
+<body data-screen-label="02 Ürünler">
+
+<div class="app">
+  <!-- ============ SIDEBAR (kept compact identical to pano) ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">P</div>
+      <div>
+        <div class="brand-name">PetStockPro</div>
+        <div class="brand-sub">Mavi Pet Shop</div>
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Genel</div>
+      <a class="nav-item" href="pano.html">
+        <svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Pano
+      </a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Envanter</div>
+      <a class="nav-item active" href="urunler.html">
+        <svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>
+        Ürünler
+        <span class="nav-badge">47</span>
+      </a>
+      <a class="nav-item" href="stok-hareketleri.html">
+        <svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17l5-5 5 5"/><path d="M7 7l5 5 5-5"/></svg>
+        Stok Hareketleri
+      </a>
+      <a class="nav-item" href="#">
+        <svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M5 9l7-7 7 7"/></svg>
+        Düşük Stok
+        <span class="nav-badge" style="background:var(--danger)">5</span>
+      </a>
+      <a class="nav-item" href="#">Sayım</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Operasyon</div>
+      <a class="nav-item" href="#">Satış</a>
+      <a class="nav-item" href="#">Transferler</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Kaynaklar</div>
+      <a class="nav-item" href="#">Tedarikçiler</a>
+      <a class="nav-item" href="#">Şubeler<span class="nav-badge" style="background:var(--bars-7)">3</span></a>
+      <a class="nav-item" href="#">Kullanıcılar</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Analiz</div>
+      <a class="nav-item" href="#">Raporlar</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">🏪 Vitrin</div>
+      <a class="nav-item vitrin" href="#">Vitrin Profili</a>
+      <a class="nav-item vitrin" href="#">Vitrin Metrikleri</a>
+    </div>
+    <div class="nav-group"><div class="nav-group-label">Sistem</div><a class="nav-item" href="#">Ayarlar</a></div>
+    <div class="plan-card">
+      <div class="plan-row">
+        <div><div class="plan-name">PLAN</div><div class="plan-tier">FREE</div></div>
+      </div>
+      <div class="plan-prog-wrap">
+        <div class="plan-prog-label"><span>Ürün limiti</span><span class="tnum">47 / 50</span></div>
+        <div class="plan-prog-bar"><div class="plan-prog-fill" style="width:94%"></div></div>
+      </div>
+      <a href="#" class="plan-cta">PRO'ya Yükselt →</a>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+    <header class="topbar">
+      <div>
+        <div class="topbar-title">Ürünler</div>
+        <div class="topbar-sub">Envanter kataloğu · 47 aktif ürün</div>
+      </div>
+      <div class="topbar-spacer"></div>
+      <div class="cmdk">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        Ara: ürün, SKU, barkod...
+        <kbd>⌘K</kbd>
+      </div>
+      <a class="tb-btn vitrin-link" href="#">🏪 Vitrin'i Görüntüle →</a>
+      <div class="tb-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9"/></svg><span class="dot" style="position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--cat);border:2px solid #fff;"></span></div>
+      <div class="tb-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg></div>
+      <div class="avatar">MK</div>
+    </header>
+
+    <main class="content">
+
+      <!-- Page Head -->
+      <div class="page-head">
+        <h1>Ürünler</h1>
+        <span class="pill blue">47 ürün · 124 variant</span>
+        <span class="pill green">38 Vitrin'de</span>
+        <div class="page-head-spacer"></div>
+        <button class="btn btn-ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v6l-7 8v4l-2-2v-2l-7-8z"/></svg> İçeri Aktar</button>
+        <button class="btn btn-ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg> Dışarı Aktar</button>
+        <button class="btn btn-primary" data-open-drawer="#dr-new-back">+ Yeni Ürün</button>
+      </div>
+
+      <!-- Plan strip -->
+      <div class="plan-strip">
+        <span class="pill cat" style="font-weight:bold">FREE</span>
+        <div>
+          <div style="font-size:12.5px;font-weight:bold;color:var(--cart)">Ürün limiti: 47 / 50</div>
+          <div class="small muted">PRO ile sınırsız ürün, çoklu variant ve toplu vitrin yönetimi.</div>
+        </div>
+        <div class="plan-prog-strip"><div class="fill"></div></div>
+        <a class="btn btn-primary btn-sm" href="#">PRO'ya geç →</a>
+      </div>
+
+      <!-- KPI Strip -->
+      <div class="kpi-strip">
+        <div class="kpi-tile k1">
+          <div class="row gap-8 center">
+            <div class="ic">📦</div>
+            <div class="kpi-label">Aktif Ürün</div>
+          </div>
+          <div class="kpi-num mt-4">47<span style="color:var(--ink-4);font-size:18px">/50</span></div>
+          <div class="small muted mt-4">124 variant · 3 yeni bu hafta</div>
+        </div>
+        <div class="kpi-tile k2">
+          <div class="row gap-8 center">
+            <div class="ic">🏪</div>
+            <div class="kpi-label">Vitrin'de</div>
+          </div>
+          <div class="kpi-num mt-4">38</div>
+          <div class="small muted mt-4">9 ürün vitrine açılmamış</div>
+        </div>
+        <div class="kpi-tile k3">
+          <div class="row gap-8 center">
+            <div class="ic">💰</div>
+            <div class="kpi-label">Envanter Değeri</div>
+          </div>
+          <div class="kpi-num mt-4">48.620₺</div>
+          <div class="small muted mt-4">↑ 5,2% aylık</div>
+        </div>
+        <div class="kpi-tile k4">
+          <div class="row gap-8 center">
+            <div class="ic">⚠</div>
+            <div class="kpi-label">Düşük / Tükendi</div>
+          </div>
+          <div class="kpi-num mt-4">5<span style="color:var(--ink-4);font-size:18px"> / 3</span></div>
+          <div class="small muted mt-4">3 ürün satıştan çekildi</div>
+        </div>
+      </div>
+
+      <!-- Filter -->
+      <div class="filter-panel">
+        <div class="field">
+          <label class="field-label">Ara</label>
+          <input class="input" placeholder="🔍 İsim, SKU, barkod..." value="royal canin"/>
+        </div>
+        <div class="field">
+          <label class="field-label">Kategori</label>
+          <select class="select"><option>Tümü</option><option>Kedi Maması</option><option>Köpek Maması</option><option>Aksesuar</option></select>
+        </div>
+        <div class="field">
+          <label class="field-label">Tedarikçi</label>
+          <select class="select"><option>Tümü</option><option>Dostlar Pet Tedarik</option><option>Royal Pet</option></select>
+        </div>
+        <div class="field">
+          <label class="field-label">Stok</label>
+          <select class="select"><option>Tümü</option><option>Stokta</option><option>Düşük</option><option>Tükendi</option></select>
+        </div>
+        <div class="field">
+          <label class="field-label">Vitrin</label>
+          <select class="select"><option>Tümü</option><option>Vitrin'de</option><option>Kapalı</option><option>Doğrulama bekliyor</option></select>
+        </div>
+        <button class="btn btn-ghost">⟲ Sıfırla</button>
+      </div>
+
+      <!-- Bulk action bar -->
+      <div class="bulk-bar">
+        <div class="count">3 ürün seçildi</div>
+        <span style="font-size:12.5px;opacity:.9">Toplu eylem:</span>
+        <button class="btn btn-sm btn-primary">🏪 Vitrine Aç</button>
+        <button class="btn btn-sm btn-ghost-on-dark">🏪 Vitrinden Çıkar</button>
+        <button class="btn btn-sm btn-ghost-on-dark">Fiyat Güncelle</button>
+        <button class="btn btn-sm btn-ghost-on-dark">Kategori Değiştir</button>
+        <button class="btn btn-sm btn-ghost-on-dark" style="margin-left:auto">Seçimi temizle</button>
+      </div>
+
+      <!-- Product table -->
+      <div class="product-wrap">
+        <table class="product-table">
+          <thead>
+            <tr>
+              <th style="width:30px"><div class="chk"></div></th>
+              <th>Ürün</th>
+              <th>Kategori</th>
+              <th class="right">Toplam Stok</th>
+              <th class="right">Birim ₺</th>
+              <th class="right">Değer</th>
+              <th>Tedarikçi</th>
+              <th class="right">Son Hareket</th>
+              <th class="sticky-right" style="text-align:center;width:170px">Vitrin · Satışa Aç</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Row 1 — expanded with variants -->
+            <tr class="selected expanded">
+              <td><div class="chk on"></div></td>
+              <td>
+                <span class="pthumb">🐱</span>
+                <span class="pname" data-open-drawer="#dr-detail-back" style="cursor:pointer">
+                  <span class="nm">Royal Canin Adult Kedi 2kg ▾</span>
+                  <span class="sku">SKU: RC-AK-2 · Barkod: 869…01</span>
+                </span>
+              </td>
+              <td><span class="pill blue">Kedi · Mama</span></td>
+              <td class="right num">28</td>
+              <td class="right num">180,00 ₺</td>
+              <td class="right num bold">5.040 ₺</td>
+              <td>Dostlar Pet</td>
+              <td class="right small muted">12 dk önce</td>
+              <td class="sticky-right">
+                <div class="sale-cell">
+                  <span class="val-ind ok" style="position:relative">✓<span class="mini-tip">Vitrin doğrulaması tamam.</span></span>
+                  <span class="pill green">Vitrin'de</span>
+                  <div class="toggle on"></div>
+                </div>
+              </td>
+            </tr>
+            <tr class="expand-row">
+              <td colspan="9">
+                <div class="expand-body">
+                  <h4>Variantlar · Şube bazında stok matrisi</h4>
+                  <div class="var-grid head">
+                    <span>Variant</span><span>Üsküdar</span><span>Kadıköy</span><span>Beykoz</span><span>Toplam</span><span>Vitrin</span>
+                  </div>
+                  <div class="var-grid">
+                    <span><strong>2kg</strong> · varsayılan</span>
+                    <span class="branch-cell" style="color:var(--arrow-7)">18</span>
+                    <span class="branch-cell" style="color:var(--danger-7)">0</span>
+                    <span class="branch-cell" style="color:var(--arrow-7)">10</span>
+                    <span class="branch-cell">28</span>
+                    <span><div class="toggle on" style="margin:auto"></div></span>
+                  </div>
+                  <div class="var-grid">
+                    <span><strong>4kg</strong></span>
+                    <span class="branch-cell" style="color:var(--arrow-7)">12</span>
+                    <span class="branch-cell" style="color:var(--cat-7)">3</span>
+                    <span class="branch-cell" style="color:var(--arrow-7)">8</span>
+                    <span class="branch-cell">23</span>
+                    <span><div class="toggle on" style="margin:auto"></div></span>
+                  </div>
+                  <div class="var-grid">
+                    <span><strong>10kg</strong> · ekonomik</span>
+                    <span class="branch-cell" style="color:var(--cat-7)">2</span>
+                    <span class="branch-cell" style="color:var(--arrow-7)">5</span>
+                    <span class="branch-cell" style="color:var(--ink-4)">—</span>
+                    <span class="branch-cell">7</span>
+                    <span><div class="toggle" style="margin:auto"></div></span>
+                  </div>
+                  <div class="row gap-8 mt-12">
+                    <button class="btn btn-ghost btn-sm">+ Variant Ekle</button>
+                    <button class="btn btn-ghost btn-sm">Transfer</button>
+                    <a href="#" class="small bold" style="color:var(--cat);text-decoration:none;margin-left:auto;align-self:center">Detayı aç →</a>
+                  </div>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Row 2 — stock out, toggle OFF -->
+            <tr>
+              <td><div class="chk on"></div></td>
+              <td>
+                <span class="pthumb">🐱</span>
+                <span class="pname"><span class="nm">Whiskas Konserve 85g · 4'lü</span><span class="sku">SKU: WH-K-85 · Barkod: 869…45</span></span>
+              </td>
+              <td><span class="pill blue">Kedi · Yaş mama</span></td>
+              <td class="right num"><span class="stock-pill out">0</span></td>
+              <td class="right num">18,50 ₺</td>
+              <td class="right num">0 ₺</td>
+              <td>Dostlar Pet</td>
+              <td class="right small muted">2 dk önce</td>
+              <td class="sticky-right">
+                <div class="sale-cell">
+                  <span class="val-ind" style="position:relative">!<span class="mini-tip">Stok bittiği için otomatik çekildi.</span></span>
+                  <span class="pill outline">Otomatik</span>
+                  <div class="toggle disabled"></div>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Row 3 — selected, vitrin off awaiting validation -->
+            <tr class="selected">
+              <td><div class="chk on"></div></td>
+              <td>
+                <span class="pthumb">🐶</span>
+                <span class="pname"><span class="nm">Pro Plan Yavru Köpek 1kg</span><span class="sku">SKU: PP-YK-1 · Barkod: 869…22</span></span>
+              </td>
+              <td><span class="pill blue">Köpek · Mama</span></td>
+              <td class="right num"><span class="stock-pill out">0</span></td>
+              <td class="right num">125,00 ₺</td>
+              <td class="right num">0 ₺</td>
+              <td>Royal Pet</td>
+              <td class="right small muted">1s önce</td>
+              <td class="sticky-right">
+                <div class="sale-cell">
+                  <span class="val-ind" style="position:relative">!<span class="mini-tip">Görsel eksik · Açıklama 32 karakter (min 80)</span></span>
+                  <button class="btn btn-sm" style="background:var(--cat-soft);color:var(--cat-7)">Doğrula</button>
+                  <div class="toggle disabled"></div>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Rows 4-12 — diverse data -->
+            <tr>
+              <td><div class="chk"></div></td>
+              <td>
+                <span class="pthumb">🐶</span>
+                <span class="pname"><span class="nm">Pedigree Adult 3kg</span><span class="sku">SKU: PD-A-3</span></span>
+              </td>
+              <td><span class="pill blue">Köpek · Mama</span></td>
+              <td class="right num"><span class="stock-pill ok">42</span></td>
+              <td class="right num">95,00 ₺</td>
+              <td class="right num bold">3.990 ₺</td>
+              <td>Bayındır Yem</td>
+              <td class="right small muted">3s önce</td>
+              <td class="sticky-right">
+                <div class="sale-cell">
+                  <span class="val-ind ok">✓</span>
+                  <span class="pill green">Vitrin'de</span>
+                  <div class="toggle on"></div>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><div class="chk"></div></td>
+              <td>
+                <span class="pthumb">🐶</span>
+                <span class="pname"><span class="nm">Hill's Science Plan Yetişkin 12kg</span><span class="sku">SKU: HSP-Y-12</span></span>
+              </td>
+              <td><span class="pill blue">Köpek · Mama</span></td>
+              <td class="right num"><span class="stock-pill low">2</span></td>
+              <td class="right num">680,00 ₺</td>
+              <td class="right num bold">1.360 ₺</td>
+              <td>Royal Pet</td>
+              <td class="right small muted">5s önce</td>
+              <td class="sticky-right">
+                <div class="sale-cell">
+                  <span class="val-ind ok">✓</span>
+                  <span class="pill green">Vitrin'de</span>
+                  <div class="toggle on"></div>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><div class="chk"></div></td>
+              <td>
+                <span class="pthumb">🐰</span>
+                <span class="pname"><span class="nm">Versele Crispy Muesli 2kg</span><span class="sku">SKU: VS-CM-2</span></span>
+              </td>
+              <td><span class="pill blue">Tavşan · Mama</span></td>
+              <td class="right num"><span class="stock-pill low">3</span></td>
+              <td class="right num">220,00 ₺</td>
+              <td class="right num">660 ₺</td>
+              <td>Dostlar Pet</td>
+              <td class="right small muted">6s önce</td>
+              <td class="sticky-right">
+                <div class="sale-cell">
+                  <span class="val-ind ok">✓</span>
+                  <span class="pill green">Vitrin'de</span>
+                  <div class="toggle on"></div>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><div class="chk"></div></td>
+              <td>
+                <span class="pthumb">🐱</span>
+                <span class="pname"><span class="nm">Trixie Kedi Tırmalama Tahtası</span><span class="sku">SKU: TR-KTT-001</span></span>
+              </td>
+              <td><span class="pill dog">Aksesuar</span></td>
+              <td class="right num"><span class="stock-pill ok">18</span></td>
+              <td class="right num">185,00 ₺</td>
+              <td class="right num bold">3.330 ₺</td>
+              <td>Trixie TR</td>
+              <td class="right small muted">1g önce</td>
+              <td class="sticky-right">
+                <div class="sale-cell">
+                  <span class="val-ind ok">✓</span>
+                  <span class="pill green">Vitrin'de</span>
+                  <div class="toggle on"></div>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><div class="chk"></div></td>
+              <td>
+                <span class="pthumb">🐦</span>
+                <span class="pname"><span class="nm">Tetra Goldfish 100g</span><span class="sku">SKU: TT-GF-100</span></span>
+              </td>
+              <td><span class="pill blue">Akvaryum · Yem</span></td>
+              <td class="right num"><span class="stock-pill ok">64</span></td>
+              <td class="right num">45,00 ₺</td>
+              <td class="right num bold">2.880 ₺</td>
+              <td>Akva Dünyası</td>
+              <td class="right small muted">1g önce</td>
+              <td class="sticky-right">
+                <div class="sale-cell">
+                  <span class="val-ind ok">✓</span>
+                  <span class="pill green">Vitrin'de</span>
+                  <div class="toggle on"></div>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><div class="chk"></div></td>
+              <td>
+                <span class="pthumb">🐱</span>
+                <span class="pname"><span class="nm">Friskies Adventurous Eats 1.5kg</span><span class="sku">SKU: FR-AE-15</span></span>
+              </td>
+              <td><span class="pill blue">Kedi · Mama</span></td>
+              <td class="right num"><span class="stock-pill ok">31</span></td>
+              <td class="right num">142,00 ₺</td>
+              <td class="right num bold">4.402 ₺</td>
+              <td>Dostlar Pet</td>
+              <td class="right small muted">2g önce</td>
+              <td class="sticky-right">
+                <div class="sale-cell">
+                  <span class="val-ind ok">✓</span>
+                  <span class="pill outline">Kapalı</span>
+                  <div class="toggle"></div>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><div class="chk"></div></td>
+              <td>
+                <span class="pthumb">🐦</span>
+                <span class="pname"><span class="nm">Bunny Premium Hamster 600g</span><span class="sku">SKU: BN-HM-600</span></span>
+              </td>
+              <td><span class="pill blue">Kemirgen · Mama</span></td>
+              <td class="right num"><span class="stock-pill low">5</span></td>
+              <td class="right num">85,00 ₺</td>
+              <td class="right num">425 ₺</td>
+              <td>Bayındır Yem</td>
+              <td class="right small muted">3g önce</td>
+              <td class="sticky-right">
+                <div class="sale-cell">
+                  <span class="val-ind ok">✓</span>
+                  <span class="pill green">Vitrin'de</span>
+                  <div class="toggle on"></div>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><div class="chk"></div></td>
+              <td>
+                <span class="pthumb">🐶</span>
+                <span class="pname"><span class="nm">Kong Classic Köpek Oyuncağı L</span><span class="sku">SKU: KG-CL-L</span></span>
+              </td>
+              <td><span class="pill dog">Aksesuar</span></td>
+              <td class="right num"><span class="stock-pill ok">22</span></td>
+              <td class="right num">240,00 ₺</td>
+              <td class="right num bold">5.280 ₺</td>
+              <td>Kong TR</td>
+              <td class="right small muted">4g önce</td>
+              <td class="sticky-right">
+                <div class="sale-cell">
+                  <span class="val-ind ok">✓</span>
+                  <span class="pill green">Vitrin'de</span>
+                  <div class="toggle on"></div>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><div class="chk"></div></td>
+              <td>
+                <span class="pthumb">🐱</span>
+                <span class="pname"><span class="nm">Catit Senses 2.0 Çeşmesi</span><span class="sku">SKU: CT-S2-FNT</span></span>
+              </td>
+              <td><span class="pill dog">Aksesuar</span></td>
+              <td class="right num"><span class="stock-pill ok">11</span></td>
+              <td class="right num">420,00 ₺</td>
+              <td class="right num bold">4.620 ₺</td>
+              <td>Dostlar Pet</td>
+              <td class="right small muted">5g önce</td>
+              <td class="sticky-right">
+                <div class="sale-cell">
+                  <span class="val-ind ok">✓</span>
+                  <span class="pill green">Vitrin'de</span>
+                  <div class="toggle on"></div>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><div class="chk"></div></td>
+              <td>
+                <span class="pthumb">🐶</span>
+                <span class="pname"><span class="nm">Frontline Combo Tasma</span><span class="sku">SKU: FL-CMB-M</span></span>
+              </td>
+              <td><span class="pill red">Veteriner</span></td>
+              <td class="right num"><span class="stock-pill ok">38</span></td>
+              <td class="right num">180,00 ₺</td>
+              <td class="right num bold">6.840 ₺</td>
+              <td>Royal Pet</td>
+              <td class="right small muted">6g önce</td>
+              <td class="sticky-right">
+                <div class="sale-cell">
+                  <span class="val-ind ok">✓</span>
+                  <span class="pill green">Vitrin'de</span>
+                  <div class="toggle on"></div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="pagi">
+          <span class="small muted">12 / 47 ürün gösteriliyor</span>
+          <div class="pagi-btns">
+            <button class="pagi-btn">‹</button>
+            <button class="pagi-btn active">1</button>
+            <button class="pagi-btn">2</button>
+            <button class="pagi-btn">3</button>
+            <button class="pagi-btn">4</button>
+            <button class="pagi-btn">›</button>
+          </div>
+          <div class="row gap-8">
+            <span class="small muted">Sayfa başına:</span>
+            <select class="select" style="width:auto;padding:4px 8px;font-size:11px"><option>12</option><option>25</option><option>50</option></select>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ============ DRAWER: Ürün Detayı ============ -->
+<div class="drawer-back" id="dr-detail-back"></div>
+<div class="drawer" id="dr-detail">
+  <div class="drawer-head">
+    <div class="pthumb" style="width:40px;height:40px;font-size:20px">🐱</div>
+    <div>
+      <div class="drawer-title">Royal Canin Adult Kedi 2kg</div>
+      <div class="small muted">SKU RC-AK-2 · Barkod 8690000000001 · 3 variant</div>
+    </div>
+    <button class="drawer-close" data-close-drawer>✕</button>
+  </div>
+  <div class="drawer-body" data-tabs-host>
+    <div class="tabs" data-tabs>
+      <div class="tab active" data-tab="detail-genel">Genel</div>
+      <div class="tab" data-tab="detail-stok">Stok & Variant</div>
+      <div class="tab" data-tab="detail-fiyat">Fiyat</div>
+      <div class="tab" data-tab="detail-vitrin">Vitrin</div>
+      <div class="tab" data-tab="detail-hareket">Hareket <span class="tab-badge">42</span></div>
+    </div>
+
+    <div data-pane="detail-genel">
+      <div class="row gap-12 mt-12">
+        <div style="flex:1">
+          <div class="field-label">Kategori</div>
+          <span class="pill blue">Kedi · Mama</span>
+        </div>
+        <div style="flex:1">
+          <div class="field-label">Yaş grubu</div>
+          <span class="pill outline">Yetişkin</span>
+        </div>
+      </div>
+      <div class="field mt-16">
+        <label class="field-label">Açıklama</label>
+        <div style="font-size:12.5px;line-height:1.55;color:var(--ink-2)">
+          Royal Canin Adult Kedi 2kg — 1-7 yaş arası evdeki yetişkin kediler için özel olarak hazırlanmış kuru mama. Sindirim sistemi sağlığını destekler, idrar yolu fonksiyonlarını korur. Tüy yumağı oluşumunu azaltır.
+        </div>
+      </div>
+      <div class="row gap-12 mt-12">
+        <div style="flex:1">
+          <div class="field-label">Tedarikçi</div>
+          <div class="bold" style="font-size:13px">Dostlar Pet Tedarik</div>
+          <div class="small muted">Tedarik süresi: 3 gün · Ödeme: 30 gün vade</div>
+        </div>
+        <div style="flex:1">
+          <div class="field-label">Reorder noktası</div>
+          <div class="bold" style="font-size:13px">10 adet</div>
+          <div class="small muted">Hedef stok: 30 adet</div>
+        </div>
+      </div>
+      <div class="field mt-16">
+        <label class="field-label">Görseller (3)</label>
+        <div class="row gap-8">
+          <div style="width:72px;height:72px;border-radius:10px;background:linear-gradient(135deg,var(--cat-soft),var(--bars-soft));display:grid;place-items:center;font-size:28px;border:1px solid var(--line)">🐱</div>
+          <div style="width:72px;height:72px;border-radius:10px;background:linear-gradient(135deg,var(--bars-soft),var(--paper));display:grid;place-items:center;font-size:28px;border:1px solid var(--line)">📦</div>
+          <div style="width:72px;height:72px;border-radius:10px;background:linear-gradient(135deg,var(--arrow-soft),var(--paper));display:grid;place-items:center;font-size:28px;border:1px solid var(--line)">🏷</div>
+        </div>
+      </div>
+    </div>
+
+    <div data-pane="detail-stok" style="display:none">
+      <p class="small muted">3 variant · 3 şube</p>
+      <div class="var-grid head">
+        <span>Variant</span><span>Üsküdar</span><span>Kadıköy</span><span>Beykoz</span><span>Toplam</span><span>Vitrin</span>
+      </div>
+      <div class="var-grid"><span><strong>2kg</strong></span><span class="branch-cell" style="color:var(--arrow-7)">18</span><span class="branch-cell" style="color:var(--danger-7)">0</span><span class="branch-cell" style="color:var(--arrow-7)">10</span><span class="branch-cell">28</span><span><div class="toggle on" style="margin:auto"></div></span></div>
+      <div class="var-grid"><span><strong>4kg</strong></span><span class="branch-cell" style="color:var(--arrow-7)">12</span><span class="branch-cell" style="color:var(--cat-7)">3</span><span class="branch-cell" style="color:var(--arrow-7)">8</span><span class="branch-cell">23</span><span><div class="toggle on" style="margin:auto"></div></span></div>
+      <div class="var-grid"><span><strong>10kg</strong></span><span class="branch-cell" style="color:var(--cat-7)">2</span><span class="branch-cell" style="color:var(--arrow-7)">5</span><span class="branch-cell" style="color:var(--ink-4)">—</span><span class="branch-cell">7</span><span><div class="toggle" style="margin:auto"></div></span></div>
+    </div>
+
+    <div data-pane="detail-fiyat" style="display:none">
+      <div class="form-grid">
+        <div class="field"><label class="field-label">Alış fiyatı (KDV hariç)</label><input class="input" value="142,00 ₺"/></div>
+        <div class="field"><label class="field-label">KDV oranı</label><select class="select"><option>%10</option><option>%20</option></select></div>
+        <div class="field"><label class="field-label">Satış fiyatı (KDV dahil)</label><input class="input" value="180,00 ₺"/></div>
+        <div class="field"><label class="field-label">Kâr marjı</label><div class="pill green">%26.7</div></div>
+      </div>
+    </div>
+
+    <div data-pane="detail-vitrin" style="display:none">
+      <div class="checklist">
+        <h4>Vitrin doğrulaması — 5/5</h4>
+        <div class="checklist-item ok"><span class="ic">✓</span> En az 1 görsel (3 mevcut)</div>
+        <div class="checklist-item ok"><span class="ic">✓</span> Açıklama ≥ 80 karakter</div>
+        <div class="checklist-item ok"><span class="ic">✓</span> Kategori seçili</div>
+        <div class="checklist-item ok"><span class="ic">✓</span> Satış fiyatı tanımlı</div>
+        <div class="checklist-item ok"><span class="ic">✓</span> En az 1 şubede stok var</div>
+      </div>
+      <div class="row gap-12 mt-16 center">
+        <div class="toggle on"></div>
+        <div>
+          <div class="bold">Vitrin'de görünür</div>
+          <div class="small muted">petstockpro.com/vitrin/urun/royal-canin-adult-2kg</div>
+        </div>
+        <a class="btn btn-ghost btn-sm" style="margin-left:auto" href="#">Aç ↗</a>
+      </div>
+    </div>
+
+    <div data-pane="detail-hareket" style="display:none">
+      <p class="small muted">Son 30 gün · 42 hareket</p>
+      <div class="feed">
+        <div class="feed-item"><div class="feed-ic out">↓</div><div class="feed-text"><span class="who">Ayşe T.</span> <span class="what">satış —</span> <strong>2kg × 1</strong><div class="where">Üsküdar · 180₺</div></div><span class="feed-time">12 dk</span></div>
+        <div class="feed-item"><div class="feed-ic in">↑</div><div class="feed-text"><span class="who">Mehmet K.</span> <span class="what">giriş —</span> <strong>2kg × 12</strong><div class="where">Üsküdar · Dostlar Pet</div></div><span class="feed-time">3 s</span></div>
+        <div class="feed-item"><div class="feed-ic tr">⇄</div><div class="feed-text"><span class="who">Mehmet K.</span> <span class="what">transfer —</span> <strong>2kg × 3</strong><div class="where">Üsküdar → Kadıköy</div></div><span class="feed-time">1 g</span></div>
+        <div class="feed-item"><div class="feed-ic out">↓</div><div class="feed-text"><span class="who">Burak S.</span> <span class="what">satış —</span> <strong>4kg × 2</strong><div class="where">Kadıköy · 680₺</div></div><span class="feed-time">2 g</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn btn-danger">Sil</button>
+    <button class="btn btn-ghost" data-close-drawer>Kapat</button>
+    <button class="btn btn-primary">Düzenle →</button>
+  </div>
+</div>
+
+<!-- ============ DRAWER: Yeni Ürün ============ -->
+<div class="drawer-back" id="dr-new-back"></div>
+<div class="drawer" id="dr-new" style="width:680px">
+  <div class="drawer-head">
+    <div class="drawer-title">Yeni Ürün</div>
+    <span class="pill cat" style="margin-left:8px">FREE: 3 ürün hakkın kaldı</span>
+    <button class="drawer-close" data-close-drawer>✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="form-grid">
+      <div class="field form-full">
+        <label class="field-label">Ürün adı *</label>
+        <input class="input" placeholder="ör: Royal Canin Adult Kedi 2kg"/>
+      </div>
+      <div class="field"><label class="field-label">SKU *</label><input class="input" placeholder="otomatik üret"/></div>
+      <div class="field"><label class="field-label">Barkod</label><input class="input" placeholder="869…"/></div>
+      <div class="field"><label class="field-label">Kategori *</label><select class="select"><option>Seçin...</option><option>Kedi · Mama</option><option>Köpek · Mama</option><option>Aksesuar</option></select></div>
+      <div class="field"><label class="field-label">Yaş grubu</label><select class="select"><option>Yetişkin</option><option>Yavru</option><option>Yaşlı</option></select></div>
+      <div class="field"><label class="field-label">Alış ₺ (KDVsiz)</label><input class="input" placeholder="0,00"/></div>
+      <div class="field"><label class="field-label">Satış ₺ (KDV dahil)</label><input class="input" placeholder="0,00"/></div>
+      <div class="field"><label class="field-label">KDV</label><select class="select"><option>%10</option><option>%20</option></select></div>
+      <div class="field"><label class="field-label">Tedarikçi</label><select class="select"><option>Dostlar Pet Tedarik</option></select></div>
+      <div class="field"><label class="field-label">Reorder noktası</label><input class="input" placeholder="10"/></div>
+      <div class="field"><label class="field-label">Hedef stok</label><input class="input" placeholder="30"/></div>
+
+      <div class="field form-full">
+        <label class="field-label">Açıklama (Vitrin için min 80 karakter)</label>
+        <textarea class="textarea" rows="3" placeholder="Ürünün özelliklerini, içeriğini, uygunluğunu yazın..."></textarea>
+      </div>
+
+      <div class="field form-full">
+        <label class="field-label">Görseller (en az 1)</label>
+        <div class="img-up">📷 Sürükle bırak veya tıkla — JPG/PNG, maks 5MB · 4 görsele kadar</div>
+      </div>
+
+      <div class="form-full">
+        <div class="row gap-12 center" style="padding:14px;background:var(--cat-soft);border:1px solid rgba(212,98,28,.2);border-radius:12px">
+          <div style="font-size:24px">🏪</div>
+          <div style="flex:1">
+            <div class="bold" style="color:var(--cat-7)">Kayıttan sonra Vitrin'de göster</div>
+            <div class="small muted">Doğrulama başarılı olursa otomatik aktif olur.</div>
+          </div>
+          <div class="toggle on"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn btn-ghost" data-close-drawer>İptal</button>
+    <button class="btn btn-dark">Taslak</button>
+    <button class="btn btn-primary">Kaydet & Variant Ekle →</button>
+  </div>
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

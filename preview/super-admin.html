@@ -1,0 +1,988 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Süperadmin · PetStockPro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/tokens-v2.css">
+<style>
+  /* Super-admin: darker theme cues, distinct sidebar */
+  .sidebar.sup {
+    background: linear-gradient(180deg, var(--ink) 0%, var(--cart-7) 100%);
+    color: rgba(255,255,255,.86);
+    border-right: 1px solid rgba(255,255,255,.08);
+  }
+  .sidebar.sup .brand-name { color: #fff; }
+  .sidebar.sup .brand-sub { color: rgba(255,255,255,.55); }
+  .sidebar.sup .nav-group-label { color: rgba(255,255,255,.45); }
+  .sidebar.sup .nav-item { color: rgba(255,255,255,.78); }
+  .sidebar.sup .nav-item:hover { background: rgba(255,255,255,.06); color: #fff; }
+  .sidebar.sup .nav-item.active { background: linear-gradient(90deg, var(--danger) 0%, var(--cat-7) 100%); color: #fff; box-shadow: 0 8px 20px rgba(239,68,68,.32); }
+  .sidebar.sup .nav-ic { color: rgba(255,255,255,.55); }
+  .sidebar.sup .nav-item.active .nav-ic { color: #fff; }
+  .sidebar.sup .brand-mark {
+    background: linear-gradient(135deg, var(--danger) 0%, var(--cat) 100%);
+    box-shadow: 0 8px 24px rgba(239,68,68,.32);
+  }
+
+  .sup-stamp {
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    background: rgba(239,68,68,.14);
+    border: 1px solid rgba(239,68,68,.32);
+    border-radius: 12px;
+    font-size: 11px;
+    color: #fff;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .sup-stamp .ic { font-size: 14px; }
+  .sup-stamp .who { font-weight: bold; }
+
+  .page-head { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+  .page-head h1 { margin: 0; font-size: 22px; font-weight: bold; color: var(--cart); letter-spacing: -.4px; }
+  .page-head-spacer { flex: 1; }
+
+  /* Philosophy banner */
+  .philo {
+    background: linear-gradient(135deg, var(--ink) 0%, var(--cart-7) 100%);
+    color: #fff;
+    border-radius: var(--r-md);
+    padding: 18px 22px;
+    margin-bottom: 18px;
+    display: grid; grid-template-columns: auto 1fr auto; gap: 18px;
+    align-items: center;
+    position: relative; overflow: hidden;
+    box-shadow: var(--shadow-cart);
+  }
+  .philo::before {
+    content: ""; position: absolute; right: -40px; top: -40px;
+    width: 160px; height: 160px;
+    background: radial-gradient(circle, rgba(239,68,68,.35), transparent 70%);
+  }
+  .philo .ic-big {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--danger), var(--cat));
+    display: grid; place-items: center;
+    font-size: 22px;
+    box-shadow: 0 8px 22px rgba(239,68,68,.45);
+    z-index: 1;
+  }
+  .philo h2 { margin: 0 0 4px; font-size: 16px; font-weight: bold; letter-spacing: -.3px; }
+  .philo p { margin: 0; font-size: 12.5px; opacity: .85; line-height: 1.5; max-width: 680px; }
+  .philo .stat { z-index: 1; text-align: right; padding-left: 14px; border-left: 1px solid rgba(255,255,255,.15); }
+  .philo .stat .lbl { font-size: 10.5px; opacity: .6; text-transform: uppercase; letter-spacing: .5px; }
+  .philo .stat .nm { font-size: 24px; font-weight: bold; }
+
+  /* Top tabs */
+  .main-tabs {
+    display: flex; gap: 6px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 18px;
+    padding: 0;
+  }
+  .main-tab {
+    padding: 12px 18px;
+    font-size: 13px; font-weight: bold;
+    color: var(--ink-3);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -1px;
+    display: flex; align-items: center; gap: 8px;
+    transition: all .15s ease;
+  }
+  .main-tab:hover { color: var(--cart); }
+  .main-tab.active { color: var(--cart); border-bottom-color: var(--cat); }
+  .main-tab .tab-badge { font-size: 10.5px; padding: 2px 7px; border-radius: 999px; background: var(--line); color: var(--ink-3); }
+  .main-tab.active .tab-badge { background: var(--cat); color: #fff; }
+  .main-tab.flag { color: var(--danger-7); }
+  .main-tab.flag.active { border-bottom-color: var(--danger); }
+
+  /* Subtabs (pills) */
+  .subtabs {
+    display: flex; gap: 6px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .subtab {
+    padding: 7px 14px;
+    font-size: 12px; font-weight: bold;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--ink-3);
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .subtab:hover { border-color: var(--cart-2); color: var(--cart); }
+  .subtab.active { background: var(--cart); color: #fff; border-color: var(--cart); }
+  .subtab.disabled { opacity: .5; cursor: not-allowed; }
+  .subtab .badge { background: rgba(255,255,255,.22); color: inherit; padding: 1px 6px; border-radius: 999px; font-size: 10px; }
+  .subtab:not(.active) .badge { background: var(--line-soft); }
+
+  /* KPI strip — auto-approval emphasis */
+  .auto-kpi-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 18px; }
+  .auto-kpi {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: 14px 16px;
+    position: relative; overflow: hidden;
+  }
+  .auto-kpi.highlight {
+    background: linear-gradient(135deg, var(--arrow-soft), #fff);
+    border-color: rgba(34,197,94,.3);
+  }
+  .auto-kpi .lbl { font-size: 11px; color: var(--ink-4); text-transform: uppercase; letter-spacing: .4px; font-weight: bold; }
+  .auto-kpi .num { font-size: 24px; font-weight: bold; color: var(--cart); margin-top: 4px; }
+  .auto-kpi.highlight .num { color: var(--arrow-7); font-size: 28px; }
+  .auto-kpi .sub { font-size: 11px; color: var(--ink-4); margin-top: 4px; }
+  .auto-kpi .donut-mini {
+    position: absolute; right: 12px; top: 12px;
+    width: 36px; height: 36px;
+  }
+
+  /* Review queue table */
+  .queue-wrap {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  .queue-head {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+    background: var(--paper-glass);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .queue-head h3 { margin: 0; font-size: 14px; font-weight: bold; color: var(--cart); }
+  .queue-spacer { flex: 1; }
+  .queue-list { display: flex; flex-direction: column; }
+  .queue-item {
+    display: grid; grid-template-columns: 56px 1fr 200px 180px 220px;
+    gap: 16px; align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line-soft);
+    transition: background .12s;
+  }
+  .queue-item:hover { background: rgba(124,184,224,.06); }
+  .queue-item .thumb {
+    width: 56px; height: 56px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--cat-soft), var(--bars-soft));
+    display: grid; place-items: center;
+    font-size: 28px;
+  }
+  .queue-item .who-info .nm { font-weight: bold; color: var(--cart); font-size: 13px; }
+  .queue-item .who-info .sub { font-size: 11.5px; color: var(--ink-4); margin-top: 2px; }
+  .queue-item .tags { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+  .queue-item .meta { font-size: 11.5px; color: var(--ink-3); }
+  .queue-item .meta strong { color: var(--cart); font-weight: bold; }
+
+  /* Flags chip */
+  .flag-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10.5px; padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--danger-soft);
+    color: var(--danger-7);
+    font-weight: bold;
+  }
+  .flag-chip.warn { background: var(--cat-soft); color: var(--cat-7); }
+  .flag-chip.ok { background: var(--arrow-soft); color: var(--arrow-7); }
+  .flag-chip.dog { background: var(--dog-soft); color: var(--dog-7); }
+
+  /* Plan table */
+  .plan-table {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  .plan-table-head, .plan-row-pt {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+    gap: 14px; align-items: center;
+    padding: 14px 16px;
+  }
+  .plan-table-head { background: var(--line-soft); font-size: 11px; color: var(--ink-3); font-weight: bold; text-transform: uppercase; letter-spacing: .4px; }
+  .plan-row-pt { border-top: 1px solid var(--line-soft); font-size: 12.5px; }
+  .plan-row-pt:hover { background: rgba(124,184,224,.06); }
+  .plan-row-pt .nm { font-weight: bold; color: var(--cart); }
+  .plan-row-pt .nm-sub { font-size: 11px; color: var(--ink-4); }
+  .pt-pill {
+    display: inline-block;
+    font-size: 11px; padding: 3px 9px;
+    border-radius: 999px;
+    font-weight: bold;
+  }
+  .pt-pill.free { background: var(--bars-soft); color: var(--cart); }
+  .pt-pill.pro { background: var(--cat-soft); color: var(--cat-7); }
+  .pt-pill.removed { background: var(--line-soft); color: var(--ink-4); text-decoration: line-through; }
+
+  /* Toolbox FAB */
+  .toolbox-fab {
+    position: fixed; right: 22px; bottom: 22px;
+    width: 56px; height: 56px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, var(--danger), var(--cat));
+    color: #fff;
+    box-shadow: 0 18px 36px rgba(239,68,68,.42);
+    display: grid; place-items: center;
+    cursor: pointer;
+    z-index: 40;
+    font-size: 24px;
+    transition: transform .18s ease;
+  }
+  .toolbox-fab:hover { transform: translateY(-3px) rotate(8deg); }
+  .toolbox-popup {
+    position: fixed; right: 22px; bottom: 88px;
+    width: 320px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    z-index: 40;
+    padding: 12px;
+    display: none;
+  }
+  .toolbox-fab.open + .toolbox-popup { display: block; }
+  .tb-cat { padding: 8px 10px; margin-top: 4px; }
+  .tb-cat .ttl { font-size: 10.5px; color: var(--ink-4); text-transform: uppercase; letter-spacing: .5px; font-weight: bold; margin-bottom: 4px; }
+  .tb-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tb-btn-sm {
+    padding: 6px 10px;
+    background: var(--line-soft);
+    border-radius: 8px;
+    font-size: 11.5px;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .tb-btn-sm:hover { border-color: var(--cat); background: var(--cat-soft); color: var(--cat-7); }
+
+  /* Audit log */
+  .audit-tbl {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    overflow: hidden;
+  }
+  .audit-row {
+    display: grid; grid-template-columns: 80px 110px 1fr 140px 140px;
+    gap: 12px; align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 12px;
+  }
+  .audit-row.head { background: var(--line-soft); font-size: 10.5px; color: var(--ink-3); font-weight: bold; text-transform: uppercase; letter-spacing: .4px; }
+  .audit-row .time { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
+  .audit-row .action { font-weight: bold; color: var(--cart); }
+
+  /* Auto filter rules */
+  .rule-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .rule-num {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--bars), var(--bars-7));
+    color: #fff;
+    display: grid; place-items: center;
+    font-weight: bold;
+    font-size: 13px;
+  }
+  .rule-card .rule-text { font-size: 13px; color: var(--cart); font-weight: bold; }
+  .rule-card .rule-sub { font-size: 11px; color: var(--ink-4); margin-top: 2px; }
+  .rule-card .rule-hit { font-family: var(--font-mono); font-size: 11px; color: var(--cat-7); font-weight: bold; }
+</style>
+</head>
+<body data-screen-label="04 Süperadmin">
+
+<div class="app">
+  <!-- ============ SIDEBAR — sup styling ============ -->
+  <aside class="sidebar sup">
+    <div class="brand">
+      <div class="brand-mark">🚨</div>
+      <div>
+        <div class="brand-name">PetStockPro</div>
+        <div class="brand-sub">SÜPERADMIN</div>
+      </div>
+    </div>
+
+    <div class="sup-stamp">
+      <span class="ic">👁</span>
+      <div>
+        <div class="who">Sezai K. olarak</div>
+        <div style="opacity:.7">Sahip · 7/24 aktif</div>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-label">Sistem</div>
+      <a class="nav-item active" href="#">
+        <svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/></svg>
+        Genel Bakış
+      </a>
+      <a class="nav-item" href="#">
+        <svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h18M5 10v9a1 1 0 001 1h12a1 1 0 001-1v-9M9 10V5a3 3 0 016 0v5"/></svg>
+        Tenant'lar<span class="nav-badge" style="background:var(--cat)">428</span>
+      </a>
+      <a class="nav-item" href="#">
+        <svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Audit Log
+      </a>
+      <a class="nav-item" href="#">
+        <svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 4h18v4H3z"/><path d="M5 8v12h14V8M9 12h6"/></svg>
+        Plan Onay
+      </a>
+      <a class="nav-item" href="#">
+        <svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 9h.01M15 9h.01M9 15s1 2 3 2 3-2 3-2"/></svg>
+        Vitrin Modlama<span class="nav-badge" style="background:var(--danger)">12</span>
+      </a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-label">Operasyon</div>
+      <a class="nav-item" href="#">📧 E-posta Şablonları</a>
+      <a class="nav-item" href="#">💳 Paddle Webhook</a>
+      <a class="nav-item" href="#">📊 KPI / Metrik</a>
+      <a class="nav-item" href="#">⚙ Feature Flag</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-label">Geliştirici</div>
+      <a class="nav-item" href="#">🔧 Toolbox</a>
+      <a class="nav-item" href="#">📋 Hata Logları</a>
+      <a class="nav-item" href="#">🔐 API Token</a>
+    </div>
+
+    <div class="plan-card" style="background:linear-gradient(135deg, var(--danger), var(--cat-7));">
+      <div class="row gap-8 center">
+        <span style="font-size:18px">🚨</span>
+        <div>
+          <div class="plan-name">Süperadmin yetki</div>
+          <div class="plan-tier">FULL</div>
+        </div>
+      </div>
+      <div class="small mt-8" style="opacity:.85">
+        Müdahaleler tenant audit log'a "Süperadmin" işaretiyle düşer.
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+    <header class="topbar">
+      <div>
+        <div class="topbar-title">Süperadmin</div>
+        <div class="topbar-sub">Sistem yönetimi · 428 tenant · 14 May 14:32</div>
+      </div>
+      <div class="topbar-spacer"></div>
+      <div class="cmdk">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        Ara: tenant, kullanıcı, e-posta...
+        <kbd>⌘K</kbd>
+      </div>
+      <a class="tb-btn" href="pano.html">↩ Normal panele dön</a>
+      <div class="tb-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9"/></svg><span class="dot" style="position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--danger);border:2px solid #fff;"></span></div>
+      <div class="avatar" style="background:linear-gradient(135deg, var(--danger), var(--cat))">SK</div>
+    </header>
+
+    <main class="content">
+
+      <!-- Philosophy banner -->
+      <div class="philo">
+        <div class="ic-big">🛡</div>
+        <div>
+          <h2>Süperadmin felsefesi — Operasyonel müdür değil, kişisel kontrolör.</h2>
+          <p>Bu panel <strong>tenant'ların günlük operasyonunu yönetmek için değil</strong>. Sadece <em>müdahale gerektiren</em> durumlar için: vitrin profili manuel inceleme, KVKK / kötüye kullanım bildirimleri, plan değişimi onayı, audit log incelemesi. Tenant'lar kendi panelerinde tam yetkili.</p>
+        </div>
+        <div class="stat">
+          <div class="lbl">Bugün</div>
+          <div class="nm">12</div>
+          <div class="small" style="opacity:.6">aktif inceleme</div>
+        </div>
+      </div>
+
+      <!-- MAIN TABS -->
+      <div data-tabs-host>
+        <div class="main-tabs" data-tabs>
+          <div class="main-tab" data-tab="tab-tenant">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h18M5 10v9a1 1 0 001 1h12a1 1 0 001-1v-9M9 10V5a3 3 0 016 0v5"/></svg>
+            Tenant'lar <span class="tab-badge">428</span>
+          </div>
+          <div class="main-tab" data-tab="tab-audit">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/></svg>
+            Audit
+          </div>
+          <div class="main-tab" data-tab="tab-plan">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+            Plan Onay <span class="tab-badge">3</span>
+          </div>
+          <div class="main-tab active flag" data-tab="tab-vitrin">
+            🚨 Vitrin Modlama <span class="tab-badge">12</span> · <span style="color:var(--arrow-7);font-weight:bold">%94 oto-onay</span>
+          </div>
+        </div>
+
+        <!-- ============================ TAB: TENANT'LAR ============================ -->
+        <div data-pane="tab-tenant" style="display:none">
+          <div class="auto-kpi-strip">
+            <div class="auto-kpi"><div class="lbl">Toplam Tenant</div><div class="num">428</div><div class="sub">↑ 14 bu hafta</div></div>
+            <div class="auto-kpi"><div class="lbl">FREE</div><div class="num">386</div><div class="sub">%90 · ortalama 32 ürün</div></div>
+            <div class="auto-kpi"><div class="lbl">PRO</div><div class="num">42</div><div class="sub">%10 · 38 aktif</div></div>
+            <div class="auto-kpi"><div class="lbl">Aktif Bugün</div><div class="num">312</div><div class="sub">son 24 saat</div></div>
+            <div class="auto-kpi"><div class="lbl">MRR</div><div class="num">12.6K ₺</div><div class="sub">↑ 18% aylık</div></div>
+          </div>
+          <div class="card">
+            <p>Tenant arama, filtre ve detay — burada tüm tenant'ların özet görünümü, son login, plan, ürün sayısı, vitrin durumu. (Tab içeriği örnek — diğer 3 sekme aktif.)</p>
+          </div>
+        </div>
+
+        <!-- ============================ TAB: AUDIT ============================ -->
+        <div data-pane="tab-audit" style="display:none">
+          <div class="audit-tbl">
+            <div class="audit-row head">
+              <span>Zaman</span><span>Tenant</span><span>Eylem</span><span>Süperadmin</span><span>IP</span>
+            </div>
+            <div class="audit-row">
+              <span class="time">14:18:42</span>
+              <span><strong>Mavi Pet Shop</strong></span>
+              <span class="action">Vitrin profili manuel onayı</span>
+              <span>Sezai K.</span>
+              <span class="time">88.243.x.x</span>
+            </div>
+            <div class="audit-row">
+              <span class="time">13:54:01</span>
+              <span><strong>Patpat Pet</strong></span>
+              <span class="action">PRO plan onaylandı</span>
+              <span>Sezai K.</span>
+              <span class="time">88.243.x.x</span>
+            </div>
+            <div class="audit-row">
+              <span class="time">11:22:18</span>
+              <span><strong>Yıldız Pet Shop</strong></span>
+              <span class="action">Vitrin reddi: yetersiz görsel</span>
+              <span>Sezai K.</span>
+              <span class="time">88.243.x.x</span>
+            </div>
+            <div class="audit-row">
+              <span class="time">10:08:33</span>
+              <span><strong>Kuyruk Pet</strong></span>
+              <span class="action">Tenant şifre sıfırlama</span>
+              <span>Sezai K.</span>
+              <span class="time">88.243.x.x</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================ TAB: PLAN ONAY ============================ -->
+        <div data-pane="tab-plan" style="display:none">
+          <h3 style="margin:0 0 14px;font-size:14px">Plan Tablosu — 2-tier yapı</h3>
+          <div class="plan-table">
+            <div class="plan-table-head">
+              <span>Özellik</span>
+              <span>FREE</span>
+              <span>PRO</span>
+              <span>PRO+</span>
+              <span>Limit</span>
+              <span>Durum</span>
+            </div>
+            <div class="plan-row-pt">
+              <span><span class="nm">Ürün limiti</span><div class="nm-sub">aktif ürün sayısı</div></span>
+              <span class="pt-pill free">50</span>
+              <span class="pt-pill pro">Sınırsız</span>
+              <span class="pt-pill removed">Sınırsız</span>
+              <span class="small muted">—</span>
+              <span><span class="pill green">Aktif</span></span>
+            </div>
+            <div class="plan-row-pt">
+              <span><span class="nm">Şube</span><div class="nm-sub">çoklu lokasyon</div></span>
+              <span class="pt-pill free">3</span>
+              <span class="pt-pill pro">Sınırsız</span>
+              <span class="pt-pill removed">Sınırsız</span>
+              <span class="small muted">—</span>
+              <span><span class="pill green">Aktif</span></span>
+            </div>
+            <div class="plan-row-pt">
+              <span><span class="nm">Vitrin</span><div class="nm-sub">petstockpro.com/vitrin</div></span>
+              <span class="pt-pill free">✓</span>
+              <span class="pt-pill pro">✓</span>
+              <span class="pt-pill removed">Özel tema</span>
+              <span class="small muted">tek tema</span>
+              <span><span class="pill green">Aktif</span></span>
+            </div>
+            <div class="plan-row-pt">
+              <span><span class="nm">PetPro Asistan</span><div class="nm-sub">öneri sistemi</div></span>
+              <span class="pt-pill free">Sınırlı</span>
+              <span class="pt-pill pro">Tam</span>
+              <span class="pt-pill removed">+ AI sohbet</span>
+              <span class="small muted">—</span>
+              <span><span class="pill green">Aktif</span></span>
+            </div>
+            <div class="plan-row-pt">
+              <span><span class="nm">Bayi Admin</span><div class="nm-sub">çoklu bayi yönetimi</div></span>
+              <span class="pt-pill removed">—</span>
+              <span class="pt-pill removed">—</span>
+              <span class="pt-pill removed">✓</span>
+              <span class="small muted">—</span>
+              <span><span class="pill outline">Faz 3 disable</span></span>
+            </div>
+            <div class="plan-row-pt" style="background:var(--danger-soft)">
+              <span><span class="nm" style="color:var(--danger-7)">PRO+ Tier</span><div class="nm-sub" style="color:var(--danger-7)">2026-05-13 kararı: kaldırıldı</div></span>
+              <span colspan="3" style="grid-column:span 3" class="small muted">Yeni 2-tier yapı: FREE 50 ürün + PRO sınırsız. PRO+ ihtiyacı oluşmadı.</span>
+              <span></span>
+              <span><span class="pill red">Kaldırıldı</span></span>
+            </div>
+          </div>
+
+          <h3 style="margin:24px 0 12px;font-size:14px">Bekleyen Yükseltme Onayları</h3>
+          <div class="queue-wrap">
+            <div class="queue-item">
+              <div class="thumb">🐕</div>
+              <div class="who-info">
+                <div class="nm">Patpat Pet</div>
+                <div class="sub">Beşiktaş · İstanbul · 5 ürün hakkına ulaştı</div>
+              </div>
+              <div class="meta"><strong>FREE → PRO</strong><br><span class="small muted">Aylık 199₺</span></div>
+              <div class="meta">Paddle ödeme: <span class="pill green">✓ Onaylandı</span></div>
+              <div class="row gap-6">
+                <button class="btn btn-ghost btn-sm">Reddet</button>
+                <button class="btn btn-success btn-sm">✓ Onayla & Aktif Et</button>
+              </div>
+            </div>
+            <div class="queue-item">
+              <div class="thumb">🦮</div>
+              <div class="who-info">
+                <div class="nm">Sevgi Pet Shop</div>
+                <div class="sub">Bornova · İzmir · Vergi no doğrulama bekliyor</div>
+              </div>
+              <div class="meta"><strong>FREE → PRO</strong><br><span class="small muted">Yıllık 1.990₺</span></div>
+              <div class="meta">Paddle ödeme: <span class="pill cat">Bekliyor</span></div>
+              <div class="row gap-6">
+                <button class="btn btn-ghost btn-sm">Detay →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================ TAB: VITRIN MODLAMA (active) ============================ -->
+        <div data-pane="tab-vitrin">
+
+          <!-- KPI strip emphasizing auto-approval -->
+          <div class="auto-kpi-strip">
+            <div class="auto-kpi highlight">
+              <div class="donut-mini">
+                <svg width="36" height="36">
+                  <circle cx="18" cy="18" r="14" stroke="rgba(34,197,94,.18)" stroke-width="4" fill="none"/>
+                  <circle cx="18" cy="18" r="14" stroke="var(--arrow)" stroke-width="4" fill="none" stroke-dasharray="88" stroke-dashoffset="5.3" stroke-linecap="round" transform="rotate(-90 18 18)"/>
+                </svg>
+              </div>
+              <div class="lbl">Oto-onay oranı</div>
+              <div class="num">%94</div>
+              <div class="sub">son 30 gün · ortalama 8 sn</div>
+            </div>
+            <div class="auto-kpi">
+              <div class="lbl">Manuel İnceleme</div>
+              <div class="num">12</div>
+              <div class="sub">bekliyor · %6 manuel</div>
+            </div>
+            <div class="auto-kpi">
+              <div class="lbl">Bildirim</div>
+              <div class="num">3</div>
+              <div class="sub">açık · KVKK + 1 spam</div>
+            </div>
+            <div class="auto-kpi">
+              <div class="lbl">Aktif Filtre</div>
+              <div class="num">14</div>
+              <div class="sub">otomatik kural</div>
+            </div>
+            <div class="auto-kpi">
+              <div class="lbl">Bu Hafta İncelendi</div>
+              <div class="num">186</div>
+              <div class="sub">174 onay · 12 ret</div>
+            </div>
+          </div>
+
+          <!-- Sub-tabs (5 alt-sekme) -->
+          <div data-subtabs-host>
+            <div class="subtabs" data-subtabs>
+              <div class="subtab active" data-subtab="vm-manual">📋 Manuel İnceleme <span class="badge">12</span></div>
+              <div class="subtab" data-subtab="vm-bildiri">🚩 Bildirimler <span class="badge">3</span></div>
+              <div class="subtab" data-subtab="vm-filter">⚡ Otomatik Filter</div>
+              <div class="subtab" data-subtab="vm-log">📜 Onay Logları</div>
+              <div class="subtab disabled" data-subtab="vm-bayi">🏢 Bayi Admin · Faz 3</div>
+            </div>
+
+            <!-- Subtab: Manuel İnceleme -->
+            <div data-subpane="vm-manual">
+              <div class="queue-wrap">
+                <div class="queue-head">
+                  <h3>Manuel İnceleme Sırası</h3>
+                  <span class="pill cat">12 bekliyor</span>
+                  <span class="small muted">Otomatik filtre takılan vakalar burada</span>
+                  <div class="queue-spacer"></div>
+                  <select class="select" style="width:auto"><option>Sıra: En eski</option><option>Bayrak sayısı</option><option>Risk skoru</option></select>
+                </div>
+                <div class="queue-list">
+
+                  <div class="queue-item">
+                    <div class="thumb">🐶</div>
+                    <div class="who-info">
+                      <div class="nm">Mavi Pet Shop · Vitrin profili</div>
+                      <div class="sub">Üsküdar · İstanbul · 8 dk önce gönderildi</div>
+                      <div class="tags">
+                        <span class="flag-chip warn">Görsel: 1 (min 3 önerilir)</span>
+                        <span class="flag-chip dog">İlk başvuru</span>
+                      </div>
+                    </div>
+                    <div class="meta">
+                      <strong>Risk skoru: 0.18</strong><br>
+                      <span class="small muted">Filtre takıldı: low_image_count</span>
+                    </div>
+                    <div class="meta">
+                      Slug: <code style="font-family:var(--font-mono);background:var(--line-soft);padding:1px 5px;border-radius:4px;font-size:11px">mavi-pet-shop</code><br>
+                      WhatsApp ✓ · Saatler ✓
+                    </div>
+                    <div class="row gap-6">
+                      <button class="btn btn-ghost btn-sm">İncele →</button>
+                      <button class="btn btn-danger btn-sm">Reddet</button>
+                      <button class="btn btn-success btn-sm">✓ Onayla</button>
+                    </div>
+                  </div>
+
+                  <div class="queue-item">
+                    <div class="thumb">🐱</div>
+                    <div class="who-info">
+                      <div class="nm">Cemil's Pet World · Yeni ürün vitrini</div>
+                      <div class="sub">Kadıköy · 1 saat önce</div>
+                      <div class="tags">
+                        <span class="flag-chip">Açıklama: 24 karakter (min 80)</span>
+                        <span class="flag-chip warn">İçerikte tehlikeli ürün listesi</span>
+                      </div>
+                    </div>
+                    <div class="meta"><strong>Risk skoru: 0.42</strong><br><span class="small muted">2 filtre takıldı</span></div>
+                    <div class="meta">Ürün: <strong>Kong Tasma · Uzun zincir</strong></div>
+                    <div class="row gap-6">
+                      <button class="btn btn-ghost btn-sm">İncele →</button>
+                      <button class="btn btn-danger btn-sm">Reddet</button>
+                      <button class="btn btn-success btn-sm">✓ Onayla</button>
+                    </div>
+                  </div>
+
+                  <div class="queue-item">
+                    <div class="thumb">🐰</div>
+                    <div class="who-info">
+                      <div class="nm">Yıldız Pet Shop · Logo değişimi</div>
+                      <div class="sub">Bornova · İzmir · 2 saat önce</div>
+                      <div class="tags">
+                        <span class="flag-chip">Logo OCR: marka adı algılandı (Royal Canin?)</span>
+                      </div>
+                    </div>
+                    <div class="meta"><strong>Risk skoru: 0.65</strong><br><span class="small muted">Telif riski</span></div>
+                    <div class="meta">Manuel inceleme zorunlu</div>
+                    <div class="row gap-6">
+                      <button class="btn btn-ghost btn-sm">İncele →</button>
+                      <button class="btn btn-danger btn-sm">Reddet</button>
+                      <button class="btn btn-success btn-sm">✓ Onayla</button>
+                    </div>
+                  </div>
+
+                  <div class="queue-item">
+                    <div class="thumb">🦜</div>
+                    <div class="who-info">
+                      <div class="nm">Patpat Pet · Kapak fotoğrafı</div>
+                      <div class="sub">Beşiktaş · İstanbul · 3 saat önce</div>
+                      <div class="tags"><span class="flag-chip warn">Çözünürlük: 720×360 (min 1200)</span></div>
+                    </div>
+                    <div class="meta"><strong>Risk skoru: 0.12</strong></div>
+                    <div class="meta">Tek aykırılık · büyük ihtimal onay</div>
+                    <div class="row gap-6">
+                      <button class="btn btn-ghost btn-sm">İncele →</button>
+                      <button class="btn btn-danger btn-sm">Reddet</button>
+                      <button class="btn btn-success btn-sm">✓ Onayla</button>
+                    </div>
+                  </div>
+
+                  <div class="queue-item">
+                    <div class="thumb">🐠</div>
+                    <div class="who-info">
+                      <div class="nm">Akva Dünyası · Profil güncelleme</div>
+                      <div class="sub">Çankaya · Ankara · 6 saat önce</div>
+                      <div class="tags">
+                        <span class="flag-chip">İletişim: WhatsApp yok</span>
+                        <span class="flag-chip warn">Çalışma saatleri eksik</span>
+                      </div>
+                    </div>
+                    <div class="meta"><strong>Risk skoru: 0.28</strong></div>
+                    <div class="meta">Eksik alanlar var · revize iste</div>
+                    <div class="row gap-6">
+                      <button class="btn btn-ghost btn-sm">İncele →</button>
+                      <button class="btn btn-ghost btn-sm">Revize iste</button>
+                      <button class="btn btn-danger btn-sm">Reddet</button>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
+            <!-- Subtab: Bildirimler -->
+            <div data-subpane="vm-bildiri" style="display:none">
+              <div class="queue-wrap">
+                <div class="queue-head">
+                  <h3>Kullanıcı Bildirimleri</h3>
+                  <span class="pill red">3 açık</span>
+                  <div class="queue-spacer"></div>
+                  <span class="small muted">Müşteriler 🚩 ile bildirim açtı</span>
+                </div>
+                <div class="queue-list">
+                  <div class="queue-item">
+                    <div class="thumb" style="background:var(--danger-soft);color:var(--danger-7);font-size:24px">🚩</div>
+                    <div class="who-info">
+                      <div class="nm">Cemil's Pet World — Yanıltıcı fiyat</div>
+                      <div class="sub">Şikayet eden: Müşteri (anonim · IP doğrulandı) · 12 dk önce</div>
+                      <div class="tags">
+                        <span class="flag-chip">İddia: Vitrin'de 180₺, mağazada 240₺</span>
+                      </div>
+                    </div>
+                    <div class="meta"><strong>3. bildirim</strong><br><span class="small muted">Bu tenant için</span></div>
+                    <div class="meta">Ürün: Royal Canin 2kg</div>
+                    <div class="row gap-6">
+                      <button class="btn btn-ghost btn-sm">Tenanta sor</button>
+                      <button class="btn btn-danger btn-sm">Vitrin'i durdur</button>
+                    </div>
+                  </div>
+                  <div class="queue-item">
+                    <div class="thumb" style="background:var(--danger-soft);color:var(--danger-7);font-size:24px">🔒</div>
+                    <div class="who-info">
+                      <div class="nm">KVKK talebi — Veri silme</div>
+                      <div class="sub">tester@example.com · 2 saat önce · §11 talebi</div>
+                      <div class="tags"><span class="flag-chip">7 gün içinde yanıt zorunlu</span></div>
+                    </div>
+                    <div class="meta"><strong>Yasal · acil</strong></div>
+                    <div class="meta">Veri dağılımı: 2 tenant'a yansıyor</div>
+                    <div class="row gap-6">
+                      <button class="btn btn-ghost btn-sm">Detay →</button>
+                      <button class="btn btn-primary btn-sm">İşleme al</button>
+                    </div>
+                  </div>
+                  <div class="queue-item">
+                    <div class="thumb" style="background:var(--cat-soft);color:var(--cat-7);font-size:24px">⚠</div>
+                    <div class="who-info">
+                      <div class="nm">Yıldız Pet — Spam içerik şüphesi</div>
+                      <div class="sub">Otomatik tespit · 1 gün önce</div>
+                      <div class="tags"><span class="flag-chip warn">Aynı içerik 3 ürüne kopyalandı</span></div>
+                    </div>
+                    <div class="meta">İçerik benzerlik: %96</div>
+                    <div class="meta">Tenant uyarıldı</div>
+                    <div class="row gap-6">
+                      <button class="btn btn-ghost btn-sm">İncele →</button>
+                      <button class="btn btn-ghost btn-sm">Kapat</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Subtab: Otomatik Filter -->
+            <div data-subpane="vm-filter" style="display:none">
+              <div class="card" style="padding:18px">
+                <div class="card-head">
+                  <span class="card-title">Otomatik Filtre Kuralları</span>
+                  <span class="pill green">14 aktif</span>
+                  <span class="card-sub">Bu kurallardan biri tetiklenirse Manuel İncelemeye düşer.</span>
+                </div>
+                <div class="small muted mt-8" style="margin-bottom:14px">
+                  Felsefe: kurallar "engelle" yapmaz, "<strong>insan gözüne yönlendir</strong>". %94 vitrin başvurusu hiçbir kurala takılmaz → 8 sn'de otomatik onay.
+                </div>
+
+                <div class="rule-card">
+                  <div class="rule-num">1</div>
+                  <div>
+                    <div class="rule-text">Görsel sayısı &lt; 3</div>
+                    <div class="rule-sub">Görsel az ise düşük kalite riski</div>
+                  </div>
+                  <span class="rule-hit">142 tetik / 30g</span>
+                  <div class="toggle on"></div>
+                </div>
+                <div class="rule-card">
+                  <div class="rule-num">2</div>
+                  <div>
+                    <div class="rule-text">Açıklama &lt; 80 karakter</div>
+                    <div class="rule-sub">Yetersiz içerik · SEO ve kullanıcı için riskli</div>
+                  </div>
+                  <span class="rule-hit">88 tetik / 30g</span>
+                  <div class="toggle on"></div>
+                </div>
+                <div class="rule-card">
+                  <div class="rule-num">3</div>
+                  <div>
+                    <div class="rule-text">Logo OCR: marka adı algılama</div>
+                    <div class="rule-sub">Royal Canin, Whiskas, Pedigree vs. — telif riski</div>
+                  </div>
+                  <span class="rule-hit">14 tetik / 30g</span>
+                  <div class="toggle on"></div>
+                </div>
+                <div class="rule-card">
+                  <div class="rule-num">4</div>
+                  <div>
+                    <div class="rule-text">Kapak fotoğrafı &lt; 1200×600 px</div>
+                    <div class="rule-sub">Vitrin estetiği için minimum çözünürlük</div>
+                  </div>
+                  <span class="rule-hit">62 tetik / 30g</span>
+                  <div class="toggle on"></div>
+                </div>
+                <div class="rule-card">
+                  <div class="rule-num">5</div>
+                  <div>
+                    <div class="rule-text">İçerik benzerlik &gt; %90</div>
+                    <div class="rule-sub">Aynı tenant içinde kopyala-yapıştır ürün</div>
+                  </div>
+                  <span class="rule-hit">23 tetik / 30g</span>
+                  <div class="toggle on"></div>
+                </div>
+                <div class="rule-card">
+                  <div class="rule-num">6</div>
+                  <div>
+                    <div class="rule-text">Tehlikeli kategori kelimeleri</div>
+                    <div class="rule-sub">"silah", "doping", "ilaç" — yasaklı ürün ihtimali</div>
+                  </div>
+                  <span class="rule-hit">4 tetik / 30g</span>
+                  <div class="toggle on"></div>
+                </div>
+                <div class="rule-card" style="opacity:.7">
+                  <div class="rule-num" style="background:var(--ink-4)">7</div>
+                  <div>
+                    <div class="rule-text">Yeni tenant + ilk vitrin (&lt; 24 saat)</div>
+                    <div class="rule-sub">İlk vitrini her zaman manuel incele (kapatıldı: %94 oto-onay isteği)</div>
+                  </div>
+                  <span class="rule-hit">0 tetik / 30g</span>
+                  <div class="toggle"></div>
+                </div>
+
+                <button class="btn btn-ghost mt-12">+ Yeni Kural Ekle</button>
+              </div>
+            </div>
+
+            <!-- Subtab: Onay Logları -->
+            <div data-subpane="vm-log" style="display:none">
+              <div class="audit-tbl">
+                <div class="audit-row head"><span>Zaman</span><span>Tenant</span><span>Eylem & Gerekçe</span><span>Karar veren</span><span>Süre</span></div>
+                <div class="audit-row">
+                  <span class="time">14:18:42</span>
+                  <span><strong>Mavi Pet Shop</strong></span>
+                  <span class="action">Vitrin profili onaylandı <span class="small muted">— logo, kapak, WhatsApp ✓</span></span>
+                  <span>Sezai K. (manuel)</span>
+                  <span class="time">2 dk 18 sn</span>
+                </div>
+                <div class="audit-row">
+                  <span class="time">14:12:01</span>
+                  <span><strong>Tatlı Pati Shop</strong></span>
+                  <span class="action">Vitrin profili otomatik onaylandı <span class="small muted">— 0 filtre tetiklendi</span></span>
+                  <span><span class="pill green">⚡ Oto</span></span>
+                  <span class="time">8 sn</span>
+                </div>
+                <div class="audit-row">
+                  <span class="time">14:08:55</span>
+                  <span><strong>Petim Burada</strong></span>
+                  <span class="action">Vitrin profili otomatik onaylandı</span>
+                  <span><span class="pill green">⚡ Oto</span></span>
+                  <span class="time">6 sn</span>
+                </div>
+                <div class="audit-row">
+                  <span class="time">13:42:18</span>
+                  <span><strong>Sevimli Pati</strong></span>
+                  <span class="action">Vitrin profili reddedildi <span class="small muted">— logo telif (Royal Canin algılandı)</span></span>
+                  <span>Sezai K.</span>
+                  <span class="time">4 dk 02 sn</span>
+                </div>
+                <div class="audit-row">
+                  <span class="time">11:22:18</span>
+                  <span><strong>Yıldız Pet Shop</strong></span>
+                  <span class="action">Vitrin reddi: yetersiz görsel <span class="small muted">— revize istendi</span></span>
+                  <span>Sezai K.</span>
+                  <span class="time">1 dk 44 sn</span>
+                </div>
+                <div class="audit-row">
+                  <span class="time">10:58:33</span>
+                  <span><strong>Kuyruk Pet</strong></span>
+                  <span class="action">Vitrin profili otomatik onaylandı</span>
+                  <span><span class="pill green">⚡ Oto</span></span>
+                  <span class="time">11 sn</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Subtab: Bayi Admin (disabled) -->
+            <div data-subpane="vm-bayi" style="display:none">
+              <div class="card" style="padding:32px;text-align:center">
+                <div style="font-size:48px;margin-bottom:12px;opacity:.4">🏢</div>
+                <h3 style="margin:0 0 8px;color:var(--cart)">Bayi Admin Sekmesi — Faz 3'te aktif olacak</h3>
+                <p class="small muted" style="max-width:520px;margin:0 auto">PRO+ tier ile gelecek olan çoklu bayi yönetimi (1 ana tenant + N alt bayi) burada yönetilecek. Faz 3'e kadar disabled.</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Toolbox FAB -->
+<div class="toolbox-fab" id="tbFab" onclick="this.classList.toggle('open')">🧰</div>
+<div class="toolbox-popup">
+  <div class="tb-cat">
+    <div class="ttl">🚀 Tenant Müdahale</div>
+    <div class="tb-row">
+      <span class="tb-btn-sm">Şifre sıfırla</span>
+      <span class="tb-btn-sm">Login as tenant</span>
+      <span class="tb-btn-sm">Plan değiştir</span>
+    </div>
+  </div>
+  <div class="tb-cat">
+    <div class="ttl">🏪 Vitrin</div>
+    <div class="tb-row">
+      <span class="tb-btn-sm">Vitrin durdur</span>
+      <span class="tb-btn-sm">Manuel onay aç</span>
+    </div>
+  </div>
+  <div class="tb-cat">
+    <div class="ttl">🔧 Sistem</div>
+    <div class="tb-row">
+      <span class="tb-btn-sm">Cache temizle</span>
+      <span class="tb-btn-sm">Webhook tetik</span>
+      <span class="tb-btn-sm">Feature flag</span>
+    </div>
+  </div>
+  <div class="tb-cat">
+    <div class="ttl">📋 Veri</div>
+    <div class="tb-row">
+      <span class="tb-btn-sm">Tenant export</span>
+      <span class="tb-btn-sm">KVKK sil</span>
+      <span class="tb-btn-sm">Audit indir</span>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/app.js"></script>
+<script>
+  // Click outside closes new-dd & toolbox
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('#newDd')) document.getElementById('newDd')?.classList.remove('open');
+    if (!e.target.closest('#tbFab') && !e.target.closest('.toolbox-popup')) document.getElementById('tbFab')?.classList.remove('open');
+  });
+</script>
+</body>
+</html>

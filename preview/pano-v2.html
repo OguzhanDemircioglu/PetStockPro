@@ -1,0 +1,899 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Pano · PetStockPro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/tokens-v2.css">
+<style>
+  /* ---------- HERO ---------- */
+  .hero {
+    border-radius: var(--r-lg);
+    padding: 26px 28px;
+    background:
+      radial-gradient(ellipse 70% 100% at 100% 0%, rgba(184,84,32,.20), transparent 60%),
+      radial-gradient(ellipse 60% 100% at 0% 100%, rgba(112,176,208,.22), transparent 60%),
+      linear-gradient(135deg, var(--cart) 0%, var(--cart-7) 100%);
+    color: #fff;
+    position: relative; overflow: hidden;
+    box-shadow: var(--shadow-cart);
+    display: grid; grid-template-columns: 1fr auto auto; gap: 22px; align-items: center;
+  }
+  .hero h1 { margin: 0; font-size: 24px; font-weight: bold; letter-spacing: -.4px; }
+  .hero p { margin: 6px 0 0; font-size: 13px; opacity: .85; max-width: 560px; line-height: 1.55; }
+  .hero-ring-wrap {
+    display: flex; align-items: center; gap: 16px;
+    padding: 14px 20px 14px 14px;
+    background: rgba(255,255,255,.10);
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: var(--r-md);
+    backdrop-filter: blur(8px);
+  }
+  .ring-big { position: relative; width: 64px; height: 64px; flex-shrink: 0; }
+  .ring-big svg { transform: rotate(-90deg); }
+  .ring-big .ring-bg { stroke: rgba(255,255,255,.22); }
+  .ring-big .ring-fg { stroke: var(--cat); stroke-width: 5; }
+  .ring-big-num { position: absolute; inset: 0; display: grid; place-items: center; font-size: 14px; font-weight: bold; color: #fff; }
+
+  .hero-logo {
+    position: relative;
+    width: 140px; height: 140px;
+    border-radius: 22px;
+    background: rgba(255,255,255,.94);
+    display: grid; place-items: center;
+    box-shadow: 0 14px 34px rgba(184,84,32,.32), 0 0 0 1px rgba(255,255,255,.15);
+    transform: rotate(-3deg);
+  }
+  .hero-logo img { width: 134px; height: 134px; object-fit: contain; border-radius: 18px; }
+  .hero-logo::before {
+    content: ""; position: absolute; inset: -10px;
+    border-radius: 26px;
+    background: radial-gradient(circle, rgba(255,255,255,.25), transparent 60%);
+    pointer-events: none; z-index: -1;
+  }
+
+  .branch-bar { display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
+  .branch-chip {
+    font-size: 11px; padding: 5px 11px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.22);
+    background: rgba(255,255,255,.08);
+    color: rgba(255,255,255,.85);
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+  }
+  .branch-chip.active { background: #fff; color: var(--cart); border-color: #fff; font-weight: bold; }
+
+  /* ---------- QUICK ACTIONS ---------- */
+  .quick-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 16px; }
+  .quick {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px;
+    background: var(--paper-glass-strong);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,.7);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-sm);
+    text-decoration: none; color: inherit;
+    cursor: pointer;
+    transition: all .15s ease;
+  }
+  .quick:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--cat-2); }
+  .quick-ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; color: #fff; flex-shrink: 0; }
+  .quick:nth-child(1) .quick-ic { background: linear-gradient(135deg, var(--arrow), var(--arrow-7)); }
+  .quick:nth-child(2) .quick-ic { background: linear-gradient(135deg, var(--cat), var(--cat-7)); }
+  .quick:nth-child(3) .quick-ic { background: linear-gradient(135deg, var(--bars), var(--bars-7)); }
+  .quick:nth-child(4) .quick-ic { background: linear-gradient(135deg, var(--cart), var(--dog)); }
+  .quick-label { font-size: 13px; font-weight: bold; color: var(--cart); display: block; }
+  .quick-sub { font-size: 11px; color: var(--ink-4); }
+
+  /* ---------- KPI STRIP ---------- */
+  .kpi-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 16px; }
+  .kpi {
+    background: var(--paper-glass-strong);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,.65);
+    box-shadow: var(--shadow-sm);
+    border-radius: var(--r-md);
+    padding: 16px 18px;
+    position: relative; overflow: hidden;
+    transition: transform .2s ease, box-shadow .2s ease;
+    cursor: pointer;
+  }
+  .kpi:hover { transform: perspective(900px) rotateX(2deg) rotateY(-2deg) translateY(-2px); box-shadow: var(--shadow-lg); }
+  .kpi-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .kpi-ic { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; color: #fff; flex-shrink: 0; }
+  .kpi.k1 .kpi-ic { background: var(--cat); }
+  .kpi.k2 .kpi-ic { background: var(--arrow); }
+  .kpi.k3 .kpi-ic { background: var(--bars-7); }
+  .kpi.k4 .kpi-ic { background: var(--cart); }
+  .kpi-mini-bars { display: flex; align-items: flex-end; gap: 2px; height: 24px; margin-top: 10px; }
+  .kpi-mini-bars span { width: 5px; border-radius: 1px; }
+  .kpi.k1 .kpi-mini-bars span { background: var(--cat); opacity: .7; }
+  .kpi.k2 .kpi-mini-bars span { background: var(--arrow); opacity: .7; }
+  .kpi.k3 .kpi-mini-bars span { background: var(--bars-7); opacity: .7; }
+  .kpi.k4 .kpi-mini-bars span { background: var(--cart); opacity: .7; }
+  .kpi .ring-mini { position: absolute; right: 14px; top: 14px; }
+
+  /* ---------- BENTO ---------- */
+  .bento { display: grid; grid-template-columns: repeat(12, 1fr); grid-auto-rows: minmax(60px, auto); gap: 14px; margin-top: 16px; }
+  .bento-trend { grid-column: span 8; }
+  .bento-lowstock { grid-column: span 4; }
+  .bento-feed { grid-column: span 5; }
+  .bento-asistan { grid-column: span 7; }
+  .bento-mini1 { grid-column: span 4; }
+  .bento-mini2 { grid-column: span 4; }
+  .bento-mini3 { grid-column: span 4; }
+
+  /* ---------- TREND ---------- */
+  .trend-wrap { position: relative; height: 260px; margin-top: 6px; }
+  .trend-svg { width: 100%; height: 100%; }
+  .trend-legend { display: flex; gap: 14px; font-size: 11px; color: var(--ink-3); }
+  .trend-legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .trend-legend i { width: 10px; height: 3px; border-radius: 2px; background: var(--cat); }
+
+  /* ---------- LOW STOCK ---------- */
+  .lowstock-list { display: flex; flex-direction: column; gap: 4px; max-height: 280px; overflow-y: auto; }
+  .lowstock-item { display: grid; grid-template-columns: 28px 1fr auto auto; gap: 10px; padding: 9px 10px; border-radius: 10px; cursor: pointer; align-items: center; }
+  .lowstock-item:hover { background: var(--line-soft); }
+  .lowstock-thumb { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, var(--cat-soft), var(--bars-soft)); display: grid; place-items: center; color: var(--cart); font-size: 12px; }
+  .lowstock-name { font-size: 12px; color: var(--ink-2); line-height: 1.25; }
+  .lowstock-sub { font-size: 10.5px; color: var(--ink-4); }
+  .lowstock-qty { font-family: var(--font-mono); font-size: 11.5px; font-weight: bold; }
+
+  /* ---------- ASISTAN ---------- */
+  .sug-list { display: flex; flex-direction: column; gap: 10px; }
+  .sug { display: grid; grid-template-columns: 36px 1fr auto; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: linear-gradient(135deg, var(--paper) 0%, rgba(255,255,255,.4) 100%); }
+  .sug-ic { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: #fff; font-size: 14px; }
+  .sug.ord .sug-ic { background: linear-gradient(135deg, var(--cat), var(--cat-7)); }
+  .sug.tr .sug-ic { background: linear-gradient(135deg, var(--bars-7), var(--cart)); }
+  .sug.disc .sug-ic { background: linear-gradient(135deg, var(--arrow), var(--arrow-7)); }
+  .sug-text { font-size: 12.5px; line-height: 1.4; }
+  .sug-text strong { color: var(--cart); }
+
+  /* ---------- MINI STAT ---------- */
+  .ts-list { font-size: 12px; }
+  .ts-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed var(--line-soft); }
+  .ts-row:last-child { border-bottom: 0; }
+  .ts-row .who { color: var(--ink-2); }
+  .ts-row .val { font-family: var(--font-mono); color: var(--cart); font-weight: bold; }
+
+  .donut { position: relative; width: 84px; height: 84px; }
+  .donut-num { position: absolute; inset: 0; display: grid; place-items: center; font-size: 16px; font-weight: bold; color: var(--cart); }
+
+  /* ---------- LOGO MOTIF (sticky barcode strip) ---------- */
+  .logo-motif {
+    position: relative;
+    margin-top: 16px;
+    border-radius: var(--r-md);
+    padding: 18px 22px;
+    background: linear-gradient(135deg, var(--dog-soft) 0%, #fff 50%, var(--bars-soft) 100%);
+    border: 1px solid var(--line);
+    display: grid; grid-template-columns: auto 1fr auto auto; gap: 20px; align-items: center;
+    overflow: hidden;
+  }
+  .logo-motif::before {
+    /* barcode strip */
+    content: "";
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: 5px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--dog) 0 2px, transparent 2px 4px,
+      var(--dog) 4px 5px, transparent 5px 8px,
+      var(--dog) 8px 12px, transparent 12px 14px,
+      var(--dog) 14px 15px, transparent 15px 19px,
+      var(--dog) 19px 21px, transparent 21px 24px
+    );
+    opacity: .42;
+  }
+  .logo-motif .logo-sm {
+    width: 56px; height: 56px;
+    border-radius: 14px;
+    background: #fff;
+    border: 1px solid var(--line);
+    padding: 4px;
+    box-shadow: var(--shadow-sm);
+  }
+  .logo-motif .logo-sm img { width: 100%; height: 100%; object-fit: contain; }
+  .logo-motif h3 { margin: 0; font-size: 14px; font-weight: bold; color: var(--cart); }
+  .logo-motif p { margin: 4px 0 0; font-size: 12px; color: var(--ink-3); }
+
+  /* sparkline overlay reminiscent of logo arrow */
+  .logo-spark {
+    position: absolute; right: 24px; top: 14px;
+    width: 130px; height: 64px;
+    opacity: .85;
+  }
+
+  /* ---------- WIDGET WATERMARKS using the logo ---------- */
+  .wm-cat { position: absolute; right: -14px; bottom: -14px; width: 130px; height: 130px; opacity: .06; pointer-events: none; }
+
+  .branch-strip {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px;
+  }
+  .b-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+  .b-card .b-head { display: flex; align-items: center; gap: 8px; }
+  .b-card .b-head .mark {
+    width: 24px; height: 24px; border-radius: 7px;
+    display: grid; place-items: center; color: #fff;
+    font-size: 11px;
+  }
+  .b-card.b1 .mark { background: var(--cat); }
+  .b-card.b2 .mark { background: var(--bars-7); }
+  .b-card.b3 .mark { background: var(--arrow); }
+  .b-card .b-name { font-size: 12.5px; font-weight: bold; color: var(--cart); }
+  .b-card .b-val { font-family: var(--font-mono); font-size: 16px; font-weight: bold; color: var(--cart); margin-top: 6px; }
+  .b-card .b-bar { height: 5px; border-radius: 999px; background: var(--line-soft); margin-top: 8px; overflow: hidden; }
+  .b-card .b-fill { height: 100%; border-radius: 999px; }
+  .b-card.b1 .b-fill { background: linear-gradient(90deg, var(--cat), var(--cat-2)); }
+  .b-card.b2 .b-fill { background: linear-gradient(90deg, var(--bars), var(--bars-7)); }
+  .b-card.b3 .b-fill { background: linear-gradient(90deg, var(--arrow), var(--arrow-2)); }
+</style>
+</head>
+<body data-screen-label="01 Pano">
+
+<div class="app">
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><img src="../assets/logo.png" alt="PetStockPro"></div>
+      <div>
+        <div class="brand-name">PetStockPro</div>
+        <div class="brand-sub">Mavi Pet Shop</div>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-label">Genel</div>
+      <a class="nav-item active" href="pano-v2.html">
+        <svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Pano
+      </a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-label">Envanter</div>
+      <a class="nav-item" href="urunler.html">
+        <svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>
+        Ürünler
+        <span class="nav-badge">47</span>
+      </a>
+      <a class="nav-item" href="stok-hareketleri.html">
+        <svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17l5-5 5 5"/><path d="M7 7l5 5 5-5"/></svg>
+        Stok Hareketleri
+      </a>
+      <a class="nav-item" href="#">
+        <svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M5 9l7-7 7 7"/></svg>
+        Düşük Stok
+        <span class="nav-badge" style="background:var(--danger)">5</span>
+      </a>
+      <a class="nav-item" href="#">
+        <svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 10h6M9 14h4"/></svg>
+        Sayım
+      </a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-label">Operasyon</div>
+      <a class="nav-item" href="#"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18M6 7v13a1 1 0 001 1h10a1 1 0 001-1V7M9 7V5a3 3 0 016 0v2"/></svg>Satış</a>
+      <a class="nav-item" href="#"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="12" r="2"/><circle cx="18" cy="12" r="2"/><path d="M8 12h8"/></svg>Transferler</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-label">Kaynaklar</div>
+      <a class="nav-item" href="#"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M3 21c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>Tedarikçiler</a>
+      <a class="nav-item" href="#"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h18M5 10v9a1 1 0 001 1h12a1 1 0 001-1v-9M9 10V5a3 3 0 016 0v5"/></svg>Şubeler<span class="nav-badge" style="background:var(--bars-7)">3</span></a>
+      <a class="nav-item" href="#"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.5"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>Kullanıcılar</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-label">Analiz</div>
+      <a class="nav-item" href="#"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5M4 19h16M8 15v-4M12 15V8M16 15v-6"/></svg>Raporlar</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-label">🏪 Vitrin</div>
+      <a class="nav-item vitrin" href="#"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/></svg>Vitrin Profili</a>
+      <a class="nav-item vitrin" href="#"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v4l-2 3v8a1 1 0 01-1 1H6a1 1 0 01-1-1v-8L3 7z"/></svg>Vitrin Metrikleri</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-label">Sistem</div>
+      <a class="nav-item" href="#">Ayarlar</a>
+    </div>
+
+    <div class="plan-card">
+      <div class="plan-row">
+        <div>
+          <div class="plan-name">PLAN</div>
+          <div class="plan-tier">FREE</div>
+        </div>
+      </div>
+      <div class="plan-prog-wrap">
+        <div class="plan-prog-label"><span>Ürün limiti</span><span class="tnum">47 / 50</span></div>
+        <div class="plan-prog-bar"><div class="plan-prog-fill" style="width:94%"></div></div>
+      </div>
+      <a href="#" class="plan-cta">PRO'ya Yükselt →</a>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+
+    <header class="topbar">
+      <div>
+        <div class="topbar-title">Pano</div>
+        <div class="topbar-sub">Pazartesi, 14 Mayıs 2026 · 14:32</div>
+      </div>
+      <div class="topbar-spacer"></div>
+      <div class="cmdk">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        Ara: ürün, hareket, müşteri...
+        <kbd>⌘K</kbd>
+      </div>
+      <a class="tb-btn vitrin-link" href="#">🏪 Vitrin'i Görüntüle →</a>
+      <div class="tb-icon" title="Bildirimler">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 004 0"/></svg>
+        <span class="dot"></span>
+      </div>
+      <div class="tb-icon" title="Tema">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>
+      </div>
+      <div class="avatar" title="Mehmet K. — Sahip">MK</div>
+    </header>
+
+    <main class="content">
+
+      <!-- ============ HERO ============ -->
+      <section class="hero">
+        <div>
+          <h1>Hoş geldin, Mehmet 👋</h1>
+          <p>Bugün <strong>14 satış</strong> yapıldı, <strong>1.850₺</strong> ciro elde ettin. <strong>5 ürün</strong> kritik stok seviyesinde — sipariş zamanı olabilir.</p>
+          <div class="branch-bar">
+            <div class="branch-chip active">📍 Tüm Şubeler</div>
+            <div class="branch-chip">Üsküdar Merkez</div>
+            <div class="branch-chip">Kadıköy</div>
+            <div class="branch-chip">Beykoz</div>
+          </div>
+        </div>
+        <div class="hero-ring-wrap">
+          <div class="ring-big">
+            <svg width="64" height="64">
+              <circle class="ring-bg" cx="32" cy="32" r="26" stroke-width="5"/>
+              <circle class="ring-fg" cx="32" cy="32" r="26" stroke-width="5" stroke-dasharray="163.36" stroke-dashoffset="9.8"/>
+            </svg>
+            <div class="ring-big-num">47<span style="font-size:9px;opacity:.7">/50</span></div>
+          </div>
+          <div>
+            <div style="font-size:11px;opacity:.7;text-transform:uppercase;letter-spacing:.5px">PLAN · FREE</div>
+            <div style="font-size:14px;font-weight:bold">3 ürün kaldı</div>
+            <a href="#" style="color:var(--cat-2);font-size:11.5px;font-weight:bold;text-decoration:none">PRO'ya geç ↗</a>
+          </div>
+        </div>
+        <div class="hero-logo">
+          <img src="../assets/logo.png" alt="PetStockPro logo">
+        </div>
+      </section>
+
+      <!-- ============ LOGO MOTIF STRIP ============ -->
+      <div class="logo-motif">
+        <div class="logo-sm"><img src="../assets/logo.png" alt=""></div>
+        <div>
+          <h3>Stoğun büyüyor, vitrin'in görünüyor.</h3>
+          <p>Son 30 günde envanter değerin <strong style="color:var(--arrow-7)">↑ %5,2</strong> arttı · Vitrin'de bu hafta <strong style="color:var(--cat-7)">12 görüntülenme</strong> aldın.</p>
+        </div>
+        <svg class="logo-spark" viewBox="0 0 130 64" fill="none" style="position:static;width:130px;height:54px;opacity:1">
+          <!-- Bars echoing the logo's bar chart -->
+          <rect x="2"  y="38" width="12" height="22" rx="2" fill="#3090d0" opacity=".75"/>
+          <rect x="18" y="30" width="12" height="30" rx="2" fill="#3090d0" opacity=".85"/>
+          <rect x="34" y="22" width="12" height="38" rx="2" fill="#1d6ba6"/>
+          <rect x="50" y="14" width="12" height="46" rx="2" fill="#1d6ba6"/>
+          <!-- Arrow rising — logo's signature teal-green -->
+          <path d="M2 50 L20 42 L40 32 L60 22 L92 8 L82 14 M92 8 L86 24" stroke="#16a08a" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="92" cy="8" r="3" fill="#16a08a"/>
+        </svg>
+        <div class="row gap-8">
+          <span class="pill green">↑ 5,2%</span>
+          <a class="btn btn-ghost btn-sm" href="#">Detay →</a>
+        </div>
+      </div>
+
+      <!-- ============ QUICK ACTIONS ============ -->
+      <div class="quick-grid">
+        <a class="quick" data-open-drawer="#dr-stok-girisi-back">
+          <div class="quick-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg></div>
+          <div><span class="quick-label">Stok Girişi</span><span class="quick-sub">Tedarikçiden mal kabul</span></div>
+        </a>
+        <a class="quick" href="#">
+          <div class="quick-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 7h18M6 7v13a1 1 0 001 1h10a1 1 0 001-1V7"/></svg></div>
+          <div><span class="quick-label">Yeni Satış</span><span class="quick-sub">Hızlı POS satışı</span></div>
+        </a>
+        <a class="quick" href="#">
+          <div class="quick-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12h12M11 6l6 6-6 6"/></svg></div>
+          <div><span class="quick-label">Transfer</span><span class="quick-sub">Şubeler arası geçiş</span></div>
+        </a>
+        <a class="quick" href="#">
+          <div class="quick-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M9 11l2 2 4-4"/></svg></div>
+          <div><span class="quick-label">Sayım</span><span class="quick-sub">Fiziksel envanter</span></div>
+        </a>
+      </div>
+
+      <!-- ============ DIKKAT BANDI ============ -->
+      <div class="col gap-8 mt-16">
+        <div class="banner crit">
+          <div class="banner-ic">🚨</div>
+          <div class="banner-text">
+            <strong>3 ürün stok tükendi</strong>
+            Royal Canin Adult Kedi 2kg (Kadıköy), Whiskas Konserve 85g, Pro Plan Yavru Köpek 1kg — satış sayfasından otomatik çekildi.
+          </div>
+          <a class="btn btn-danger btn-sm" href="#">Hızlı Sipariş →</a>
+        </div>
+        <div class="banner warn">
+          <div class="banner-ic">⚠</div>
+          <div class="banner-text">
+            <strong>5 ürün kritik seviyenin altında</strong>
+            Reorder noktasına yaklaştılar. PetPro asistanı tedarikçi başına sipariş paketi hazırladı.
+          </div>
+          <a class="btn btn-ghost btn-sm" href="#">Detay →</a>
+        </div>
+        <div class="banner info">
+          <div class="banner-ic">💡</div>
+          <div class="banner-text">
+            <strong>Vitrin'de 12 görüntülenme aldın bu hafta</strong>
+            2 müşteri WhatsApp üzerinden iletişime geçti. Vitrin profilini tamamla — kapak fotoğrafı eksik.
+          </div>
+          <a class="btn btn-ghost btn-sm" href="#">Profili Tamamla →</a>
+        </div>
+      </div>
+
+      <!-- ============ KPI STRIP ============ -->
+      <div class="kpi-strip">
+        <div class="kpi k1">
+          <div class="kpi-top">
+            <div>
+              <div class="kpi-label">Bugün Satış</div>
+              <div class="kpi-num">1.850₺</div>
+            </div>
+            <div class="kpi-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 7h18M6 7v13h12V7"/></svg></div>
+          </div>
+          <div class="row gap-8 mt-8">
+            <span class="kpi-delta up">↑ 18%</span>
+            <span class="small muted">14 adet · dünden</span>
+          </div>
+          <div class="kpi-mini-bars">
+            <span style="height:30%"></span><span style="height:45%"></span><span style="height:38%"></span><span style="height:55%"></span><span style="height:62%"></span><span style="height:48%"></span><span style="height:72%"></span><span style="height:68%"></span><span style="height:80%"></span><span style="height:95%"></span>
+          </div>
+        </div>
+        <div class="kpi k2">
+          <div class="kpi-top">
+            <div>
+              <div class="kpi-label">Bugün Giriş</div>
+              <div class="kpi-num">3.420₺</div>
+            </div>
+            <div class="kpi-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+          </div>
+          <div class="row gap-8 mt-8">
+            <span class="kpi-delta flat">─ 0%</span>
+            <span class="small muted">2 tedarikçi · 84 adet</span>
+          </div>
+          <div class="kpi-mini-bars">
+            <span style="height:60%"></span><span style="height:40%"></span><span style="height:70%"></span><span style="height:45%"></span><span style="height:55%"></span><span style="height:90%"></span><span style="height:38%"></span><span style="height:65%"></span><span style="height:50%"></span><span style="height:78%"></span>
+          </div>
+        </div>
+        <div class="kpi k3">
+          <div class="kpi-top">
+            <div>
+              <div class="kpi-label">Aktif Ürün</div>
+              <div class="kpi-num">47<span style="font-size:18px;color:var(--ink-4)">/50</span></div>
+            </div>
+            <div class="ring-mini">
+              <svg width="32" height="32">
+                <circle stroke="var(--line)" fill="none" cx="16" cy="16" r="13" stroke-width="3"/>
+                <circle stroke="var(--cat)" fill="none" stroke-linecap="round" cx="16" cy="16" r="13" stroke-width="3" stroke-dasharray="81.68" stroke-dashoffset="4.9" transform="rotate(-90 16 16)"/>
+              </svg>
+            </div>
+          </div>
+          <div class="row gap-8 mt-8">
+            <span class="kpi-delta up">↑ 3</span>
+            <span class="small muted">FREE limit · 94%</span>
+          </div>
+          <div class="kpi-mini-bars">
+            <span style="height:55%"></span><span style="height:60%"></span><span style="height:60%"></span><span style="height:65%"></span><span style="height:70%"></span><span style="height:72%"></span><span style="height:80%"></span><span style="height:85%"></span><span style="height:88%"></span><span style="height:94%"></span>
+          </div>
+        </div>
+        <div class="kpi k4">
+          <div class="kpi-top">
+            <div>
+              <div class="kpi-label">Envanter Değeri</div>
+              <div class="kpi-num">48.620₺</div>
+            </div>
+            <div class="kpi-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/></svg></div>
+          </div>
+          <div class="row gap-8 mt-8">
+            <span class="kpi-delta up">↑ 5,2%</span>
+            <span class="small muted">aylık ortalama</span>
+          </div>
+          <div class="kpi-mini-bars">
+            <span style="height:50%"></span><span style="height:54%"></span><span style="height:52%"></span><span style="height:58%"></span><span style="height:60%"></span><span style="height:64%"></span><span style="height:68%"></span><span style="height:72%"></span><span style="height:76%"></span><span style="height:82%"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ BENTO ============ -->
+      <div class="bento">
+
+        <div class="card bento-trend tilt">
+          <div class="card-head">
+            <span class="card-title">Envanter Değeri Trendi</span>
+            <span class="pill blue">30 gün</span>
+            <span class="card-sub">14 Nis — 14 May</span>
+          </div>
+          <div class="trend-legend mt-4">
+            <span><i></i> Toplam Değer (₺)</span>
+            <span><i style="background:var(--bars-7)"></i> Satılan (₺)</span>
+            <span><i style="background:var(--arrow);height:2px"></i> Hedef trend</span>
+          </div>
+          <div class="trend-wrap">
+            <svg class="trend-svg" viewBox="0 0 800 240" preserveAspectRatio="none">
+              <g stroke="#dfe4ec" stroke-width="1" stroke-dasharray="3 3">
+                <line x1="0" y1="40" x2="800" y2="40"/>
+                <line x1="0" y1="100" x2="800" y2="100"/>
+                <line x1="0" y1="160" x2="800" y2="160"/>
+                <line x1="0" y1="220" x2="800" y2="220"/>
+              </g>
+              <g fill="#94a0b0" font-size="10" font-family="Verdana">
+                <text x="2" y="36">60K</text>
+                <text x="2" y="96">50K</text>
+                <text x="2" y="156">40K</text>
+                <text x="2" y="216">30K</text>
+              </g>
+              <defs>
+                <linearGradient id="grad-cat" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stop-color="#d44a14" stop-opacity="0.34"/>
+                  <stop offset="100%" stop-color="#d44a14" stop-opacity="0"/>
+                </linearGradient>
+                <linearGradient id="grad-bars" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stop-color="#3090d0" stop-opacity="0.26"/>
+                  <stop offset="100%" stop-color="#3090d0" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path d="M30,180 L60,172 L90,166 L120,158 L150,164 L180,150 L210,144 L240,138 L270,142 L300,128 L330,122 L360,118 L390,124 L420,108 L450,104 L480,98 L510,92 L540,98 L570,86 L600,80 L630,74 L660,80 L690,68 L720,62 L750,58 L780,52 L780,240 L30,240 Z" fill="url(#grad-cat)"/>
+              <path d="M30,180 L60,172 L90,166 L120,158 L150,164 L180,150 L210,144 L240,138 L270,142 L300,128 L330,122 L360,118 L390,124 L420,108 L450,104 L480,98 L510,92 L540,98 L570,86 L600,80 L630,74 L660,80 L690,68 L720,62 L750,58 L780,52" stroke="#d44a14" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M30,210 L60,206 L90,212 L120,200 L150,206 L180,196 L210,202 L240,190 L270,196 L300,184 L330,190 L360,178 L390,184 L420,170 L450,176 L480,164 L510,168 L540,156 L570,162 L600,150 L630,154 L660,144 L690,148 L720,138 L750,142 L780,132 L780,240 L30,240 Z" fill="url(#grad-bars)"/>
+              <path d="M30,210 L60,206 L90,212 L120,200 L150,206 L180,196 L210,202 L240,190 L270,196 L300,184 L330,190 L360,178 L390,184 L420,170 L450,176 L480,164 L510,168 L540,156 L570,162 L600,150 L630,154 L660,144 L690,148 L720,138 L750,142 L780,132" stroke="#3090d0" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="30" y1="190" x2="780" y2="60" stroke="#16a08a" stroke-width="1.5" stroke-dasharray="5 4" opacity=".8"/>
+              <circle cx="780" cy="52" r="5" fill="#d44a14"/>
+              <circle cx="780" cy="52" r="9" fill="#d44a14" opacity=".22"/>
+              <g fill="#94a0b0" font-size="10" font-family="Verdana">
+                <text x="30" y="236">14 Nis</text>
+                <text x="220" y="236">21 Nis</text>
+                <text x="410" y="236">28 Nis</text>
+                <text x="600" y="236">5 May</text>
+                <text x="745" y="236">Bugün</text>
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <div class="card bento-lowstock tilt">
+          <div class="card-head">
+            <span class="card-title">Düşük Stok</span>
+            <span class="pill red">5 kritik</span>
+            <a class="card-sub" href="#" style="text-decoration:none;color:var(--cat);font-weight:bold">Tümü →</a>
+          </div>
+          <div class="lowstock-list">
+            <div class="lowstock-item">
+              <div class="lowstock-thumb">🐱</div>
+              <div><div class="lowstock-name">Royal Canin Adult 2kg</div><div class="lowstock-sub">Kadıköy · Reorder: 10</div></div>
+              <span class="pill red">0</span>
+              <span class="lowstock-qty" style="color:var(--danger-7)">↑ Sipariş</span>
+            </div>
+            <div class="lowstock-item">
+              <div class="lowstock-thumb">🐶</div>
+              <div><div class="lowstock-name">Pro Plan Yavru Köpek 1kg</div><div class="lowstock-sub">Üsküdar · Reorder: 8</div></div>
+              <span class="pill red">0</span>
+              <span class="lowstock-qty" style="color:var(--danger-7)">↑ Sipariş</span>
+            </div>
+            <div class="lowstock-item">
+              <div class="lowstock-thumb">🐱</div>
+              <div><div class="lowstock-name">Whiskas Konserve 85g · 4'lü</div><div class="lowstock-sub">Üsküdar · Reorder: 24</div></div>
+              <span class="pill red">0</span>
+              <span class="lowstock-qty" style="color:var(--danger-7)">↑ Sipariş</span>
+            </div>
+            <div class="lowstock-item">
+              <div class="lowstock-thumb">🐶</div>
+              <div><div class="lowstock-name">Hill's Science Plan 12kg</div><div class="lowstock-sub">Kadıköy · Reorder: 4</div></div>
+              <span class="pill cat">2</span>
+              <span class="lowstock-qty" style="color:var(--cat-7)">Yakın</span>
+            </div>
+            <div class="lowstock-item">
+              <div class="lowstock-thumb">🐰</div>
+              <div><div class="lowstock-name">Versele Crispy Muesli 2kg</div><div class="lowstock-sub">Beykoz · Reorder: 6</div></div>
+              <span class="pill cat">3</span>
+              <span class="lowstock-qty" style="color:var(--cat-7)">Yakın</span>
+            </div>
+            <div class="lowstock-item">
+              <div class="lowstock-thumb">🐦</div>
+              <div><div class="lowstock-name">Bunny Premium Hamster 600g</div><div class="lowstock-sub">Üsküdar · Reorder: 12</div></div>
+              <span class="pill cat">5</span>
+              <span class="lowstock-qty" style="color:var(--cat-7)">Yakın</span>
+            </div>
+          </div>
+          <img class="wm-cat" src="../assets/logo.png" alt="">
+        </div>
+
+        <div class="card bento-feed tilt">
+          <div class="card-head">
+            <span class="card-title">Son Hareketler</span>
+            <span class="row gap-4" style="font-size:10px;color:var(--ink-4)">
+              <span class="dot pulse" style="background:var(--arrow);color:var(--arrow)"></span>
+              canlı · 30sn
+            </span>
+            <a class="card-sub" href="#" style="text-decoration:none;color:var(--cat);font-weight:bold">Tümü →</a>
+          </div>
+          <div class="feed">
+            <div class="feed-item">
+              <div class="feed-ic out">↓</div>
+              <div class="feed-text">
+                <span class="who">Ayşe T.</span> <span class="what">satış yaptı —</span> <strong>Royal Canin Kitten 400g × 2</strong>
+                <div class="where">Üsküdar · 240₺ · #SAT-2026-0814</div>
+              </div>
+              <span class="feed-time">2d önce</span>
+            </div>
+            <div class="feed-item">
+              <div class="feed-ic in">↑</div>
+              <div class="feed-text">
+                <span class="who">Mehmet K.</span> <span class="what">stok girişi —</span> <strong>Whiskas Konserve × 24</strong>
+                <div class="where">Üsküdar · Dostlar Pet Tedarik · 480₺</div>
+              </div>
+              <span class="feed-time">12d önce</span>
+            </div>
+            <div class="feed-item">
+              <div class="feed-ic tr">⇄</div>
+              <div class="feed-text">
+                <span class="who">Mehmet K.</span> <span class="what">transfer —</span> <strong>Pro Plan Köpek 12kg × 3</strong>
+                <div class="where">Üsküdar → Kadıköy</div>
+              </div>
+              <span class="feed-time">34d önce</span>
+            </div>
+            <div class="feed-item">
+              <div class="feed-ic out">↓</div>
+              <div class="feed-text">
+                <span class="who">Burak S.</span> <span class="what">satış yaptı —</span> <strong>Trixie Kedi Tırmalama Tahtası</strong>
+                <div class="where">Kadıköy · 185₺</div>
+              </div>
+              <span class="feed-time">48d önce</span>
+            </div>
+            <div class="feed-item">
+              <div class="feed-ic sa">✓</div>
+              <div class="feed-text">
+                <span class="who">Mehmet K.</span> <span class="what">sayım tamamladı —</span> <strong>Mama reyonu</strong>
+                <div class="where">Üsküdar · 18 ürün · 2 fark</div>
+              </div>
+              <span class="feed-time">1s önce</span>
+            </div>
+            <div class="feed-item" style="background:rgba(196,69,58,.06);border-radius:10px">
+              <div class="feed-ic sup">🚨</div>
+              <div class="feed-text">
+                <span class="who" style="color:var(--danger-7)">Süperadmin</span> <span class="what">vitrin profilini onayladı —</span> <strong>Mavi Pet Shop</strong>
+                <div class="where">Manuel inceleme · 2 dk sürdü</div>
+              </div>
+              <span class="feed-time">2s önce</span>
+            </div>
+            <div class="feed-item">
+              <div class="feed-ic in">↑</div>
+              <div class="feed-text">
+                <span class="who">Ayşe T.</span> <span class="what">stok girişi —</span> <strong>Royal Canin Kitten × 12</strong>
+                <div class="where">Üsküdar · 720₺</div>
+              </div>
+              <span class="feed-time">3s önce</span>
+            </div>
+            <div class="feed-item">
+              <div class="feed-ic out">↓</div>
+              <div class="feed-text">
+                <span class="who">Burak S.</span> <span class="what">satış yaptı —</span> <strong>Tetra Goldfish 100g × 1</strong>
+                <div class="where">Kadıköy · 45₺</div>
+              </div>
+              <span class="feed-time">4s önce</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card bento-asistan tilt" style="background:linear-gradient(135deg, rgba(255,255,255,.88), rgba(184,84,32,.08));">
+          <div class="card-head">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--cat),var(--cat-7));display:grid;place-items:center;color:#fff;font-size:13px">✨</div>
+              <span class="card-title">PetPro Asistanı</span>
+              <span class="pill cat">3 öneri</span>
+            </div>
+            <a class="card-sub" href="#" style="text-decoration:none;color:var(--cat);font-weight:bold">Tüm öneriler →</a>
+          </div>
+          <p class="small muted mt-4" style="margin-top:0">Kural tabanlı öneriler. Onayını bekliyor — otomatik bir şey yapmaz.</p>
+          <div class="sug-list mt-12">
+            <div class="sug ord">
+              <div class="sug-ic">📦</div>
+              <div class="sug-text">
+                <strong>Sipariş öneri</strong> — Royal Canin Adult Kedi 2kg için <strong>20 adet</strong> sipariş ver.
+                <div class="small muted">Son 30g 28 adet satıldı · Tedarik süresi 3g · Stok bitiş tahmini: <strong>yarın</strong> · Dostlar Pet Tedarik</div>
+              </div>
+              <div class="row gap-6">
+                <button class="btn btn-ghost btn-sm">Sonra</button>
+                <button class="btn btn-primary btn-sm">Sipariş Hazırla →</button>
+              </div>
+            </div>
+            <div class="sug tr">
+              <div class="sug-ic">⇄</div>
+              <div class="sug-text">
+                <strong>Transfer öneri</strong> — Üsküdar'da Hill's Köpek 12kg <strong>8 adet</strong> birikti, Kadıköy'de stok <strong>2 adet</strong>.
+                <div class="small muted">Kadıköy son 14g 4 adet sattı · Üsküdar 14g 1 adet sattı · 4-5 adet transfer önerilir</div>
+              </div>
+              <div class="row gap-6">
+                <button class="btn btn-ghost btn-sm">Yok say</button>
+                <button class="btn btn-primary btn-sm">Transfer Aç →</button>
+              </div>
+            </div>
+            <div class="sug disc">
+              <div class="sug-ic">🏷</div>
+              <div class="sug-text">
+                <strong>İndirim öneri</strong> — Versele Çamur Banyosu 1kg <strong>120g</strong> stok, son 60g hiç satılmamış.
+                <div class="small muted">Ölü stok riski · %15 indirim önerilir · 90g öncesi tüketmen önerilir</div>
+              </div>
+              <div class="row gap-6">
+                <button class="btn btn-ghost btn-sm">Yok say</button>
+                <button class="btn btn-primary btn-sm">İndirim Uygula →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card bento-mini1 tilt">
+          <div class="card-head">
+            <span class="card-title">En Çok Satan (30g)</span>
+            <span class="pill outline">adet</span>
+          </div>
+          <div class="ts-list">
+            <div class="ts-row"><span class="who">🐱 Whiskas Konserve 85g</span><span class="val">142</span></div>
+            <div class="ts-row"><span class="who">🐱 Royal Canin Adult 2kg</span><span class="val">94</span></div>
+            <div class="ts-row"><span class="who">🐶 Pedigree Adult 3kg</span><span class="val">76</span></div>
+            <div class="ts-row"><span class="who">🐦 Tetra Goldfish 100g</span><span class="val">58</span></div>
+            <div class="ts-row"><span class="who">🐶 Pro Plan Yavru 1kg</span><span class="val">42</span></div>
+            <div class="ts-row"><span class="who">🐱 Trixie Tırmalama</span><span class="val">28</span></div>
+          </div>
+        </div>
+
+        <div class="card bento-mini2 tilt">
+          <div class="card-head">
+            <span class="card-title">Şube Performansı (Bugün)</span>
+          </div>
+          <div class="branch-strip">
+            <div class="b-card b1">
+              <div class="b-head"><div class="mark">U</div><div class="b-name">Üsküdar</div></div>
+              <div class="b-val">920₺</div>
+              <div class="b-bar"><div class="b-fill" style="width:64%"></div></div>
+              <div class="small muted mt-4">7 satış · 64%</div>
+            </div>
+            <div class="b-card b2">
+              <div class="b-head"><div class="mark">K</div><div class="b-name">Kadıköy</div></div>
+              <div class="b-val">680₺</div>
+              <div class="b-bar"><div class="b-fill" style="width:48%"></div></div>
+              <div class="small muted mt-4">5 satış · 48%</div>
+            </div>
+            <div class="b-card b3">
+              <div class="b-head"><div class="mark">B</div><div class="b-name">Beykoz</div></div>
+              <div class="b-val">250₺</div>
+              <div class="b-bar"><div class="b-fill" style="width:18%"></div></div>
+              <div class="small muted mt-4">2 satış · 18%</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card bento-mini3 tilt" style="background:linear-gradient(135deg, var(--cat-soft), rgba(255,255,255,.7))">
+          <div class="card-head">
+            <span class="card-title">🏪 Vitrin Bu Hafta</span>
+            <span class="pill green">Canlı</span>
+          </div>
+          <div class="row gap-16 mt-8" style="align-items:flex-end">
+            <div class="donut">
+              <svg width="84" height="84">
+                <circle cx="42" cy="42" r="32" stroke="var(--line)" stroke-width="6" fill="none"/>
+                <circle cx="42" cy="42" r="32" stroke="var(--cat)" stroke-width="6" fill="none" stroke-dasharray="201" stroke-dashoffset="50" stroke-linecap="round" transform="rotate(-90 42 42)"/>
+              </svg>
+              <div class="donut-num">12</div>
+            </div>
+            <div style="flex:1">
+              <div class="kpi-label">Görüntülenme</div>
+              <div class="row gap-8 mt-4"><span class="kpi-delta up">↑ 4</span><span class="small muted">vs geçen hafta</span></div>
+              <div class="ts-row" style="margin-top:10px;padding:4px 0"><span class="who">WhatsApp</span><span class="val">2</span></div>
+              <div class="ts-row" style="padding:4px 0"><span class="who">Profil tıklama</span><span class="val">8</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ============ DRAWER: Stok Girişi ============ -->
+<div class="drawer-back" id="dr-stok-girisi-back"></div>
+<div class="drawer" id="dr-stok-girisi">
+  <div class="drawer-head">
+    <div class="quick-ic" style="background:linear-gradient(135deg,var(--arrow),var(--arrow-7))"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg></div>
+    <div>
+      <div class="drawer-title">Stok Girişi</div>
+      <div class="small muted">Tedarikçiden mal kabul · ledger'a IN olarak kaydedilir</div>
+    </div>
+    <button class="drawer-close" data-close-drawer>✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="field">
+      <label class="field-label">Tedarikçi</label>
+      <select class="select">
+        <option>Dostlar Pet Tedarik · İstanbul</option>
+        <option>Royal Pet Distribütör</option>
+        <option>Bayındır Yem A.Ş.</option>
+      </select>
+    </div>
+    <div class="row gap-12">
+      <div class="field" style="flex:1">
+        <label class="field-label">Şube</label>
+        <select class="select"><option>Üsküdar Merkez</option><option>Kadıköy</option><option>Beykoz</option></select>
+      </div>
+      <div class="field" style="flex:1">
+        <label class="field-label">İrsaliye No</label>
+        <input class="input" placeholder="IR-2026-0451"/>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">Ürünler</label>
+      <div style="border:1px solid var(--line);border-radius:10px;overflow:hidden">
+        <div style="padding:8px 10px;background:var(--line-soft);font-size:11px;color:var(--ink-3);display:grid;grid-template-columns:1fr 70px 90px 30px;gap:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.4px">
+          <span>Ürün</span><span>Adet</span><span>Birim ₺</span><span></span>
+        </div>
+        <div style="padding:10px;display:grid;grid-template-columns:1fr 70px 90px 30px;gap:8px;align-items:center;border-bottom:1px solid var(--line-soft)">
+          <div><div style="font-weight:bold">Royal Canin Adult Kedi 2kg</div><div class="small muted">SKU: RC-AK-2</div></div>
+          <input class="input" value="20" style="text-align:right"/>
+          <input class="input" value="180,00" style="text-align:right"/>
+          <button class="drawer-close" style="border-color:var(--line-soft);color:var(--danger)">✕</button>
+        </div>
+        <div style="padding:10px;display:grid;grid-template-columns:1fr 70px 90px 30px;gap:8px;align-items:center;border-bottom:1px solid var(--line-soft)">
+          <div><div style="font-weight:bold">Whiskas Konserve 85g</div><div class="small muted">SKU: WH-K-85</div></div>
+          <input class="input" value="48" style="text-align:right"/>
+          <input class="input" value="18,50" style="text-align:right"/>
+          <button class="drawer-close" style="border-color:var(--line-soft);color:var(--danger)">✕</button>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="margin:10px;width:calc(100% - 20px);justify-content:center">+ Ürün Ekle</button>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">Not (opsiyonel)</label>
+      <textarea class="textarea" rows="2" placeholder="İrsaliye/fatura ile ilgili not..."></textarea>
+    </div>
+    <div class="card" style="padding:14px;background:var(--cart-soft);border:1px solid rgba(21,85,112,.18)">
+      <div class="row between">
+        <span class="small muted">Toplam tutar</span>
+        <span class="bold tnum" style="color:var(--cart);font-size:18px">4.488,00 ₺</span>
+      </div>
+      <div class="row between">
+        <span class="small muted">Toplam adet</span>
+        <span class="bold tnum">68</span>
+      </div>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn btn-ghost" data-close-drawer>İptal</button>
+    <button class="btn btn-dark">Taslak Kaydet</button>
+    <button class="btn btn-primary">Girişi Onayla →</button>
+  </div>
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

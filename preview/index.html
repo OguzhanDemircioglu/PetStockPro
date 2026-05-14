@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>PetStockPro · Faz 1 Mockup Canvas</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body { margin: 0; height: 100%; background: #f0eee9; font-family: Verdana, Geneva, Tahoma, sans-serif; }
+  #root { height: 100vh; }
+
+  /* Splash header above canvas */
+  .splash {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 12px 22px;
+    background: rgba(255,255,255,.78);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(0,0,0,.08);
+    display: flex; align-items: center; gap: 14px;
+  }
+  .splash .logo {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #d4621c, #1e3a5f);
+    color: #fff; font-weight: bold;
+    display: grid; place-items: center;
+    box-shadow: 0 8px 22px rgba(212,98,28,.32);
+    flex-shrink: 0;
+  }
+  .splash .title { font-size: 16px; font-weight: bold; color: #1e3a5f; letter-spacing: -.3px; }
+  .splash .sub { font-size: 11.5px; color: #5b6a82; }
+  .splash .pill {
+    font-size: 10.5px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-weight: bold;
+    background: #fdf3ec; color: #9c4710;
+  }
+  .splash .pill.green { background: #ecfdf5; color: #15803d; }
+  .splash .spacer { flex: 1; }
+  .splash a {
+    font-size: 12px;
+    color: #1e3a5f;
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(0,0,0,.1);
+    background: #fff;
+    transition: all .15s ease;
+  }
+  .splash a:hover { background: #1e3a5f; color: #fff; border-color: #1e3a5f; }
+
+  /* Canvas offset for splash */
+  #root > div:first-child { padding-top: 64px; }
+
+  /* Iframe artboards */
+  iframe.screen-frame {
+    width: 100%; height: 100%;
+    border: 0;
+    border-radius: 6px;
+    background: #f6f7fb;
+  }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<div class="splash">
+  <div class="logo">P</div>
+  <div>
+    <div class="title">PetStockPro · Faz 1 Mockup Canvas</div>
+    <div class="sub">Verdana + glass-mesh tasarım sistemi · 4 admin ekran · 14 May 2026</div>
+  </div>
+  <span class="pill">FAZ 1 · MEVCUT 4 EKRAN</span>
+  <span class="pill green">Sprint 0 öncesi</span>
+  <div class="spacer"></div>
+  <a href="pano.html" target="_blank">Pano ↗</a>
+  <a href="urunler.html" target="_blank">Ürünler ↗</a>
+  <a href="stok-hareketleri.html" target="_blank">Stok ↗</a>
+  <a href="super-admin.html" target="_blank">Süperadmin ↗</a>
+</div>
+
+<div id="root"></div>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel">
+  const { useState } = React;
+
+  function ScreenIframe({ src }) {
+    return (
+      <iframe className="screen-frame" src={src} />
+    );
+  }
+
+  function App() {
+    return (
+      <DesignCanvas>
+        <DCSection
+          id="admin-v4"
+          title="Pano v4 — Final (sade + cesur, logo renkleri aktif)"
+          subtitle="3 bölge narrative: BUGÜN hero (turuncu dominant) → BU HAFTA 3 marka-renkli KPI → SIRADA NE VAR 2-kolon eylem listesi. Logo physically present."
+        >
+          <DCArtboard id="pano-v4" label="Pano v4 · Final" width={1440} height={1260}>
+            <ScreenIframe src="pano-v4.html" />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection
+          id="auth"
+          title="🔐 Auth Flow — 5 state"
+          subtitle="Tek dosyada tüm auth akışı. Üst pill switcher: Giriş / Kayıt / E-posta Doğrula / Şifre Sıfırla / Onboarding. Solda turuncu görsel panel, sağda form. Onboarding 3-step harita pin'li."
+        >
+          <DCArtboard id="auth" label="Auth (Giriş aktif)" width={1440} height={900}>
+            <ScreenIframe src="auth.html" />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection
+          id="vitrin"
+          title="🏪 Vitrin (Public) — petstockpro.com/vitrin"
+          subtitle="Marşallık tonunda public sayfa. Tek mesaj hero (turuncu), trust strip, kategori grid, yakınlar + harita, popüler ürünler, owner CTA, footer + cookie. Tüm pet shop'lar eşit görünür (subdomain yok)."
+        >
+          <DCArtboard id="vitrin-home" label="Vitrin Anasayfa" width={1440} height={2880}>
+            <ScreenIframe src="vitrin-anasayfa.html" />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection
+          id="admin-v3"
+          title="Pano v3 — Sade + Cesur (logo renkleri aktif)"
+          subtitle="3 bölge: BUGÜN hero (turuncu dominant) → BU HAFTA 3 marka-renkli KPI → SIRADA NE VAR 2-kolon eylem listesi. Mesaj tek, hiyerarşi net."
+        >
+          <DCArtboard id="pano-v3" label="Pano v3 · Sade narrative" width={1440} height={1260}>
+            <ScreenIframe src="pano-v3.html" />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection
+          id="admin-v2"
+          title="Pano v2 — Logo'ya Tunelenmiş Palet"
+          subtitle="Gerçek logodan örneklenmiş hex'ler: parlak turuncu (#d44a14), zengin lacivert (#1a5588), teal-yeşil ok (#16a08a), parlak gök mavisi barlar (#3090d0). Logo hero'da ve sidebar'da fiziksel olarak yer alıyor."
+        >
+          <DCArtboard id="pano-v2" label="Pano v2 · Logo-tuned" width={1440} height={1280}>
+            <ScreenIframe src="pano-v2.html" />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection
+          id="admin"
+          title="Admin Paneli — Faz 1 (4 ekran)"
+          subtitle="Tenant tarafı: Mavi Pet Shop hesabı görünümü. Verdana + glass-mesh + bento + 3D tilt."
+        >
+          <DCArtboard id="pano" label="Pano · Dashboard" width={1440} height={1100}>
+            <ScreenIframe src="pano.html" />
+          </DCArtboard>
+          <DCArtboard id="urunler" label="Ürünler · Products" width={1440} height={1100}>
+            <ScreenIframe src="urunler.html" />
+          </DCArtboard>
+          <DCArtboard id="hareket" label="Stok Hareketleri · Ledger" width={1440} height={1100}>
+            <ScreenIframe src="stok-hareketleri.html" />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection
+          id="sup"
+          title="Süperadmin — Sistem Yönetimi"
+          subtitle="Sezai K. perspektifi. 4 sekme: Tenant'lar / Audit / Plan Onay / 🚨 Vitrin Modlama (yeni). Vitrin Modlama aktif — Manuel İnceleme alt-sekmesi."
+        >
+          <DCArtboard id="sup" label="Süperadmin · Vitrin Modlama aktif" width={1440} height={1280}>
+            <ScreenIframe src="super-admin.html" />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection
+          id="system"
+          title="Tasarım Sistemi · Token Referansı"
+          subtitle="Verdana tipografi, 5 semantik renk teması (logodan), glass morphism, mesh gradient, paw pattern, bento + 3D tilt."
+        >
+          <DCArtboard id="tokens" label="Renk + Token paleti" width={1280} height={780}>
+            <iframe className="screen-frame" src="tokens-preview.html" />
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+
+</body>
+</html>

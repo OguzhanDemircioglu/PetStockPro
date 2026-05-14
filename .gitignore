@@ -1,0 +1,91 @@
+# PetStockPro — .gitignore
+
+# ============================================================
+# 🔐 GÜVENLİK — Asla commit etme
+# ============================================================
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.production.local
+.env.test.local
+# Sadece .env.example commit edilir (template)
+!.env.example
+
+# Supabase anahtarları
+.supabase/
+
+# Cloudflare deploy secrets
+.wrangler/
+wrangler.toml.local
+
+# Diğer credential dosyaları
+*.pem
+*.key
+secrets/
+credentials.json
+
+# ============================================================
+# Node / Next.js
+# ============================================================
+node_modules/
+.next/
+out/
+build/
+dist/
+.turbo/
+
+# Next.js debug
+*.tsbuildinfo
+next-env.d.ts
+
+# ============================================================
+# Logs
+# ============================================================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-debug.log*
+
+# ============================================================
+# Test & Coverage
+# ============================================================
+coverage/
+.nyc_output/
+*.lcov
+test-results/
+playwright-report/
+playwright/.cache/
+
+# ============================================================
+# IDE & Editor
+# ============================================================
+.idea/
+.vscode/*
+!.vscode/settings.json.example
+!.vscode/extensions.json.example
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ============================================================
+# OpenNext / Cloudflare Workers build artifacts
+# ============================================================
+.open-next/
+.wrangler/
+worker.js
+
+# ============================================================
+# Vercel (alternatif deploy)
+# ============================================================
+.vercel/
+
+# ============================================================
+# Claude Code — local settings
+# ============================================================
+.claude/settings.local.json
+.claude/.cache/

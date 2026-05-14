@@ -1,0 +1,1093 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>PetStockPro · Vitrin — Yakınındaki Pet Shop'lar</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/tokens-v2.css">
+<style>
+  /* ---------- VITRIN ÖZGÜ ---------- */
+  body { background: #fafaf7; }
+  body::before { opacity: .55; }
+  body::after { opacity: .3; }
+
+  /* Hide app shell — vitrin is public */
+  .v-wrap { max-width: 1280px; margin: 0 auto; padding: 0 28px; }
+
+  /* ============ TOP NAV (lacivert, kompakt) ============ */
+  .v-nav {
+    position: sticky; top: 0; z-index: 40;
+    background: rgba(255,255,255,.85);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border-bottom: 1px solid var(--line);
+  }
+  .v-nav-inner {
+    max-width: 1280px; margin: 0 auto;
+    padding: 14px 28px;
+    display: grid; grid-template-columns: auto 1fr auto auto auto; gap: 18px; align-items: center;
+  }
+  .v-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .v-brand-mark {
+    width: 38px; height: 38px;
+    border-radius: 11px;
+    background: #fff; border: 1px solid var(--line);
+    padding: 3px;
+    box-shadow: var(--shadow-sm);
+  }
+  .v-brand-mark img { width: 100%; height: 100%; object-fit: contain; }
+  .v-brand-name { font-size: 15px; font-weight: bold; color: var(--cart); letter-spacing: -.2px; }
+  .v-brand-sub { font-size: 10px; color: var(--ink-4); letter-spacing: .4px; text-transform: uppercase; }
+
+  .v-search {
+    display: flex; align-items: center; gap: 10px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 10px 14px;
+    box-shadow: var(--shadow-sm);
+    max-width: 520px; margin: 0 auto;
+  }
+  .v-search:focus-within { border-color: var(--cat); box-shadow: 0 0 0 3px rgba(212,74,20,.14); }
+  .v-search svg { color: var(--ink-4); flex-shrink: 0; }
+  .v-search input {
+    border: 0; outline: 0;
+    flex: 1; font: inherit; font-size: 13px;
+    background: transparent;
+    color: var(--ink);
+  }
+  .v-search .city-divider {
+    width: 1px; height: 18px; background: var(--line);
+  }
+  .v-search .city-select {
+    background: transparent; border: 0; font: inherit; font-size: 12px;
+    color: var(--cart); font-weight: bold;
+    cursor: pointer;
+  }
+
+  .v-lang {
+    display: flex; gap: 0;
+    background: var(--line-soft);
+    border-radius: 999px;
+    padding: 3px;
+    font-size: 11px; font-weight: bold;
+  }
+  .v-lang .lng {
+    padding: 5px 10px;
+    border-radius: 999px;
+    color: var(--ink-3);
+    cursor: pointer;
+  }
+  .v-lang .lng.active { background: var(--cart); color: #fff; }
+
+  .v-cta {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 16px;
+    background: linear-gradient(135deg, var(--cat), var(--cat-2));
+    color: #fff;
+    border-radius: 12px;
+    font-size: 12px; font-weight: bold;
+    text-decoration: none;
+    box-shadow: var(--shadow-cat);
+  }
+
+  /* ============ INFO BAR (rotation) ============ */
+  .v-info {
+    background: linear-gradient(90deg, var(--cart) 0%, var(--cart-7) 100%);
+    color: #fff;
+    font-size: 12px;
+    text-align: center;
+    padding: 8px 24px;
+    letter-spacing: .2px;
+  }
+  .v-info strong { color: var(--cat-2); }
+  .v-info .dot-sep { margin: 0 12px; opacity: .5; }
+
+  /* ============ HERO ============ */
+  .v-hero {
+    margin-top: 32px;
+    padding: 56px 56px 64px;
+    background:
+      radial-gradient(ellipse at 100% 0%, rgba(212,74,20,.18), transparent 50%),
+      radial-gradient(ellipse at 0% 100%, rgba(48,144,208,.16), transparent 50%),
+      linear-gradient(180deg, #fff 0%, #fafaf4 100%);
+    border-radius: 32px;
+    border: 1px solid var(--line);
+    box-shadow: 0 20px 50px rgba(0,0,0,.04);
+    display: grid; grid-template-columns: 1.4fr 1fr; gap: 40px; align-items: center;
+    position: relative; overflow: hidden;
+  }
+  .v-hero::after {
+    /* logo bar+arrow ritmi alt çizgi */
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 6px;
+    background: linear-gradient(90deg,
+      var(--cat) 0% 25%,
+      var(--bars) 25% 50%,
+      var(--arrow) 50% 75%,
+      var(--cart) 75% 100%
+    );
+  }
+  .v-hero-eye {
+    font-size: 11px; color: var(--cat-7); font-weight: bold;
+    text-transform: uppercase; letter-spacing: .8px;
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--cat-soft);
+    padding: 6px 12px; border-radius: 999px;
+    margin-bottom: 16px;
+  }
+  .v-hero-eye .pulse-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cat); animation: pulse-orange 1.6s infinite; }
+  @keyframes pulse-orange {
+    0%,100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.6); opacity: .5; }
+  }
+  .v-hero h1 {
+    margin: 0; font-size: 48px; font-weight: bold;
+    color: var(--ink); letter-spacing: -1.5px; line-height: 1.05;
+  }
+  .v-hero h1 .acc { color: var(--cat); }
+  .v-hero h1 .acc-blue { color: var(--cart); }
+  .v-hero p {
+    margin: 18px 0 0; font-size: 16px; color: var(--ink-3); line-height: 1.55;
+    max-width: 520px;
+  }
+
+  /* Big search inside hero */
+  .v-hero-search {
+    margin-top: 28px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 8px;
+    display: grid; grid-template-columns: 1fr auto auto auto; gap: 8px; align-items: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,.06);
+    max-width: 560px;
+  }
+  .v-hero-search input {
+    border: 0; outline: 0;
+    padding: 12px 16px;
+    font: inherit; font-size: 14px;
+    background: transparent;
+  }
+  .v-hero-search .v-city {
+    display: flex; align-items: center; gap: 6px;
+    padding: 0 12px;
+    font-size: 13px; font-weight: bold;
+    color: var(--cart);
+    border-left: 1px solid var(--line);
+    cursor: pointer;
+  }
+  .v-hero-search .v-search-btn {
+    padding: 11px 22px;
+    background: linear-gradient(135deg, var(--cat), var(--cat-2));
+    color: #fff;
+    border: 0;
+    border-radius: 12px;
+    font: inherit; font-size: 13px; font-weight: bold;
+    cursor: pointer;
+    box-shadow: var(--shadow-cat);
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+
+  /* Location hint */
+  .v-loc-hint {
+    margin-top: 14px;
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12.5px; color: var(--ink-3);
+  }
+  .v-loc-hint a { color: var(--cart); font-weight: bold; text-decoration: none; border-bottom: 1px dashed var(--cart); }
+
+  /* Right side: logo display */
+  .v-hero-art {
+    position: relative;
+    display: grid; place-items: center;
+    height: 360px;
+  }
+  .v-logo-card {
+    position: relative;
+    width: 260px; height: 260px;
+    background: #fff;
+    border-radius: 36px;
+    border: 1px solid var(--line);
+    box-shadow: 0 30px 60px rgba(0,0,0,.10), 0 10px 24px rgba(212,74,20,.14);
+    display: grid; place-items: center;
+    transform: rotate(-4deg);
+    z-index: 2;
+  }
+  .v-logo-card img { width: 220px; height: 220px; object-fit: contain; }
+  /* floating chips around logo */
+  .v-float {
+    position: absolute;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 10px 14px;
+    box-shadow: 0 10px 24px rgba(0,0,0,.10);
+    font-size: 12px;
+    display: flex; align-items: center; gap: 8px;
+    font-weight: bold;
+  }
+  .v-float .ic { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; color: #fff; font-size: 13px; }
+  .v-float.f1 { top: 24px; right: -10px; z-index: 3; }
+  .v-float.f1 .ic { background: var(--arrow); }
+  .v-float.f2 { bottom: 28px; left: -28px; z-index: 3; transform: rotate(3deg); }
+  .v-float.f2 .ic { background: var(--cart); }
+  .v-float.f3 { bottom: 64px; right: -24px; z-index: 3; }
+  .v-float.f3 .ic { background: var(--bars-7); }
+
+  /* ============ TRUST STRIP ============ */
+  .v-trust {
+    margin-top: 32px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+  }
+  .v-trust-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 20px 22px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .v-trust-card .ic-big {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: grid; place-items: center;
+    color: #fff; font-size: 18px;
+    flex-shrink: 0;
+  }
+  .v-trust-card.t1 .ic-big { background: var(--cat); }
+  .v-trust-card.t2 .ic-big { background: var(--cart); }
+  .v-trust-card.t3 .ic-big { background: var(--bars-7); }
+  .v-trust-card.t4 .ic-big { background: var(--arrow); }
+  .v-trust-card .num { font-size: 22px; font-weight: bold; color: var(--cart); letter-spacing: -.5px; line-height: 1; }
+  .v-trust-card .lbl { font-size: 11.5px; color: var(--ink-3); margin-top: 4px; }
+
+  /* ============ SECTION HEAD ============ */
+  .v-section { margin-top: 64px; }
+  .v-section-head { display: flex; align-items: flex-end; gap: 14px; margin-bottom: 22px; }
+  .v-section-head h2 { margin: 0; font-size: 26px; font-weight: bold; color: var(--cart); letter-spacing: -.5px; }
+  .v-section-head p { margin: 4px 0 0; font-size: 13px; color: var(--ink-3); }
+  .v-section-head .more {
+    margin-left: auto;
+    color: var(--cat); font-weight: bold; font-size: 13px;
+    text-decoration: none;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+
+  /* ============ KATEGORI GRID ============ */
+  .cat-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+  .cat-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 22px 16px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all .2s ease;
+    text-align: center;
+    position: relative; overflow: hidden;
+  }
+  .cat-card:hover { transform: translateY(-3px); box-shadow: 0 14px 32px rgba(0,0,0,.08); border-color: transparent; }
+  .cat-card::before {
+    content: ""; position: absolute; left: 0; right: 0; top: 0;
+    height: 3px; background: var(--ink-4);
+    transition: background .2s;
+  }
+  .cat-card.c1::before { background: var(--cat); }
+  .cat-card.c2::before { background: var(--cart); }
+  .cat-card.c3::before { background: var(--bars-7); }
+  .cat-card.c4::before { background: var(--arrow); }
+  .cat-card.c5::before { background: var(--cat-7); }
+  .cat-card.c6::before { background: var(--dog); }
+  .cat-card .emo {
+    font-size: 38px;
+    line-height: 1;
+    margin-bottom: 10px;
+    display: block;
+  }
+  .cat-card .name { font-size: 14px; font-weight: bold; color: var(--cart); }
+  .cat-card .count { font-size: 11px; color: var(--ink-4); margin-top: 3px; }
+
+  /* ============ YAKINDAKI PET SHOP'LAR ============ */
+  .nearby-wrap { display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; }
+  .nearby-list { display: flex; flex-direction: column; gap: 12px; }
+  .shop-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 18px 20px;
+    display: grid; grid-template-columns: 64px 1fr auto; gap: 16px; align-items: center;
+    cursor: pointer;
+    transition: all .15s ease;
+    text-decoration: none;
+  }
+  .shop-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--cat-2); }
+  .shop-avatar {
+    width: 64px; height: 64px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--cat-soft), var(--bars-soft));
+    display: grid; place-items: center;
+    font-size: 28px;
+    flex-shrink: 0;
+    border: 1px solid var(--line);
+  }
+  .shop-name { font-size: 15px; font-weight: bold; color: var(--cart); letter-spacing: -.2px; }
+  .shop-meta { font-size: 12px; color: var(--ink-3); margin-top: 4px; display: flex; align-items: center; gap: 10px; }
+  .shop-meta .sep { color: var(--ink-4); }
+  .shop-tags { display: flex; gap: 5px; margin-top: 8px; flex-wrap: wrap; }
+  .stag {
+    font-size: 10.5px; padding: 2px 8px; border-radius: 999px;
+    background: var(--line-soft); color: var(--ink-3); font-weight: bold;
+  }
+  .stag.open { background: var(--arrow-soft); color: var(--arrow-7); }
+  .stag.wa { background: var(--arrow); color: #fff; }
+  .stag.fav { background: var(--cat-soft); color: var(--cat-7); }
+  .shop-dist {
+    text-align: right;
+    color: var(--cat); font-weight: bold;
+  }
+  .shop-dist .km { font-size: 16px; }
+  .shop-dist .lbl { font-size: 10.5px; color: var(--ink-4); text-transform: uppercase; letter-spacing: .4px; font-weight: bold; }
+
+  /* Map */
+  .nearby-map {
+    background: linear-gradient(135deg, #e9efe8 0%, #dde6e8 100%);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    position: relative;
+    overflow: hidden;
+    min-height: 480px;
+  }
+  .nearby-map svg.map-bg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .map-pin {
+    position: absolute;
+    width: 36px; height: 36px;
+    background: var(--cat);
+    color: #fff;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    display: grid; place-items: center;
+    box-shadow: 0 4px 12px rgba(212,74,20,.4);
+    border: 2px solid #fff;
+    cursor: pointer;
+  }
+  .map-pin span { transform: rotate(45deg); font-size: 14px; font-weight: bold; }
+  .map-pin.you { background: var(--bars-7); }
+  .map-pin.pulse-mp::after {
+    content: ""; position: absolute; inset: -8px;
+    border-radius: 50%; border: 2px solid var(--cat);
+    animation: ring 1.8s infinite;
+    transform: rotate(45deg);
+  }
+  @keyframes ring {
+    0% { transform: rotate(45deg) scale(1); opacity: .8; }
+    100% { transform: rotate(45deg) scale(2.2); opacity: 0; }
+  }
+  .map-overlay {
+    position: absolute; top: 16px; left: 16px;
+    background: rgba(255,255,255,.96);
+    backdrop-filter: blur(8px);
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 12px;
+    box-shadow: var(--shadow-sm);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .map-zoom {
+    position: absolute; bottom: 16px; right: 16px;
+    display: flex; flex-direction: column;
+    background: rgba(255,255,255,.96);
+    border-radius: 10px;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+  .map-zoom button {
+    width: 36px; height: 36px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    font-size: 16px; font-weight: bold;
+    color: var(--cart);
+    border-bottom: 1px solid var(--line);
+  }
+  .map-zoom button:last-child { border-bottom: 0; }
+
+  /* ============ POPÜLER ÜRÜNLER ============ */
+  .prod-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .prod-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all .2s ease;
+    text-decoration: none;
+    display: flex; flex-direction: column;
+  }
+  .prod-card:hover { transform: translateY(-3px); box-shadow: 0 18px 36px rgba(0,0,0,.08); border-color: transparent; }
+  .prod-img {
+    aspect-ratio: 4 / 3;
+    background: linear-gradient(135deg, var(--cat-soft), var(--bars-soft));
+    display: grid; place-items: center;
+    font-size: 64px;
+    position: relative;
+  }
+  .prod-img .save {
+    position: absolute; top: 12px; right: 12px;
+    width: 32px; height: 32px;
+    border-radius: 10px;
+    background: rgba(255,255,255,.92);
+    display: grid; place-items: center;
+    font-size: 14px;
+    color: var(--ink-4);
+    border: 0; cursor: pointer;
+  }
+  .prod-img .save:hover { color: var(--danger); }
+  .prod-img .dist-badge {
+    position: absolute; bottom: 12px; left: 12px;
+    background: var(--cart);
+    color: #fff;
+    font-size: 10.5px; font-weight: bold;
+    padding: 4px 10px; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .prod-body { padding: 14px 16px; flex: 1; display: flex; flex-direction: column; }
+  .prod-name { font-size: 13.5px; font-weight: bold; color: var(--cart); line-height: 1.35; }
+  .prod-shop { font-size: 11px; color: var(--ink-3); margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+  .prod-shop .verified { color: var(--arrow); }
+  .prod-foot { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line-soft); display: flex; align-items: center; gap: 8px; }
+  .prod-price { font-size: 18px; font-weight: bold; color: var(--cat); letter-spacing: -.4px; }
+  .prod-price .from { font-size: 10.5px; color: var(--ink-4); font-weight: normal; text-transform: uppercase; letter-spacing: .4px; display: block; }
+  .prod-wa {
+    margin-left: auto;
+    background: var(--arrow);
+    color: #fff;
+    width: 32px; height: 32px;
+    border-radius: 10px;
+    display: grid; place-items: center;
+    cursor: pointer;
+    border: 0;
+    font-size: 14px;
+  }
+  .prod-wa:hover { background: var(--arrow-7); }
+
+  /* ============ ŞEHİR GRID ============ */
+  .city-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+  .city-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 18px 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .15s ease;
+    text-decoration: none;
+    position: relative; overflow: hidden;
+  }
+  .city-card:hover { transform: translateY(-2px); border-color: var(--cart); box-shadow: var(--shadow-md); }
+  .city-card .name { font-size: 14px; font-weight: bold; color: var(--cart); }
+  .city-card .meta { font-size: 11px; color: var(--ink-4); margin-top: 4px; }
+
+  /* ============ OWNER CTA (pet shop sahibi misin?) ============ */
+  .owner-cta {
+    margin-top: 64px;
+    background:
+      radial-gradient(circle at 88% 30%, rgba(255,255,255,.18), transparent 60%),
+      linear-gradient(135deg, var(--cart) 0%, var(--cart-7) 100%);
+    color: #fff;
+    border-radius: 28px;
+    padding: 48px 56px;
+    display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: center;
+    position: relative; overflow: hidden;
+    box-shadow: 0 20px 50px rgba(26,85,136,.25);
+  }
+  .owner-cta::before {
+    content: ""; position: absolute; right: -60px; top: -60px;
+    width: 280px; height: 280px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(212,74,20,.35), transparent 70%);
+  }
+  .owner-cta h2 { margin: 0; font-size: 32px; font-weight: bold; letter-spacing: -.6px; line-height: 1.15; }
+  .owner-cta p { margin: 12px 0 0; font-size: 14px; opacity: .88; max-width: 540px; line-height: 1.55; }
+  .owner-cta .bullets { display: flex; gap: 24px; margin-top: 20px; font-size: 13px; opacity: .88; }
+  .owner-cta .bullets span { display: inline-flex; align-items: center; gap: 6px; }
+  .owner-cta .bullets span::before { content: "✓"; color: var(--arrow-2); font-weight: bold; }
+  .owner-cta-action {
+    display: flex; flex-direction: column; gap: 10px; align-items: stretch; z-index: 1; position: relative;
+  }
+  .owner-cta .big-btn {
+    padding: 16px 28px;
+    background: #fff;
+    color: var(--cart);
+    border: 0; border-radius: 14px;
+    font: inherit; font-size: 15px; font-weight: bold;
+    text-decoration: none;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    cursor: pointer;
+  }
+  .owner-cta .small-note { font-size: 11.5px; opacity: .7; text-align: center; }
+
+  /* ============ FOOTER ============ */
+  .v-footer {
+    margin-top: 80px;
+    padding: 48px 28px 32px;
+    background: #fff;
+    border-top: 1px solid var(--line);
+  }
+  .v-footer-inner {
+    max-width: 1280px; margin: 0 auto;
+    display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: 40px;
+  }
+  .v-footer h4 { margin: 0 0 14px; font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .5px; font-weight: bold; }
+  .v-footer a { display: block; padding: 4px 0; font-size: 13px; color: var(--ink-2); text-decoration: none; }
+  .v-footer a:hover { color: var(--cat); }
+  .v-foot-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .v-foot-tagline { font-size: 13px; color: var(--ink-3); line-height: 1.55; max-width: 320px; }
+  .v-foot-bottom {
+    margin-top: 32px; padding-top: 20px;
+    border-top: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--ink-4);
+  }
+  .v-foot-bottom .signature { display: flex; gap: 12px; }
+  .v-foot-bottom a { color: var(--ink-4); }
+
+  /* ============ COOKIE BANNER ============ */
+  .cookie {
+    position: fixed; bottom: 20px; left: 20px; right: 20px;
+    max-width: 540px; margin: 0 auto;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    box-shadow: 0 18px 42px rgba(0,0,0,.16);
+    padding: 16px 20px;
+    z-index: 50;
+    display: grid; grid-template-columns: auto 1fr auto auto; gap: 14px; align-items: center;
+  }
+  .cookie .ic-c {
+    width: 36px; height: 36px;
+    background: var(--cat-soft);
+    border-radius: 10px;
+    display: grid; place-items: center;
+    font-size: 18px;
+  }
+  .cookie .ctext { font-size: 12px; color: var(--ink-2); line-height: 1.45; }
+  .cookie .ctext a { color: var(--cart); font-weight: bold; }
+  .cookie .b-decline {
+    padding: 8px 14px;
+    border: 1px solid var(--line); background: #fff;
+    border-radius: 10px; font: inherit; font-size: 12px; cursor: pointer; color: var(--ink-3);
+  }
+  .cookie .b-accept {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, var(--cat), var(--cat-2));
+    color: #fff;
+    border: 0;
+    border-radius: 10px; font: inherit; font-size: 12px; font-weight: bold; cursor: pointer;
+  }
+
+  /* responsive guard */
+  @media (max-width: 980px) {
+    .v-hero { grid-template-columns: 1fr; padding: 36px 28px 44px; }
+    .v-hero h1 { font-size: 36px; }
+    .v-hero-art { display: none; }
+    .nearby-wrap { grid-template-columns: 1fr; }
+    .cat-grid, .city-grid { grid-template-columns: repeat(3, 1fr); }
+    .prod-grid { grid-template-columns: repeat(2, 1fr); }
+    .v-trust { grid-template-columns: repeat(2, 1fr); }
+    .v-nav-inner { grid-template-columns: auto 1fr auto; gap: 10px; }
+    .v-lang, .v-cta { display: none; }
+  }
+</style>
+</head>
+<body data-screen-label="05 Vitrin Anasayfa">
+
+<!-- ============ INFO BAR ============ -->
+<div class="v-info">
+  🐾 <strong>1.247 ürün</strong> 47 şehirde
+  <span class="dot-sep">·</span>
+  ⚡ <strong>428 pet shop</strong> sistemde
+  <span class="dot-sep">·</span>
+  🔒 Ödeme yok · WhatsApp ile direkt iletişim
+</div>
+
+<!-- ============ TOP NAV ============ -->
+<nav class="v-nav">
+  <div class="v-nav-inner">
+    <a class="v-brand" href="#">
+      <div class="v-brand-mark"><img src="../assets/logo.png" alt=""></div>
+      <div>
+        <div class="v-brand-name">PetStockPro</div>
+        <div class="v-brand-sub">Vitrin</div>
+      </div>
+    </a>
+    <div class="v-search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input placeholder="Ürün, marka veya pet shop ara..."/>
+      <div class="city-divider"></div>
+      <div class="city-select">📍 İstanbul ▾</div>
+    </div>
+    <div class="v-lang">
+      <span class="lng active">TR</span>
+      <span class="lng">EN</span>
+    </div>
+    <a class="v-cta" href="#">Pet shop sahibi misin? →</a>
+  </div>
+</nav>
+
+<div class="v-wrap">
+
+  <!-- ============ HERO ============ -->
+  <section class="v-hero">
+    <div>
+      <div class="v-hero-eye"><span class="pulse-dot"></span> Yakınında 8 pet shop · 312 ürün canlı</div>
+      <h1>
+        Mamasını <span class="acc">yakınındaki</span><br>
+        pet shop'tan al<span class="acc-blue">.</span>
+      </h1>
+      <p>
+        Üye olmadan, ödeme yapmadan, anında. <strong>WhatsApp'tan direkt sahibe yaz</strong>,
+        fiyat ve stok karşılaştır, en yakını seç.
+      </p>
+
+      <div class="v-hero-search">
+        <input placeholder="Royal Canin Adult Kedi 2kg..."/>
+        <div class="v-city">📍 Üsküdar ▾</div>
+        <button class="v-search-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          Ara
+        </button>
+      </div>
+
+      <div class="v-loc-hint">
+        📍 <span><a href="#">Konumumu paylaş</a> — sana en yakın pet shop'ları gösterelim</span>
+      </div>
+    </div>
+
+    <div class="v-hero-art">
+      <div class="v-float f1">
+        <div class="ic">📦</div>
+        <div>
+          <div style="color:var(--ink-3);font-weight:normal;font-size:10px">CANLI STOK</div>
+          <div style="color:var(--cart)">18 adet · Üsküdar</div>
+        </div>
+      </div>
+      <div class="v-logo-card">
+        <img src="../assets/logo.png" alt="PetStockPro">
+      </div>
+      <div class="v-float f2">
+        <div class="ic">📍</div>
+        <div>
+          <div style="color:var(--ink-3);font-weight:normal;font-size:10px">YAKIN</div>
+          <div style="color:var(--cart)">800 m mesafe</div>
+        </div>
+      </div>
+      <div class="v-float f3">
+        <div class="ic">💬</div>
+        <div>
+          <div style="color:var(--ink-3);font-weight:normal;font-size:10px">WHATSAPP</div>
+          <div style="color:var(--cart)">Anında iletişim</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TRUST STRIP ============ -->
+  <div class="v-trust">
+    <div class="v-trust-card t1">
+      <div class="ic-big">📍</div>
+      <div>
+        <div class="num">47 şehir</div>
+        <div class="lbl">Tüm Türkiye'de pet shop'lar</div>
+      </div>
+    </div>
+    <div class="v-trust-card t2">
+      <div class="ic-big">🏪</div>
+      <div>
+        <div class="num">428 pet shop</div>
+        <div class="lbl">Bağımsız esnaf, eşit görünür</div>
+      </div>
+    </div>
+    <div class="v-trust-card t3">
+      <div class="ic-big">📦</div>
+      <div>
+        <div class="num">1.247 ürün</div>
+        <div class="lbl">Canlı stok bilgisiyle</div>
+      </div>
+    </div>
+    <div class="v-trust-card t4">
+      <div class="ic-big">💬</div>
+      <div>
+        <div class="num">WhatsApp</div>
+        <div class="lbl">Direkt sahibe yaz, hemen al</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ KATEGORI ============ -->
+  <section class="v-section">
+    <div class="v-section-head">
+      <div>
+        <h2>Ne arıyorsun?</h2>
+        <p>6 ana kategoride 1.247 ürün</p>
+      </div>
+      <a class="more" href="#">Tüm kategoriler →</a>
+    </div>
+    <div class="cat-grid">
+      <a class="cat-card c1" href="#"><span class="emo">🐱</span><div class="name">Kedi</div><div class="count">462 ürün · 248 mağaza</div></a>
+      <a class="cat-card c2" href="#"><span class="emo">🐶</span><div class="name">Köpek</div><div class="count">528 ürün · 286 mağaza</div></a>
+      <a class="cat-card c3" href="#"><span class="emo">🐦</span><div class="name">Kuş</div><div class="count">96 ürün · 142 mağaza</div></a>
+      <a class="cat-card c4" href="#"><span class="emo">🐠</span><div class="name">Akvaryum</div><div class="count">88 ürün · 124 mağaza</div></a>
+      <a class="cat-card c5" href="#"><span class="emo">🐰</span><div class="name">Kemirgen</div><div class="count">42 ürün · 88 mağaza</div></a>
+      <a class="cat-card c6" href="#"><span class="emo">🦎</span><div class="name">Sürüngen</div><div class="count">31 ürün · 54 mağaza</div></a>
+    </div>
+  </section>
+
+  <!-- ============ YAKINDAKI PET SHOP'LAR ============ -->
+  <section class="v-section">
+    <div class="v-section-head">
+      <div>
+        <h2>📍 Yakındaki pet shop'lar</h2>
+        <p>Üsküdar'a göre · en yakın 4 mağaza</p>
+      </div>
+      <a class="more" href="#">Tümünü gör →</a>
+    </div>
+
+    <div class="nearby-wrap">
+      <div class="nearby-list">
+
+        <a class="shop-card" href="#">
+          <div class="shop-avatar">🐾</div>
+          <div>
+            <div class="shop-name">Mavi Pet Shop</div>
+            <div class="shop-meta">
+              <span>📍 Üsküdar Merkez</span><span class="sep">·</span><span>⭐ 4.8 · 142 yorum</span>
+            </div>
+            <div class="shop-tags">
+              <span class="stag open">Açık · 21:00'e kadar</span>
+              <span class="stag wa">💬 WhatsApp</span>
+              <span class="stag fav">🔥 Popüler</span>
+            </div>
+          </div>
+          <div class="shop-dist">
+            <div class="km">800 m</div>
+            <div class="lbl">5 dk yürüme</div>
+          </div>
+        </a>
+
+        <a class="shop-card" href="#">
+          <div class="shop-avatar">🐈</div>
+          <div>
+            <div class="shop-name">Patpat Pet & Veteriner</div>
+            <div class="shop-meta">
+              <span>📍 Kadıköy · Bağdat Cad.</span><span class="sep">·</span><span>⭐ 4.6 · 88 yorum</span>
+            </div>
+            <div class="shop-tags">
+              <span class="stag open">Açık · 22:00'e kadar</span>
+              <span class="stag wa">💬 WhatsApp</span>
+            </div>
+          </div>
+          <div class="shop-dist">
+            <div class="km">2.4 km</div>
+            <div class="lbl">8 dk araç</div>
+          </div>
+        </a>
+
+        <a class="shop-card" href="#">
+          <div class="shop-avatar">🐕</div>
+          <div>
+            <div class="shop-name">Kuyruk Pet Dünyası</div>
+            <div class="shop-meta">
+              <span>📍 Beykoz · Yalı Cad.</span><span class="sep">·</span><span>⭐ 4.9 · 64 yorum</span>
+            </div>
+            <div class="shop-tags">
+              <span class="stag" style="background:var(--cat-soft);color:var(--cat-7)">Kapanıyor · 30 dk</span>
+              <span class="stag wa">💬 WhatsApp</span>
+            </div>
+          </div>
+          <div class="shop-dist">
+            <div class="km">3.8 km</div>
+            <div class="lbl">12 dk araç</div>
+          </div>
+        </a>
+
+        <a class="shop-card" href="#">
+          <div class="shop-avatar">🦴</div>
+          <div>
+            <div class="shop-name">Sevimli Pati Shop</div>
+            <div class="shop-meta">
+              <span>📍 Çamlıca</span><span class="sep">·</span><span>⭐ 4.4 · 32 yorum</span>
+            </div>
+            <div class="shop-tags">
+              <span class="stag open">Açık</span>
+              <span class="stag wa">💬 WhatsApp</span>
+            </div>
+          </div>
+          <div class="shop-dist">
+            <div class="km">4.2 km</div>
+            <div class="lbl">14 dk araç</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Map -->
+      <div class="nearby-map">
+        <svg class="map-bg" viewBox="0 0 400 480" preserveAspectRatio="xMidYMid slice">
+          <!-- Soft map shapes — represent water + parks -->
+          <path d="M0,180 Q80,200 160,160 T320,180 L400,160 L400,260 Q300,290 200,250 T0,260 Z" fill="#cad8db" opacity=".7"/>
+          <path d="M40,40 Q120,30 180,80 Q160,140 100,150 Q60,130 40,80 Z" fill="#c8d9c4" opacity=".5"/>
+          <path d="M260,320 Q340,310 380,380 Q360,440 280,440 Q240,380 260,320 Z" fill="#c8d9c4" opacity=".5"/>
+          <!-- Roads -->
+          <path d="M0,260 L400,260 M0,360 L400,360 M120,0 L120,480 M260,0 L260,480" stroke="#fff" stroke-width="3" opacity=".7"/>
+          <path d="M0,200 L400,200 M0,420 L400,420 M60,0 L60,480 M340,0 L340,480" stroke="#fff" stroke-width="2" opacity=".5"/>
+        </svg>
+        <div class="map-overlay">
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--cat);"></span>
+          <strong>8 pet shop</strong> bu bölgede
+        </div>
+        <!-- Pins -->
+        <div class="map-pin pulse-mp you" style="left:48%;top:52%"><span>📍</span></div>
+        <div class="map-pin" style="left:36%;top:34%"><span>1</span></div>
+        <div class="map-pin" style="left:62%;top:42%"><span>2</span></div>
+        <div class="map-pin" style="left:72%;top:62%"><span>3</span></div>
+        <div class="map-pin" style="left:28%;top:70%"><span>4</span></div>
+        <div class="map-pin" style="left:80%;top:24%;opacity:.7"><span>5</span></div>
+        <div class="map-pin" style="left:18%;top:48%;opacity:.7"><span>6</span></div>
+        <div class="map-pin" style="left:54%;top:78%;opacity:.7"><span>7</span></div>
+        <div class="map-pin" style="left:88%;top:48%;opacity:.7"><span>8</span></div>
+        <div class="map-zoom">
+          <button>+</button>
+          <button>−</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ POPÜLER ÜRÜNLER ============ -->
+  <section class="v-section">
+    <div class="v-section-head">
+      <div>
+        <h2>🔥 Bu hafta popüler</h2>
+        <p>Yakınında en çok bakılan ürünler · cross-mağaza</p>
+      </div>
+      <a class="more" href="#">Tümünü gör →</a>
+    </div>
+    <div class="prod-grid">
+      <a class="prod-card" href="#">
+        <div class="prod-img">🐱
+          <button class="save">♡</button>
+          <span class="dist-badge">📍 800m</span>
+        </div>
+        <div class="prod-body">
+          <div class="prod-name">Royal Canin Adult Kedi 2kg</div>
+          <div class="prod-shop">Mavi Pet Shop <span class="verified">✓</span> · Üsküdar</div>
+          <div class="prod-foot">
+            <div class="prod-price"><span class="from">başlangıç</span>180 ₺</div>
+            <button class="prod-wa" title="WhatsApp">💬</button>
+          </div>
+        </div>
+      </a>
+      <a class="prod-card" href="#">
+        <div class="prod-img">🐶
+          <button class="save">♡</button>
+          <span class="dist-badge">📍 2.4 km</span>
+        </div>
+        <div class="prod-body">
+          <div class="prod-name">Pro Plan Yetişkin Köpek 3kg</div>
+          <div class="prod-shop">Patpat Pet <span class="verified">✓</span> · Kadıköy</div>
+          <div class="prod-foot">
+            <div class="prod-price"><span class="from">başlangıç</span>240 ₺</div>
+            <button class="prod-wa">💬</button>
+          </div>
+        </div>
+      </a>
+      <a class="prod-card" href="#">
+        <div class="prod-img">🐱
+          <button class="save">♡</button>
+          <span class="dist-badge">📍 1.2 km</span>
+        </div>
+        <div class="prod-body">
+          <div class="prod-name">Whiskas Konserve 85g · 4'lü Paket</div>
+          <div class="prod-shop">Mavi Pet Shop <span class="verified">✓</span> · Üsküdar</div>
+          <div class="prod-foot">
+            <div class="prod-price"><span class="from">başlangıç</span>72 ₺</div>
+            <button class="prod-wa">💬</button>
+          </div>
+        </div>
+      </a>
+      <a class="prod-card" href="#">
+        <div class="prod-img">🐶
+          <button class="save">♡</button>
+          <span class="dist-badge">📍 3.8 km</span>
+        </div>
+        <div class="prod-body">
+          <div class="prod-name">Kong Classic Köpek Oyuncağı L</div>
+          <div class="prod-shop">Kuyruk Pet <span class="verified">✓</span> · Beykoz</div>
+          <div class="prod-foot">
+            <div class="prod-price"><span class="from">başlangıç</span>240 ₺</div>
+            <button class="prod-wa">💬</button>
+          </div>
+        </div>
+      </a>
+      <a class="prod-card" href="#">
+        <div class="prod-img">🐦
+          <button class="save">♡</button>
+          <span class="dist-badge">📍 800m</span>
+        </div>
+        <div class="prod-body">
+          <div class="prod-name">Tetra Goldfish Granül 100g</div>
+          <div class="prod-shop">Mavi Pet Shop <span class="verified">✓</span> · Üsküdar</div>
+          <div class="prod-foot">
+            <div class="prod-price"><span class="from">başlangıç</span>45 ₺</div>
+            <button class="prod-wa">💬</button>
+          </div>
+        </div>
+      </a>
+      <a class="prod-card" href="#">
+        <div class="prod-img">🐰
+          <button class="save">♡</button>
+          <span class="dist-badge">📍 4.2 km</span>
+        </div>
+        <div class="prod-body">
+          <div class="prod-name">Versele Crispy Muesli Tavşan 2kg</div>
+          <div class="prod-shop">Sevimli Pati <span class="verified">✓</span> · Çamlıca</div>
+          <div class="prod-foot">
+            <div class="prod-price"><span class="from">başlangıç</span>220 ₺</div>
+            <button class="prod-wa">💬</button>
+          </div>
+        </div>
+      </a>
+      <a class="prod-card" href="#">
+        <div class="prod-img">🐱
+          <button class="save">♡</button>
+          <span class="dist-badge">📍 800m</span>
+        </div>
+        <div class="prod-body">
+          <div class="prod-name">Trixie Kedi Tırmalama Tahtası</div>
+          <div class="prod-shop">Mavi Pet Shop <span class="verified">✓</span> · Üsküdar</div>
+          <div class="prod-foot">
+            <div class="prod-price"><span class="from">başlangıç</span>185 ₺</div>
+            <button class="prod-wa">💬</button>
+          </div>
+        </div>
+      </a>
+      <a class="prod-card" href="#">
+        <div class="prod-img">🐶
+          <button class="save">♡</button>
+          <span class="dist-badge">📍 2.4 km</span>
+        </div>
+        <div class="prod-body">
+          <div class="prod-name">Frontline Combo Tasma · M Beden</div>
+          <div class="prod-shop">Patpat Pet <span class="verified">✓</span> · Kadıköy</div>
+          <div class="prod-foot">
+            <div class="prod-price"><span class="from">başlangıç</span>180 ₺</div>
+            <button class="prod-wa">💬</button>
+          </div>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- ============ ŞEHİR GRID ============ -->
+  <section class="v-section">
+    <div class="v-section-head">
+      <div>
+        <h2>Şehir seç</h2>
+        <p>Türkiye'nin 47 şehrinde aktif pet shop'lar</p>
+      </div>
+      <a class="more" href="#">Tüm şehirler →</a>
+    </div>
+    <div class="city-grid">
+      <a class="city-card" href="#"><div class="name">İstanbul</div><div class="meta">186 pet shop · 642 ürün</div></a>
+      <a class="city-card" href="#"><div class="name">Ankara</div><div class="meta">74 pet shop · 248 ürün</div></a>
+      <a class="city-card" href="#"><div class="name">İzmir</div><div class="meta">62 pet shop · 196 ürün</div></a>
+      <a class="city-card" href="#"><div class="name">Bursa</div><div class="meta">38 pet shop · 118 ürün</div></a>
+      <a class="city-card" href="#"><div class="name">Antalya</div><div class="meta">32 pet shop · 96 ürün</div></a>
+      <a class="city-card" href="#"><div class="name">Eskişehir</div><div class="meta">18 pet shop · 54 ürün</div></a>
+    </div>
+  </section>
+
+  <!-- ============ OWNER CTA ============ -->
+  <section class="owner-cta">
+    <div>
+      <h2>Pet shop sahibi misin?<br>Vitrin'e ücretsiz katıl.</h2>
+      <p>
+        Stoğunu PetStockPro ile yönet, vitrin'de görünür ol.
+        <strong>FREE plan</strong> ile başla — 50 ürüne kadar tamamen ücretsiz.
+      </p>
+      <div class="bullets">
+        <span>50 ürün ücretsiz</span>
+        <span>3 şube</span>
+        <span>WhatsApp entegre</span>
+        <span>Komisyon yok</span>
+      </div>
+    </div>
+    <div class="owner-cta-action">
+      <a class="big-btn" href="#">
+        Hemen Başla →
+      </a>
+      <div class="small-note">Kredi kartı gerekmez</div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ FOOTER ============ -->
+<footer class="v-footer">
+  <div class="v-footer-inner">
+    <div>
+      <div class="v-foot-brand">
+        <div class="v-brand-mark"><img src="../assets/logo.png" alt=""></div>
+        <div>
+          <div class="v-brand-name">PetStockPro</div>
+          <div class="v-brand-sub">Vitrin</div>
+        </div>
+      </div>
+      <p class="v-foot-tagline">
+        Türkiye'nin pet shop'larını tek vitrin'de buluşturuyoruz.
+        Yakınındakini bul, WhatsApp'tan yaz, gel al.
+      </p>
+    </div>
+    <div>
+      <h4>Vitrin</h4>
+      <a href="#">Tüm Pet Shop'lar</a>
+      <a href="#">Kategoriler</a>
+      <a href="#">Şehirler</a>
+      <a href="#">Popüler Ürünler</a>
+    </div>
+    <div>
+      <h4>Pet Shop'lar İçin</h4>
+      <a href="#">Ücretsiz Başla</a>
+      <a href="#">FREE vs PRO</a>
+      <a href="#">Vitrin Rehberi</a>
+      <a href="#">Yardım Merkezi</a>
+    </div>
+    <div>
+      <h4>Hakkımızda</h4>
+      <a href="#">Biz Kimiz</a>
+      <a href="#">İletişim</a>
+      <a href="#">KVKK</a>
+      <a href="#">Kullanım Koşulları</a>
+      <a href="#">🚩 Bildirim Yap</a>
+    </div>
+  </div>
+  <div class="v-foot-bottom v-footer-inner">
+    <div>© 2026 PetStockPro · Tüm hakları saklıdır</div>
+    <div class="signature">
+      <a href="#">KVKK</a>
+      <a href="#">Çerezler</a>
+      <a href="#">Gizlilik</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ============ COOKIE BANNER ============ -->
+<div class="cookie" id="cookie">
+  <div class="ic-c">🍪</div>
+  <div class="ctext">
+    Konum + analitik için çerez kullanıyoruz — sana en yakın pet shop'ları gösterebilmek için.
+    <a href="#">Detay</a>
+  </div>
+  <button class="b-decline" onclick="document.getElementById('cookie').style.display='none'">Reddet</button>
+  <button class="b-accept" onclick="document.getElementById('cookie').style.display='none'">Kabul Et</button>
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

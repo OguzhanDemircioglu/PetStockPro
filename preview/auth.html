@@ -1,0 +1,796 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>PetStockPro · Giriş</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/tokens-v2.css">
+<style>
+  body { background: #fafaf7; }
+  body::before { opacity: .5; }
+  body::after { opacity: .25; }
+
+  /* ============ STATE SWITCHER (top, for review/mockup nav) ============ */
+  .state-bar {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(255,255,255,.92);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--line);
+    padding: 12px 28px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .state-bar .brand-tag { display: flex; align-items: center; gap: 8px; }
+  .state-bar .brand-tag img { width: 28px; height: 28px; }
+  .state-bar .brand-tag .nm { font-size: 13px; font-weight: bold; color: var(--cart); }
+  .state-bar .brand-tag .sb { font-size: 10px; color: var(--ink-4); }
+  .state-spacer { flex: 1; }
+  .state-pills {
+    display: flex; gap: 4px;
+    background: var(--line-soft);
+    padding: 4px;
+    border-radius: 999px;
+  }
+  .state-pill {
+    padding: 7px 14px;
+    font-size: 12px; font-weight: bold;
+    color: var(--ink-3);
+    cursor: pointer;
+    border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 6px;
+    transition: all .15s ease;
+  }
+  .state-pill:hover { color: var(--cart); }
+  .state-pill.active { background: var(--cart); color: #fff; box-shadow: var(--shadow-sm); }
+
+  /* ============ LAYOUT — left visual panel + right form ============ */
+  .auth-shell {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: calc(100vh - 56px);
+  }
+  .auth-visual {
+    position: relative; overflow: hidden;
+    background:
+      radial-gradient(circle at 80% 20%, rgba(255,255,255,.16), transparent 50%),
+      linear-gradient(135deg, #d44a14 0%, #ed6a2c 100%);
+    color: #fff;
+    padding: 56px 56px 48px;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .auth-visual::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 6px;
+    background: linear-gradient(90deg, var(--cart) 0% 25%, var(--bars) 25% 50%, var(--arrow) 50% 75%, var(--cat-7) 75% 100%);
+  }
+  .visual-logo {
+    width: 88px; height: 88px;
+    background: rgba(255,255,255,.95);
+    border-radius: 22px;
+    padding: 8px;
+    box-shadow: 0 16px 36px rgba(0,0,0,.18);
+    margin-bottom: 32px;
+    transform: rotate(-3deg);
+  }
+  .visual-logo img { width: 100%; height: 100%; object-fit: contain; }
+  .visual-eye {
+    font-size: 11px; color: rgba(255,255,255,.85);
+    text-transform: uppercase; letter-spacing: .8px; font-weight: bold;
+    margin-bottom: 14px;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .visual-eye::before {
+    content: ""; width: 24px; height: 1px; background: rgba(255,255,255,.5);
+  }
+  .visual-h1 {
+    margin: 0; font-size: 40px; font-weight: bold;
+    letter-spacing: -1px; line-height: 1.1;
+  }
+  .visual-h1 .u { background: rgba(255,255,255,.18); padding: 0 6px; border-radius: 6px; }
+  .visual-lead {
+    margin: 18px 0 0; font-size: 15px; opacity: .9; line-height: 1.6;
+    max-width: 460px;
+  }
+  .visual-bullets {
+    margin-top: 36px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .visual-bullet {
+    display: flex; align-items: center; gap: 14px;
+    font-size: 13.5px;
+  }
+  .visual-bullet .ic {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    background: rgba(255,255,255,.18);
+    border: 1px solid rgba(255,255,255,.22);
+    display: grid; place-items: center;
+    flex-shrink: 0;
+  }
+  .visual-bullet .ic svg { color: #fff; }
+  .visual-bullet strong { display: block; margin-bottom: 2px; }
+  .visual-bullet .sub { opacity: .82; font-size: 12px; }
+
+  .visual-footer {
+    display: flex; gap: 28px;
+    font-size: 12px; opacity: .8;
+  }
+  .visual-footer strong { color: #fff; }
+  .visual-footer .num { display: block; font-size: 22px; font-weight: bold; line-height: 1; letter-spacing: -.5px; }
+
+  /* ============ RIGHT — FORM ============ */
+  .auth-form {
+    padding: 56px 64px;
+    display: flex; flex-direction: column; justify-content: center;
+    max-width: 560px;
+    width: 100%; margin: 0 auto;
+  }
+  .form-eye {
+    font-size: 11px; color: var(--cat); font-weight: bold;
+    text-transform: uppercase; letter-spacing: .8px;
+    margin-bottom: 10px;
+  }
+  .form-title { margin: 0; font-size: 28px; font-weight: bold; color: var(--ink); letter-spacing: -.5px; }
+  .form-lead { margin: 8px 0 0; font-size: 13.5px; color: var(--ink-3); }
+  .form-body { margin-top: 32px; display: flex; flex-direction: column; gap: 14px; }
+  .form-foot { margin-top: 28px; font-size: 12.5px; color: var(--ink-3); text-align: center; }
+  .form-foot a { color: var(--cart); font-weight: bold; text-decoration: none; border-bottom: 1px dashed var(--cart); }
+
+  /* Input — bigger, friendly */
+  .lbl { font-size: 11.5px; font-weight: bold; color: var(--ink-3); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px; display: block; }
+  .inp {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    font: inherit; font-size: 14px;
+    background: #fff;
+    color: var(--ink);
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .inp:focus { outline: none; border-color: var(--cat); box-shadow: 0 0 0 4px rgba(212,74,20,.14); }
+  .inp.has-ic { padding-left: 44px; }
+  .inp-wrap { position: relative; }
+  .inp-wrap > svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--ink-4); }
+  .inp-wrap .toggle-eye {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    border: 0; background: transparent;
+    color: var(--ink-4); cursor: pointer;
+    padding: 6px;
+    border-radius: 8px;
+  }
+  .inp-wrap .toggle-eye:hover { color: var(--cart); background: var(--line-soft); }
+
+  .row-split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* CTA buttons */
+  .b-primary {
+    width: 100%;
+    padding: 14px 24px;
+    background: linear-gradient(135deg, var(--cat), var(--cat-2));
+    color: #fff;
+    border: 0; border-radius: 14px;
+    font: inherit; font-size: 14px; font-weight: bold;
+    cursor: pointer;
+    box-shadow: var(--shadow-cat);
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    transition: transform .12s ease;
+  }
+  .b-primary:hover { transform: translateY(-1px); }
+
+  .b-google {
+    width: 100%;
+    padding: 13px 20px;
+    background: #fff;
+    color: var(--ink-2);
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    font: inherit; font-size: 13px; font-weight: bold;
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    transition: all .15s ease;
+  }
+  .b-google:hover { border-color: var(--cart-2); color: var(--cart); }
+
+  .divider {
+    display: flex; align-items: center; gap: 12px;
+    color: var(--ink-4); font-size: 11px;
+    text-transform: uppercase; letter-spacing: .6px; font-weight: bold;
+    margin: 4px 0;
+  }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  /* Forgot row */
+  .opt-row {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 12.5px;
+    margin-top: -4px;
+  }
+  .chk-row { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); cursor: pointer; }
+  .chk-row input { width: 16px; height: 16px; accent-color: var(--cat); }
+  .opt-row a { color: var(--cart); font-weight: bold; text-decoration: none; }
+
+  /* ============ STATE PANES ============ */
+  .pane { display: none; }
+  .pane.active { display: block; }
+
+  /* ============ STATE: Verify (OTP) ============ */
+  .otp-row { display: flex; gap: 10px; justify-content: center; margin: 24px 0 8px; }
+  .otp-cell {
+    width: 56px; height: 64px;
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    font: inherit; font-size: 24px; font-weight: bold;
+    text-align: center; color: var(--cart);
+    background: #fff;
+    font-family: var(--font-mono);
+  }
+  .otp-cell:focus { outline: none; border-color: var(--cat); box-shadow: 0 0 0 4px rgba(212,74,20,.14); }
+  .otp-cell.filled { border-color: var(--arrow); background: var(--arrow-soft); }
+  .resend-row {
+    text-align: center;
+    margin-top: 16px;
+    font-size: 12.5px; color: var(--ink-3);
+  }
+  .resend-row a { color: var(--cart); font-weight: bold; text-decoration: none; }
+  .resend-row .timer { color: var(--ink-4); font-family: var(--font-mono); }
+
+  /* ============ STATE: KVKK ============ */
+  .kvkk {
+    background: var(--cart-soft);
+    border: 1px solid rgba(26,85,136,.18);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--ink-2);
+    display: flex; gap: 10px; align-items: flex-start;
+    line-height: 1.5;
+  }
+  .kvkk input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--cat); margin-top: 2px; flex-shrink: 0; }
+  .kvkk a { color: var(--cart); font-weight: bold; text-decoration: none; }
+
+  /* ============ STATE: Onboarding (3 step) ============ */
+  .onb-shell {
+    max-width: 720px; margin: 0 auto; width: 100%;
+    padding: 56px 32px;
+  }
+  .onb-header { text-align: center; margin-bottom: 32px; }
+  .onb-header h2 { margin: 12px 0 6px; font-size: 28px; font-weight: bold; color: var(--ink); letter-spacing: -.5px; }
+  .onb-header p { margin: 0; color: var(--ink-3); font-size: 14px; }
+
+  .onb-steps {
+    display: grid; grid-template-columns: 1fr auto 1fr auto 1fr;
+    gap: 12px; align-items: center;
+    margin-bottom: 36px;
+  }
+  .onb-step {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    text-align: center;
+  }
+  .onb-step .dotn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--line);
+    color: var(--ink-3);
+    font-weight: bold; font-size: 13px;
+    display: grid; place-items: center;
+  }
+  .onb-step.done .dotn { background: var(--arrow); color: #fff; }
+  .onb-step.active .dotn { background: var(--cat); color: #fff; box-shadow: 0 0 0 6px rgba(212,74,20,.18); }
+  .onb-step .nm { font-size: 12px; font-weight: bold; color: var(--ink-3); }
+  .onb-step.active .nm, .onb-step.done .nm { color: var(--cart); }
+  .onb-bar {
+    height: 2px;
+    background: var(--line);
+    border-radius: 999px;
+    position: relative;
+  }
+  .onb-bar.fill { background: var(--arrow); }
+
+  .onb-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: 32px 36px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.04);
+  }
+  .onb-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .onb-card .helper {
+    background: var(--bars-soft);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 12.5px; color: var(--ink-2);
+    margin-top: 14px;
+    display: flex; align-items: flex-start; gap: 10px;
+    line-height: 1.5;
+  }
+  .onb-card .helper .ic-h { width: 24px; height: 24px; border-radius: 7px; background: var(--bars-7); color: #fff; display: grid; place-items: center; flex-shrink: 0; font-size: 13px; }
+
+  .onb-cta-row { margin-top: 28px; display: flex; gap: 12px; justify-content: space-between; align-items: center; }
+  .b-skip { padding: 12px 18px; background: transparent; border: 0; color: var(--ink-3); font-size: 13px; font-weight: bold; cursor: pointer; }
+  .b-next {
+    padding: 13px 28px;
+    background: linear-gradient(135deg, var(--cat), var(--cat-2));
+    color: #fff; border: 0;
+    border-radius: 14px;
+    font: inherit; font-size: 14px; font-weight: bold;
+    cursor: pointer; box-shadow: var(--shadow-cat);
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+
+  /* Mini visible preview map for branch step */
+  .branch-pin-map {
+    height: 220px;
+    background: linear-gradient(135deg, #e9efe8 0%, #dde6e8 100%);
+    border-radius: 14px; position: relative; overflow: hidden;
+    margin-top: 14px;
+    border: 1px solid var(--line);
+  }
+  .branch-pin-map .pin-c {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -100%);
+    width: 36px; height: 36px;
+    background: var(--cat);
+    border-radius: 50% 50% 50% 0;
+    transform: translate(-50%, -100%) rotate(-45deg);
+    display: grid; place-items: center;
+    border: 3px solid #fff;
+    box-shadow: 0 6px 14px rgba(212,74,20,.34);
+  }
+  .branch-pin-map .pin-c span { transform: rotate(45deg); color: #fff; font-weight: bold; font-size: 14px; }
+  .branch-pin-map .map-hint {
+    position: absolute; bottom: 12px; left: 12px;
+    background: #fff;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 11.5px;
+    box-shadow: var(--shadow-sm);
+    color: var(--ink-2);
+  }
+
+  /* Photo upload (vitrin onboarding) */
+  .upload {
+    border: 2px dashed var(--line);
+    border-radius: 14px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    color: var(--ink-3);
+    font-size: 13px;
+    transition: all .15s ease;
+  }
+  .upload:hover { border-color: var(--cat); color: var(--cat); background: var(--cat-soft); }
+  .upload .em { font-size: 28px; display: block; margin-bottom: 6px; }
+
+  @media (max-width: 900px) {
+    .auth-shell { grid-template-columns: 1fr; }
+    .auth-visual { padding: 36px 28px; min-height: auto; }
+    .visual-h1 { font-size: 30px; }
+    .auth-form { padding: 36px 28px; }
+    .row-split, .onb-form-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body data-screen-label="06 Auth">
+
+<!-- ============ STATE SWITCHER ============ -->
+<div class="state-bar">
+  <div class="brand-tag">
+    <img src="../assets/logo.png" alt="">
+    <div>
+      <div class="nm">PetStockPro</div>
+      <div class="sb">Auth Flow</div>
+    </div>
+  </div>
+  <div class="state-spacer"></div>
+  <div class="state-pills">
+    <div class="state-pill active" data-state="login">🔐 Giriş</div>
+    <div class="state-pill" data-state="register">✨ Kayıt</div>
+    <div class="state-pill" data-state="verify">📧 Doğrula</div>
+    <div class="state-pill" data-state="reset">🔑 Şifre</div>
+    <div class="state-pill" data-state="onboard">🚀 Onboarding</div>
+  </div>
+</div>
+
+<!-- ============ STATE 1: LOGIN ============ -->
+<div class="pane active" data-pane="login">
+  <div class="auth-shell">
+    <div class="auth-visual">
+      <div>
+        <div class="visual-logo"><img src="../assets/logo.png" alt=""></div>
+        <div class="visual-eye">Pet shop sahibi · giriş</div>
+        <h1 class="visual-h1">Stoğun seni <span class="u">bekliyor</span>.</h1>
+        <p class="visual-lead">
+          Mavi Pet Shop'a hoş geldin. Bugün <strong>14 satış</strong> yapıldı,
+          <strong>5 ürün</strong> stok bekliyor. Devamına bak.
+        </p>
+        <div class="visual-bullets">
+          <div class="visual-bullet">
+            <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 10v6m11-11h-6M7 12H1m17.4-7.4l-4.2 4.2m-4.4 4.4l-4.2 4.2m12.8 0l-4.2-4.2m-4.4-4.4L4.6 4.6"/></svg></div>
+            <div><strong>Tek panel, üç şube</strong><span class="sub">Stok dengele, transfer at, anında sat.</span></div>
+          </div>
+          <div class="visual-bullet">
+            <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18"/></svg></div>
+            <div><strong>Vitrin'de görünür ol</strong><span class="sub">Yakındaki müşteriler seni petstockpro.com'da bulsun.</span></div>
+          </div>
+          <div class="visual-bullet">
+            <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.4 8.4 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.4 8.4 0 01-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.4 8.4 0 013.8-.9h.5a8.5 8.5 0 018 8v.5z"/></svg></div>
+            <div><strong>WhatsApp entegre</strong><span class="sub">Müşteri direkt sana yazsın, komisyon ödeme.</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="visual-footer">
+        <div><strong class="num">428</strong>pet shop bize güveniyor</div>
+        <div><strong class="num">47</strong>şehir aktif</div>
+        <div><strong class="num">FREE</strong>ile başla</div>
+      </div>
+    </div>
+
+    <div class="auth-form">
+      <div class="form-eye">PetStockPro</div>
+      <h2 class="form-title">Hesabına giriş yap</h2>
+      <p class="form-lead">E-posta ve şifrenle ya da Google hesabınla devam et.</p>
+
+      <div class="form-body">
+        <div>
+          <label class="lbl">E-posta</label>
+          <div class="inp-wrap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+            <input class="inp has-ic" type="email" placeholder="mehmet@mavipetshop.com" value="mehmet@mavipetshop.com"/>
+          </div>
+        </div>
+        <div>
+          <label class="lbl">Şifre</label>
+          <div class="inp-wrap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            <input class="inp has-ic" type="password" placeholder="••••••••" value="••••••••"/>
+            <button class="toggle-eye" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          </div>
+        </div>
+
+        <div class="opt-row">
+          <label class="chk-row"><input type="checkbox" checked> Beni hatırla</label>
+          <a href="#" onclick="setState('reset');return false">Şifremi unuttum →</a>
+        </div>
+
+        <button class="b-primary">
+          Giriş Yap →
+        </button>
+
+        <div class="divider">veya</div>
+
+        <button class="b-google">
+          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8a12 12 0 110-24c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2c-2 1.5-4.5 2.4-7.2 2.4-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4.1 5.6l6.2 5.2c-.4.4 6.6-4.8 6.6-14.8 0-1.3-.1-2.4-.4-3.5z"/></svg>
+          Google ile devam et
+        </button>
+      </div>
+
+      <div class="form-foot">
+        Hesabın yok mu? <a href="#" onclick="setState('register');return false">Ücretsiz kaydol</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ STATE 2: REGISTER ============ -->
+<div class="pane" data-pane="register">
+  <div class="auth-shell">
+    <div class="auth-visual">
+      <div>
+        <div class="visual-logo"><img src="../assets/logo.png" alt=""></div>
+        <div class="visual-eye">Yeni pet shop · kayıt</div>
+        <h1 class="visual-h1">3 dakikada <span class="u">başla</span>.</h1>
+        <p class="visual-lead">
+          Kart gerekmez. <strong>FREE</strong> ile 50 ürün, 3 şube, vitrin profili.
+          Sınıra geldiğinde PRO'ya geç.
+        </p>
+        <div class="visual-bullets">
+          <div class="visual-bullet">
+            <div class="ic" style="background:rgba(34,197,94,.25);border-color:rgba(34,197,94,.4)">✓</div>
+            <div><strong>50 ürün ücretsiz</strong><span class="sub">Komisyon yok, gizli ücret yok.</span></div>
+          </div>
+          <div class="visual-bullet">
+            <div class="ic" style="background:rgba(34,197,94,.25);border-color:rgba(34,197,94,.4)">✓</div>
+            <div><strong>3 şube yönet</strong><span class="sub">Üsküdar, Kadıköy, Beykoz — tek panel.</span></div>
+          </div>
+          <div class="visual-bullet">
+            <div class="ic" style="background:rgba(34,197,94,.25);border-color:rgba(34,197,94,.4)">✓</div>
+            <div><strong>Vitrin'de görün</strong><span class="sub">28. dakikadan sonra petstockpro.com'da.</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="visual-footer">
+        <div><strong class="num">8 sn</strong>otomatik onay süresi</div>
+        <div><strong class="num">∞</strong>PRO ile sınırsız</div>
+      </div>
+    </div>
+
+    <div class="auth-form">
+      <div class="form-eye">Kayıt ol</div>
+      <h2 class="form-title">Pet shop'unu sisteme ekle</h2>
+      <p class="form-lead">Vergi numarası şu an gerekmez · sonra Ayarlar'dan ekleyebilirsin.</p>
+
+      <div class="form-body">
+        <div>
+          <label class="lbl">Şirket / Pet shop adı *</label>
+          <div class="inp-wrap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M15 9h.01M9 13h.01M15 13h.01M9 17h.01M15 17h.01"/></svg>
+            <input class="inp has-ic" placeholder="Mavi Pet Shop"/>
+          </div>
+        </div>
+        <div>
+          <label class="lbl">E-posta *</label>
+          <div class="inp-wrap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+            <input class="inp has-ic" type="email" placeholder="mehmet@..."/>
+          </div>
+        </div>
+        <div>
+          <label class="lbl">Şifre * <span style="color:var(--ink-4);font-weight:normal;text-transform:none;letter-spacing:0">· en az 8 karakter, 1 sayı</span></label>
+          <div class="inp-wrap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            <input class="inp has-ic" type="password" placeholder="••••••••"/>
+          </div>
+        </div>
+
+        <div class="row-split">
+          <div>
+            <label class="lbl">İl *</label>
+            <select class="inp">
+              <option>İstanbul</option><option>Ankara</option><option>İzmir</option>
+              <option>Bursa</option><option>Antalya</option>
+            </select>
+          </div>
+          <div>
+            <label class="lbl">İlçe *</label>
+            <select class="inp">
+              <option>Üsküdar</option><option>Kadıköy</option><option>Beşiktaş</option>
+            </select>
+          </div>
+        </div>
+
+        <label class="kvkk">
+          <input type="checkbox"/>
+          <span>
+            <strong>KVKK Aydınlatma Metni</strong>'ni okudum, kişisel verilerimin işlenmesini onaylıyorum.
+            <a href="#">Detay</a> · <a href="#">Kullanım Koşulları</a>
+          </span>
+        </label>
+
+        <button class="b-primary" onclick="setState('verify')">
+          Hesabımı Oluştur →
+        </button>
+
+        <div class="divider">veya</div>
+
+        <button class="b-google">
+          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8a12 12 0 110-24c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2c-2 1.5-4.5 2.4-7.2 2.4-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4.1 5.6l6.2 5.2c-.4.4 6.6-4.8 6.6-14.8 0-1.3-.1-2.4-.4-3.5z"/></svg>
+          Google ile kaydol
+        </button>
+      </div>
+
+      <div class="form-foot">
+        Zaten hesabın var mı? <a href="#" onclick="setState('login');return false">Giriş yap</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ STATE 3: VERIFY (OTP) ============ -->
+<div class="pane" data-pane="verify">
+  <div class="auth-shell">
+    <div class="auth-visual">
+      <div>
+        <div class="visual-logo"><img src="../assets/logo.png" alt=""></div>
+        <div class="visual-eye">E-posta doğrulama</div>
+        <h1 class="visual-h1">Son <span class="u">bir adım</span> kaldı.</h1>
+        <p class="visual-lead">
+          <strong>mehmet@mavipetshop.com</strong> adresine 6 haneli bir kod gönderdik.
+          Spam klasörüne de bak.
+        </p>
+        <div class="visual-bullets">
+          <div class="visual-bullet">
+            <div class="ic">📧</div>
+            <div><strong>30 saniye içinde gelir</strong><span class="sub">Spam'a düşerse kod yine geçerli.</span></div>
+          </div>
+          <div class="visual-bullet">
+            <div class="ic">🔐</div>
+            <div><strong>Hesap güvenliği için</strong><span class="sub">Doğrulanmayan hesaplar 7 gün sonra silinir.</span></div>
+          </div>
+          <div class="visual-bullet">
+            <div class="ic">⚡</div>
+            <div><strong>Tek seferlik</strong><span class="sub">Bu adımı bir daha geçmeyeceksin.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-form">
+      <div class="form-eye">E-posta doğrula</div>
+      <h2 class="form-title">6 haneli kodu gir</h2>
+      <p class="form-lead"><strong style="color:var(--cart)">mehmet@mavipetshop.com</strong> · <a href="#" style="color:var(--cat);font-weight:bold;text-decoration:none">değiştir</a></p>
+
+      <div class="otp-row">
+        <input class="otp-cell filled" maxlength="1" value="4"/>
+        <input class="otp-cell filled" maxlength="1" value="8"/>
+        <input class="otp-cell filled" maxlength="1" value="2"/>
+        <input class="otp-cell" maxlength="1" value="1"/>
+        <input class="otp-cell" maxlength="1"/>
+        <input class="otp-cell" maxlength="1"/>
+      </div>
+
+      <button class="b-primary mt-12" onclick="setState('onboard')" style="margin-top:18px">
+        Doğrula & Devam Et →
+      </button>
+
+      <div class="resend-row">
+        Kod gelmediyse <a href="#">tekrar gönder</a> <span class="timer">(00:48)</span>
+      </div>
+
+      <div style="margin-top:32px;padding:14px 16px;background:var(--arrow-soft);border-radius:12px;font-size:12.5px;color:var(--arrow-7);line-height:1.5">
+        <strong>İpucu:</strong> Kodu yazdıktan sonra otomatik doğrularız — tıklamana gerek yok.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ STATE 4: PASSWORD RESET ============ -->
+<div class="pane" data-pane="reset">
+  <div class="auth-shell">
+    <div class="auth-visual">
+      <div>
+        <div class="visual-logo"><img src="../assets/logo.png" alt=""></div>
+        <div class="visual-eye">Şifre sıfırlama</div>
+        <h1 class="visual-h1">Şifreni mi <span class="u">unuttun</span>?</h1>
+        <p class="visual-lead">
+          Üzülme — e-posta adresini gir, sana sıfırlama linki gönderelim.
+          Link <strong>1 saat</strong> geçerli.
+        </p>
+        <div class="visual-bullets">
+          <div class="visual-bullet">
+            <div class="ic">🔑</div>
+            <div><strong>1 dakikada işlem biter</strong><span class="sub">Linke tıkla, yeni şifreni belirle.</span></div>
+          </div>
+          <div class="visual-bullet">
+            <div class="ic">🔒</div>
+            <div><strong>Eski şifreni göstermeyiz</strong><span class="sub">Şifreler bcrypt ile saklanır.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-form">
+      <div class="form-eye">Şifre Sıfırla</div>
+      <h2 class="form-title">E-posta adresini gir</h2>
+      <p class="form-lead">Hesabınla ilişkili e-postayı yaz, sıfırlama bağlantısı gönderelim.</p>
+
+      <div class="form-body">
+        <div>
+          <label class="lbl">E-posta</label>
+          <div class="inp-wrap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+            <input class="inp has-ic" type="email" placeholder="mehmet@mavipetshop.com"/>
+          </div>
+        </div>
+
+        <button class="b-primary">Sıfırlama Linki Gönder →</button>
+
+        <div class="divider">veya</div>
+
+        <button class="b-google" onclick="setState('login')">
+          ← Girişe Dön
+        </button>
+      </div>
+
+      <div style="margin-top:24px;padding:14px 16px;background:var(--bars-soft);border-radius:12px;font-size:12.5px;color:var(--cart);line-height:1.5">
+        <strong>Hâlâ giriş yapamıyorsun?</strong>
+        <a href="#" style="color:var(--cart);font-weight:bold;text-decoration:underline">Destek ekibine yaz</a> — 24 saat içinde döneriz.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ STATE 5: ONBOARDING (3 STEP) ============ -->
+<div class="pane" data-pane="onboard">
+  <div class="onb-shell">
+    <div class="onb-header">
+      <div style="display:inline-flex;align-items:center;gap:10px;padding:6px 14px;background:var(--cat-soft);border-radius:999px;font-size:11px;color:var(--cat-7);font-weight:bold;text-transform:uppercase;letter-spacing:.5px">
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--cat)"></span>
+        Hoş geldin Mavi Pet Shop!
+      </div>
+      <h2>3 adımda hazır ol</h2>
+      <p>Şubeni ekle, ilk ürününü oluştur, vitrin profilini tamamla (opsiyonel).</p>
+    </div>
+
+    <div class="onb-steps">
+      <div class="onb-step active">
+        <div class="dotn">1</div>
+        <div class="nm">Şube ekle</div>
+      </div>
+      <div class="onb-bar"></div>
+      <div class="onb-step">
+        <div class="dotn">2</div>
+        <div class="nm">İlk ürün</div>
+      </div>
+      <div class="onb-bar"></div>
+      <div class="onb-step">
+        <div class="dotn">3</div>
+        <div class="nm">Vitrin profili</div>
+      </div>
+    </div>
+
+    <div class="onb-card">
+      <h3 style="margin:0 0 6px;font-size:18px;color:var(--cart)">📍 İlk şubeni ekle</h3>
+      <p style="margin:0 0 22px;font-size:13px;color:var(--ink-3)">
+        Stoğun nerede tutulacak? Şube adresini ve harita konumunu gir.
+        <strong>Vitrin'de görünmek için</strong> en az bir şubenin haritada konumu olmalı.
+      </p>
+
+      <div class="onb-form-grid">
+        <div>
+          <label class="lbl">Şube adı</label>
+          <input class="inp" placeholder="Üsküdar Merkez" value="Üsküdar Merkez"/>
+        </div>
+        <div>
+          <label class="lbl">Telefon</label>
+          <input class="inp" placeholder="0216 ..."/>
+        </div>
+        <div style="grid-column: span 2">
+          <label class="lbl">Adres</label>
+          <input class="inp" placeholder="Atatürk Cad. No: 12 Üsküdar/İstanbul" value="Atatürk Cad. No: 12 Üsküdar/İstanbul"/>
+        </div>
+      </div>
+
+      <label class="lbl mt-16" style="margin-top:14px">Haritada konum (zorunlu)</label>
+      <div class="branch-pin-map">
+        <svg viewBox="0 0 800 220" style="position:absolute;inset:0;width:100%;height:100%" preserveAspectRatio="xMidYMid slice">
+          <path d="M0,90 Q200,100 400,80 T800,90 L800,150 Q600,160 400,140 T0,150 Z" fill="#cad8db" opacity=".6"/>
+          <path d="M0,160 L800,160 M0,200 L800,200 M200,0 L200,220 M520,0 L520,220" stroke="#fff" stroke-width="3" opacity=".7"/>
+        </svg>
+        <div class="pin-c"><span>📍</span></div>
+        <div class="map-hint">📍 41.0214, 29.0153 · Sürükleyerek ayarla</div>
+      </div>
+
+      <div class="helper">
+        <div class="ic-h">i</div>
+        <div>
+          <strong>Neden konum gerekli?</strong>
+          Müşteriler vitrin'de seni "yakındaki" sonuçlarda görsün diye. Tahmini adres çekilir ama tam konumu sen doğrulamalısın.
+        </div>
+      </div>
+
+      <div class="onb-cta-row">
+        <button class="b-skip">← Geri</button>
+        <button class="b-next">Şubeyi Kaydet & Devam →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/app.js"></script>
+<script>
+  function setState(name) {
+    document.querySelectorAll('.state-pill').forEach(p => {
+      p.classList.toggle('active', p.getAttribute('data-state') === name);
+    });
+    document.querySelectorAll('.pane').forEach(p => {
+      p.classList.toggle('active', p.getAttribute('data-pane') === name);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  document.querySelectorAll('.state-pill').forEach(p => {
+    p.addEventListener('click', () => setState(p.getAttribute('data-state')));
+  });
+
+  // OTP auto-advance
+  document.querySelectorAll('.otp-cell').forEach((c, i, arr) => {
+    c.addEventListener('input', () => {
+      if (c.value) {
+        c.classList.add('filled');
+        if (arr[i + 1]) arr[i + 1].focus();
+      } else {
+        c.classList.remove('filled');
+      }
+    });
+  });
+</script>
+</body>
+</html>

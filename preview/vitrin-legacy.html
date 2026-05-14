@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<!--
+  ⚠ LEGACY MOCKUP (2026-05-13 itibariyle eski tasarım)
+
+  Bu mockup eski "tenant subdomain" modeli için hazırlandı:
+    {slug}.petstockpro.com — her pet shop'un kendi mini sitesi (Shopify-Lite modeli)
+
+  YENİ KARAR (2026-05-13): Bu model İPTAL edildi.
+  Kullanıcı dedi: "Tek bir vitrin var, her kullanıcının ortak kullandığı tek bir vitrin var."
+
+  Yeni vitrin yapısı:
+    petstockpro.com/vitrin — merkezi tek dizin (Sahibinden / Yelp modeli)
+    Cross-tenant ürün kıyaslama
+    PostGIS yakınlık sorgusu (en yakın pet shop)
+    WhatsApp deep link (biz API kullanmıyoruz, müşteri kendi gönderir)
+    PRO+ tier RAFA kaldırıldı (sade FREE/PRO 2-tier)
+
+  Detay: docs/EKRAN-PUBLIC-VITRIN.md (yeniden yazıldı 2026-05-13)
+  Yeni HTML mockup Sprint 12 öncesi hazırlanacak.
+-->
+<html lang="tr" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>[LEGACY] Mavi Pet Shop — Eski tenant subdomain mockup'ı (2026-05-13 itibariyle geçersiz)</title>
+  <meta name="description" content="LEGACY MOCKUP — Bu vitrin tasarımı 2026-05-13'te iptal edildi. Yeni yapı: merkezi tek vitrin (petstockpro.com/vitrin)." />
+
+  <style>
+    :root {
+      color-scheme: light;
+      --cat: #d4621c;      --cat-2: #ed7d2f;     --cat-700: #b8530f;   --cat-soft: #fdf2e9;
+      --cart: #1e3a5f;     --cart-2: #2a4f7a;    --cart-700: #16304d;  --cart-soft: #e8eef6;
+      --arrow: #22c55e;    --arrow-2: #4ade80;   --arrow-700: #16a34a; --arrow-soft: #ecfdf5;
+      --bars: #7cb8e0;     --bars-2: #98c9e8;    --bars-700: #4d8fb8;  --bars-soft: #eaf3fa;
+      --dog: #2c4257;      --dog-2: #41607d;     --dog-soft: #e6ebf0;
+      --danger: #ef4444;   --warning: #f59e0b;
+
+      --bg: #f7f5f0;       --bg-warm: #fbf8f3;   --surface: #ffffff;
+      --surface-2: #f3f0ea;--surface-3: #e8e3d8;
+      --glass-bg: rgba(255,255,255,0.72);
+      --glass-border: rgba(255,255,255,0.5);
+      --glass-shadow: 0 8px 32px rgba(30,58,95,.08);
+
+      --text: #0e1a2b;     --text-2: #50627a;    --text-3: #8b9bb1;
+      --border: rgba(30,58,95,0.08);
+      --border-strong: rgba(30,58,95,0.16);
+
+      --r-xs: 8px;  --r-sm: 12px;  --r: 18px;  --r-lg: 24px;  --r-xl: 32px;  --r-pill: 999px;
+
+      --shadow-sm: 0 1px 3px rgba(14,26,43,.06);
+      --shadow-md: 0 8px 28px rgba(14,26,43,.09);
+      --shadow-lg: 0 24px 64px rgba(14,26,43,.15);
+      --shadow-cat: 0 12px 32px -8px rgba(212,98,28,0.4);
+      --shadow-cart: 0 12px 32px -8px rgba(30,58,95,0.35);
+
+      --ease: cubic-bezier(.22,.61,.36,1);
+      --dur-fast: 160ms; --dur: 280ms; --dur-slow: 520ms;
+
+      --font-sans: Verdana, Geneva, Tahoma, sans-serif;
+      --font-mono: Consolas, "Lucida Console", Monaco, monospace;
+    }
+    [data-theme="dark"] {
+      --bg: #07101e; --bg-warm: #0c1828;
+      --surface: #111c2f; --surface-2: #182438; --surface-3: #213048;
+      --glass-bg: rgba(17,28,47,0.65); --glass-border: rgba(255,255,255,0.08);
+      --glass-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      --text: #f0f5fb; --text-2: #94a3b8; --text-3: #64748b;
+      --border: rgba(255,255,255,0.07); --border-strong: rgba(255,255,255,0.14);
+      --cart-soft: #15233a; --cat-soft: #2a1808; --arrow-soft: #042818; --bars-soft: #0e2030; --dog-soft: #1a2335;
+    }
+
+    *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html,body { height: 100%; scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-sans);
+      font-size: 14px; line-height: 1.55;
+      background: var(--bg); color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
+      overflow-x: hidden; position: relative;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; font-family: inherit; }
+    input, select, textarea { font: inherit; color: inherit; font-family: inherit; }
+    img, svg { display: block; max-width: 100%; }
+    ::selection { background: var(--cat); color: #fff; }
+    *:focus-visible { outline: 2px solid var(--cat); outline-offset: 3px; border-radius: 8px; }
+
+    /* ============================================================
+       MESH GRADIENT BG (animated) + PAW PATTERN
+       ============================================================ */
+    .mesh-bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+    .mesh-blob {
+      position: absolute; width: 640px; height: 640px;
+      border-radius: 50%; filter: blur(90px); opacity: 0.35; will-change: transform;
+    }
+    [data-theme="dark"] .mesh-blob { opacity: 0.22; }
+    .blob-1 { top: -200px; left: -100px; background: radial-gradient(circle, var(--cart) 0%, transparent 65%); animation: blobMove1 22s ease-in-out infinite; }
+    .blob-2 { top: 20%; right: -200px; background: radial-gradient(circle, var(--cat) 0%, transparent 65%); animation: blobMove2 26s ease-in-out infinite; }
+    .blob-3 { bottom: -250px; left: 30%; background: radial-gradient(circle, var(--bars) 0%, transparent 65%); animation: blobMove3 30s ease-in-out infinite; }
+    .blob-4 { top: 50%; left: 15%; width: 420px; height: 420px; background: radial-gradient(circle, var(--arrow) 0%, transparent 65%); animation: blobMove4 34s ease-in-out infinite; opacity: 0.24; }
+    @keyframes blobMove1 { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(80px,60px) scale(1.1); } 66% { transform: translate(-40px,100px) scale(0.95); } }
+    @keyframes blobMove2 { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(-100px,80px) scale(1.05); } 66% { transform: translate(60px,-60px) scale(0.9); } }
+    @keyframes blobMove3 { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(120px,-50px) scale(1.08); } 66% { transform: translate(-80px,-80px) scale(0.95); } }
+    @keyframes blobMove4 { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(-60px,80px) scale(1.12); } 66% { transform: translate(80px,-40px) scale(0.95); } }
+
+    .paw-pattern {
+      position: fixed; inset: 0; z-index: -1; pointer-events: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'><g fill='%231e3a5f' fill-opacity='0.025'><circle cx='30' cy='30' r='6'/><circle cx='22' cy='22' r='3.5'/><circle cx='38' cy='22' r='3.5'/><circle cx='18' cy='32' r='3'/><circle cx='42' cy='32' r='3'/><circle cx='90' cy='80' r='5'/><circle cx='84' cy='74' r='3'/><circle cx='96' cy='74' r='3'/><circle cx='80' cy='82' r='2.5'/><circle cx='100' cy='82' r='2.5'/></g></svg>");
+    }
+    [data-theme="dark"] .paw-pattern { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'><g fill='%23ffffff' fill-opacity='0.018'><circle cx='30' cy='30' r='6'/><circle cx='22' cy='22' r='3.5'/></g></svg>"); }
+
+    /* ============================================================
+       TOPBAR — Public (sidebar YOK)
+       ============================================================ */
+    .topbar {
+      position: sticky; top: 0; z-index: 20;
+      height: 72px;
+      padding: 0 32px;
+      display: flex; align-items: center; gap: 22px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border-bottom: 1px solid var(--border);
+    }
+    .tb-brand { display: flex; align-items: center; gap: 12px; }
+    .tb-logo { width: 44px; height: 44px; flex-shrink: 0; }
+    .tb-logo img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 6px 14px rgba(30,58,95,0.28)); }
+    .tb-name { font-size: 20px; font-weight: 800; letter-spacing: -0.025em; line-height: 1; }
+    .tb-name .ps { color: var(--cart); }
+    .tb-name .pro { color: var(--arrow); }
+    .tb-tag { font-size: 10.5px; color: var(--text-3); font-weight: 700; margin-top: 2px; letter-spacing: 0.06em; text-transform: uppercase; }
+
+    .tb-nav { display: flex; align-items: center; gap: 4px; margin-left: 32px; }
+    .tb-nav a {
+      padding: 9px 14px; border-radius: var(--r-sm); font-size: 13.5px; font-weight: 700; color: var(--text-2);
+      transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+    }
+    .tb-nav a:hover { background: var(--surface-2); color: var(--text); }
+    .tb-nav a[aria-current="page"] { background: var(--cart-soft); color: var(--cart); }
+    [data-theme="dark"] .tb-nav a[aria-current="page"] { color: var(--bars); }
+
+    .tb-search {
+      flex: 1; max-width: 340px; margin: 0 auto;
+      height: 42px; padding: 0 16px;
+      display: flex; align-items: center; gap: 10px;
+      background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--r-pill);
+      color: var(--text-3); font-size: 13.5px;
+      transition: all var(--dur-fast) var(--ease); box-shadow: var(--shadow-sm);
+    }
+    .tb-search:hover, .tb-search:focus-within { color: var(--text-2); border-color: var(--cart); box-shadow: 0 0 0 4px var(--cart-soft); }
+    .tb-search svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .tb-search input { flex: 1; border: none; background: none; outline: none; font-size: 13.5px; color: var(--text); }
+
+    .tb-acts { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+    .tb-btn {
+      width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: var(--r-sm); color: var(--text-2);
+      transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+    }
+    .tb-btn:hover { background: var(--surface-2); color: var(--text); }
+    .tb-btn svg { width: 18px; height: 18px; }
+
+    .tb-cta {
+      display: inline-flex; align-items: center; gap: 7px;
+      height: 40px; padding: 0 16px; border-radius: var(--r-sm);
+      font-weight: 800; font-size: 13px;
+      background: linear-gradient(135deg, var(--arrow) 0%, var(--arrow-700) 100%);
+      color: #fff; box-shadow: 0 6px 18px -4px rgba(34,197,94,0.45);
+      transition: all var(--dur-fast) var(--ease);
+    }
+    .tb-cta:hover { transform: translateY(-2px); box-shadow: 0 10px 24px -4px rgba(34,197,94,0.55); }
+    .tb-cta svg { width: 14px; height: 14px; }
+
+    .lang { display: inline-flex; align-items: center; gap: 5px; padding: 0 10px; height: 38px; border-radius: var(--r-sm); font-size: 12.5px; font-weight: 700; color: var(--text-2); cursor: pointer; }
+    .lang:hover { background: var(--surface-2); color: var(--text); }
+
+    /* ============================================================
+       HERO BANNER
+       ============================================================ */
+    .hero {
+      margin: 32px 32px 0;
+      border-radius: var(--r-xl);
+      padding: 56px 56px;
+      background:
+        radial-gradient(ellipse at 90% 0%, rgba(212,98,28,0.45) 0%, transparent 50%),
+        radial-gradient(ellipse at 0% 100%, rgba(124,184,224,0.4) 0%, transparent 55%),
+        radial-gradient(ellipse at 60% 80%, rgba(34,197,94,0.3) 0%, transparent 45%),
+        linear-gradient(135deg, var(--cart) 0%, var(--dog) 100%);
+      color: #fff;
+      position: relative; overflow: hidden;
+      box-shadow: var(--shadow-cart);
+    }
+    .hero-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 9px;
+      padding: 6px 14px;
+      background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.24);
+      border-radius: var(--r-pill);
+      font-size: 11.5px; font-weight: 800; letter-spacing: 0.06em;
+      margin-bottom: 16px;
+    }
+    .live-d { width: 7px; height: 7px; background: var(--arrow-2); border-radius: 50%; animation: livePulseW 1.6s var(--ease) infinite; box-shadow: 0 0 0 3px rgba(74,222,128,0.3); }
+    @keyframes livePulseW { 0%,100% { box-shadow: 0 0 0 0 rgba(74,222,128,0.7); } 50% { box-shadow: 0 0 0 6px rgba(74,222,128,0); } }
+
+    .hero-title {
+      font-size: 48px; font-weight: 800; letter-spacing: -0.025em; line-height: 1.05;
+      margin-bottom: 16px;
+    }
+    .hero-title em { font-style: normal; color: var(--cat-2); }
+    .hero-desc {
+      font-size: 16px; line-height: 1.6;
+      color: rgba(255,255,255,0.88);
+      margin-bottom: 28px; max-width: 540px;
+    }
+    .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+    .hero-cta {
+      display: inline-flex; align-items: center; gap: 10px;
+      height: 52px; padding: 0 26px;
+      border-radius: var(--r-sm);
+      font-weight: 800; font-size: 14.5px;
+      transition: all var(--dur) var(--ease);
+      box-shadow: var(--shadow-cat);
+    }
+    .hero-cta svg { width: 20px; height: 20px; }
+    .hero-cta-wa {
+      background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+      color: #fff;
+    }
+    .hero-cta-wa:hover { transform: translateY(-2px); box-shadow: 0 18px 40px -8px rgba(37,211,102,0.55); }
+    .hero-cta-tel {
+      background: rgba(255,255,255,0.16); color: #fff;
+      border: 1px solid rgba(255,255,255,0.24);
+      backdrop-filter: blur(10px);
+      box-shadow: none;
+    }
+    .hero-cta-tel:hover { background: rgba(255,255,255,0.22); transform: translateY(-2px); }
+    .hero-cta-tg { background: linear-gradient(135deg, #229ED9 0%, #1c7ea8 100%); color: #fff; }
+    .hero-cta-tg:hover { transform: translateY(-2px); box-shadow: 0 18px 40px -8px rgba(34,158,217,0.55); }
+
+    .hero-stats {
+      display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap;
+    }
+    .hs-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 14px;
+      background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.18);
+      backdrop-filter: blur(10px);
+      border-radius: var(--r-pill);
+      font-size: 12.5px; font-weight: 700;
+    }
+    .hs-pill .num { font-family: var(--font-mono); font-size: 13.5px; font-weight: 800; color: var(--cat-2); }
+
+    /* Mascot Hero (kedi + köpek + sparkle) */
+    .hero-mascot { position: relative; width: 100%; height: 320px; display: grid; place-items: center; }
+    .hero-mascot svg { width: 100%; height: 100%; max-width: 380px; }
+    .float-cat { animation: floatA 3.4s ease-in-out infinite; transform-origin: 65% 75%; }
+    .float-dog { animation: floatA 4s ease-in-out infinite reverse; transform-origin: 35% 75%; }
+    .spark-anim { animation: sparkle 1.5s ease-in-out infinite; transform-origin: center; }
+    .spark-anim:nth-child(2) { animation-delay: 0.5s; }
+    .spark-anim:nth-child(3) { animation-delay: 1s; }
+    @keyframes floatA { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-12px) rotate(2deg); } }
+    @keyframes sparkle { 0%,100% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.4); opacity: 1; } }
+
+    /* ============================================================
+       KATEGORİ ŞERİDİ (yatay scroll)
+       ============================================================ */
+    .categories {
+      padding: 32px 32px 0;
+      display: flex; gap: 14px; flex-wrap: wrap;
+    }
+    .cat-card {
+      flex: 1; min-width: 130px;
+      padding: 18px 16px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px); border: 1px solid var(--glass-border);
+      border-radius: var(--r-lg);
+      text-align: center;
+      cursor: pointer;
+      transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+      box-shadow: var(--glass-shadow);
+    }
+    .cat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+    .cat-icon { font-size: 36px; margin-bottom: 8px; display: block; }
+    .cat-name { font-size: 13.5px; font-weight: 800; margin-bottom: 3px; }
+    .cat-count { font-size: 11px; color: var(--text-3); font-weight: 600; }
+
+    /* ============================================================
+       SECTION
+       ============================================================ */
+    .section { padding: 56px 32px 0; }
+    .section-head { margin-bottom: 28px; }
+    .section-eyebrow { font-size: 11.5px; font-weight: 800; letter-spacing: 0.12em; color: var(--cat); text-transform: uppercase; margin-bottom: 8px; }
+    .section-title { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 8px; }
+    .section-sub { font-size: 15px; color: var(--text-2); }
+
+    /* ============================================================
+       ÜRÜN GRID
+       ============================================================ */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+    .product {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+      box-shadow: var(--glass-shadow);
+      cursor: pointer;
+      display: flex; flex-direction: column;
+    }
+    .product:hover { transform: translateY(-6px); box-shadow: var(--shadow-md); }
+    .product-img {
+      aspect-ratio: 1; width: 100%;
+      background: linear-gradient(135deg, var(--cat-soft) 0%, var(--bars-soft) 100%);
+      display: grid; place-items: center;
+      position: relative;
+    }
+    .product-img svg { width: 60%; height: 60%; }
+    .product-badge {
+      position: absolute; top: 10px; right: 10px;
+      padding: 4px 9px; border-radius: var(--r-pill);
+      font-size: 10px; font-weight: 800; letter-spacing: 0.04em;
+    }
+    .badge-new { background: var(--arrow); color: #fff; }
+    .badge-discount { background: var(--cat); color: #fff; }
+    .product-info { padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+    .product-brand { font-size: 10.5px; font-weight: 700; color: var(--text-3); letter-spacing: 0.06em; text-transform: uppercase; }
+    .product-name { font-size: 13.5px; font-weight: 800; line-height: 1.35; min-height: 36px; }
+    .product-meta { display: flex; gap: 6px; font-size: 10.5px; color: var(--text-3); font-weight: 600; }
+    .product-meta span { padding: 2px 7px; background: var(--surface-2); border-radius: 5px; }
+    .product-bottom { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 8px; padding-top: 10px; border-top: 1px dashed var(--border); }
+    .product-price { font-size: 18px; font-weight: 800; color: var(--cart); font-family: var(--font-mono); }
+    [data-theme="dark"] .product-price { color: var(--bars); }
+    .product-stock {
+      font-size: 10.5px; font-weight: 800; padding: 3px 9px; border-radius: var(--r-pill);
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .stock-ok { background: var(--arrow-soft); color: var(--arrow-700); }
+    .stock-warn { background: var(--cat-soft); color: var(--cat-700); }
+    .stock-out { background: rgba(239,68,68,0.12); color: var(--danger); }
+    [data-theme="dark"] .stock-ok { color: var(--arrow); }
+    [data-theme="dark"] .stock-warn { color: var(--cat); }
+
+    /* ============================================================
+       BİLGİ ŞERİDİ
+       ============================================================ */
+    .info-strip {
+      margin-top: 56px;
+      padding: 32px;
+      background: linear-gradient(135deg, var(--cart-soft) 0%, var(--bars-soft) 100%);
+      border-radius: var(--r-xl);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+    }
+    [data-theme="dark"] .info-strip { background: linear-gradient(135deg, var(--cart-soft) 0%, var(--surface-2) 100%); }
+    .info-item {
+      display: flex; gap: 16px; align-items: flex-start;
+    }
+    .info-icon {
+      width: 52px; height: 52px; border-radius: 14px;
+      background: var(--surface);
+      display: grid; place-items: center;
+      box-shadow: var(--shadow-sm);
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    .info-title { font-size: 15px; font-weight: 800; margin-bottom: 4px; }
+    .info-desc { font-size: 12.5px; color: var(--text-2); line-height: 1.5; }
+
+    /* ============================================================
+       FİLTRE BAR (Ürün katalog)
+       ============================================================ */
+    .filter-bar {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      padding: 16px 22px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px); border: 1px solid var(--glass-border);
+      border-radius: var(--r);
+      margin-bottom: 22px;
+    }
+    .filter-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border-radius: var(--r-pill);
+      background: var(--surface); border: 1px solid var(--border-strong);
+      font-size: 12.5px; font-weight: 700; color: var(--text-2);
+      cursor: pointer; transition: all var(--dur-fast) var(--ease);
+    }
+    .filter-chip:hover, .filter-chip.active { background: var(--cart); color: #fff; border-color: var(--cart); }
+
+    /* ============================================================
+       ŞUBELER
+       ============================================================ */
+    .branches {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+    .branch-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px); border: 1px solid var(--glass-border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      box-shadow: var(--glass-shadow);
+    }
+    .branch-map {
+      aspect-ratio: 16/9;
+      background: linear-gradient(135deg, var(--bars-soft) 0%, var(--cart-soft) 100%);
+      display: grid; place-items: center;
+      position: relative;
+    }
+    .branch-pin {
+      width: 48px; height: 48px;
+      background: var(--cat); color: #fff;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      display: grid; place-items: center;
+      box-shadow: var(--shadow-cat);
+      animation: floatA 3s ease-in-out infinite;
+    }
+    .branch-pin svg { transform: rotate(45deg); width: 22px; height: 22px; }
+    .branch-info { padding: 20px; }
+    .branch-name { font-size: 17px; font-weight: 800; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+    .branch-name .tag { font-size: 10.5px; font-weight: 700; color: var(--text-3); background: var(--surface-2); padding: 3px 9px; border-radius: var(--r-pill); }
+    .branch-addr { font-size: 12.5px; color: var(--text-2); line-height: 1.55; margin-bottom: 10px; }
+    .branch-meta { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--text-2); margin-bottom: 16px; }
+    .branch-meta-line { display: flex; align-items: center; gap: 8px; }
+    .branch-meta-line svg { width: 14px; height: 14px; color: var(--text-3); flex-shrink: 0; }
+    .branch-actions { display: flex; gap: 8px; }
+    .branch-btn {
+      flex: 1; height: 38px; padding: 0 12px;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      border-radius: var(--r-sm); font-size: 12.5px; font-weight: 700;
+      transition: all var(--dur-fast) var(--ease);
+    }
+    .branch-btn-cart { background: var(--cart); color: #fff; }
+    .branch-btn-cart:hover { background: var(--cart-2); }
+    .branch-btn-wa { background: #25d366; color: #fff; }
+    .branch-btn-wa:hover { background: #128c7e; }
+    .branch-btn-out { background: var(--surface); color: var(--text); border: 1px solid var(--border-strong); }
+    .branch-btn-out:hover { background: var(--surface-2); }
+
+    /* ============================================================
+       İLETİŞİM
+       ============================================================ */
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 32px;
+    }
+    .contact-info-card {
+      background: linear-gradient(135deg, var(--cart) 0%, var(--dog) 100%);
+      color: #fff;
+      padding: 32px;
+      border-radius: var(--r-lg);
+      position: relative; overflow: hidden;
+    }
+    .contact-info-card::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, var(--cat) 0%, transparent 65%);
+      opacity: 0.4;
+    }
+    .contact-title { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+    .contact-sub { font-size: 13.5px; color: rgba(255,255,255,0.85); margin-bottom: 24px; }
+    .contact-line {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      font-size: 13.5px;
+    }
+    .contact-line:last-child { border-bottom: none; }
+    .contact-line .icon {
+      width: 38px; height: 38px;
+      background: rgba(255,255,255,0.14);
+      border-radius: var(--r-sm);
+      display: grid; place-items: center;
+      flex-shrink: 0;
+    }
+    .contact-line .icon svg { width: 17px; height: 17px; }
+    .contact-line strong { font-weight: 800; color: #fff; }
+    .contact-line span { color: rgba(255,255,255,0.85); font-size: 11.5px; }
+
+    .contact-form-card {
+      background: var(--surface);
+      padding: 32px;
+      border-radius: var(--r-lg);
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border);
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 11px; font-weight: 800; color: var(--text-3); letter-spacing: 0.06em; text-transform: uppercase; }
+    .input, .select, .textarea {
+      height: 44px; padding: 0 14px;
+      background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--r-sm);
+      font-size: 13.5px; color: var(--text);
+      transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+      width: 100%; font-family: inherit;
+    }
+    .textarea { min-height: 110px; padding: 12px 14px; line-height: 1.5; resize: vertical; }
+    .input:focus, .select:focus, .textarea:focus {
+      outline: none; border-color: var(--cat); box-shadow: 0 0 0 4px rgba(212,98,28,0.15);
+    }
+    .form-submit {
+      width: 100%; height: 50px; margin-top: 14px;
+      background: linear-gradient(135deg, var(--cat) 0%, var(--cat-2) 100%);
+      color: #fff; font-weight: 800; font-size: 14.5px;
+      border-radius: var(--r-sm); box-shadow: var(--shadow-cat);
+      transition: all var(--dur-fast) var(--ease);
+    }
+    .form-submit:hover { transform: translateY(-2px); box-shadow: 0 18px 40px -8px rgba(212,98,28,0.55); }
+
+    /* ============================================================
+       HAKKIMIZDA
+       ============================================================ */
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+    }
+    .about-image {
+      aspect-ratio: 4/3;
+      background: linear-gradient(135deg, var(--cat-soft) 0%, var(--bars-soft) 100%);
+      border-radius: var(--r-xl);
+      display: grid; place-items: center;
+      position: relative;
+    }
+    .about-image svg { width: 60%; height: 60%; }
+    .about-content h3 { font-size: 22px; font-weight: 800; margin-bottom: 14px; }
+    .about-content p { font-size: 14.5px; color: var(--text-2); line-height: 1.7; margin-bottom: 14px; }
+    .about-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 22px; }
+    .about-stat { padding: 18px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); text-align: center; box-shadow: var(--shadow-sm); }
+    .about-stat-num { font-size: 28px; font-weight: 800; color: var(--cat); font-family: var(--font-mono); line-height: 1; margin-bottom: 4px; }
+    .about-stat-lbl { font-size: 11px; font-weight: 700; color: var(--text-3); letter-spacing: 0.04em; text-transform: uppercase; }
+
+    /* ============================================================
+       FOOTER
+       ============================================================ */
+    .footer {
+      margin-top: 80px;
+      padding: 56px 32px 32px;
+      background: linear-gradient(180deg, var(--cart) 0%, var(--cart-700) 100%);
+      color: #fff;
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+    .footer-col h4 { font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.7); margin-bottom: 16px; }
+    .footer-col p, .footer-col a { font-size: 13px; color: rgba(255,255,255,0.85); line-height: 1.7; }
+    .footer-col a { display: block; padding: 4px 0; }
+    .footer-col a:hover { color: var(--cat-2); }
+    .footer-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .footer-brand img { width: 40px; height: 40px; }
+    .footer-brand-name { font-size: 20px; font-weight: 800; }
+    .footer-brand-name .ps { color: #fff; }
+    .footer-brand-name .pro { color: var(--arrow-2); }
+    .footer-social { display: flex; gap: 10px; margin-top: 14px; }
+    .footer-social a { width: 38px; height: 38px; padding: 0; display: grid; place-items: center; background: rgba(255,255,255,0.12); border-radius: var(--r-sm); transition: all var(--dur-fast) var(--ease); }
+    .footer-social a:hover { background: var(--cat); }
+    .footer-social svg { width: 17px; height: 17px; }
+    .footer-bottom {
+      padding-top: 24px;
+      border-top: 1px solid rgba(255,255,255,0.12);
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;
+      font-size: 11.5px; color: rgba(255,255,255,0.6);
+    }
+    .footer-bottom a:hover { color: #fff; }
+    .powered-by {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px;
+      background: rgba(255,255,255,0.08);
+      border-radius: var(--r-pill);
+      font-size: 11px;
+    }
+
+    /* ============================================================
+       WHATSAPP FLOATING BUTTON
+       ============================================================ */
+    .wa-fab {
+      position: fixed; bottom: 24px; right: 24px;
+      width: 60px; height: 60px;
+      background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+      border-radius: 50%;
+      display: grid; place-items: center;
+      box-shadow: 0 10px 28px -6px rgba(37,211,102,0.5);
+      z-index: 25;
+      cursor: pointer;
+      animation: waPulse 2s ease-in-out infinite;
+      transition: transform var(--dur) var(--ease);
+    }
+    .wa-fab:hover { transform: scale(1.08); }
+    .wa-fab svg { width: 30px; height: 30px; color: #fff; }
+    @keyframes waPulse { 0%,100% { box-shadow: 0 10px 28px -6px rgba(37,211,102,0.5), 0 0 0 0 rgba(37,211,102,0.4); } 50% { box-shadow: 0 10px 28px -6px rgba(37,211,102,0.5), 0 0 0 16px rgba(37,211,102,0); } }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media (max-width: 1280px) {
+      .product-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 1024px) {
+      .hero { padding: 36px; }
+      .hero-grid { grid-template-columns: 1fr; }
+      .hero-mascot { height: 260px; }
+      .hero-title { font-size: 36px; }
+      .product-grid { grid-template-columns: repeat(2, 1fr); }
+      .branches { grid-template-columns: 1fr; }
+      .contact-grid, .about-grid { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+      .info-strip { grid-template-columns: 1fr; }
+      .tb-nav { display: none; }
+    }
+    @media (max-width: 640px) {
+      .topbar { padding: 0 16px; gap: 12px; }
+      .tb-search { display: none; }
+      .hero { margin: 16px 14px 0; padding: 28px 22px; }
+      .hero-title { font-size: 28px; }
+      .hero-actions .hero-cta { flex: 1; justify-content: center; }
+      .section { padding: 40px 14px 0; }
+      .product-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+      .footer-grid { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Animated background -->
+  <div class="mesh-bg" aria-hidden="true">
+    <div class="mesh-blob blob-1"></div>
+    <div class="mesh-blob blob-2"></div>
+    <div class="mesh-blob blob-3"></div>
+    <div class="mesh-blob blob-4"></div>
+  </div>
+  <div class="paw-pattern" aria-hidden="true"></div>
+
+  <!-- ============================================================
+       TOPBAR
+       ============================================================ -->
+  <header class="topbar">
+    <a href="#" class="tb-brand">
+      <div class="tb-logo"><img src="logo.png" alt="Mavi Pet Shop"/></div>
+      <div>
+        <div class="tb-name"><span class="ps">Mavi</span> <span class="pro">Pet</span></div>
+        <div class="tb-tag">İstanbul · 3 Şube</div>
+      </div>
+    </a>
+
+    <nav class="tb-nav" aria-label="Ana menü">
+      <a href="#" aria-current="page">Anasayfa</a>
+      <a href="#urunler">Ürünler</a>
+      <a href="#subeler">Şubeler</a>
+      <a href="#hakkimizda">Hakkımızda</a>
+      <a href="#iletisim">İletişim</a>
+    </nav>
+
+    <div class="tb-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" placeholder="Ürün ara..." />
+    </div>
+
+    <div class="tb-acts">
+      <span class="lang">🇹🇷 TR ▾</span>
+      <button class="tb-btn" id="themeBtn" aria-label="Tema değiştir">
+        <svg id="iconSun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        <svg id="iconMoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+      </button>
+      <a href="https://wa.me/905321234567" class="tb-cta">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 6.32A7.85 7.85 0 0 0 12.05 4a7.94 7.94 0 0 0-6.88 11.92L4 20l4.2-1.1a7.93 7.93 0 0 0 3.85.98h.01a7.94 7.94 0 0 0 7.94-7.93 7.88 7.88 0 0 0-2.4-5.63z"/></svg>
+        WhatsApp
+      </a>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       HERO BANNER
+       ============================================================ -->
+  <section class="hero">
+    <div class="hero-grid">
+      <div>
+        <div class="hero-eyebrow">
+          <span class="live-d"></span>
+          <span>3 ŞUBE · 10 YILLIK TECRÜBE · GÜVENLİ ALIŞVERİŞ</span>
+        </div>
+        <h1 class="hero-title">Sevdiklerinize<br><em>en iyisini.</em></h1>
+        <p class="hero-desc">
+          Royal Canin, Whiskas, Pro Plan, Hill's ve daha fazlası. Pet shop'umuzda her bütçeye uygun, kaliteli ürünler.
+          Kadıköy, Beşiktaş ve Üsküdar şubelerimizde sizi bekliyoruz.
+        </p>
+        <div class="hero-actions">
+          <a href="https://wa.me/905321234567?text=Merhaba,%20bilgi%20almak%20istiyorum" class="hero-cta hero-cta-wa">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 6.32A7.85 7.85 0 0 0 12.05 4a7.94 7.94 0 0 0-6.88 11.92L4 20l4.2-1.1a7.93 7.93 0 0 0 3.85.98h.01a7.94 7.94 0 0 0 7.94-7.93 7.88 7.88 0 0 0-2.4-5.63z"/></svg>
+            WhatsApp ile Sipariş
+          </a>
+          <a href="tel:+902121234567" class="hero-cta hero-cta-tel">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            0212 123 45 67
+          </a>
+          <a href="https://t.me/maviPetshop" class="hero-cta hero-cta-tg">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.5 4.5L2.5 12.5l5.5 2 2 5.5 3-3 5 4 4-16.5z"/></svg>
+            Telegram
+          </a>
+        </div>
+        <div class="hero-stats">
+          <div class="hs-pill"><span class="num">184</span><span>ürün çeşidi</span></div>
+          <div class="hs-pill"><span class="num">5.000+</span><span>mutlu müşteri</span></div>
+          <div class="hs-pill"><span class="num">⭐ 4.9</span><span>5 üzerinden</span></div>
+        </div>
+      </div>
+
+      <!-- Hero Mascot -->
+      <div class="hero-mascot" aria-hidden="true">
+        <svg viewBox="0 0 280 240">
+          <!-- Sparkles -->
+          <g fill="#4ade80">
+            <path class="spark-anim" d="M240 30 L243 38 L251 41 L243 44 L240 52 L237 44 L229 41 L237 38 Z"/>
+            <path class="spark-anim" d="M30 60 L32 66 L38 68 L32 70 L30 76 L28 70 L22 68 L28 66 Z"/>
+            <path class="spark-anim" d="M220 180 L222 184 L226 186 L222 188 L220 192 L218 188 L214 186 L218 184 Z"/>
+          </g>
+          <!-- KEDİ -->
+          <g class="float-cat">
+            <ellipse cx="90" cy="160" rx="48" ry="44" fill="#d4621c"/>
+            <path d="M55 130 L62 95 L82 122 Z M125 130 L118 95 L98 122 Z" fill="#d4621c"/>
+            <path d="M60 122 L65 108 L73 122 Z" fill="#fdf2e9"/>
+            <path d="M120 122 L115 108 L107 122 Z" fill="#fdf2e9"/>
+            <ellipse cx="74" cy="155" rx="4" ry="6" fill="#0e1a2b"/>
+            <ellipse cx="106" cy="155" rx="4" ry="6" fill="#0e1a2b"/>
+            <circle cx="75" cy="152" r="1.2" fill="#fff"/>
+            <circle cx="107" cy="152" r="1.2" fill="#fff"/>
+            <path d="M84 170 L90 175 L96 170 Z" fill="#0e1a2b"/>
+            <path d="M90 175 L90 180 M90 180 Q83 183 81 180 M90 180 Q97 183 99 180" stroke="#0e1a2b" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+            <line x1="50" y1="160" x2="68" y2="166" stroke="#0e1a2b" stroke-width="1.2" stroke-linecap="round"/>
+            <line x1="130" y1="160" x2="112" y2="166" stroke="#0e1a2b" stroke-width="1.2" stroke-linecap="round"/>
+          </g>
+          <!-- KÖPEK -->
+          <g class="float-dog">
+            <ellipse cx="195" cy="155" rx="52" ry="46" fill="#2c4257"/>
+            <ellipse cx="158" cy="135" rx="11" ry="28" fill="#2c4257" transform="rotate(-15 158 135)"/>
+            <ellipse cx="232" cy="135" rx="11" ry="28" fill="#2c4257" transform="rotate(15 232 135)"/>
+            <ellipse cx="195" cy="172" rx="26" ry="18" fill="#41607d"/>
+            <path d="M174 150 Q180 142 188 150" stroke="#0e1a2b" stroke-width="3" stroke-linecap="round" fill="none"/>
+            <path d="M202 150 Q210 142 216 150" stroke="#0e1a2b" stroke-width="3" stroke-linecap="round" fill="none"/>
+            <ellipse cx="195" cy="168" rx="5" ry="4" fill="#0e1a2b"/>
+            <path d="M186 180 Q195 188 204 180" stroke="#0e1a2b" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       KATEGORİ ŞERİDİ
+       ============================================================ -->
+  <div class="categories">
+    <div class="cat-card"><span class="cat-icon">🐱</span><div class="cat-name">Kedi</div><div class="cat-count">68 ürün</div></div>
+    <div class="cat-card"><span class="cat-icon">🐶</span><div class="cat-name">Köpek</div><div class="cat-count">52 ürün</div></div>
+    <div class="cat-card"><span class="cat-icon">🐦</span><div class="cat-name">Kuş</div><div class="cat-count">22 ürün</div></div>
+    <div class="cat-card"><span class="cat-icon">🐟</span><div class="cat-name">Balık</div><div class="cat-count">18 ürün</div></div>
+    <div class="cat-card"><span class="cat-icon">🐰</span><div class="cat-name">Tavşan</div><div class="cat-count">14 ürün</div></div>
+    <div class="cat-card"><span class="cat-icon">🦎</span><div class="cat-name">Sürüngen</div><div class="cat-count">10 ürün</div></div>
+  </div>
+
+  <!-- ============================================================
+       BİLGİ ŞERİDİ (3 kolon)
+       ============================================================ -->
+  <div class="section" style="padding-top:40px">
+    <div class="info-strip">
+      <div class="info-item">
+        <div class="info-icon">🚚</div>
+        <div><div class="info-title">Hızlı Teslimat</div><div class="info-desc">İstanbul içi siparişlerde aynı gün teslimat. WhatsApp ile sipariş, kapıda nakit/kart ödeme.</div></div>
+      </div>
+      <div class="info-item">
+        <div class="info-icon">💝</div>
+        <div><div class="info-title">7/24 Destek</div><div class="info-desc">WhatsApp ve Telegram'dan her zaman ulaşabilirsiniz. Uzman ekibimiz hayvanınız için en doğru ürünü tavsiye eder.</div></div>
+      </div>
+      <div class="info-item">
+        <div class="info-icon">🏪</div>
+        <div><div class="info-title">3 Şubemiz</div><div class="info-desc">Kadıköy (merkez), Beşiktaş ve Üsküdar — Anadolu ve Avrupa yakasında size en yakın şubeye gelebilirsiniz.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       ÖNE ÇIKAN ÜRÜNLER
+       ============================================================ -->
+  <section class="section" id="urunler">
+    <div class="section-head">
+      <div class="section-eyebrow">✦ ÖNE ÇIKANLAR</div>
+      <h2 class="section-title">Çok Satan Ürünler</h2>
+      <p class="section-sub">Bu hafta en çok satılan ürünlerimiz. Stok hızlı tükeniyor.</p>
+    </div>
+
+    <!-- Filtre bar -->
+    <div class="filter-bar">
+      <span style="font-size:11px;font-weight:800;letter-spacing:0.08em;color:var(--text-3);text-transform:uppercase">Filtreler:</span>
+      <button class="filter-chip active">Tümü</button>
+      <button class="filter-chip">🐱 Kedi</button>
+      <button class="filter-chip">🐶 Köpek</button>
+      <button class="filter-chip">Mama</button>
+      <button class="filter-chip">Aksesuar</button>
+      <button class="filter-chip">Sağlık</button>
+      <span style="margin-left:auto;font-size:12px;color:var(--text-2)">12 ürün gösteriliyor</span>
+    </div>
+
+    <div class="product-grid">
+      <!-- Ürün 1: Royal Canin -->
+      <article class="product">
+        <div class="product-img">
+          <svg viewBox="0 0 100 100"><ellipse cx="50" cy="58" rx="32" ry="30" fill="#d4621c"/><path d="M22 38 L28 18 L42 36 Z M78 38 L72 18 L58 36 Z" fill="#d4621c"/><circle cx="42" cy="55" r="2.5" fill="#0e1a2b"/><circle cx="58" cy="55" r="2.5" fill="#0e1a2b"/></svg>
+          <span class="product-badge badge-new">YENİ</span>
+        </div>
+        <div class="product-info">
+          <span class="product-brand">Royal Canin</span>
+          <h3 class="product-name">Royal Canin Adult Kedi Maması 2kg</h3>
+          <div class="product-meta"><span>🐱 Kedi</span><span>Mama</span></div>
+          <div class="product-bottom">
+            <div class="product-price">₺250</div>
+            <span class="product-stock stock-ok">✓ Stokta</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Ürün 2: Whiskas -->
+      <article class="product">
+        <div class="product-img">
+          <svg viewBox="0 0 100 100"><ellipse cx="50" cy="58" rx="32" ry="30" fill="#d4621c"/><path d="M22 38 L28 18 L42 36 Z M78 38 L72 18 L58 36 Z" fill="#d4621c"/><circle cx="42" cy="55" r="2.5" fill="#0e1a2b"/><circle cx="58" cy="55" r="2.5" fill="#0e1a2b"/></svg>
+        </div>
+        <div class="product-info">
+          <span class="product-brand">Whiskas</span>
+          <h3 class="product-name">Whiskas 400g · Sığır Etli</h3>
+          <div class="product-meta"><span>🐱 Kedi</span><span>Mama</span></div>
+          <div class="product-bottom">
+            <div class="product-price">₺12,50</div>
+            <span class="product-stock stock-warn">🟠 Az kaldı</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Ürün 3: Pro Plan -->
+      <article class="product">
+        <div class="product-img">
+          <svg viewBox="0 0 100 100"><ellipse cx="50" cy="58" rx="32" ry="30" fill="#2c4257"/><ellipse cx="32" cy="42" rx="7" ry="16" fill="#2c4257" transform="rotate(-15 32 42)"/><ellipse cx="68" cy="42" rx="7" ry="16" fill="#2c4257" transform="rotate(15 68 42)"/><ellipse cx="50" cy="68" rx="14" ry="9" fill="#41607d"/></svg>
+          <span class="product-badge badge-discount">-%15</span>
+        </div>
+        <div class="product-info">
+          <span class="product-brand">Pro Plan</span>
+          <h3 class="product-name">Pro Plan Köpek Yetişkin 15kg</h3>
+          <div class="product-meta"><span>🐶 Köpek</span><span>Mama</span></div>
+          <div class="product-bottom">
+            <div class="product-price">₺850</div>
+            <span class="product-stock stock-ok">✓ Stokta</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Ürün 4: Felix -->
+      <article class="product">
+        <div class="product-img">
+          <svg viewBox="0 0 100 100"><ellipse cx="50" cy="58" rx="32" ry="30" fill="#d4621c"/><path d="M22 38 L28 18 L42 36 Z M78 38 L72 18 L58 36 Z" fill="#d4621c"/></svg>
+        </div>
+        <div class="product-info">
+          <span class="product-brand">Felix</span>
+          <h3 class="product-name">Felix Yaş Mama Pouch 12'li Karışık</h3>
+          <div class="product-meta"><span>🐱 Kedi</span><span>Yaş Mama</span></div>
+          <div class="product-bottom">
+            <div class="product-price">₺85</div>
+            <span class="product-stock stock-out">⛔ Stok yok</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Ürün 5: Trixie kum kabı -->
+      <article class="product">
+        <div class="product-img">
+          <svg viewBox="0 0 100 100"><rect x="22" y="35" width="56" height="48" rx="6" fill="#7cb8e0"/><rect x="22" y="35" width="56" height="6" fill="#fff" opacity="0.3"/><path d="M35 35 L35 22 L65 22 L65 35" stroke="#7cb8e0" stroke-width="6" fill="none"/></svg>
+        </div>
+        <div class="product-info">
+          <span class="product-brand">Trixie</span>
+          <h3 class="product-name">Trixie Kum Kabı XL · Çekmeceli</h3>
+          <div class="product-meta"><span>🐱 Kedi</span><span>Aksesuar</span></div>
+          <div class="product-bottom">
+            <div class="product-price">₺345</div>
+            <span class="product-stock stock-ok">✓ Stokta</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Ürün 6: Almo Nature -->
+      <article class="product">
+        <div class="product-img">
+          <svg viewBox="0 0 100 100"><ellipse cx="50" cy="58" rx="30" ry="28" fill="#22c55e"/><circle cx="42" cy="55" r="2.5" fill="#fff"/><circle cx="58" cy="55" r="2.5" fill="#fff"/></svg>
+        </div>
+        <div class="product-info">
+          <span class="product-brand">Almo Nature</span>
+          <h3 class="product-name">Almo Nature Kedi 70g · 5 Çeşit</h3>
+          <div class="product-meta"><span>🐱 Kedi</span><span>Yaş Mama</span></div>
+          <div class="product-bottom">
+            <div class="product-price">₺28-34</div>
+            <span class="product-stock stock-ok">✓ Stokta</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Ürün 7: Hill's -->
+      <article class="product">
+        <div class="product-img">
+          <svg viewBox="0 0 100 100"><ellipse cx="50" cy="58" rx="32" ry="30" fill="#2c4257"/><circle cx="42" cy="55" r="3" fill="#fff"/><circle cx="58" cy="55" r="3" fill="#fff"/><path d="M40 70 Q50 78 60 70" stroke="#fff" stroke-width="2" fill="none"/></svg>
+          <span class="product-badge badge-new">PROFESYONEL</span>
+        </div>
+        <div class="product-info">
+          <span class="product-brand">Hill's Prescription</span>
+          <h3 class="product-name">Hill's Kedi Sterilised 2kg</h3>
+          <div class="product-meta"><span>🐱 Kedi</span><span>Sağlık</span></div>
+          <div class="product-bottom">
+            <div class="product-price">₺680-1420</div>
+            <span class="product-stock stock-ok">✓ Stokta</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Ürün 8: Drontal -->
+      <article class="product">
+        <div class="product-img">
+          <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="32" fill="#22c55e"/><path d="M38 50 L46 58 L62 42" stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round"/></svg>
+        </div>
+        <div class="product-info">
+          <span class="product-brand">Bayer</span>
+          <h3 class="product-name">Drontal Plus Köpek · Şurup 250ml</h3>
+          <div class="product-meta"><span>🐶 Köpek</span><span>Sağlık</span></div>
+          <div class="product-bottom">
+            <div class="product-price">₺285</div>
+            <span class="product-stock stock-ok">✓ Stokta</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Ürün 9: Tasma -->
+      <article class="product">
+        <div class="product-img">
+          <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="32" stroke="#d4621c" stroke-width="6" fill="none"/><circle cx="50" cy="22" r="6" fill="#d4621c"/></svg>
+        </div>
+        <div class="product-info">
+          <span class="product-brand">Trixie</span>
+          <h3 class="product-name">Trixie Tasma · Deri · M boy</h3>
+          <div class="product-meta"><span>🐶 Köpek</span><span>Aksesuar</span></div>
+          <div class="product-bottom">
+            <div class="product-price">₺125</div>
+            <span class="product-stock stock-ok">✓ Stokta</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Ürün 10: Kuş yemi -->
+      <article class="product">
+        <div class="product-img">
+          <svg viewBox="0 0 100 100"><ellipse cx="50" cy="55" rx="26" ry="22" fill="#fbbf24"/><path d="M70 50 L84 45 L78 56 Z" fill="#fbbf24"/><circle cx="42" cy="50" r="2" fill="#0e1a2b"/></svg>
+        </div>
+        <div class="product-info">
+          <span class="product-brand">Versele Laga</span>
+          <h3 class="product-name">Muhabbet Kuşu Yemi 1kg</h3>
+          <div class="product-meta"><span>🐦 Kuş</span><span>Mama</span></div>
+          <div class="product-bottom">
+            <div class="product-price">₺48</div>
+            <span class="product-stock stock-ok">✓ Stokta</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Ürün 11: Balık yemi -->
+      <article class="product">
+        <div class="product-img">
+          <svg viewBox="0 0 100 100"><ellipse cx="46" cy="50" rx="24" ry="14" fill="#7cb8e0"/><path d="M68 50 L82 38 L82 62 Z" fill="#7cb8e0"/><circle cx="38" cy="48" r="2" fill="#0e1a2b"/></svg>
+        </div>
+        <div class="product-info">
+          <span class="product-brand">Tetra</span>
+          <h3 class="product-name">Tetra Balık Yemi Pul 100g</h3>
+          <div class="product-meta"><span>🐟 Balık</span><span>Mama</span></div>
+          <div class="product-bottom">
+            <div class="product-price">₺52</div>
+            <span class="product-stock stock-ok">✓ Stokta</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Ürün 12: Tavşan yemi -->
+      <article class="product">
+        <div class="product-img">
+          <svg viewBox="0 0 100 100"><ellipse cx="50" cy="60" rx="22" ry="20" fill="#a78bfa"/><ellipse cx="42" cy="38" rx="5" ry="14" fill="#a78bfa"/><ellipse cx="58" cy="38" rx="5" ry="14" fill="#a78bfa"/><circle cx="44" cy="58" r="2" fill="#0e1a2b"/><circle cx="56" cy="58" r="2" fill="#0e1a2b"/></svg>
+        </div>
+        <div class="product-info">
+          <span class="product-brand">Cuni Complete</span>
+          <h3 class="product-name">Tavşan Yemi 1.5kg · Sebzeli</h3>
+          <div class="product-meta"><span>🐰 Tavşan</span><span>Mama</span></div>
+          <div class="product-bottom">
+            <div class="product-price">₺75</div>
+            <span class="product-stock stock-warn">🟠 Az kaldı</span>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <div style="display:flex;justify-content:center;margin-top:32px">
+      <a href="https://wa.me/905321234567?text=Merhaba,%20%C3%BCr%C3%BCn%20katalo%C4%9Funu%20g%C3%B6rmek%20istiyorum" class="hero-cta hero-cta-wa" style="box-shadow:0 6px 18px -4px rgba(37,211,102,0.45)">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 6.32A7.85 7.85 0 0 0 12.05 4a7.94 7.94 0 0 0-6.88 11.92L4 20l4.2-1.1a7.93 7.93 0 0 0 3.85.98h.01a7.94 7.94 0 0 0 7.94-7.93 7.88 7.88 0 0 0-2.4-5.63z"/></svg>
+        Tüm Kataloğu Görmek İçin WhatsApp
+      </a>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       ŞUBELER
+       ============================================================ -->
+  <section class="section" id="subeler">
+    <div class="section-head">
+      <div class="section-eyebrow">🏪 3 ŞUBEMİZ</div>
+      <h2 class="section-title">Size En Yakın Şubemiz</h2>
+      <p class="section-sub">Anadolu ve Avrupa yakasında, 3 noktada hizmetinizdeyiz.</p>
+    </div>
+
+    <div class="branches">
+      <div class="branch-card">
+        <div class="branch-map">
+          <div class="branch-pin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 7-8 13-8 13s-8-6-8-13a8 8 0 0 1 16 0Z"/></svg></div>
+        </div>
+        <div class="branch-info">
+          <div class="branch-name">Merkez <span class="tag">Kadıköy</span></div>
+          <div class="branch-addr">Caferağa Mah. Bahariye Cad. No 47/3<br>Kadıköy/İstanbul · 34710</div>
+          <div class="branch-meta">
+            <div class="branch-meta-line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Pzt-Cmt 09:00-19:00 · Paz Kapalı</div>
+            <div class="branch-meta-line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg> 0216 123 45 67</div>
+            <div class="branch-meta-line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> merkez@mavipet.com</div>
+          </div>
+          <div class="branch-actions">
+            <a href="https://www.google.com/maps?q=Kadıköy+İstanbul" class="branch-btn branch-btn-cart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M20 10c0 7-8 13-8 13s-8-6-8-13a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg> Yol Tarifi</a>
+            <a href="https://wa.me/905321234567" class="branch-btn branch-btn-wa"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px"><path d="M17.6 6.32A7.85 7.85 0 0 0 12.05 4a7.94 7.94 0 0 0-6.88 11.92L4 20l4.2-1.1a7.93 7.93 0 0 0 3.85.98h.01a7.94 7.94 0 0 0 7.94-7.93 7.88 7.88 0 0 0-2.4-5.63z"/></svg> WhatsApp</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="branch-card">
+        <div class="branch-map" style="background:linear-gradient(135deg,var(--cat-soft) 0%,var(--bars-soft) 100%)">
+          <div class="branch-pin" style="background:var(--cart)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 7-8 13-8 13s-8-6-8-13a8 8 0 0 1 16 0Z"/></svg></div>
+        </div>
+        <div class="branch-info">
+          <div class="branch-name">Şube A <span class="tag">Beşiktaş</span></div>
+          <div class="branch-addr">Sinanpaşa Mah. Köyiçi Cad. No 12<br>Beşiktaş/İstanbul · 34353</div>
+          <div class="branch-meta">
+            <div class="branch-meta-line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Pzt-Cmt 10:00-20:00 · Paz 11:00-18:00</div>
+            <div class="branch-meta-line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/></svg> 0212 234 56 78</div>
+            <div class="branch-meta-line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> besiktas@mavipet.com</div>
+          </div>
+          <div class="branch-actions">
+            <a href="#" class="branch-btn branch-btn-cart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M20 10c0 7-8 13-8 13s-8-6-8-13a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg> Yol Tarifi</a>
+            <a href="#" class="branch-btn branch-btn-wa"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px"><path d="M17.6 6.32A7.85 7.85 0 0 0 12.05 4a7.94 7.94 0 0 0-6.88 11.92L4 20l4.2-1.1a7.93 7.93 0 0 0 3.85.98h.01a7.94 7.94 0 0 0 7.94-7.93 7.88 7.88 0 0 0-2.4-5.63z"/></svg> WhatsApp</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="branch-card">
+        <div class="branch-map" style="background:linear-gradient(135deg,var(--arrow-soft) 0%,var(--cart-soft) 100%)">
+          <div class="branch-pin" style="background:var(--arrow)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 7-8 13-8 13s-8-6-8-13a8 8 0 0 1 16 0Z"/></svg></div>
+        </div>
+        <div class="branch-info">
+          <div class="branch-name">Şube B <span class="tag">Üsküdar</span></div>
+          <div class="branch-addr">Bağlarbaşı Mah. Bağdat Cad. No 88<br>Üsküdar/İstanbul · 34662</div>
+          <div class="branch-meta">
+            <div class="branch-meta-line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Pzt-Cmt 09:30-19:30 · Paz Kapalı</div>
+            <div class="branch-meta-line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07"/></svg> 0216 345 67 89</div>
+            <div class="branch-meta-line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> uskudar@mavipet.com</div>
+          </div>
+          <div class="branch-actions">
+            <a href="#" class="branch-btn branch-btn-cart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M20 10c0 7-8 13-8 13s-8-6-8-13a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg> Yol Tarifi</a>
+            <a href="#" class="branch-btn branch-btn-wa"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px"><path d="M17.6 6.32A7.85 7.85 0 0 0 12.05 4a7.94 7.94 0 0 0-6.88 11.92L4 20l4.2-1.1a7.93 7.93 0 0 0 3.85.98h.01a7.94 7.94 0 0 0 7.94-7.93 7.88 7.88 0 0 0-2.4-5.63z"/></svg> WhatsApp</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       HAKKIMIZDA
+       ============================================================ -->
+  <section class="section" id="hakkimizda">
+    <div class="about-grid">
+      <div class="about-image">
+        <svg viewBox="0 0 280 240">
+          <g class="float-cat"><ellipse cx="90" cy="150" rx="44" ry="40" fill="#d4621c"/><path d="M58 122 L65 88 L84 116 Z M122 122 L115 88 L96 116 Z" fill="#d4621c"/><circle cx="76" cy="145" r="3" fill="#0e1a2b"/><circle cx="104" cy="145" r="3" fill="#0e1a2b"/><path d="M85 165 L90 170 L95 165 Z" fill="#0e1a2b"/></g>
+          <g class="float-dog"><ellipse cx="190" cy="148" rx="48" ry="42" fill="#2c4257"/><ellipse cx="158" cy="125" rx="9" ry="24" fill="#2c4257" transform="rotate(-15 158 125)"/><ellipse cx="222" cy="125" rx="9" ry="24" fill="#2c4257" transform="rotate(15 222 125)"/><ellipse cx="190" cy="165" rx="22" ry="14" fill="#41607d"/><circle cx="190" cy="160" r="4" fill="#0e1a2b"/></g>
+        </svg>
+      </div>
+      <div class="about-content">
+        <div class="section-eyebrow">🐾 HİKAYEMİZ</div>
+        <h2 class="section-title">2014'ten Beri Sevdiklerinizle</h2>
+        <p>Mavi Pet Shop olarak 10 yılı aşkın süredir İstanbul'da pet shop sektöründe hizmet veriyoruz. İlk şubemizi Kadıköy'de açtığımızda hayalimiz "her bütçeye uygun, kaliteli, güvenilir ürünler" sunan bir mağaza zinciri kurmaktı.</p>
+        <p>Bugün Kadıköy, Beşiktaş ve Üsküdar'da 3 şubemiz var. Royal Canin, Whiskas, Pro Plan, Hill's gibi dünya markalarının resmi distribütörüyüz. Veterinerlerle çalışıyor, hayvanınızın sağlığı için en doğru ürünü öneriyoruz.</p>
+        <p>WhatsApp, Telegram veya telefonla bize ulaşın — sipariş alıp aynı gün teslimat yapıyoruz.</p>
+        <div class="about-stats">
+          <div class="about-stat"><div class="about-stat-num">10+</div><div class="about-stat-lbl">Yıllık Tecrübe</div></div>
+          <div class="about-stat"><div class="about-stat-num">5K+</div><div class="about-stat-lbl">Mutlu Müşteri</div></div>
+          <div class="about-stat"><div class="about-stat-num">184</div><div class="about-stat-lbl">Ürün Çeşidi</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       İLETİŞİM
+       ============================================================ -->
+  <section class="section" id="iletisim">
+    <div class="section-head">
+      <div class="section-eyebrow">📨 BİZE ULAŞIN</div>
+      <h2 class="section-title">İletişim</h2>
+      <p class="section-sub">Sorularınız mı var? Aşağıdaki formu doldurun veya direkt bize ulaşın.</p>
+    </div>
+
+    <div class="contact-grid">
+      <!-- Sol: İletişim bilgileri -->
+      <div class="contact-info-card">
+        <div class="contact-title">📞 Hızlı İletişim</div>
+        <div class="contact-sub">7/24 ulaşabilirsiniz. Genellikle 15 dk içinde dönüş yapıyoruz.</div>
+        <div class="contact-line">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 6.32A7.85 7.85 0 0 0 12.05 4a7.94 7.94 0 0 0-6.88 11.92L4 20l4.2-1.1a7.93 7.93 0 0 0 3.85.98h.01a7.94 7.94 0 0 0 7.94-7.93 7.88 7.88 0 0 0-2.4-5.63z"/></svg></div>
+          <div><strong>WhatsApp</strong><br><span>+90 532 123 45 67</span></div>
+        </div>
+        <div class="contact-line">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.5 4.5L2.5 12.5l5.5 2 2 5.5 3-3 5 4 4-16.5z"/></svg></div>
+          <div><strong>Telegram</strong><br><span>@maviPetshop</span></div>
+        </div>
+        <div class="contact-line">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/></svg></div>
+          <div><strong>Telefon</strong><br><span>0216 123 45 67 (Kadıköy)</span></div>
+        </div>
+        <div class="contact-line">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+          <div><strong>E-posta</strong><br><span>info@mavipet.com</span></div>
+        </div>
+        <div class="contact-line">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <div><strong>Çalışma Saatleri</strong><br><span>Pzt-Cmt 09:00-19:00 · Pzr Kapalı</span></div>
+        </div>
+      </div>
+
+      <!-- Sağ: Form -->
+      <div class="contact-form-card">
+        <h3 style="font-size:20px;font-weight:800;margin-bottom:6px">Bize Yazın</h3>
+        <p style="font-size:13px;color:var(--text-2);margin-bottom:22px">Form göndereceğiniz mesaj WhatsApp'a iletilir, en geç 1 saat içinde dönüş yapılır.</p>
+        <form>
+          <div class="form-row">
+            <div class="field"><label>Adınız *</label><input type="text" class="input" placeholder="Adınız Soyadınız"/></div>
+            <div class="field"><label>Telefon</label><input type="tel" class="input" placeholder="0xxx xxx xxxx"/></div>
+          </div>
+          <div class="field" style="margin-bottom:14px"><label>E-posta *</label><input type="email" class="input" placeholder="ornek@email.com"/></div>
+          <div class="field" style="margin-bottom:14px"><label>Konu</label>
+            <select class="select"><option>Genel bilgi</option><option>Ürün soru</option><option>Sipariş</option><option>Şikayet</option><option>Diğer</option></select>
+          </div>
+          <div class="field" style="margin-bottom:14px"><label>Mesajınız *</label><textarea class="textarea" placeholder="Sorunuzu detaylı yazın..."></textarea></div>
+          <button type="submit" class="form-submit">📨 Mesajı Gönder</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FOOTER
+       ============================================================ -->
+  <footer class="footer">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <div class="footer-brand">
+          <img src="logo.png" alt="Mavi Pet Shop"/>
+          <div class="footer-brand-name"><span class="ps">Mavi</span> <span class="pro">Pet</span></div>
+        </div>
+        <p style="margin-bottom:18px">Sevdiklerinize en iyisini sunmak için 10 yıldır buradayız. Kadıköy, Beşiktaş, Üsküdar şubelerimizde sizi bekliyoruz.</p>
+        <div class="footer-social">
+          <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41-.56-.22-.96-.48-1.38-.9-.42-.42-.68-.82-.9-1.38-.16-.42-.36-1.06-.41-2.23-.06-1.27-.07-1.65-.07-4.85s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41 1.27-.06 1.65-.07 4.85-.07M12 0C8.74 0 8.33.01 7.05.07 5.77.13 4.9.33 4.14.63c-.8.31-1.47.72-2.13 1.38C1.35 2.67.94 3.34.63 4.14.33 4.9.13 5.77.07 7.05.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.06 1.28.26 2.15.56 2.91.31.8.72 1.47 1.38 2.13.66.66 1.33 1.07 2.13 1.38.76.3 1.63.5 2.91.56C8.33 23.99 8.74 24 12 24s3.67-.01 4.95-.07c1.28-.06 2.15-.26 2.91-.56.8-.31 1.47-.72 2.13-1.38.66-.66 1.07-1.33 1.38-2.13.3-.76.5-1.63.56-2.91.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.06-1.28-.26-2.15-.56-2.91-.31-.8-.72-1.47-1.38-2.13C21.33 1.35 20.66.94 19.86.63 19.1.33 18.23.13 16.95.07 15.67.01 15.26 0 12 0zm0 5.84A6.16 6.16 0 1 0 12 18.16 6.16 6.16 0 0 0 12 5.84zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.41-11.85a1.44 1.44 0 1 0 0 2.88 1.44 1.44 0 0 0 0-2.88z"/></svg></a>
+          <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.07c0-6.63-5.37-12-12-12s-12 5.37-12 12c0 5.99 4.39 10.95 10.13 11.85v-8.38h-3.05v-3.47h3.05V9.43c0-3.01 1.79-4.67 4.53-4.67 1.31 0 2.69.23 2.69.23v2.95h-1.51c-1.49 0-1.96.93-1.96 1.88v2.25h3.32l-.53 3.47h-2.79v8.38C19.61 23.02 24 18.06 24 12.07z"/></svg></a>
+          <a href="#" aria-label="Twitter"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+          <a href="#" aria-label="TikTok"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43V8.34a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.84-.27z"/></svg></a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Hızlı Erişim</h4>
+        <a href="#">Anasayfa</a>
+        <a href="#urunler">Ürünler</a>
+        <a href="#subeler">Şubelerimiz</a>
+        <a href="#hakkimizda">Hakkımızda</a>
+        <a href="#iletisim">İletişim</a>
+      </div>
+      <div class="footer-col">
+        <h4>Kategoriler</h4>
+        <a href="#">🐱 Kedi Ürünleri</a>
+        <a href="#">🐶 Köpek Ürünleri</a>
+        <a href="#">🐦 Kuş Ürünleri</a>
+        <a href="#">🐟 Balık Ürünleri</a>
+        <a href="#">🐰 Tavşan Ürünleri</a>
+      </div>
+      <div class="footer-col">
+        <h4>Yasal</h4>
+        <a href="#">Gizlilik Politikası</a>
+        <a href="#">Kullanım Koşulları</a>
+        <a href="#">KVKK</a>
+        <a href="#">Çerez Politikası</a>
+        <a href="#">İletişim Bilgileri</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>© 2026 Mavi Pet Shop A.Ş. · Tüm hakları saklıdır.</div>
+      <a href="https://petstockpro.com" class="powered-by" target="_blank">
+        🛡 Powered by <strong>PetStockPro</strong>
+      </a>
+    </div>
+  </footer>
+
+  <!-- WhatsApp FAB -->
+  <a href="https://wa.me/905321234567" class="wa-fab" aria-label="WhatsApp ile iletişim">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 6.32A7.85 7.85 0 0 0 12.05 4a7.94 7.94 0 0 0-6.88 11.92L4 20l4.2-1.1a7.93 7.93 0 0 0 3.85.98h.01a7.94 7.94 0 0 0 7.94-7.93 7.88 7.88 0 0 0-2.4-5.63z"/></svg>
+  </a>
+
+  <script>
+    (function () {
+      const root = document.documentElement;
+      const themeBtn = document.getElementById('themeBtn');
+      const sun = document.getElementById('iconSun'), moon = document.getElementById('iconMoon');
+      const initTheme = () => {
+        const saved = localStorage.getItem('vitrin-theme');
+        const dark = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+        root.dataset.theme = dark ? 'dark' : 'light';
+        sun.style.display = dark ? 'none' : '';
+        moon.style.display = dark ? '' : 'none';
+      };
+      themeBtn.addEventListener('click', () => {
+        const dark = root.dataset.theme !== 'dark';
+        root.dataset.theme = dark ? 'dark' : 'light';
+        localStorage.setItem('vitrin-theme', root.dataset.theme);
+        sun.style.display = dark ? 'none' : '';
+        moon.style.display = dark ? '' : 'none';
+      });
+      initTheme();
+
+      // Filtre chip aktif
+      document.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+        });
+      });
+
+      // Form submit (simülasyon)
+      document.querySelector('form')?.addEventListener('submit', e => {
+        e.preventDefault();
+        alert('Mesajınız iletildi! En geç 1 saat içinde dönüş yapacağız.');
+      });
+    })();
+  </script>
+</body>
+</html>
