@@ -114,6 +114,9 @@ export function MovementsTable({ movements, now }: Props) {
                   {m.unitCost && (
                     <span className="mr-2 text-ink-4">alış {m.unitCost}₺</span>
                   )}
+                  {m.supplierName && (
+                    <span className="mr-2">🏢 {m.supplierName}</span>
+                  )}
                   {m.customerRef && (
                     <span className="mr-2">👤 {m.customerRef}</span>
                   )}

@@ -13,6 +13,7 @@ import {
   products,
   branches,
   users,
+  suppliers,
 } from '@/db/schema';
 
 export interface StockMovementListItem {
@@ -34,6 +35,7 @@ export interface StockMovementListItem {
   reason: string | null;
   note: string | null;
   performedBy: string | null;
+  supplierName: string | null;
   transferGroupId: string | null;
   reversesId: string | null;
   reversedById: string | null;
@@ -82,6 +84,7 @@ export async function listStockMovements(
       reason: stockMovements.reason,
       note: stockMovements.note,
       performedBy: sql<string | null>`${users.email}`,
+      supplierName: sql<string | null>`${suppliers.name}`,
       transferGroupId: stockMovements.transferGroupId,
       reversesId: stockMovements.reversesId,
       reversedById: stockMovements.reversedById,
@@ -91,6 +94,7 @@ export async function listStockMovements(
     .innerJoin(products, eq(products.id, productVariants.productId))
     .innerJoin(branches, eq(branches.id, stockMovements.branchId))
     .leftJoin(users, eq(users.id, stockMovements.createdById))
+    .leftJoin(suppliers, eq(suppliers.id, stockMovements.supplierId))
     .where(and(...conditions))
     .orderBy(desc(stockMovements.createdAt))
     .limit(opts.limit ?? 100);
