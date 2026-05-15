@@ -211,19 +211,7 @@ export default async function AuditLogPage({
                       {row.userEmail ?? '—'}
                     </td>
                     <td className="px-4 py-3 text-[11px] font-mono text-ink-4">
-                      {row.entityType ? (
-                        <>
-                          {row.entityType}
-                          {row.entityId && (
-                            <span className="text-[9px]">
-                              {' '}
-                              ({row.entityId.slice(0, 8)})
-                            </span>
-                          )}
-                        </>
-                      ) : (
-                        '—'
-                      )}
+                      <EntityCell entityType={row.entityType} entityId={row.entityId} />
                     </td>
                     <td className="px-4 py-3 text-[11px] text-ink-3">
                       {row.afterState ? (
@@ -254,5 +242,61 @@ export default async function AuditLogPage({
         ← Pano&apos;ya dön
       </Link>
     </main>
+  );
+}
+
+/**
+ * Audit entity link — entityType'a göre ilgili sayfaya götürür.
+ * Silinmiş entity'ler hala link verir (soft delete olabilir).
+ */
+function EntityCell({
+  entityType,
+  entityId,
+}: {
+  entityType: string | null;
+  entityId: string | null;
+}) {
+  if (!entityType) return <>—</>;
+
+  const href = (() => {
+    if (!entityId) return null;
+    switch (entityType) {
+      case 'product':
+        return `/admin/products/${entityId}/edit`;
+      case 'brand':
+        return `/admin/brands/${entityId}/edit`;
+      case 'category':
+        return `/admin/categories/${entityId}/edit`;
+      case 'supplier':
+        return `/admin/suppliers/${entityId}/edit`;
+      case 'branch':
+        return `/admin/branches/${entityId}/edit`;
+      case 'stock_movement':
+      case 'transfer_group':
+        return `/admin/stock-movements`;
+      default:
+        return null;
+    }
+  })();
+
+  const shortId = entityId ? entityId.slice(0, 8) : '';
+
+  if (href) {
+    return (
+      <Link
+        href={href as never}
+        className="text-cat hover:underline"
+      >
+        {entityType}
+        {shortId && <span className="text-[9px]"> ({shortId})</span>}
+      </Link>
+    );
+  }
+
+  return (
+    <>
+      {entityType}
+      {shortId && <span className="text-[9px]"> ({shortId})</span>}
+    </>
   );
 }
