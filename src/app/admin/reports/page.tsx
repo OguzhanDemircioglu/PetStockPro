@@ -46,20 +46,40 @@ export default async function ReportsPage({
             (reversedları hariç)
           </p>
         </div>
-        <div className="flex gap-2" data-testid="range-picker">
-          {RANGE_OPTIONS.map((d) => (
-            <Link
-              key={d}
-              href={`/admin/reports?days=${d}` as never}
-              className={`rounded-xl border px-3 py-1.5 text-xs font-bold ${
-                d === days
-                  ? 'border-cat bg-cat text-white'
-                  : 'border-line bg-white text-ink-3 hover:bg-line-soft'
-              }`}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex gap-2" data-testid="range-picker">
+            {RANGE_OPTIONS.map((d) => (
+              <Link
+                key={d}
+                href={`/admin/reports?days=${d}` as never}
+                className={`rounded-xl border px-3 py-1.5 text-xs font-bold ${
+                  d === days
+                    ? 'border-cat bg-cat text-white'
+                    : 'border-line bg-white text-ink-3 hover:bg-line-soft'
+                }`}
+              >
+                {d} gün
+              </Link>
+            ))}
+          </div>
+          <div className="flex gap-2 border-l border-line pl-3">
+            <a
+              href={`/admin/reports/export?days=${days}&kind=daily`}
+              download
+              data-testid="export-daily"
+              className="rounded-xl border border-line bg-white px-3 py-1.5 text-xs font-bold text-cart hover:bg-cat-soft"
             >
-              {d} gün
-            </Link>
-          ))}
+              ⬇ Günlük CSV
+            </a>
+            <a
+              href={`/admin/reports/export?days=${days}&kind=top`}
+              download
+              data-testid="export-top"
+              className="rounded-xl border border-line bg-white px-3 py-1.5 text-xs font-bold text-cart hover:bg-cat-soft"
+            >
+              ⬇ Top variant CSV
+            </a>
+          </div>
         </div>
       </header>
 
