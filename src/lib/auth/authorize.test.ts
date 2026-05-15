@@ -6,7 +6,12 @@ import {
   generateTotpCode,
   generateRecoveryCodes,
 } from './two-factor';
-import { TwoFactorRequiredError, TwoFactorInvalidError } from './errors';
+import {
+  TwoFactorRequiredError,
+  TwoFactorInvalidError,
+  AccountLockedError,
+  InvalidCredentialsError,
+} from './errors';
 import type { DbClient } from '@/lib/db/client';
 import type { RecoveryCode } from '@/db/schema';
 
@@ -24,6 +29,9 @@ type MockUserRow = {
   companyId: string | null;
   failedLoginCount: number;
   lockedUntil: Date | null;
+  lockedReason?: string | null;
+  recentLockCount?: number;
+  lastLockedAt?: Date | null;
   twoFactorEnabled?: boolean;
   twoFactorSecret?: string | null;
   twoFactorRecoveryCodes?: RecoveryCode[] | null;
@@ -69,6 +77,9 @@ async function makeValidUser(overrides: Partial<MockUserRow> = {}): Promise<Mock
     companyId: 'company-uuid-1',
     failedLoginCount: 0,
     lockedUntil: null,
+    lockedReason: null,
+    recentLockCount: 0,
+    lastLockedAt: null,
     twoFactorEnabled: false,
     twoFactorSecret: null,
     twoFactorRecoveryCodes: null,
@@ -146,20 +157,22 @@ describe('authorizeCredentials', () => {
   });
 
   describe('account lock', () => {
-    it('lockedUntil gelecekte → null', async () => {
+    it('lockedUntil gelecekte → AccountLockedError throw (UI /account-locked redirect)', async () => {
       const user = await makeValidUser({
         lockedUntil: new Date(NOW.getTime() + 30 * 60 * 1000), // 30 dk sonra
+        lockedReason: 'BRUTE_FORCE_1H',
       });
       const { db, updateSpy } = makeMockDb(user);
 
-      const result = await authorizeCredentials(
-        { email: user.email, password: 'CorrectPass123' },
-        db,
-        NOW,
-      );
+      await expect(
+        authorizeCredentials(
+          { email: user.email, password: 'CorrectPass123' },
+          db,
+          NOW,
+        ),
+      ).rejects.toBeInstanceOf(AccountLockedError);
 
-      expect(result).toBeNull();
-      expect(updateSpy).not.toHaveBeenCalled(); // lock'lu, failed_count tracking yapma
+      expect(updateSpy).not.toHaveBeenCalled(); // lock'lu iken DB güncelleme yok
     });
 
     it('lockedUntil geçmişte → password verify edilir (lock süresi bitti)', async () => {
@@ -175,6 +188,22 @@ describe('authorizeCredentials', () => {
       );
 
       expect(result).not.toBeNull();
+    });
+
+    // Sprint 2.7 — 5. yanlış lock'u tetikler
+    it('5. yanlış şifre → AccountLockedError + lockedUntil DB\'ye yazılır', async () => {
+      const user = await makeValidUser({ failedLoginCount: 4 });
+      const { db, updateSpy } = makeMockDb(user);
+
+      await expect(
+        authorizeCredentials(
+          { email: user.email, password: 'WrongPass456' },
+          db,
+          NOW,
+        ),
+      ).rejects.toBeInstanceOf(AccountLockedError);
+
+      expect(updateSpy).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -205,35 +234,22 @@ describe('authorizeCredentials', () => {
       expect(result).toBeNull();
     });
 
-    it('yanlış şifre → null + failed_count artırır', async () => {
+    it('yanlış şifre → InvalidCredentialsError + failed_count artırır + remainingAttempts banner için', async () => {
       const user = await makeValidUser({ failedLoginCount: 2 });
       const { db, updateSpy } = makeMockDb(user);
 
-      const result = await authorizeCredentials(
-        { email: user.email, password: 'WrongPass456' },
-        db,
-        NOW,
-      );
+      await expect(
+        authorizeCredentials(
+          { email: user.email, password: 'WrongPass456' },
+          db,
+          NOW,
+        ),
+      ).rejects.toThrow(InvalidCredentialsError);
 
-      expect(result).toBeNull();
       expect(updateSpy).toHaveBeenCalledTimes(1);
     });
 
-    it('5. yanlış şifre → null + lockedUntil set', async () => {
-      const user = await makeValidUser({ failedLoginCount: 4 });
-      const { db, updateSpy } = makeMockDb(user);
-
-      const result = await authorizeCredentials(
-        { email: user.email, password: 'WrongPass456' },
-        db,
-        NOW,
-      );
-
-      expect(result).toBeNull();
-      expect(updateSpy).toHaveBeenCalledTimes(1);
-      // Drizzle chain: db.update().set({...}).where() — set spy çağrılan args görmek karmaşık,
-      // ama updateSpy çağrıldı = state güncellendi
-    });
+    // Sprint 2.7: 5. yanlış AccountLockedError throw → test "account lock" describe'ında
 
     it('doğru şifre → AuthorizedUser (id, email, name, role, companyId)', async () => {
       const user = await makeValidUser();
@@ -326,7 +342,7 @@ describe('authorizeCredentials', () => {
           db,
           NOW,
         ),
-      ).rejects.toBeInstanceOf(TwoFactorInvalidError);
+      ).rejects.toThrow(TwoFactorInvalidError);
 
       // Password verify başarılıydı ama TOTP fail — failedLoginCount güncelleme YAPILMAZ
       // (success-path update'i de yapmadık çünkü exception throw oldu)

@@ -127,7 +127,10 @@ export const users = petstockproSchema.table('users', {
   invitedById: uuid('invited_by_id'),
   twoFactorEnabled: boolean('two_factor_enabled').notNull().default(false),
   lockedUntil: timestamp('locked_until', { withTimezone: true }),
+  lockedReason: varchar('locked_reason', { length: 50 }), // 'BRUTE_FORCE_1H' | 'BRUTE_FORCE_24H' | 'EMAIL_UNVERIFIED' | 'SUPERADMIN'
   failedLoginCount: integer('failed_login_count').notNull().default(0),
+  recentLockCount: integer('recent_lock_count').notNull().default(0), // 24h içinde art arda lock (3+ = kalıcı 24h)
+  lastLockedAt: timestamp('last_locked_at', { withTimezone: true }), // pg_cron 24h+ olunca recentLockCount reset
   // KVKK consents (Sprint 2.2'de aktif)
   kvkkConsentedAt: timestamp('kvkk_consented_at', { withTimezone: true }),
   dataLocationConsentedAt: timestamp('data_location_consented_at', { withTimezone: true }),

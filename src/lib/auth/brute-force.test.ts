@@ -64,14 +64,54 @@ describe('processFailedLogin', () => {
     expect(result.remainingAttempts).toBe(0);
   });
 
-  it('3 art arda lock → 24 saat KALICI lock', () => {
+  it('3 art arda lock (24h penceresinde) → 24 saat KALICI lock', () => {
+    const recentLockTime = new Date(NOW.getTime() - 30 * 60 * 1000); // 30dk önce
     const result = processFailedLogin(
-      { failedLoginCount: 4, lockedUntil: null, recentLockCount: 2 },
+      {
+        failedLoginCount: 4,
+        lockedUntil: null,
+        recentLockCount: 2,
+        lastLockedAt: recentLockTime,
+      },
       NOW,
     );
     expect(result.shouldLock).toBe(true);
     expect(result.isPermanentLock).toBe(true);
+    expect(result.newRecentLockCount).toBe(3);
+    expect(result.lockedReason).toBe('BRUTE_FORCE_24H');
     expect(result.newLockedUntil).toEqual(new Date(NOW.getTime() + PERMANENT_LOCK_DURATION_MS));
+  });
+
+  it('24h+ önceki recentLockCount stale → sıfırlanır, yeni 1h lock', () => {
+    const oldLockTime = new Date(NOW.getTime() - 25 * 60 * 60 * 1000); // 25 saat önce
+    const result = processFailedLogin(
+      {
+        failedLoginCount: 4,
+        lockedUntil: null,
+        recentLockCount: 2,
+        lastLockedAt: oldLockTime,
+      },
+      NOW,
+    );
+    expect(result.shouldLock).toBe(true);
+    expect(result.isPermanentLock).toBe(false);
+    expect(result.newRecentLockCount).toBe(1); // stale reset → 1
+    expect(result.lockedReason).toBe('BRUTE_FORCE_1H');
+  });
+
+  it('Lock olmayan fail → recentLockCount korunur', () => {
+    const result = processFailedLogin(
+      {
+        failedLoginCount: 1,
+        lockedUntil: null,
+        recentLockCount: 1,
+        lastLockedAt: new Date(NOW.getTime() - 60 * 1000),
+      },
+      NOW,
+    );
+    expect(result.shouldLock).toBe(false);
+    expect(result.newRecentLockCount).toBe(1); // dokunulmaz
+    expect(result.lockedReason).toBeNull();
   });
 
   it('FAIL_THRESHOLD constant 5', () => {

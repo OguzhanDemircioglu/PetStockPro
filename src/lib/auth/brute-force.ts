@@ -22,17 +22,26 @@ export const FAIL_THRESHOLD = 5; // 5 yanlış → lock
 export const PERMANENT_LOCK_THRESHOLD = 3; // 3 art arda lock → 24h kalıcı
 export const REMAINING_BANNER_FROM = 3; // 3 hak kaldığında banner göster
 
+/** 24 saat içinde art arda lock olmayınca recentLockCount sıfırlanır (pg_cron). */
+export const RECENT_LOCK_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+export type LockedReason = 'BRUTE_FORCE_1H' | 'BRUTE_FORCE_24H' | 'EMAIL_UNVERIFIED' | 'SUPERADMIN';
+
 export interface UserAuthState {
   failedLoginCount: number;
   lockedUntil: Date | null;
   recentLockCount?: number; // 24h içinde tetiklenen lock sayısı (3+ ise kalıcı)
+  lastLockedAt?: Date | null; // recentLockCount stale (24h+) check için
 }
 
 export interface LoginAttemptResult {
   shouldLock: boolean;
   newFailedCount: number;
   newLockedUntil: Date | null;
+  newRecentLockCount: number;
+  newLastLockedAt: Date | null;
   isPermanentLock: boolean;
+  lockedReason: LockedReason | null;
   remainingAttempts: number; // 0 = locked, 5 = no fails yet
   showRemainingBanner: boolean;
 }
@@ -52,15 +61,25 @@ export function processFailedLogin(
 
   // 5 fail'e ulaştı → lock
   if (newFailedCount >= FAIL_THRESHOLD) {
-    const recentLocks = (current.recentLockCount ?? 0) + 1;
-    const isPermanent = recentLocks >= PERMANENT_LOCK_THRESHOLD;
+    // recentLockCount stale ise (24h+ önce son lock) sıfırla — aksi halde art arda say
+    const lastLockedAt = current.lastLockedAt ?? null;
+    const isStaleWindow =
+      !lastLockedAt || now.getTime() - lastLockedAt.getTime() > RECENT_LOCK_WINDOW_MS;
+    const baseRecentLocks = isStaleWindow ? 0 : (current.recentLockCount ?? 0);
+    const newRecentLockCount = baseRecentLocks + 1;
+
+    const isPermanent = newRecentLockCount >= PERMANENT_LOCK_THRESHOLD;
     const duration = isPermanent ? PERMANENT_LOCK_DURATION_MS : LOCK_DURATION_MS;
+    const lockedReason: LockedReason = isPermanent ? 'BRUTE_FORCE_24H' : 'BRUTE_FORCE_1H';
 
     return {
       shouldLock: true,
       newFailedCount: 0, // lock sonrası reset (countdown lockedUntil'da)
       newLockedUntil: new Date(now.getTime() + duration),
+      newRecentLockCount,
+      newLastLockedAt: now,
       isPermanentLock: isPermanent,
+      lockedReason,
       remainingAttempts: 0,
       showRemainingBanner: false,
     };
@@ -70,7 +89,10 @@ export function processFailedLogin(
     shouldLock: false,
     newFailedCount,
     newLockedUntil: current.lockedUntil, // mevcut lock varsa korur (rare edge)
+    newRecentLockCount: current.recentLockCount ?? 0,
+    newLastLockedAt: current.lastLockedAt ?? null,
     isPermanentLock: false,
+    lockedReason: null,
     remainingAttempts: FAIL_THRESHOLD - newFailedCount,
     showRemainingBanner: newFailedCount >= REMAINING_BANNER_FROM,
   };

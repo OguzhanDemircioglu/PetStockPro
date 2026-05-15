@@ -132,15 +132,55 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Error banner */}
-          {state?.error && (
-            <div
-              role="alert"
-              className="mt-6 rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-bold text-danger-7"
-            >
-              {state.error}
-            </div>
-          )}
+          {/* Sprint 2.7 — Kalan hak banner (EKRAN-AUTH §2.3) */}
+          {state?.remainingAttempts !== null &&
+            state?.remainingAttempts !== undefined &&
+            state.remainingAttempts <= 3 && (
+              <div
+                role="alert"
+                className={
+                  state.remainingAttempts === 1
+                    ? 'mt-6 rounded-xl border border-danger/40 bg-danger-soft px-4 py-3 text-sm font-bold text-danger-7'
+                    : state.remainingAttempts === 2
+                      ? 'mt-6 rounded-xl border border-cat/40 bg-cat-soft px-4 py-3 text-sm font-bold text-cart'
+                      : 'mt-6 rounded-xl border border-bars/30 bg-bars-soft px-4 py-3 text-sm font-bold text-bars'
+                }
+              >
+                {state.remainingAttempts === 1 ? (
+                  <>
+                    ⚠ <strong>1 hakkın kaldı.</strong> Bir sonraki yanlışta hesabın{' '}
+                    <strong>1 saat kilitlenecek</strong>.{' '}
+                    <a href="/forgot-password" className="underline">
+                      Şifremi unuttum →
+                    </a>
+                  </>
+                ) : state.remainingAttempts === 2 ? (
+                  <>
+                    ⚠ <strong>2 hakkın kaldı.</strong> Şifreni unuttun mu?{' '}
+                    <a href="/forgot-password" className="underline">
+                      Şifremi unuttum →
+                    </a>
+                  </>
+                ) : (
+                  <>
+                    🟡 <strong>{state.remainingAttempts} hakkın kaldı.</strong>
+                  </>
+                )}
+              </div>
+            )}
+
+          {/* Error banner (kalan hak yoksa veya 4+ ise gösterilir) */}
+          {state?.error &&
+            (state.remainingAttempts === null ||
+              state.remainingAttempts === undefined ||
+              state.remainingAttempts > 3) && (
+              <div
+                role="alert"
+                className="mt-6 rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-bold text-danger-7"
+              >
+                {state.error}
+              </div>
+            )}
 
           {/* Form */}
           <form action={formAction} className="mt-7 flex flex-col gap-3.5">

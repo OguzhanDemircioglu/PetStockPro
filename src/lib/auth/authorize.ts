@@ -18,6 +18,7 @@ import { verifyPassword } from './password';
 import { verifyTotp, verifyRecoveryCode } from './two-factor';
 import {
   isLocked,
+  getLockRemainingSeconds,
   processFailedLogin,
   processSuccessfulLogin,
   type UserAuthState,
@@ -25,7 +26,11 @@ import {
 import {
   TwoFactorRequiredError,
   TwoFactorInvalidError,
+  AccountLockedError,
+  InvalidCredentialsError,
 } from './errors';
+import { sendBrevoEmail } from '@/lib/brevo/client';
+import { buildAccountLockedTemplate } from '@/lib/brevo/templates';
 import type { DbClient } from '@/lib/db/client';
 import { users } from '@/db/schema';
 
@@ -71,9 +76,15 @@ export async function authorizeCredentials(
   const state: UserAuthState = {
     failedLoginCount: user.failedLoginCount,
     lockedUntil: user.lockedUntil,
+    recentLockCount: user.recentLockCount,
+    lastLockedAt: user.lastLockedAt,
   };
   if (isLocked(state, now)) {
-    return null; // UI route handler lockedUntil'i ayrıca okur (countdown için)
+    // Lock varsa AccountLockedError fırlat → frontend /account-locked'a yönlendirir
+    throw new AccountLockedError(
+      getLockRemainingSeconds(state, now),
+      user.lockedReason ?? 'BRUTE_FORCE_1H',
+    );
   }
 
   // 4. Email verified?
@@ -95,9 +106,46 @@ export async function authorizeCredentials(
       .set({
         failedLoginCount: result.newFailedCount,
         lockedUntil: result.newLockedUntil,
+        lockedReason: result.lockedReason,
+        recentLockCount: result.newRecentLockCount,
+        lastLockedAt: result.newLastLockedAt,
+        updatedAt: now,
       })
       .where(eq(users.id, user.id));
-    return null;
+
+    // Bu fail lock'u tetiklediyse AccountLockedError (frontend /account-locked'a yönlendirir);
+    // değilse null (generic "şifre yanlış" — UI banner için remaining bilgisini bir sonraki
+    // login attempt'inde DB'den okuruz).
+    if (result.shouldLock && result.newLockedUntil && result.lockedReason) {
+      // Bilgilendirme email'i (Brevo) — fire-and-forget, fail durumunda lock sürer
+      const template = buildAccountLockedTemplate({
+        userName: user.name,
+        reason: result.lockedReason as 'BRUTE_FORCE_1H' | 'BRUTE_FORCE_24H',
+        lockedUntil: result.newLockedUntil,
+        ipAddress: null, // Sprint 2.7 minimal: IP capture login action'da (Auth.js authorize req'i geçmez)
+        resetPasswordUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/forgot-password`,
+      });
+      try {
+        await sendBrevoEmail({
+          to: { email: user.email },
+          subject: template.subject,
+          htmlContent: template.htmlContent,
+          textContent: template.textContent,
+          tags: ['account-locked', result.lockedReason.toLowerCase()],
+        });
+      } catch (err) {
+        console.warn(`[authorize] Account locked email fail user=${user.id}:`, err);
+      }
+
+      throw new AccountLockedError(
+        Math.ceil((result.newLockedUntil.getTime() - now.getTime()) / 1000),
+        result.lockedReason,
+      );
+    }
+
+    // Lock tetiklenmedi ama şifre yanlış — frontend banner için remaining hakkı iletilir.
+    // EKRAN-AUTH §2.3: 3 ve daha az kalınca banner gösterilir (frontend filter).
+    throw new InvalidCredentialsError(result.remainingAttempts);
   }
 
   // 6. 2FA check (Sprint 2.5)

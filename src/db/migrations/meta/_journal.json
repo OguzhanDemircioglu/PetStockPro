@@ -36,6 +36,13 @@
       "when": 1778854611285,
       "tag": "0004_sprint_2_5_two_factor",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1778856861313,
+      "tag": "0005_sprint_2_7_account_lock",
+      "breakpoints": true
     }
   ]
 }

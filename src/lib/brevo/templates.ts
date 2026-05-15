@@ -227,3 +227,105 @@ Bu işlemi sen yapmadıysan hemen destek ekibine ulaş: ${supportUrl}
     textContent: text,
   };
 }
+
+// ─────────────────────────────────────────────────────────────────
+// Sprint 2.7 — Account Locked (brute-force 5 fail + 24h kalıcı)
+// ─────────────────────────────────────────────────────────────────
+
+export type AccountLockedReason = 'BRUTE_FORCE_1H' | 'BRUTE_FORCE_24H';
+
+export interface AccountLockedTemplateInput {
+  userName: string | null;
+  reason: AccountLockedReason;
+  lockedUntil: Date;
+  ipAddress?: string | null;
+  resetPasswordUrl: string;
+  supportEmail?: string;
+}
+
+/**
+ * Hesap kilitli bildirimi (Sprint 2.7).
+ *
+ * 1H varyant: standart brute-force lock — kullanıcıyı uyarır, Şifremi Unuttum CTA.
+ * 24H varyant: art arda 3 lock = ciddi saldırı şüphesi, acil tonlu uyarı.
+ *
+ * EKRAN-AUTH §10 — kullanıcı kendi yapmadıysa bile sinyal alır.
+ */
+export function buildAccountLockedTemplate(input: AccountLockedTemplateInput): VerifyEmailTemplate {
+  const greeting = input.userName ? `Merhaba ${input.userName},` : 'Merhaba,';
+  const lockedUntilTr = input.lockedUntil.toLocaleString('tr-TR', {
+    dateStyle: 'long',
+    timeStyle: 'short',
+    timeZone: 'Europe/Istanbul',
+  });
+  const supportEmail = input.supportEmail ?? 'destek@petstockpro.com';
+  const isPermanent = input.reason === 'BRUTE_FORCE_24H';
+  const durationLabel = isPermanent ? '24 SAAT' : '1 saat';
+
+  const intro = isPermanent
+    ? `⚠ <strong>Hesabına 3 kez art arda yanlış giriş denendi</strong>. Bu ciddi bir saldırı sinyali olduğu için hesabın güvenlik nedeniyle <strong>${durationLabel} kilitlendi</strong>. Şifreni hemen değiştir.`
+    : `Hesabına 5 başarısız giriş denendi. Güvenlik nedeniyle hesabın <strong>${durationLabel} kilitlendi</strong>. Kilit ${lockedUntilTr} tarihinde otomatik açılır.`;
+
+  const headlineColor = isPermanent ? BRAND_CAT : BRAND_CART;
+  const headline = isPermanent
+    ? '🔒 Hesabın 24 saat kilitlendi — saldırı şüphesi'
+    : '🔒 Hesabın 1 saat kilitlendi';
+
+  const html = emailShell(`
+    <h2 style="margin:0 0 16px;font-size:22px;color:${headlineColor};letter-spacing:-.3px;">
+      ${headline}
+    </h2>
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.6;">${greeting}</p>
+    <p style="margin:0 0 24px;font-size:14px;line-height:1.6;">${intro}</p>
+
+    ${input.ipAddress ? `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 24px;background:${BRAND_BG};border-radius:8px;">
+      <tr><td style="padding:12px 16px;font-size:12px;color:#5f6b7c;">
+        <strong style="color:${BRAND_INK};">Saldırı detayı</strong><br>
+        IP: ${input.ipAddress}<br>
+        Tahmini açılış: ${lockedUntilTr}
+      </td></tr>
+    </table>
+    ` : ''}
+
+    <table cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td align="center" style="padding:8px 0 24px;">
+      <a href="${input.resetPasswordUrl}" style="display:inline-block;background:${BRAND_CAT};color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-weight:bold;font-size:14px;box-shadow:0 8px 20px rgba(212,74,20,.32);">
+        🔑 Şifremi sıfırla (kilidi bypass eder)
+      </a>
+    </td></tr></table>
+
+    <p style="margin:0 0 8px;font-size:12px;color:#5f6b7c;line-height:1.5;">
+      <strong>Şifre sıfırlama lock'u atlatır:</strong> yeni şifre belirleyince anında giriş yapabilirsin.
+    </p>
+
+    <div style="border-left:4px solid ${BRAND_CAT};padding:12px 16px;background:#fff5ef;border-radius:0 8px 8px 0;margin:24px 0 0;">
+      <strong style="display:block;font-size:13px;color:${BRAND_CART};margin-bottom:6px;">
+        Sen denemiyorsan
+      </strong>
+      <span style="font-size:13px;color:#5f6b7c;line-height:1.6;">
+        Birisi senin hesabına erişmeye çalışıyor olabilir. Şifreni hemen değiştir +
+        <a href="mailto:${supportEmail}" style="color:${BRAND_CART};font-weight:bold;">destek ekibine ulaş</a>.
+      </span>
+    </div>
+  `);
+
+  const text = `${greeting}
+
+${isPermanent ? '⚠ Hesabına 3 kez art arda yanlış giriş denendi. 24 SAAT kilitlendi.' : `Hesabın güvenlik nedeniyle ${durationLabel} kilitlendi (${lockedUntilTr}'de açılır).`}
+
+${input.ipAddress ? `IP: ${input.ipAddress}\n` : ''}
+Şifreni sıfırla (lock bypass): ${input.resetPasswordUrl}
+
+Sen denemiyorsan destek: ${supportEmail}
+
+—
+© 2026 PetStockPro`;
+
+  return {
+    subject: isPermanent
+      ? 'PetStockPro · 🔒🔒 Hesabın 24 saat kilitlendi (saldırı şüphesi)'
+      : 'PetStockPro · 🔒 Hesabın 1 saat kilitlendi',
+    htmlContent: html,
+    textContent: text,
+  };
+}
