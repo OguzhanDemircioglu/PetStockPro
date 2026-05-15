@@ -15,6 +15,13 @@
       "when": 1778848460249,
       "tag": "0001_late_catseye",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778852076735,
+      "tag": "0002_slippery_obadiah_stane",
+      "breakpoints": true
     }
   ]
 }

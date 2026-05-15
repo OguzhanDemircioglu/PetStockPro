@@ -128,14 +128,20 @@ export const users = petstockproSchema.table('users', {
   twoFactorEnabled: boolean('two_factor_enabled').notNull().default(false),
   lockedUntil: timestamp('locked_until', { withTimezone: true }),
   failedLoginCount: integer('failed_login_count').notNull().default(0),
-  // KVKK consents (Sprint 2'de detaylanır)
+  // KVKK consents (Sprint 2.2'de aktif)
   kvkkConsentedAt: timestamp('kvkk_consented_at', { withTimezone: true }),
   dataLocationConsentedAt: timestamp('data_location_consented_at', { withTimezone: true }),
   onboardingCompletedAt: timestamp('onboarding_completed_at', { withTimezone: true }),
+  // Email verification (Sprint 2.3 — EKRAN-AUTH §4)
+  emailVerificationToken: varchar('email_verification_token', { length: 100 }),
+  emailVerificationExpiresAt: timestamp('email_verification_expires_at', { withTimezone: true }),
+  emailVerificationResendCount: integer('email_verification_resend_count').notNull().default(0),
+  emailVerificationLastSentAt: timestamp('email_verification_last_sent_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index('idx_users_company').on(t.companyId),
+  index('idx_users_verification_token').on(t.emailVerificationToken),
 ]);
 
 // Şubeler (multi-location)

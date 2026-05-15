@@ -2,6 +2,11 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { registerNewTenant, _makeSlugForTesting } from './register';
 import type { DbClient } from '@/lib/db/client';
 
+// Mock Brevo — register entegrasyonunu izole et (real API call yok)
+vi.mock('@/lib/brevo/client', () => ({
+  sendBrevoEmail: vi.fn().mockResolvedValue({ ok: true, mock: true }),
+}));
+
 describe('makeSlug', () => {
   it('Türkçe karakterleri dönüştürür', () => {
     expect(_makeSlugForTesting('Mavi Pet Shop')).toBe('mavi-pet-shop');

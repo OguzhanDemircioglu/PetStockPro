@@ -18,6 +18,9 @@
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { hashPassword, validateNewPassword } from './password';
+import { createVerificationToken } from './email-verification';
+import { sendBrevoEmail } from '@/lib/brevo/client';
+import { buildVerifyEmailTemplate } from '@/lib/brevo/templates';
 import type { DbClient } from '@/lib/db/client';
 import { companies, users } from '@/db/schema';
 
@@ -125,8 +128,11 @@ export async function registerNewTenant(
   // 5. Password hash
   const passwordHash = await hashPassword(data.password);
 
-  // 6. Transaction: company + user atomik
+  // 6. Email verification token (Sprint 2.3 — EKRAN-AUTH §4)
   const now = new Date();
+  const verification = createVerificationToken(now);
+
+  // 7. Transaction: company + user atomik (verification token user'a yazılır)
   try {
     const result = await db.transaction(async (tx) => {
       const [company] = await tx
@@ -145,15 +151,42 @@ export async function registerNewTenant(
           email: data.email,
           passwordHash,
           role: 'BAYI_SAHIBI',
-          emailVerifiedAt: null, // Sprint 2.3'te verification token + Brevo
+          emailVerifiedAt: null, // verify-email link'i ile set edilir
           kvkkConsentedAt: now,
           dataLocationConsentedAt: now,
           failedLoginCount: 0,
+          emailVerificationToken: verification.token,
+          emailVerificationExpiresAt: verification.expiresAt,
+          emailVerificationResendCount: 1,
+          emailVerificationLastSentAt: now,
         })
         .returning({ id: users.id });
 
       return { companyId: company.id, userId: user.id };
     });
+
+    // 8. Brevo verification email (DB transaction sonrası — email fail user'ı silmesin)
+    // Mock mode (no API key) → console.log fallback; production'da gerçek API.
+    // Fail durumunda warn ama register başarılı sayılır (resend ile tekrar denenebilir).
+    const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/verify-email/${verification.token}`;
+    const template = buildVerifyEmailTemplate({
+      userName: null, // Sprint 2.6 onboarding'te alınır
+      verifyUrl,
+      expiresInHours: 24,
+    });
+
+    try {
+      await sendBrevoEmail({
+        to: { email: data.email },
+        subject: template.subject,
+        htmlContent: template.htmlContent,
+        textContent: template.textContent,
+        tags: ['verify-email', 'register'],
+      });
+    } catch (emailErr) {
+      // Email gönderim hatası kullanıcıya bildirilmez — Sprint 2.3b resend ile çözer
+      console.warn(`[register] Brevo gönderim hatası user=${result.userId}:`, emailErr);
+    }
 
     return { ok: true, userId: result.userId, companyId: result.companyId };
   } catch {

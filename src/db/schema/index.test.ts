@@ -114,6 +114,13 @@ describe('Schema — Sprint 0 iskelet tabloları', () => {
     expect(users.dataLocationConsentedAt).toBeDefined();
   });
 
+  it('users: email verification 4 field (Sprint 2.3)', () => {
+    expect(users.emailVerificationToken).toBeDefined();
+    expect(users.emailVerificationExpiresAt).toBeDefined();
+    expect(users.emailVerificationResendCount).toBeDefined();
+    expect(users.emailVerificationLastSentAt).toBeDefined();
+  });
+
   it('branches: company FK + lat/lng + WhatsApp + isActive', () => {
     expect(branches.companyId).toBeDefined();
     expect(branches.lat).toBeDefined();
