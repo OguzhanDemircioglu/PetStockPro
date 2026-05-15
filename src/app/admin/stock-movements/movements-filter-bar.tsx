@@ -142,6 +142,22 @@ export function MovementsFilterBar({ branches, variants, initial }: Props) {
             × Temizle ({activeCount})
           </button>
         )}
+        <a
+          href={`/admin/stock-movements/export${
+            activeCount > 0
+              ? `?${new URLSearchParams({
+                  ...(initial.branch ? { branch: initial.branch } : {}),
+                  ...(initial.variant ? { variant: initial.variant } : {}),
+                  ...(initial.type ? { type: initial.type } : {}),
+                }).toString()}`
+              : ''
+          }`}
+          download
+          data-testid="mv-export"
+          className="ml-auto rounded-xl border border-line bg-white px-3 py-2.5 text-xs font-bold text-cart hover:bg-cat-soft"
+        >
+          ⬇ CSV
+        </a>
       </div>
     </section>
   );

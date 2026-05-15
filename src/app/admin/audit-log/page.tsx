@@ -152,6 +152,14 @@ export default async function AuditLogPage({
             × Temizle
           </Link>
         )}
+        <a
+          href={`/admin/audit-log/export${validAction || params.entity ? `?${new URLSearchParams({ ...(validAction ? { action: validAction } : {}), ...(params.entity ? { entity: params.entity } : {}) }).toString()}` : ''}`}
+          download
+          className="ml-auto rounded-xl border border-line bg-white px-3 py-2.5 text-xs font-bold text-cart hover:bg-cat-soft"
+          data-testid="audit-export"
+        >
+          ⬇ CSV
+        </a>
       </form>
 
       {items.length === 0 ? (
