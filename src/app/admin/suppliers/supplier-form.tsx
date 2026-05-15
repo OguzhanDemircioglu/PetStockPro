@@ -189,14 +189,14 @@ export function SupplierForm({ action, initial, submitLabel }: Props) {
       </Section>
 
       {state?.message && (
-        <p
+        <div
           role="alert"
           className={`rounded-lg px-3 py-2 text-sm font-bold ${
             state.ok ? 'bg-arrow-soft text-arrow-7' : 'bg-danger-soft text-danger-7'
           }`}
           data-testid="supplier-alert"
         >
-          {state.ok ? '✓' : '✕'} {state.message}
+          <p>{state.ok ? '✓' : '✕'} {state.message}</p>
           {state.issues.length > 0 && (
             <ul className="mt-1 list-inside list-disc text-[11px] font-normal">
               {state.issues.map((i, k) => (
@@ -204,7 +204,7 @@ export function SupplierForm({ action, initial, submitLabel }: Props) {
               ))}
             </ul>
           )}
-        </p>
+        </div>
       )}
 
       <div className="flex gap-3">

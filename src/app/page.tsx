@@ -8,7 +8,9 @@ import { users } from '@/db/schema';
 export default async function Home() {
   const session = await auth();
 
-  // Auth'lı user → onboardingCompletedAt kontrol → /onboarding redirect (eksikse)
+  // Auth'lı user:
+  // - onboardingCompletedAt NULL → /onboarding redirect
+  // - aksi halde /admin (Pano) redirect
   if (session?.user?.id) {
     const rows = await db
       .select({ onboardingCompletedAt: users.onboardingCompletedAt })
@@ -18,6 +20,7 @@ export default async function Home() {
     if (rows[0] && !rows[0].onboardingCompletedAt) {
       redirect('/onboarding' as never);
     }
+    redirect('/admin' as never);
   }
 
   return (

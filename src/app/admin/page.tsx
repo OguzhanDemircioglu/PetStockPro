@@ -1,0 +1,287 @@
+import { redirect } from 'next/navigation';
+import Link from 'next/link';
+import { eq } from 'drizzle-orm';
+import { auth } from '@/lib/auth/auth';
+import { db } from '@/lib/db/client';
+import { companies } from '@/db/schema';
+import {
+  getDashboardStats,
+  listLowStock,
+  listRecentActivity,
+} from '@/lib/dashboard/stats';
+
+const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
+  stock_in: { label: '📥', cls: 'bg-arrow-soft text-arrow-7' },
+  stock_out: { label: '📤', cls: 'bg-cat-soft text-cart' },
+  transfer: { label: '🔁', cls: 'bg-line-soft text-ink-2' },
+  stocktake: { label: '📋', cls: 'bg-line-soft text-ink-2' },
+  stocktake_initial: { label: '🗂', cls: 'bg-line-soft text-ink-2' },
+};
+
+const SUBTYPE_LABEL: Record<string, string> = {
+  sale: 'Satış',
+  waste: 'Fire',
+  gift: 'Hediye',
+  sample: 'Numune',
+  return: 'İade',
+  internal_use: 'Dahili',
+  other: 'Diğer',
+};
+
+export default async function AdminDashboardPage() {
+  const session = await auth();
+  if (!session?.user?.companyId) redirect('/login' as never);
+
+  const [companyRow, stats, lowStock, activity] = await Promise.all([
+    db
+      .select({ name: companies.name, plan: companies.plan })
+      .from(companies)
+      .where(eq(companies.id, session.user.companyId))
+      .limit(1),
+    getDashboardStats(session.user.companyId, db),
+    listLowStock(session.user.companyId, db, 6),
+    listRecentActivity(session.user.companyId, db, 8),
+  ]);
+
+  const company = companyRow[0];
+  const planLimitMap: Record<string, number> = {
+    FREE: 50,
+    PRO: 500,
+    PRO_PLUS: 0, // sınırsız
+  };
+  const planLimit = planLimitMap[company?.plan ?? 'FREE'] ?? 50;
+  const planLimitLabel = planLimit === 0 ? '∞' : String(planLimit);
+
+  return (
+    <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-12">
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <div className="text-[11.5px] font-bold uppercase tracking-wider text-cat">
+            Admin · Pano
+          </div>
+          <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
+            Merhaba, {company?.name ?? 'Pet shop'}
+          </h1>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <QuickLink href="/admin/stock-movements" label="📦 Stok hareketleri" />
+          <QuickLink href="/admin/products" label="🐾 Ürünler" />
+          <QuickLink href="/admin/branches" label="🏪 Şubeler" />
+          <QuickLink href="/admin/suppliers" label="🏢 Tedarikçiler" />
+          <QuickLink href="/admin/settings/company" label="⚙ Ayarlar" />
+        </div>
+      </header>
+
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KPI
+          title="Toplam ürün"
+          value={stats.totalProducts}
+          subtitle={`${planLimitLabel} limit · ${stats.totalActiveVariants} variant`}
+          emoji="🐾"
+          bar={{ value: stats.totalProducts, max: planLimit }}
+        />
+        <KPI
+          title="Toplam stok"
+          value={stats.totalStockQty}
+          subtitle={`${stats.branchCount} aktif şube`}
+          emoji="📦"
+        />
+        <KPI
+          title="Bugünkü satış"
+          value={stats.todaySaleQty}
+          subtitle={`${stats.todaySaleRevenue}₺ ciro`}
+          emoji="💰"
+          accent={stats.todaySaleQty > 0 ? 'arrow' : 'neutral'}
+        />
+        <KPI
+          title="Düşük stok"
+          value={stats.lowStockCount}
+          subtitle={
+            stats.lowStockCount > 0 ? 'Eşik altı variant' : '✓ Hepsi yeterli'
+          }
+          emoji="⚠"
+          accent={stats.lowStockCount > 0 ? 'danger' : 'arrow'}
+        />
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        <Card title="⚠ Düşük stok" testid="low-stock-card">
+          {lowStock.length === 0 ? (
+            <p className="rounded-lg bg-arrow-soft/50 px-3 py-4 text-center text-xs text-arrow-7">
+              ✓ Hiç düşük stok yok.
+            </p>
+          ) : (
+            <ul className="divide-y divide-line-soft text-sm">
+              {lowStock.map((item) => (
+                <li
+                  key={`${item.variantId}-${item.branchId}`}
+                  className="flex items-center justify-between gap-2 py-2"
+                  data-low-stock-id={item.variantId}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-bold text-ink">
+                      {item.productName}
+                    </div>
+                    <div className="text-[11px] text-ink-3">
+                      {item.variantLabel} · {item.branchName}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div
+                      className={`font-mono text-base font-bold ${
+                        item.stockQty === 0 ? 'text-danger-7' : 'text-cat'
+                      }`}
+                    >
+                      {item.stockQty}
+                    </div>
+                    <div className="text-[10px] text-ink-4">
+                      / {item.threshold} eşik
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+
+        <Card title="🕒 Son hareketler" testid="recent-activity-card">
+          {activity.length === 0 ? (
+            <p className="rounded-lg bg-line-soft px-3 py-4 text-center text-xs text-ink-3">
+              Henüz hareket yok.
+            </p>
+          ) : (
+            <ul className="divide-y divide-line-soft text-xs">
+              {activity.map((a) => {
+                const badge = TYPE_BADGE[a.type] ?? {
+                  label: a.type,
+                  cls: 'bg-line-soft',
+                };
+                const sub = a.subtype ? SUBTYPE_LABEL[a.subtype] : null;
+                return (
+                  <li
+                    key={a.id}
+                    className="flex items-center gap-3 py-2"
+                  >
+                    <span
+                      className={`grid h-8 w-8 place-items-center rounded-full text-sm ${badge.cls}`}
+                    >
+                      {badge.label}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-bold text-ink">
+                        {a.productName}{' '}
+                        <span className="text-[10px] font-normal text-ink-3">
+                          {a.variantLabel}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-ink-4">
+                        {a.branchName}
+                        {sub && ` · ${sub}`}
+                      </div>
+                    </div>
+                    <div
+                      className={`font-mono text-sm font-bold ${
+                        a.quantity > 0 ? 'text-arrow-7' : 'text-danger-7'
+                      }`}
+                    >
+                      {a.quantity > 0 ? '+' : ''}
+                      {a.quantity}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <Link
+            href={'/admin/stock-movements' as never}
+            className="mt-3 block text-center text-[11px] font-bold text-cat hover:underline"
+          >
+            Tüm ledger →
+          </Link>
+        </Card>
+      </section>
+    </main>
+  );
+}
+
+function KPI({
+  title,
+  value,
+  subtitle,
+  emoji,
+  accent = 'cat',
+  bar,
+}: {
+  title: string;
+  value: number | string;
+  subtitle: string;
+  emoji: string;
+  accent?: 'cat' | 'arrow' | 'danger' | 'neutral';
+  bar?: { value: number; max: number };
+}) {
+  const accentClasses: Record<string, string> = {
+    cat: 'border-cat/30 bg-cat-soft/40',
+    arrow: 'border-arrow/30 bg-arrow-soft/40',
+    danger: 'border-danger/30 bg-danger-soft/40',
+    neutral: 'border-line bg-white',
+  };
+
+  return (
+    <article
+      className={`flex flex-col gap-2 rounded-2xl border p-5 ${accentClasses[accent]}`}
+      data-kpi={title}
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+          {title}
+        </span>
+        <span className="text-xl">{emoji}</span>
+      </div>
+      <div className="font-mono text-3xl font-bold text-cart">{value}</div>
+      <div className="text-[11px] text-ink-3">{subtitle}</div>
+      {bar && bar.max > 0 && (
+        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-line-soft">
+          <div
+            className="h-full bg-cat"
+            style={{
+              width: `${Math.min(100, (bar.value / bar.max) * 100)}%`,
+            }}
+          />
+        </div>
+      )}
+    </article>
+  );
+}
+
+function Card({
+  title,
+  testid,
+  children,
+}: {
+  title: string;
+  testid: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <article
+      className="rounded-2xl border border-line bg-white p-5"
+      data-testid={testid}
+    >
+      <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-ink-3">
+        {title}
+      </h2>
+      {children}
+    </article>
+  );
+}
+
+function QuickLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href as never}
+      className="rounded-xl border border-line bg-white px-3 py-2 text-xs font-bold text-cart hover:bg-cat-soft"
+    >
+      {label}
+    </Link>
+  );
+}
