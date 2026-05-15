@@ -206,6 +206,16 @@ export function FilterBar({ categories, brands, initial }: Props) {
             × Temizle ({activeFilterCount})
           </button>
         )}
+        <a
+          href={`/admin/products/export${
+            params?.toString() ? `?${params.toString()}` : ''
+          }`}
+          download
+          data-testid="products-export"
+          className="ml-auto rounded-xl border border-line bg-white px-3 py-2.5 text-xs font-bold text-cart hover:bg-cat-soft"
+        >
+          ⬇ CSV
+        </a>
       </form>
     </section>
   );
