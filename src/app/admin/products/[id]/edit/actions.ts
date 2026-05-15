@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { softDeleteProduct, updateProduct } from '@/lib/catalog/products';
+import { writeAuditLogAsync } from '@/lib/audit/log';
 
 export interface EditProductState {
   ok: boolean;
@@ -18,7 +19,7 @@ export async function updateProductAction(
   formData: FormData,
 ): Promise<EditProductState> {
   const session = await auth();
-  if (!session?.user?.companyId) {
+  if (!session?.user?.companyId || !session.user.id) {
     redirect('/login' as never);
   }
 
@@ -82,14 +83,36 @@ export async function updateProductAction(
     return { ok: false, error: msg, issues: result.issues ?? [] };
   }
 
+  writeAuditLogAsync(
+    {
+      companyId: session.user.companyId,
+      userId: session.user.id,
+      action: 'product.updated',
+      entityType: 'product',
+      entityId: productId,
+      afterState: { name, sku: typeof sku === 'string' ? sku : null },
+    },
+    db,
+  );
+
   redirect('/admin/products?updated=success' as never);
 }
 
 export async function deleteProductAction(productId: string): Promise<void> {
   const session = await auth();
-  if (!session?.user?.companyId) {
+  if (!session?.user?.companyId || !session.user.id) {
     redirect('/login' as never);
   }
   await softDeleteProduct(session.user.companyId, productId, db);
+  writeAuditLogAsync(
+    {
+      companyId: session.user.companyId,
+      userId: session.user.id,
+      action: 'product.deleted',
+      entityType: 'product',
+      entityId: productId,
+    },
+    db,
+  );
   redirect('/admin/products?deleted=success' as never);
 }

@@ -10,6 +10,7 @@ import {
   setSupplierActive,
   type SupplierInput,
 } from '@/lib/suppliers/manage';
+import { writeAuditLogAsync } from '@/lib/audit/log';
 
 export interface SupplierActionState {
   ok: boolean;
@@ -70,7 +71,7 @@ export async function addSupplierAction(
   formData: FormData,
 ): Promise<SupplierActionState> {
   const session = await auth();
-  if (!session?.user?.companyId) redirect('/login' as never);
+  if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
 
   const input = parseFormInput(formData);
   if (!input) return { ...EMPTY, message: 'Tedarikçi adı zorunlu' };
@@ -84,6 +85,18 @@ export async function addSupplierAction(
     };
   }
 
+  writeAuditLogAsync(
+    {
+      companyId: session.user.companyId,
+      userId: session.user.id,
+      action: 'supplier.created',
+      entityType: 'supplier',
+      entityId: result.supplierId,
+      afterState: { name: input.name, vatNo: input.vatNo },
+    },
+    db,
+  );
+
   revalidatePath('/admin/suppliers');
   redirect('/admin/suppliers?created=success' as never);
 }
@@ -94,7 +107,7 @@ export async function updateSupplierAction(
   formData: FormData,
 ): Promise<SupplierActionState> {
   const session = await auth();
-  if (!session?.user?.companyId) redirect('/login' as never);
+  if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
 
   const input = parseFormInput(formData);
   if (!input) {
@@ -116,6 +129,18 @@ export async function updateSupplierAction(
     };
   }
 
+  writeAuditLogAsync(
+    {
+      companyId: session.user.companyId,
+      userId: session.user.id,
+      action: 'supplier.updated',
+      entityType: 'supplier',
+      entityId: supplierId,
+      afterState: { name: input.name },
+    },
+    db,
+  );
+
   revalidatePath('/admin/suppliers');
   redirect('/admin/suppliers?updated=success' as never);
 }
@@ -125,7 +150,7 @@ export async function toggleSupplierActiveAction(
   active: boolean,
 ): Promise<SupplierActionState> {
   const session = await auth();
-  if (!session?.user?.companyId) redirect('/login' as never);
+  if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
 
   const result = await setSupplierActive(
     session.user.companyId,
@@ -140,6 +165,17 @@ export async function toggleSupplierActiveAction(
       message: REASON_MSG[result.reason] ?? 'Hata',
     };
   }
+
+  writeAuditLogAsync(
+    {
+      companyId: session.user.companyId,
+      userId: session.user.id,
+      action: active ? 'supplier.activated' : 'supplier.deactivated',
+      entityType: 'supplier',
+      entityId: supplierId,
+    },
+    db,
+  );
 
   revalidatePath('/admin/suppliers');
   revalidatePath('/admin/stock-movements');

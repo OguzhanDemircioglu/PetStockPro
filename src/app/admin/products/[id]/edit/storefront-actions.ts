@@ -9,6 +9,7 @@ import {
   unpublishProduct,
   type StorefrontIssue,
 } from '@/lib/catalog/storefront';
+import { writeAuditLogAsync } from '@/lib/audit/log';
 
 export interface StorefrontActionState {
   ok: boolean;
@@ -57,6 +58,19 @@ export async function publishProductAction(
     };
   }
 
+  if (!result.alreadyPublished) {
+    writeAuditLogAsync(
+      {
+        companyId: session.user.companyId,
+        userId: session.user.id,
+        action: 'storefront.published',
+        entityType: 'product',
+        entityId: productId,
+      },
+      db,
+    );
+  }
+
   revalidatePath(`/admin/products/${productId}/edit`);
   revalidatePath('/admin/products');
   return {
@@ -83,6 +97,19 @@ export async function unpublishProductAction(
       issues: [],
       scope: 'unpublish',
     };
+  }
+
+  if (!result.alreadyUnpublished && session.user.id) {
+    writeAuditLogAsync(
+      {
+        companyId: session.user.companyId,
+        userId: session.user.id,
+        action: 'storefront.unpublished',
+        entityType: 'product',
+        entityId: productId,
+      },
+      db,
+    );
   }
 
   revalidatePath(`/admin/products/${productId}/edit`);

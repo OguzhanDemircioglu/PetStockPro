@@ -10,6 +10,7 @@ import {
   deleteCategory,
   type CategoryInput,
 } from '@/lib/categories/manage';
+import { writeAuditLogAsync } from '@/lib/audit/log';
 
 export interface CategoryActionState {
   ok: boolean;
@@ -57,7 +58,7 @@ export async function addCategoryAction(
   formData: FormData,
 ): Promise<CategoryActionState> {
   const session = await auth();
-  if (!session?.user?.companyId) redirect('/login' as never);
+  if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
 
   const input = parseFormInput(formData);
   if (!input) return { ...EMPTY, message: 'Kategori adı zorunlu' };
@@ -71,6 +72,18 @@ export async function addCategoryAction(
     };
   }
 
+  writeAuditLogAsync(
+    {
+      companyId: session.user.companyId,
+      userId: session.user.id,
+      action: 'category.created',
+      entityType: 'category',
+      entityId: result.categoryId,
+      afterState: { name: input.name, vatRate: input.vatRate, sktRequired: input.sktRequired },
+    },
+    db,
+  );
+
   revalidatePath('/admin/categories');
   revalidatePath('/admin/products');
   redirect('/admin/categories?created=success' as never);
@@ -82,7 +95,7 @@ export async function updateCategoryAction(
   formData: FormData,
 ): Promise<CategoryActionState> {
   const session = await auth();
-  if (!session?.user?.companyId) redirect('/login' as never);
+  if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
 
   const input = parseFormInput(formData);
   if (!input) return { ...EMPTY, categoryId, message: 'Kategori adı zorunlu' };
@@ -102,6 +115,18 @@ export async function updateCategoryAction(
     };
   }
 
+  writeAuditLogAsync(
+    {
+      companyId: session.user.companyId,
+      userId: session.user.id,
+      action: 'category.updated',
+      entityType: 'category',
+      entityId: categoryId,
+      afterState: { name: input.name, vatRate: input.vatRate },
+    },
+    db,
+  );
+
   revalidatePath('/admin/categories');
   revalidatePath('/admin/products');
   redirect('/admin/categories?updated=success' as never);
@@ -111,7 +136,7 @@ export async function deleteCategoryAction(
   categoryId: string,
 ): Promise<CategoryActionState> {
   const session = await auth();
-  if (!session?.user?.companyId) redirect('/login' as never);
+  if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
 
   const result = await deleteCategory(session.user.companyId, categoryId, db);
   if (!result.ok) {
@@ -121,6 +146,18 @@ export async function deleteCategoryAction(
       message: REASON_MSG[result.reason] ?? 'Silinemedi',
     };
   }
+
+  writeAuditLogAsync(
+    {
+      companyId: session.user.companyId,
+      userId: session.user.id,
+      action: 'category.deleted',
+      entityType: 'category',
+      entityId: categoryId,
+      afterState: { affectedProductCount: result.affectedProductCount },
+    },
+    db,
+  );
 
   revalidatePath('/admin/categories');
   revalidatePath('/admin/products');

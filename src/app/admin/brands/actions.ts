@@ -10,6 +10,7 @@ import {
   deleteBrand,
   type BrandInput,
 } from '@/lib/brands/manage';
+import { writeAuditLogAsync } from '@/lib/audit/log';
 
 export interface BrandActionState {
   ok: boolean;
@@ -50,7 +51,7 @@ export async function addBrandAction(
   formData: FormData,
 ): Promise<BrandActionState> {
   const session = await auth();
-  if (!session?.user?.companyId) redirect('/login' as never);
+  if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
 
   const input = parseFormInput(formData);
   if (!input) return { ...EMPTY, message: 'Marka adı zorunlu' };
@@ -64,6 +65,18 @@ export async function addBrandAction(
     };
   }
 
+  writeAuditLogAsync(
+    {
+      companyId: session.user.companyId,
+      userId: session.user.id,
+      action: 'brand.created',
+      entityType: 'brand',
+      entityId: result.brandId,
+      afterState: { name: input.name },
+    },
+    db,
+  );
+
   revalidatePath('/admin/brands');
   revalidatePath('/admin/products');
   redirect('/admin/brands?created=success' as never);
@@ -75,7 +88,7 @@ export async function updateBrandAction(
   formData: FormData,
 ): Promise<BrandActionState> {
   const session = await auth();
-  if (!session?.user?.companyId) redirect('/login' as never);
+  if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
 
   const input = parseFormInput(formData);
   if (!input) return { ...EMPTY, brandId, message: 'Marka adı zorunlu' };
@@ -90,6 +103,18 @@ export async function updateBrandAction(
     };
   }
 
+  writeAuditLogAsync(
+    {
+      companyId: session.user.companyId,
+      userId: session.user.id,
+      action: 'brand.updated',
+      entityType: 'brand',
+      entityId: brandId,
+      afterState: { name: input.name },
+    },
+    db,
+  );
+
   revalidatePath('/admin/brands');
   revalidatePath('/admin/products');
   redirect('/admin/brands?updated=success' as never);
@@ -97,7 +122,7 @@ export async function updateBrandAction(
 
 export async function deleteBrandAction(brandId: string): Promise<BrandActionState> {
   const session = await auth();
-  if (!session?.user?.companyId) redirect('/login' as never);
+  if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
 
   const result = await deleteBrand(session.user.companyId, brandId, db);
   if (!result.ok) {
@@ -107,6 +132,18 @@ export async function deleteBrandAction(brandId: string): Promise<BrandActionSta
       message: REASON_MSG[result.reason] ?? 'Silinemedi',
     };
   }
+
+  writeAuditLogAsync(
+    {
+      companyId: session.user.companyId,
+      userId: session.user.id,
+      action: 'brand.deleted',
+      entityType: 'brand',
+      entityId: brandId,
+      afterState: { affectedProductCount: result.affectedProductCount },
+    },
+    db,
+  );
 
   revalidatePath('/admin/brands');
   revalidatePath('/admin/products');

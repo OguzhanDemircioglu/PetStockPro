@@ -148,6 +148,29 @@ export default async function SettingsHubPage() {
         </div>
       </section>
 
+      <section>
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
+          📜 Denetim
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Link
+            href={'/admin/audit-log' as never}
+            data-data-link="/admin/audit-log"
+            className="group flex items-center gap-3 rounded-2xl border border-line bg-white p-4 hover:border-cat hover:shadow-sm transition-shadow"
+          >
+            <span className="grid h-12 w-12 place-items-center rounded-xl bg-cat-soft text-2xl">
+              📜
+            </span>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-bold text-cart group-hover:text-cat">
+                Audit log
+              </h3>
+              <p className="text-[11px] text-ink-3">Son aksiyonlar (KVKK 5 yıl)</p>
+            </div>
+          </Link>
+        </div>
+      </section>
+
       <Link
         href={'/admin' as never}
         className="text-center text-xs text-ink-4 hover:text-cart"

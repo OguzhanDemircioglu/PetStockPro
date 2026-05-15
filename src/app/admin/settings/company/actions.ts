@@ -8,6 +8,7 @@ import {
   updateCompanyProfile,
   type CompanyProfileInput,
 } from '@/lib/company/settings';
+import { writeAuditLogAsync } from '@/lib/audit/log';
 
 export interface CompanyActionState {
   ok: boolean;
@@ -30,7 +31,7 @@ export async function updateCompanyAction(
   formData: FormData,
 ): Promise<CompanyActionState> {
   const session = await auth();
-  if (!session?.user?.companyId) redirect('/login' as never);
+  if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
 
   const name = asStr(formData.get('name'));
   if (!name) return { ...EMPTY, message: 'Firma adı zorunlu' };
@@ -59,6 +60,22 @@ export async function updateCompanyAction(
       issues: result.issues ?? [],
     };
   }
+
+  writeAuditLogAsync(
+    {
+      companyId: session.user.companyId,
+      userId: session.user.id,
+      action: input.vatNo ? 'company.vat_no_set' : 'company.updated',
+      entityType: 'company',
+      entityId: session.user.companyId,
+      afterState: {
+        name: input.name,
+        hasVatNo: !!input.vatNo,
+        hasWhatsapp: !!input.whatsappPhone,
+      },
+    },
+    db,
+  );
 
   revalidatePath('/admin/settings/company');
   revalidatePath('/admin/products');

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { createProduct } from '@/lib/catalog/products';
+import { writeAuditLogAsync } from '@/lib/audit/log';
 
 export interface CreateProductState {
   ok: boolean;
@@ -22,7 +23,7 @@ export async function createProductAction(
   formData: FormData,
 ): Promise<CreateProductState> {
   const session = await auth();
-  if (!session?.user?.companyId) {
+  if (!session?.user?.companyId || !session.user.id) {
     redirect('/login' as never);
   }
 
@@ -91,6 +92,18 @@ export async function createProductAction(
       formValues,
     };
   }
+
+  writeAuditLogAsync(
+    {
+      companyId: session.user.companyId,
+      userId: session.user.id,
+      action: 'product.created',
+      entityType: 'product',
+      entityId: result.productId,
+      afterState: { name, sku, slug: result.slug },
+    },
+    db,
+  );
 
   redirect('/admin/products?created=success' as never);
 }

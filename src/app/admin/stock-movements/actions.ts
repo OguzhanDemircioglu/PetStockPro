@@ -14,6 +14,7 @@ import {
   type TransferResult,
   type StocktakeResult,
 } from '@/lib/stock/movements';
+import { writeAuditLogAsync } from '@/lib/audit/log';
 
 export interface MovementActionState {
   ok: boolean;
@@ -134,6 +135,22 @@ export async function stockInAction(
   );
 
   if (result.ok) {
+    writeAuditLogAsync(
+      {
+        companyId: session.user.companyId,
+        userId: session.user.id,
+        action: 'stock.in',
+        entityType: 'stock_movement',
+        entityId: result.movementId,
+        afterState: {
+          branchId,
+          variantId,
+          quantity,
+          afterQty: result.afterQty,
+        },
+      },
+      db,
+    );
     revalidatePath('/admin/stock-movements');
     revalidatePath('/admin/products');
   }
@@ -209,6 +226,24 @@ export async function stockOutAction(
   );
 
   if (result.ok) {
+    writeAuditLogAsync(
+      {
+        companyId: session.user.companyId,
+        userId: session.user.id,
+        action: 'stock.out',
+        entityType: 'stock_movement',
+        entityId: result.movementId,
+        afterState: {
+          branchId,
+          variantId,
+          quantity,
+          subtype,
+          paymentMethod,
+          afterQty: result.afterQty,
+        },
+      },
+      db,
+    );
     revalidatePath('/admin/stock-movements');
     revalidatePath('/admin/products');
   }
@@ -248,6 +283,24 @@ export async function transferAction(
   );
 
   if (result.ok) {
+    writeAuditLogAsync(
+      {
+        companyId: session.user.companyId,
+        userId: session.user.id,
+        action: 'stock.transfer',
+        entityType: 'transfer_group',
+        entityId: result.transferGroupId,
+        afterState: {
+          sourceBranchId,
+          targetBranchId,
+          variantId,
+          quantity,
+          sourceAfter: result.sourceAfterQty,
+          targetAfter: result.targetAfterQty,
+        },
+      },
+      db,
+    );
     revalidatePath('/admin/stock-movements');
     revalidatePath('/admin/products');
   }
@@ -287,6 +340,23 @@ export async function stocktakeAction(
   );
 
   if (result.ok) {
+    writeAuditLogAsync(
+      {
+        companyId: session.user.companyId,
+        userId: session.user.id,
+        action: 'stock.stocktake',
+        entityType: 'stock_movement',
+        entityId: result.movementId,
+        afterState: {
+          branchId,
+          variantId,
+          countedQty,
+          delta: result.delta,
+          afterQty: result.afterQty,
+        },
+      },
+      db,
+    );
     revalidatePath('/admin/stock-movements');
     revalidatePath('/admin/products');
   }
@@ -317,6 +387,20 @@ export async function reverseMovementAction(
   );
 
   if (result.ok) {
+    writeAuditLogAsync(
+      {
+        companyId: session.user.companyId,
+        userId: session.user.id,
+        action: 'stock.reversed',
+        entityType: 'stock_movement',
+        entityId: movementId,
+        afterState: {
+          reversalMovementId: result.reversalMovementId,
+          reversalPairId: result.reversalPairId ?? null,
+        },
+      },
+      db,
+    );
     revalidatePath('/admin/stock-movements');
     revalidatePath('/admin/products');
     return { ok: true, message: 'Geri alındı', meta: null };

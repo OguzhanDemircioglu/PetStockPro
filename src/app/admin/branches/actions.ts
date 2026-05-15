@@ -10,6 +10,7 @@ import {
   setBranchActive,
   type BranchInput,
 } from '@/lib/branches/manage';
+import { writeAuditLogAsync } from '@/lib/audit/log';
 
 export interface BranchActionState {
   ok: boolean;
@@ -56,7 +57,7 @@ export async function addBranchAction(
   formData: FormData,
 ): Promise<BranchActionState> {
   const session = await auth();
-  if (!session?.user?.companyId) redirect('/login' as never);
+  if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
 
   const input = parseFormInput(formData);
   if (!input) {
@@ -75,6 +76,18 @@ export async function addBranchAction(
     };
   }
 
+  writeAuditLogAsync(
+    {
+      companyId: session.user.companyId,
+      userId: session.user.id,
+      action: 'branch.created',
+      entityType: 'branch',
+      entityId: result.branchId,
+      afterState: { name: input.name, cityId: input.cityId },
+    },
+    db,
+  );
+
   revalidatePath('/admin/branches');
   redirect('/admin/branches?created=success' as never);
 }
@@ -85,7 +98,7 @@ export async function updateBranchAction(
   formData: FormData,
 ): Promise<BranchActionState> {
   const session = await auth();
-  if (!session?.user?.companyId) redirect('/login' as never);
+  if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
 
   const input = parseFormInput(formData);
   if (!input) {
@@ -106,6 +119,18 @@ export async function updateBranchAction(
     };
   }
 
+  writeAuditLogAsync(
+    {
+      companyId: session.user.companyId,
+      userId: session.user.id,
+      action: 'branch.updated',
+      entityType: 'branch',
+      entityId: branchId,
+      afterState: { name: input.name },
+    },
+    db,
+  );
+
   revalidatePath('/admin/branches');
   redirect('/admin/branches?updated=success' as never);
 }
@@ -115,7 +140,7 @@ export async function toggleBranchActiveAction(
   active: boolean,
 ): Promise<BranchActionState> {
   const session = await auth();
-  if (!session?.user?.companyId) redirect('/login' as never);
+  if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
 
   const result = await setBranchActive(
     session.user.companyId,
@@ -130,6 +155,17 @@ export async function toggleBranchActiveAction(
       message: REASON_MSG[result.reason] ?? 'Hata',
     };
   }
+
+  writeAuditLogAsync(
+    {
+      companyId: session.user.companyId,
+      userId: session.user.id,
+      action: active ? 'branch.activated' : 'branch.deactivated',
+      entityType: 'branch',
+      entityId: branchId,
+    },
+    db,
+  );
 
   revalidatePath('/admin/branches');
   revalidatePath('/admin/stock-movements');
