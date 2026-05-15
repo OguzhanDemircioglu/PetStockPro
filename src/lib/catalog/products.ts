@@ -202,6 +202,8 @@ export interface ProductDetail {
   brandId: string | null;
   isActive: boolean;
   vitrinPublished: boolean;
+  vitrinPublishedAt: Date | null;
+  vitrinAutoUnpublishedReason: string | null;
   defaultVariant: {
     id: string;
     valueLabel: string;
@@ -231,6 +233,8 @@ export async function getProductDetail(
       brandId: products.brandId,
       isActive: products.isActive,
       vitrinPublished: products.vitrinPublished,
+      vitrinPublishedAt: products.vitrinPublishedAt,
+      vitrinAutoUnpublishedReason: products.vitrinAutoUnpublishedReason,
     })
     .from(products)
     .where(

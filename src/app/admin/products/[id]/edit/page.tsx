@@ -5,8 +5,10 @@ import { db } from '@/lib/db/client';
 import { brands, categories } from '@/db/schema';
 import { getProductDetail } from '@/lib/catalog/products';
 import { listVariants, listBranchOptions } from '@/lib/catalog/variants';
+import { validateForStorefront } from '@/lib/catalog/storefront';
 import { EditForm } from './form';
 import { VariantsSection } from './variants-section';
+import { StorefrontSection } from './storefront-section';
 
 export default async function EditProductPage({
   params,
@@ -24,20 +26,25 @@ export default async function EditProductPage({
     notFound();
   }
 
-  const [categoryList, brandList, variants, branchOptions] = await Promise.all([
-    db
-      .select({ id: categories.id, name: categories.name, emoji: categories.emoji })
-      .from(categories)
-      .where(eq(categories.companyId, session.user.companyId))
-      .orderBy(categories.displayOrder),
-    db
-      .select({ id: brands.id, name: brands.name })
-      .from(brands)
-      .where(eq(brands.companyId, session.user.companyId))
-      .orderBy(brands.name),
-    listVariants(session.user.companyId, id, db),
-    listBranchOptions(session.user.companyId, db),
-  ]);
+  const [categoryList, brandList, variants, branchOptions, validation] =
+    await Promise.all([
+      db
+        .select({ id: categories.id, name: categories.name, emoji: categories.emoji })
+        .from(categories)
+        .where(eq(categories.companyId, session.user.companyId))
+        .orderBy(categories.displayOrder),
+      db
+        .select({ id: brands.id, name: brands.name })
+        .from(brands)
+        .where(eq(brands.companyId, session.user.companyId))
+        .orderBy(brands.name),
+      listVariants(session.user.companyId, id, db),
+      listBranchOptions(session.user.companyId, db),
+      // NOT: requireImage false — Sprint 3.3 image upload aktif olunca true yapılır
+      validateForStorefront(session.user.companyId, id, db, {
+        requireImage: false,
+      }),
+    ]);
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-12">
@@ -54,6 +61,14 @@ export default async function EditProductPage({
         }}
         categories={categoryList}
         brands={brandList}
+      />
+
+      <StorefrontSection
+        productId={product.id}
+        initialPublished={product.vitrinPublished}
+        validation={validation}
+        publishedAt={product.vitrinPublishedAt}
+        unpublishedReason={product.vitrinAutoUnpublishedReason}
       />
 
       <VariantsSection

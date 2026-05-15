@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { listProducts } from '@/lib/catalog/products';
+import { ListRowToggle } from './list-row-toggle';
 
 /**
  * /admin/products — Sprint 3.0 minimal list
@@ -118,15 +119,10 @@ export default async function ProductsPage({
                     {item.defaultSalePrice ?? '—'}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {item.vitrinPublished ? (
-                      <span className="rounded bg-arrow-soft px-2 py-0.5 text-[10px] font-bold text-arrow-7">
-                        ✓ Aktif
-                      </span>
-                    ) : (
-                      <span className="rounded bg-line-soft px-2 py-0.5 text-[10px] font-bold text-ink-4">
-                        Kapalı
-                      </span>
-                    )}
+                    <ListRowToggle
+                      productId={item.id}
+                      initialPublished={item.vitrinPublished}
+                    />
                   </td>
                 </tr>
               ))}
