@@ -7,7 +7,7 @@
  * Otoritatif: docs/DATABASE-SCHEMA.md (36 tablo MVP)
  */
 
-import { pgSchema, pgEnum, uuid, text, varchar, integer, timestamp, boolean } from 'drizzle-orm/pg-core';
+import { pgSchema, uuid, text, varchar, integer, timestamp, boolean } from 'drizzle-orm/pg-core';
 
 export const petstockproSchema = pgSchema('petstockpro');
 

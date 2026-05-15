@@ -21,7 +21,7 @@ export default function LoginPage() {
           Hesabına giriş yap
         </h1>
         <p className="mt-3 text-sm text-ink-3 leading-relaxed">
-          Login ekranı Sprint 2'de implement edilecek.<br />
+          Login ekranı Sprint 2&apos;de implement edilecek.<br />
           Şu an için mockup önizlemesi: <Link href={'/' as never} className="text-cart font-bold border-b border-dashed border-cart hover:text-cat">ana sayfa</Link>
         </p>
 
@@ -29,7 +29,7 @@ export default function LoginPage() {
           href="/preview/login.html"
           className="mt-8 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-cat text-white font-bold shadow-[var(--shadow-cat)] hover:-translate-y-0.5 transition-transform"
         >
-          Mockup'ı aç →
+          Mockup&apos;ı aç →
         </a>
       </div>
     </main>
