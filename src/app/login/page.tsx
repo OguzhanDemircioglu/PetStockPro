@@ -124,6 +124,14 @@ export default function LoginPage() {
             Pet shop&apos;unu yönet — stok, satış, vitrin tek panelde.
           </p>
 
+          {/* 2FA prompt banner */}
+          {state?.requires2fa && !state.error && (
+            <div className="mt-6 rounded-xl border border-cat/30 bg-cat-soft px-4 py-3 text-sm text-cart">
+              🛡 <strong>Hesabında 2FA aktif.</strong> Authenticator app&apos;ten 6 haneli kodu gir
+              ya da yedek kodlardan birini kullan (ABCD-EFGH).
+            </div>
+          )}
+
           {/* Error banner */}
           {state?.error && (
             <div
@@ -147,8 +155,10 @@ export default function LoginPage() {
                 placeholder="ornek@petshop.com"
                 autoComplete="email"
                 required
+                readOnly={state?.requires2fa}
+                defaultValue={state?.email ?? ''}
                 disabled={pending}
-                className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink transition-all focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+                className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink transition-all focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15 read-only:bg-line-soft"
               />
             </div>
 
@@ -163,10 +173,38 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 autoComplete="current-password"
                 required
+                defaultValue={state?.password ?? ''}
                 disabled={pending}
                 className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink transition-all focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
               />
             </div>
+
+            {state?.requires2fa && (
+              <div>
+                <label
+                  className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+                  htmlFor="totp"
+                >
+                  2FA Kodu
+                </label>
+                <input
+                  id="totp"
+                  name="totp"
+                  type="text"
+                  inputMode="text"
+                  placeholder="123456 veya ABCD-EFGH"
+                  autoComplete="one-time-code"
+                  required
+                  autoFocus
+                  disabled={pending}
+                  maxLength={20}
+                  className="w-full rounded-xl border-[1.5px] border-cat bg-white px-4 py-3 text-center font-mono text-lg tracking-[0.3em] text-ink transition-all focus:outline-none focus:ring-4 focus:ring-cat/15"
+                />
+                <p className="mt-1.5 text-[11px] text-ink-4">
+                  Authenticator app&apos;teki 6 haneli kod ya da yedek kod (ABCD-EFGH).
+                </p>
+              </div>
+            )}
 
             <div className="mt-0.5 flex items-center justify-between">
               <label className="flex cursor-pointer items-center gap-2 text-[12.5px] text-ink-2">

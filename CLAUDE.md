@@ -94,10 +94,10 @@
 - **Eski proje:** `D:/Projeler/Pet/` (PetToptan marketplace, legacy referans — yeni projeyle kod paylaşmıyor)
 - **Yeni proje:** `D:/Projeler/petstockpro/` (sıfırdan, TS stack)
 
-## 🚀 Şu Anki Durum: Sprint 2.4 Tamamlandı (2026-05-15)
+## 🚀 Şu Anki Durum: Sprint 2.5 Tamamlandı (2026-05-15)
 
-**Branch:** `cray61` — **15 commit ahead of origin** (push edilmedi, kullanıcı kararı bekliyor)
-**Test:** 315 passed (21 dosya, vitest)
+**Branch:** `cray61` — **16 commit ahead of origin** (push edilmedi, kullanıcı kararı bekliyor)
+**Test:** 368 passed (23 dosya, vitest)
 **Lint + typecheck:** 0 error
 
 ### ✅ Tamamlanan Sprint'ler
@@ -115,11 +115,12 @@
 | 2.3a Email verify foundation | 4937317 | email-verification helper + Brevo client + templates + 42 test |
 | 2.3b Verify UI | e224ef9 | Schema migration (users +4 field) + register Brevo entegrasyon + /verify-email + /verify-email/[token] + browser test |
 | 2.4 Forgot/Reset Password | (yeni) | Schema migration 0003 (users +2 field) + password-reset helper (timing-safe, 30dk TTL) + forgot-password action (enumeration koruma, generic 200) + reset-password action (HIBP + failedLoginCount/lockedUntil reset) + /forgot-password + /reset-password/[token] page (server token check + client form) + passwordChanged Brevo template + Brevo mock URL log helper (dev kolaylığı) + 34 test (10 helper + 6 forgot + 10 reset + 8 template) + browser full flow doğrulama |
+| 2.5 2FA TOTP | (yeni) | Schema migration 0004 (users +5 field: secret + recoveryCodes jsonb + enabledAt + setupSecret + setupExpiresAt) + otpauth@9.5 + qrcode@1.5 paketleri + two-factor helper (generateSecret/buildOtpAuthUri/verifyTotp/generateRecoveryCodes 8 ABCD-EFGH/hashRecoveryCode SHA-256/verifyRecoveryCode timing-safe + tek-kullanımlık) + two-factor-setup orchestration (initSetup 10dk TTL + verifySetup + enable + disable) + custom AuthErrors (TwoFactorRequiredError + TwoFactorInvalidError code field) + authorize.ts TOTP step (şifre doğru sonrası 2FA enabled ise totp gerekli; recovery code dahil) + /2fa-setup 3-adım wizard (QR + manuel secret + 6haneli verify + recovery codes ekranı + clipboard/print) + login page TOTP step (requires2fa banner + readOnly email persist) + 53 test (33 helper + 14 setup + 6 authorize 2FA) + browser full flow (login → 2fa-setup → QR/secret → TOTP verify → recovery codes → enable → logout → login → 2fa banner → TOTP/recovery code login → kullanılmış recovery reject) |
 
 ### 🛠 Stack Çalışan Durumda
 
-- **DB:** Supabase Frankfurt EU (`rjzhnfqrynalklsnnuym`), 9 tablo, 4 migration (0000 iskelet + 0001 enums + 0002 email-verify + 0003 password-reset), hepsi RLS enabled
-- **Auth flow MVP:** /login + /register + /verify-email + /verify-email/[token] + /forgot-password + /reset-password/[token] — browser'da end-to-end test geçti (register → verify → login → forgot → reset → eski-şifre-fail → yeni-şifre-success → token-reuse-invalid)
+- **DB:** Supabase Frankfurt EU (`rjzhnfqrynalklsnnuym`), 9 tablo, 5 migration (0000 iskelet + 0001 enums + 0002 email-verify + 0003 password-reset + 0004 two-factor), hepsi RLS enabled
+- **Auth flow MVP:** /login (+ 2FA TOTP step) + /register + /verify-email + /verify-email/[token] + /forgot-password + /reset-password/[token] + /2fa-setup — tümü browser end-to-end geçti
 - **Sandbox-ready integrations:** iyzico + Nilvera + Brevo (key gelince aktif)
 - **Memory:** test-first + ödeme integrity + sorusuz akış kuralları memory'de kayıtlı
 
@@ -127,9 +128,9 @@
 
 | Sprint | İçerik | Tahmin |
 |---|---|---|
-| **2.5** | 2FA setup wizard (TOTP + QR + 8 recovery code) | 2-3 saat |
-| 2.6 | Onboarding 3 adım wizard (ilk şube + ilk ürün + opsiyonel vitrin) | 1-2 saat |
-| 2.7 | Account locked page + 2+ remaining banner + brute-force banner UX | 1 saat |
+| **2.6** | Onboarding 3 adım wizard (ilk şube + ilk ürün + opsiyonel vitrin) | 1-2 saat |
+| 2.7 | Account locked page + 2+ remaining banner + brute-force banner UX (5 fail → 1h lock + email + Telegram) | 1-2 saat |
+| 2.8 | Settings > Security: 2FA disable + recovery code regenerate (Sprint 9 settings'le birleşebilir) | 1 saat |
 | 14 sonu | Billing orchestrator (iyzico webhook → DB transaction → Nilvera invoice → audit) | 2-3 saat |
 | 14 sonu | E2E mock flow test (webhook → DB → invoice complete) | 1 saat |
 | 1B | Cities/Districts seed (Pet/'ten dönüşüm) + 36 tablo schema komple | 2-3 saat |
@@ -141,7 +142,7 @@
 - Brevo API key (production transactional email)
 - Supabase Pro tier upgrade ($25/ay, lansman öncesi)
 
-Hiçbiri Sprint 2.5 için bloker değil — devam edilebilir.
+Hiçbiri Sprint 2.6 için bloker değil — devam edilebilir.
 
 ## 🆕 2026-05-14 Karar Revizyonu (TR-only + 3-tier B geri açıldı) — OTORİTATİF
 

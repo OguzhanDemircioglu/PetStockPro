@@ -1,7 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { authorizeCredentials } from './authorize';
 import { hashPassword } from './password';
+import {
+  generateTotpSecret,
+  generateTotpCode,
+  generateRecoveryCodes,
+} from './two-factor';
+import { TwoFactorRequiredError, TwoFactorInvalidError } from './errors';
 import type { DbClient } from '@/lib/db/client';
+import type { RecoveryCode } from '@/db/schema';
 
 /**
  * Drizzle DB mock helper — chain'leri vi.fn() ile yakalar.
@@ -17,6 +24,9 @@ type MockUserRow = {
   companyId: string | null;
   failedLoginCount: number;
   lockedUntil: Date | null;
+  twoFactorEnabled?: boolean;
+  twoFactorSecret?: string | null;
+  twoFactorRecoveryCodes?: RecoveryCode[] | null;
 };
 
 function makeMockDb(user: MockUserRow | null): {
@@ -59,6 +69,9 @@ async function makeValidUser(overrides: Partial<MockUserRow> = {}): Promise<Mock
     companyId: 'company-uuid-1',
     failedLoginCount: 0,
     lockedUntil: null,
+    twoFactorEnabled: false,
+    twoFactorSecret: null,
+    twoFactorRecoveryCodes: null,
     ...overrides,
   };
 }
@@ -255,6 +268,127 @@ describe('authorizeCredentials', () => {
 
       expect(result).not.toBeNull();
       expect(updateSpy).toHaveBeenCalledTimes(1); // reset için update çağrıldı
+    });
+  });
+
+  // Sprint 2.5 — 2FA enforcement
+  describe('2FA enforcement', () => {
+    // AUTH-013
+    it('2FA enabled + totp boş → TwoFactorRequiredError', async () => {
+      const secret = generateTotpSecret();
+      const user = await makeValidUser({
+        twoFactorEnabled: true,
+        twoFactorSecret: secret,
+      });
+      const { db } = makeMockDb(user);
+
+      await expect(
+        authorizeCredentials(
+          { email: user.email, password: 'CorrectPass123' },
+          db,
+          NOW,
+        ),
+      ).rejects.toBeInstanceOf(TwoFactorRequiredError);
+    });
+
+    // AUTH-013 (kabul)
+    it('2FA enabled + doğru TOTP → AuthorizedUser', async () => {
+      const secret = generateTotpSecret();
+      const code = generateTotpCode(secret);
+      const user = await makeValidUser({
+        twoFactorEnabled: true,
+        twoFactorSecret: secret,
+      });
+      const { db } = makeMockDb(user);
+
+      const result = await authorizeCredentials(
+        { email: user.email, password: 'CorrectPass123', totp: code },
+        db,
+        NOW,
+      );
+      expect(result).not.toBeNull();
+      expect(result?.id).toBe('user-uuid-1');
+    });
+
+    // AUTH-014 — TOTP failure failedLoginCount'a SAYILMAZ
+    it('2FA enabled + yanlış TOTP → TwoFactorInvalidError (failedLoginCount artmaz)', async () => {
+      const secret = generateTotpSecret();
+      const user = await makeValidUser({
+        twoFactorEnabled: true,
+        twoFactorSecret: secret,
+        failedLoginCount: 2,
+      });
+      const { db, updateSpy } = makeMockDb(user);
+
+      await expect(
+        authorizeCredentials(
+          { email: user.email, password: 'CorrectPass123', totp: '999999' },
+          db,
+          NOW,
+        ),
+      ).rejects.toBeInstanceOf(TwoFactorInvalidError);
+
+      // Password verify başarılıydı ama TOTP fail — failedLoginCount güncelleme YAPILMAZ
+      // (success-path update'i de yapmadık çünkü exception throw oldu)
+      expect(updateSpy).not.toHaveBeenCalled();
+    });
+
+    // AUTH-015 — Recovery code login
+    it('2FA enabled + recovery code → success + usedAt set', async () => {
+      const secret = generateTotpSecret();
+      const { plain, hashed } = generateRecoveryCodes();
+      const user = await makeValidUser({
+        twoFactorEnabled: true,
+        twoFactorSecret: secret,
+        twoFactorRecoveryCodes: hashed,
+      });
+      const { db, updateSpy } = makeMockDb(user);
+
+      const result = await authorizeCredentials(
+        { email: user.email, password: 'CorrectPass123', totp: plain[0] },
+        db,
+        NOW,
+      );
+
+      expect(result).not.toBeNull();
+      // İki update: recovery codes invalidate + success reset
+      expect(updateSpy).toHaveBeenCalledTimes(2);
+    });
+
+    // Kullanılmış recovery code → invalid
+    it('Daha önce kullanılmış recovery code → TwoFactorInvalidError', async () => {
+      const secret = generateTotpSecret();
+      const { plain, hashed } = generateRecoveryCodes();
+      // İlk kodu kullanılmış olarak işaretle
+      const used = hashed.map((c, i) =>
+        i === 0 ? { ...c, usedAt: new Date('2026-05-14').toISOString() } : c,
+      );
+      const user = await makeValidUser({
+        twoFactorEnabled: true,
+        twoFactorSecret: secret,
+        twoFactorRecoveryCodes: used,
+      });
+      const { db } = makeMockDb(user);
+
+      await expect(
+        authorizeCredentials(
+          { email: user.email, password: 'CorrectPass123', totp: plain[0] },
+          db,
+          NOW,
+        ),
+      ).rejects.toBeInstanceOf(TwoFactorInvalidError);
+    });
+
+    it('2FA enabled YOK → totp gönderilse bile login normal devam eder', async () => {
+      const user = await makeValidUser({ twoFactorEnabled: false });
+      const { db } = makeMockDb(user);
+
+      const result = await authorizeCredentials(
+        { email: user.email, password: 'CorrectPass123', totp: '123456' },
+        db,
+        NOW,
+      );
+      expect(result).not.toBeNull();
     });
   });
 });

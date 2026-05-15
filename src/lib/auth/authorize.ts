@@ -15,12 +15,17 @@
 import { eq } from 'drizzle-orm';
 import { credentialsSchema } from './credentials-schema';
 import { verifyPassword } from './password';
+import { verifyTotp, verifyRecoveryCode } from './two-factor';
 import {
   isLocked,
   processFailedLogin,
   processSuccessfulLogin,
   type UserAuthState,
 } from './brute-force';
+import {
+  TwoFactorRequiredError,
+  TwoFactorInvalidError,
+} from './errors';
 import type { DbClient } from '@/lib/db/client';
 import { users } from '@/db/schema';
 
@@ -53,7 +58,7 @@ export async function authorizeCredentials(
   if (!parsed.success) {
     return null;
   }
-  const { email, password } = parsed.data;
+  const { email, password, totp } = parsed.data;
 
   // 2. DB lookup
   const userRows = await db.select().from(users).where(eq(users.email, email)).limit(1);
@@ -95,7 +100,37 @@ export async function authorizeCredentials(
     return null;
   }
 
-  // 6. Success — reset failed count + lock
+  // 6. 2FA check (Sprint 2.5)
+  if (user.twoFactorEnabled && user.twoFactorSecret) {
+    if (!totp) {
+      // Şifre doğru ama TOTP gerekli — frontend 2FA input gösterir
+      throw new TwoFactorRequiredError();
+    }
+
+    // Recovery code formatı (ABCD-EFGH veya ABCDEFGH 8+ char) önce dene
+    const trimmed = totp.trim();
+    const looksLikeRecovery = /^[A-Z0-9]{4}-?[A-Z0-9]{4}$/i.test(trimmed);
+
+    if (looksLikeRecovery && user.twoFactorRecoveryCodes) {
+      const result = verifyRecoveryCode(user.twoFactorRecoveryCodes, trimmed, now);
+      if (!result.ok) {
+        throw new TwoFactorInvalidError();
+      }
+      // Recovery code kullanıldı → DB'de updatedCodes yaz
+      await db
+        .update(users)
+        .set({ twoFactorRecoveryCodes: result.updatedCodes, updatedAt: now })
+        .where(eq(users.id, user.id));
+    } else {
+      // TOTP olarak değerlendir
+      if (!verifyTotp(user.twoFactorSecret, trimmed)) {
+        // EKRAN-AUTH §2.3: TOTP yanlışı failedLoginCount'a SAYILMAZ — şifre doğruydu
+        throw new TwoFactorInvalidError();
+      }
+    }
+  }
+
+  // 7. Success — reset failed count + lock
   const success = processSuccessfulLogin();
   await db
     .update(users)

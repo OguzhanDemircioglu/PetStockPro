@@ -140,6 +140,13 @@ export const users = petstockproSchema.table('users', {
   // Password reset (Sprint 2.4 — EKRAN-AUTH §5)
   passwordResetToken: varchar('password_reset_token', { length: 100 }),
   passwordResetExpiresAt: timestamp('password_reset_expires_at', { withTimezone: true }),
+  // 2FA TOTP (Sprint 2.5 — EKRAN-AUTH §7)
+  // twoFactorEnabled (yukarıda mevcut) — 2FA aktif mi?
+  twoFactorSecret: text('two_factor_secret'),                                       // base32 secret (Faz 2'de at-rest encrypted)
+  twoFactorRecoveryCodes: jsonb('two_factor_recovery_codes').$type<RecoveryCode[]>(), // 8 adet, SHA-256 hash + usedAt
+  twoFactorEnabledAt: timestamp('two_factor_enabled_at', { withTimezone: true }),
+  twoFactorSetupSecret: text('two_factor_setup_secret'),                            // setup wizard'da geçici (10 dk TTL)
+  twoFactorSetupExpiresAt: timestamp('two_factor_setup_expires_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
@@ -147,6 +154,12 @@ export const users = petstockproSchema.table('users', {
   index('idx_users_verification_token').on(t.emailVerificationToken),
   index('idx_users_password_reset_token').on(t.passwordResetToken),
 ]);
+
+/** 2FA recovery code shape — hashed (SHA-256), tek kullanımlık. */
+export interface RecoveryCode {
+  hash: string;
+  usedAt: string | null; // ISO date string (jsonb içinde Date serialize edilmez)
+}
 
 // Şubeler (multi-location)
 export const branches = petstockproSchema.table('branches', {
