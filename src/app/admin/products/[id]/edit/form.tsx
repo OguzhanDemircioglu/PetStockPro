@@ -58,7 +58,7 @@ export function EditForm({
   );
 
   return (
-    <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-12">
+    <div className="flex flex-col gap-6">
       <header>
         <Link href={'/admin/products' as never} className="text-xs text-ink-4 hover:text-cart">
           ← Ürünlere dön
@@ -167,9 +167,9 @@ export function EditForm({
         </section>
 
         <section className="rounded-2xl border border-line bg-white p-6">
-          <h2 className="text-lg font-bold text-cart">🏷 Default variant</h2>
+          <h2 className="text-lg font-bold text-cart">🏷 Default variant — hızlı düzenleme</h2>
           <p className="mt-1 text-xs text-ink-3">
-            Çoklu variant Sprint 3.2&apos;de — şu an tek default variant düzenlenebilir.
+            Vitrin&apos;de görünen birincil variant. Tüm variantları aşağıdaki <strong>Variantlar</strong> bölümünden yönetebilirsin.
           </p>
 
           <div className="mt-4 flex flex-col gap-4">
@@ -302,6 +302,6 @@ export function EditForm({
           </button>
         </form>
       </section>
-    </main>
+    </div>
   );
 }
