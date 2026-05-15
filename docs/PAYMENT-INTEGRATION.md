@@ -190,12 +190,14 @@ const event = JSON.parse(body);
 
 **Neden ertelendi:**
 - TR-only odak: lansman süresini kısaltmak ve regülasyon yüzeyini daraltmak
-- KVKK Madde 9 yurt dışı veri aktarım akışı + GDPR cookie banner + EN locale + döviz kuru entegrasyonu (Frankfurter API) bir bütün olarak Faz 2'ye bırakıldı
+- GDPR cookie banner + EN locale + döviz kuru entegrasyonu (Frankfurter API) bir bütün olarak Faz 2'ye bırakıldı
 - Pazar önceliği: Türkiye 10-15K pet shop hedefi (PLAN-KADEMELERI §3)
+
+**⚠ NOT (2026-05-14 revize):** KVKK Madde 9 yurt dışı veri aktarımı akışı **Faz 2'ye değil, MVP'ye aktif** — Supabase Frankfurt (`eu-central-1`) region'ı kullanıldığı için kayıt formunda açık rıza checkbox şart (`DEPLOYMENT.md §2.3` + `EKRAN-PUBLIC-VITRIN §13.5.5`). Bu akış **yurt dışı müşteri kabulü** anlamında değil — **sadece veri lokasyonu** için. Paddle Faz 2'de aktive olduğunda KVKK Madde 9 akışı **yurt dışı müşteri** versiyonuyla genişletilir.
 
 **Faz 2'de talep gelirse ele alınacak başlıklar (özet):**
 - Paddle MoR (Merchant of Record) vendor onboarding + DPA
-- KVKK Madde 9 açık rıza modal'ı (yurt dışı veri aktarımı)
+- KVKK Madde 9 yurt dışı **müşteri kabul** akışı (mevcut "veri lokasyonu" akışı genişletilir)
 - GDPR cookie banner (opt-in)
 - EN locale (next-intl)
 - Aydınlatma metnine Paddle sub-processor eklenmesi

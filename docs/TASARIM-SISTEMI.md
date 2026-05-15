@@ -509,10 +509,10 @@ Her bento kartının sağ alt köşesinde subtle SVG mascot (opacity 0.07, hover
 
 ```tsx
 <PlanCard
-  plan="FREE" | "PRO"             // 2-tier (2026-05-13, PRO+ kaldırıldı)
+  plan="FREE" | "PRO" | "PRO_PLUS"  // 3-tier B (2026-05-14, TR-only) — YT-7
   used={47}
-  limit={50}                       // FREE: 50, PRO: null (sınırsız)
-  showMascot={true}                // Kedi bob animasyonu
+  limit={50}                         // FREE: 50, PRO: 500, PRO_PLUS: null (sınırsız)
+  showMascot={true}                  // Kedi bob animasyonu
   upgradeUrl="/admin/settings/plan"
 />
 ```

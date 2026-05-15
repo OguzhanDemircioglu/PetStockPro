@@ -46,49 +46,112 @@
 
 Hover satır → 👁 Detay · ✏ Düzenle · 🔑 Şifre sıfırla · ⋯ Daha
 
-## 4. Davet Akışı (Mini-Modal)
+## 4. Davet Akışı — Hibrit (Email veya Link) — 2026-05-14 kullanıcı kararı
+
+**Karar:** Admin iki davet yönteminden birini seçer. Email aktif personel (şube müdürü) için varsayılan; davet linki kasiyer (STAFF, email kullanmayan) için pratik.
+
+### 4.0 Mini-Modal
 
 ```
-┌── 👥 Yeni Kullanıcı Davet Et ────────────────┐
-│                                                 │
-│ E-posta *  [ahmet@petshop.com]                 │
-│            💡 Her tenant için ayrı email gerekir│
-│            (users.email UNIQUE — MANTIK-HATALARI│
-│            K3 politikası). Aynı kişi 2 pet shop │
-│            açacaksa Gmail "+" alias kullanabilir│
-│            (ahmet+mavi@gmail.com).              │
-│                                                 │
-│ Rol *      ◉ Bayi sahibi (ADMIN, branch_id=NULL)│
-│                Tüm şubeler, kullanıcı ekleme,  │
-│                plan yönetimi, vitrin profili   │
-│            ○ Şube müdürü (ADMIN, branch_id=X)  │
-│                Sadece atandığı şubeyi yönetir  │
-│                Plan yükseltme yok              │
-│            ○ Kasiyer (STAFF, branch_id=X)      │
-│                Sadece satış kaydeder, sayıma   │
-│                katılır. Ürün eklemez/silmez,   │
-│                fiyat değiştiremez, tedarikçi   │
-│                ile uğraşmaz. Mahalle pet shop  │
-│                veya 2+ vardiya için ideal.     │
-│                                                 │
-│ Şube       [Merkez ▼]                          │
-│            (Sadece "Şube müdürü" rolünde)      │
-│                                                 │
-│ Davet mesajı (opsiyonel)                       │
-│ [textarea — kişisel not]                       │
-│                                                 │
-│       [İptal]  [Davet Gönder]                  │
-└─────────────────────────────────────────────────┘
+┌── 👥 Yeni Kullanıcı Davet Et ────────────────────┐
+│                                                    │
+│ E-posta *  [ahmet@petshop.com]                    │
+│            💡 Her tenant için ayrı email gerekir  │
+│            (users.email UNIQUE — MANTIK-HATALARI  │
+│            K3 politikası). Aynı kişi 2 pet shop   │
+│            açacaksa Gmail "+" alias kullanabilir  │
+│            (ahmet+mavi@gmail.com).                │
+│                                                    │
+│ Rol *      ◉ Bayi sahibi (ADMIN, branch_id=NULL)  │
+│            ○ Şube müdürü (ADMIN, branch_id=X)     │
+│            ○ Kasiyer (STAFF, branch_id=X)         │
+│                                                    │
+│ Şube       [Merkez ▼]   (müdür/kasiyer için)      │
+│                                                    │
+│ Davet yöntemi * — 2026-05-14 hibrit:               │
+│ ◉ 📧 E-posta gönder                                │
+│     Brevo otomatik gönderim, 7 gün TTL             │
+│     (varsayılan — şube müdürü için ideal)          │
+│ ○ 🔗 Davet linki üret (elden ileteceğim)           │
+│     12 haneli token + URL kopya, 24 saat TTL       │
+│     (kasiyer için ideal — admin WhatsApp/SMS ile  │
+│      iletir, kasiyerin email kullanması gerekmez)  │
+│                                                    │
+│ Davet mesajı (opsiyonel)                          │
+│ [textarea — kişisel not, sadece email'de geçer]   │
+│                                                    │
+│       [İptal]  [Davet Oluştur]                    │
+└────────────────────────────────────────────────────┘
 ```
 
-### 4.1 Davet Akışı Detayı
+### 4.1 Davet Akışı — Email Yöntemi (varsayılan)
 
-1. **Davet gönder:** `users` tablosuna row eklenir (`status: invited`, `password: null`)
-2. **E-posta:** Brevo SMTP ile davet linki gönderilir
+1. **Admin "Davet Oluştur" tıklar (yöntem = email):**
+   - `users` tablosuna row INSERT
+   - `status='invited'`, `password_hash=NULL`, `invite_method='email'`
+   - `invite_token = crypto.randomUUID()` (varchar 36, hex)
+   - `invite_expires_at = NOW() + INTERVAL '7 days'`
+   - `invited_by_id = ctx.user.id`
+2. **Brevo SMTP otomatik e-posta:**
    - Subject: `PetStockPro'ya davet edildin!`
-   - Link: `https://petstockpro.com/accept-invite?token=...` (Auth.js Magic Link benzeri, 7 gün TTL)
-3. **Davet alan kullanıcı:** Link tıklar → şifre belirleme sayfası → "Kabul Et" → aktif
-4. **Davet süresi dolarsa:** Link expired, "Yeniden davet et" butonu (drawer'da)
+   - Link: `https://petstockpro.com/accept-invite?token=...`
+   - Davet mesajı (opsiyonel) email body'de
+3. **Davet alan kullanıcı:**
+   - Linke tıklar → `/accept-invite?token=...` sayfası
+   - Sayfada: ad-soyad onay + şifre belirle (Şifre Politikası §2.5)
+   - "Kabul Et" → `status='active'`, `email_verified=NOW()`, `password_hash` set
+4. **Süre dolarsa:** `status='expired_invite'` (pg_cron günlük job), "Yeniden Davet" butonu detay drawer'da
+
+### 4.2 Davet Akışı — Link Yöntemi (yeni, kasiyer için pratik)
+
+1. **Admin "Davet Oluştur" tıklar (yöntem = link):**
+   - `users` tablosuna row INSERT (email yine girilir — DB constraint zorunlu)
+   - `status='invited'`, `password_hash=NULL`, `invite_method='link'`
+   - `invite_token = crypto.randomUUID()` (varchar 36)
+   - `invite_expires_at = NOW() + INTERVAL '24 hours'` ⚠ kısa süre (link WhatsApp'a düşene kadar)
+   - `invited_by_id = ctx.user.id`
+   - **E-posta gönderilmez** (Brevo çağrısı yok)
+2. **Modal kapanırken:**
+   ```
+   ┌── ✅ Davet linki üretildi ──────────────────────┐
+   │                                                   │
+   │ Aşağıdaki linki ve geçici kodu çalışanına        │
+   │ WhatsApp / SMS ile gönder. 24 saat geçerli.       │
+   │                                                   │
+   │ 🔗 https://petstockpro.com/accept-invite?token=  │
+   │    abc123def456...xyz                             │
+   │                                                   │
+   │              [📋 Linki Kopyala]                    │
+   │                                                   │
+   │ 💡 Çalışanın bu linkten kayıt formunu açar, ad   │
+   │ soyad + şifre belirler. Kayıt sonrası hesap      │
+   │ aktife geçer.                                     │
+   │                                                   │
+   │              [Kapat]                              │
+   └───────────────────────────────────────────────────┘
+   ```
+3. **Davet alan kullanıcı:**
+   - Admin elden iletmiş (WhatsApp/SMS), linke tıklar
+   - `/accept-invite?token=...` sayfası açılır
+   - Ad-soyad onay + şifre belirle + (opsiyonel) email düzeltme (admin girmişken kasiyerin gerçek emailini girmesine izin ver)
+   - "Kabul Et" → `status='active'`, `email_verified=NOW()` (link akışında implicit), `password_hash` set
+   - **invite_token tek kullanımlık:** Token kullanıldığında `invite_token=NULL` set, ikinci tıklama 410 Gone
+4. **Süre dolarsa:** `status='expired_invite'`, admin "Yeniden Davet" tıklar → yeni link üretilir
+
+### 4.3 Karşılaştırma Tablosu
+
+| Konu | 📧 Email | 🔗 Link |
+|---|---|---|
+| Süre (TTL) | 7 gün | 24 saat (kısa — elden gönderim) |
+| Brevo SMTP çağrısı | Var | YOK |
+| Admin elden gönderim | YOK | WhatsApp/SMS (admin sorumluluğu) |
+| Token kullanımı | Tek kullanımlık | Tek kullanımlık |
+| Davet mesajı (kişisel not) | Email body'de | Yok (admin WhatsApp'tan kendi yazar) |
+| Email değiştirme (kabul anında) | YOK (gönderilen email = sabit) | Var (admin "geçici email" girmiş olabilir) |
+| Audit log | `user.invited` + `metadata.method='email'` | `user.invited` + `metadata.method='link'` |
+| Önerilen hedef | Şube müdürü | Kasiyer (STAFF) |
+
+### 4.4 Davet Durumları
 
 ### 4.2 Davet Durumları
 
@@ -207,19 +270,31 @@ SUPERADMIN ve bayi sahibi için 2FA **önerilir** (zorunlu değil MVP'de — Faz
 const { data: users } = useQuery({ queryKey: ['users'], queryFn: fetchUsers });
 ```
 
-| Endpoint | Method |
-|---|---|
-| `/api/admin/users` | GET/POST |
-| `/api/admin/users/invite` | POST (e-posta gönder) |
-| `/api/admin/users/[id]` | GET/PATCH |
-| `/api/admin/users/[id]/deactivate` | POST |
-| `/api/admin/users/[id]/reactivate` | POST |
-| `/api/admin/users/[id]/reset-password` | POST (e-posta link) |
-| `/api/admin/users/[id]/resend-invite` | POST |
-| `/api/admin/users/[id]/sessions` | GET (aktif oturumlar) |
-| `/api/admin/users/[id]/sessions/[sid]` | DELETE (oturum kapat) |
-| `/api/admin/users/[id]/audit` | GET (son hareketler) |
-| `/api/auth/accept-invite` | POST (davet kabul + şifre belirle) |
+| Endpoint | Method | Açıklama |
+|---|---|---|
+| `/api/admin/users` | GET / POST | Liste / Yeni davet (POST body: `{email, role, branchId, inviteMethod: 'email'\|'link', message?}`) |
+| `/api/admin/users/invite` | POST | **Birleşik davet endpoint** — `inviteMethod` body'den okur. `email` → Brevo SMTP gönderim + response `{status:'sent'}`. `link` → token üretir, e-posta gönderme, response `{status:'created', token, url, expiresAt}` (admin frontend'de kopya butonu) |
+| `/api/admin/users/[id]` | GET / PATCH | Detay / Güncelle |
+| `/api/admin/users/[id]/deactivate` | POST | Pasif yap |
+| `/api/admin/users/[id]/reactivate` | POST | Yeniden aktif |
+| `/api/admin/users/[id]/reset-password` | POST | E-posta link (her zaman email yöntem) |
+| `/api/admin/users/[id]/resend-invite` | POST | Yeniden davet — body: `{method: 'email'\|'link'}`. Mevcut token expire edilir, yeni token üretilir |
+| `/api/admin/users/[id]/sessions` | GET | Aktif oturumlar |
+| `/api/admin/users/[id]/sessions/[sid]` | DELETE | Oturum kapat |
+| `/api/admin/users/[id]/audit` | GET | Son hareketler |
+| `/api/auth/accept-invite` | POST | Davet kabul + şifre belirle (body: `{token, password, firstName, lastName, email?}` — email sadece link yönteminde değiştirilebilir) |
+
+**Audit log entries (`audit_logs.action`):**
+- `user.invited` · metadata: `{method: 'email'\|'link', expiresAt, invitedById}`
+- `user.invite_link_revoked` · admin manuel link iptal (gönderdiği yere ulaşamadıysa)
+- `user.invite_accepted` · metadata: `{method, acceptedAt, ipHash}`
+- `user.invite_expired` · pg_cron auto-expire (günlük job)
+- `user.invite_resent` · metadata: `{oldMethod, newMethod, expiresAt}`
+
+**Rate-limit (Cloudflare Workers KV — abuse koruma):**
+- Davet oluşturma: aynı tenant'tan **saatte max 10** (kötü niyetli admin spam koruma)
+- Davet kabul (accept-invite): aynı IP'den **dakikada max 5** (token brute-force koruma)
+- 24 saat içinde 50+ başarısız `accept-invite` → süperadmin alert (sistem genelinde)
 
 ## 11. Empty State
 
@@ -236,14 +311,20 @@ Stok takibini tek başına değil, ekip olarak yap.
 ## 12. Test Senaryoları
 
 - USR-001 KPI 3 metrik
-- USR-002 Davet: e-posta gönderilir
-- USR-003 Davet linki 7 gün TTL
-- USR-004 Davet kabul: şifre belirle + aktif
-- USR-005 Davet süresi doldu: yeniden davet
-- USR-006 Rol değiştir: bayi sahibi → şube müdürü
-- USR-007 Şube değiştir: oturumlara bildirim + auto logout
-- USR-008 2FA durumu görüntüleme
-- USR-009 Aktif oturumlar: 2 cihaz
+- USR-002 Davet (email yöntem): Brevo SMTP gönderilir, 7 gün TTL, audit `user.invited` metadata.method='email'
+- USR-003 Davet (link yöntem): token üretilir + URL response döner, Brevo çağrısı YOK, 24 saat TTL, audit metadata.method='link'
+- USR-004 Davet kabul (email yöntem): linkten gelen kullanıcı şifre belirler → aktif
+- USR-005 Davet kabul (link yöntem): kullanıcı email düzeltebilir + ad-soyad + şifre belirler → aktif
+- USR-006 Davet süresi doldu (email 7g / link 24s): status='expired_invite', "Yeniden Davet" butonu görünür
+- USR-007 Yeniden davet: eski token expire, yeni token + yeni TTL — method değiştirilebilir (email → link veya tersi)
+- USR-008 Davet token tek kullanımlık: 2. tıklama 410 Gone
+- USR-009 Davet linki kopya: modal'da [📋 Linki Kopyala] butonu clipboard'a yazar
+- USR-010 Rate-limit: aynı tenant saatte 10+ davet → 429 Too Many Requests
+- USR-011 accept-invite brute-force: aynı IP dakikada 5+ başarısız token → 429
+- USR-012 Rol değiştir: bayi sahibi → şube müdürü, oturumlara bildirim + auto logout
+- USR-013 Şube değiştir: oturumlara bildirim + auto logout
+- USR-014 2FA durumu görüntüleme
+- USR-015 Aktif oturumlar: 2 cihaz
 - USR-010 Oturum kapat (uzaktan)
 - USR-011 Şifre sıfırla (e-posta linki)
 - USR-012 Kendi pasif yapamaz (403)

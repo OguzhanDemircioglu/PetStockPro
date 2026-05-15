@@ -177,6 +177,60 @@ Periyot toggle: Bugün / 7g / 30g / 90g / 1y / Özel
 
 **Önemli kısıt (2026-05-13 net):** Bu metrikler **WhatsApp butonuna tıklama** sayar — gerçek satış değil. Pet shop sahibi "47 tıklama → 12 satış" karşılaştırmasını **kendi defterinden** yapar. (Bkz. EKRAN-PUBLIC-VITRIN §20.7 — WhatsApp deep link ölçüm sınırı.)
 
+#### 2.1.1 WhatsApp Geri Bildirimleri (2026-05-15 — Sticky Balon)
+
+> **Yeni özellik (2026-05-15):** WhatsApp tıklamasından sonra müşteriye sticky balon gösterilir — 5 emoji seçenek, tek tıklama = submit. Detay UX: `EKRAN-PUBLIC-VITRIN §15`.
+
+```
+📊 WhatsApp Geri Bildirimleri (son 30 gün)
+┌─────────────────────────────────────────────────┐
+│  Funnel:                                         │
+│  📞 WhatsApp tıklama         158                 │
+│  💬 Balon gösterildi          158 (%100)         │
+│  ✅ Submit edildi              72 (%46)          │
+│  ✖  Manuel kapatıldı           17 (%11)          │
+│  👻 Görmezden gelindi          69 (%44)          │
+│                                                  │
+│  Rating dağılımı (72 cevap):                     │
+│  😊 Çok iyi      33 (%46)  ████████████░░░     │
+│  🙂 İyi          24 (%33)  █████████░░░░░░     │
+│  😐 Orta          7 (%10)  ███░░░░░░░░░░░░     │
+│  😕 Kötü          3 (%4)   █░░░░░░░░░░░░░░     │
+│  😞 Ulaşamadım    5 (%7)   ██░░░░░░░░░░░░░     │
+│                                                  │
+│  Türetilen metric'ler:                           │
+│  • Ulaşma oranı: %93 (5 ulaşamadım / 72)         │
+│  • Memnuniyet: %85 (Çok iyi + İyi / ulaşanlar)   │
+│  • Ortalama puan: 4.1/5                          │
+│                                                  │
+│  💡 Sinyaller:                                    │
+│  ✅ Cevap hızın iyi (%93 ulaşma)                  │
+│  ⚠ "Orta + Kötü" %14 — iyileştirme noktası      │
+│                                                  │
+│  [Detay funnel →] [CSV export →]                 │
+└─────────────────────────────────────────────────┘
+```
+
+**Pet shop için pratik yorum:**
+- **Submit ratio** (%46) sektör benchmark'ından (5-15%) yüksek = müşteriler ilgili
+- **Ulaşma oranı** (%93) = pet shop hızlı cevap veriyor (>%90 hedef)
+- **Memnuniyet** (%85) = görüşme kalitesi iyi (>%80 hedef)
+- **Ortalama puan** (4.1/5) = orta-üst memnuniyet
+
+**Trend grafiği (haftalık):**
+```
+Rating ortalaması (son 12 hafta):
+  4.5 ┤     ╭─╮
+  4.0 ┤  ╭──╯ ╰╮ ╭─
+  3.5 ┤──╯    ╰─╯
+  3.0 ┴─────────────
+      W1 W4 W8 W12
+```
+
+**Yorum bölümü (Faz 2):** MVP'de yorum yok. Faz 2'de eklenirse anonim yorumlar son 10 listede gösterilir (moderation süperadmin'de).
+
+**Önemli kısıt:** 1 IP × 1 tenant × 24 saat = 1 feedback (anti-spam). Aynı müşteri günde tekrar gelir → balon **gösterilmez** (localStorage + KV check). Bu sebeple `whatsapp_clicks > balloon_shown` olabilir — normal davranış.
+
 ### 2.2 💳 Plan + Fatura
 
 > **2026-05-14 not:** 3-tier B (FREE 50 / PRO 500 / PRO+ ∞) geri açıldı, **TR-only**. Önceki 2-tier (PRO+ rafa, 2026-05-13) **iptal edildi**. Otoritatif tablo: `PLAN-KADEMELERI.md §1`. Tüm fiyatlar KDV dahil TRY. Yurt dışı ödeme (Paddle/USD/EUR) **kapsam dışı**.
@@ -205,7 +259,7 @@ Plan karşılaştırma (3 sütun grid — 3-tier B, TR-only)
 │  ✓ Vitrin        │  ✓ Vitrin        │  ✓ Vitrin        │
 │  ✓ Çoklu şube    │  ✓ Çoklu şube    │  ✓ Çoklu şube    │
 │  ✓ Sınırsız user │  ✓ Sınırsız user │  ✓ Sınırsız user │
-│  ✓ 5 rapor       │  ✓ 5 rapor       │  ✓ 5 rapor       │
+│  ✓ 6 rapor       │  ✓ 6 rapor       │  ✓ 6 rapor       │
 │  ✓ Asistan       │  ✓ Asistan       │  ✓ Asistan       │
 │  ✓ Audit + 2FA   │  ✓ Audit + 2FA   │  ✓ Audit + 2FA   │
 │  ✓ Telegram      │  ✓ Telegram      │  ✓ Telegram      │
@@ -295,43 +349,77 @@ Telegram bağlantısı
   Son test: 2 dk önce
   [Test bildirim gönder]  [Bağlantıyı Kaldır]
 
-Bildirim tipleri (tablo)
-  Tip                          │ Ekran │ Telegram │
-  Kritik stok düştü             │  ☑   │   ☑      │
-  Stok bitti                    │  ☑   │   ☑      │
-  Yüksek tutarlı satış (eşik [₺5000]) │ ☐ │ ☑ │
-  Yeni kullanıcı eklendi        │  ☑   │   ☐      │
-  Plan limit yaklaşıyor          │  ☑   │   ☑      │
-  Günlük özet (21:00)            │  ☐   │   ☑      │
-  Haftalık özet (Pzt 09:00)     │  ☐   │   ☑      │
+Bildirim tipleri (tablo) — 2026-05-14 OT2-1 + YT-5: 5 yeni event eklendi
+  Tip                                  │ Ekran │ Telegram │
+  Kritik stok düştü                     │  ☑   │   ☑      │
+  Stok bitti                            │  ☑   │   ☑      │
+  Yüksek tutarlı satış (eşik [₺5000])  │  ☐   │   ☑      │
+  Yeni kullanıcı eklendi                │  ☑   │   ☐      │
+  Plan limit yaklaşıyor                 │  ☑   │   ☑      │
+  Günlük özet (21:00)                   │  ☐   │   ☑      │
+  Haftalık özet (Pzt 09:00)             │  ☐   │   ☑      │
+  ─────────── Abonelik + Fatura ───────────
+  Abonelik ödemesi başarısız (past_due) │  ☑   │   ☑      │ ← subscription_payment_failed
+  Abonelik yenilendi (başarılı tahsilat) │  ☐   │   ☑      │ ← subscription_renewed
+  Fatura kesildi (e-Arşiv)              │  ☐   │   ☑      │ ← invoice_issued
+  ─────────── Vitrin ───────────
+  Vitrin onayı geçti                    │  ☑   │   ☑      │ ← vitrin_approved (otomatik onay sonrası)
+  Vitrin şikayeti aldın                 │  ☑   │   ☑      │ ← vitrin_report_received (3 IP → otomatik gizleme uyarısı)
 
 ⚠ WhatsApp desteklenmiyor (eski karar geçersiz)
+⚠ Abonelik ödemesi başarısız bildirimi **kapatılamaz** (zorunlu — past_due durumunda tenant uyarılmalı)
 ```
 
-### 2.5 🔒 Güvenlik (2026-05-14 detaylandırıldı — DEVAM-REHBERI mantık hatası #9)
+**Yeni event'ler için trigger noktaları (2026-05-14 OT2-1):**
+- `subscription_payment_failed`: iyzico webhook `payment.failed` → `subscriptions.status = 'past_due'` set → bildirim
+- `subscription_renewed`: iyzico webhook `payment.success` → `subscriptions.next_billing_at` ileri kaydırma → bildirim
+- `invoice_issued`: Nilvera e-Arşiv kesim başarılı → `invoices` tablosuna kayıt → bildirim (PDF link e-posta)
+- `vitrin_approved`: AI validation + storefront_status = 'approved' geçişi → bildirim (1 kez, idempotent)
+- `vitrin_report_received`: `vitrin_reports` INSERT trigger (3+ aynı target için) → süperadmin + tenant bildirim
 
-#### 2.5.1 Şifre Politikası
+### 2.5 🔒 Güvenlik
 
-| Kural | Değer | Sebep |
+> **2026-05-15 revize:** Auth akışları (login, register, email doğrulama, şifremi unuttum, email değiştirme, onboarding, CAPTCHA) `EKRAN-AUTH.md`'ye **taşındı**. Bu bölüm sadece **kullanıcı kendi paneli üzerinden değiştirebileceği** ayarları kapsar (şifre değiştir, 2FA aç/kapat, aktif oturum yönet, hesap kilidi gözden geçir).
+>
+> **Tam auth akış detayı:** `EKRAN-AUTH.md` — Login + Register + Email Verification + Forgot Password + Change Email + Onboarding + Turnstile + Account Lock + 13 alt-bölüm + 52 test senaryosu.
+
+#### 2.5.1 Şifre Politikası (Referans Özet)
+
+| Kural | Değer | Detay |
 |---|---|---|
-| Min uzunluk | **8 karakter** | OWASP modern minimum (12 ideal ama UX) |
+| Min uzunluk | **8 karakter** | OWASP modern minimum |
 | Karmaşıklık | En az 1 rakam + 1 büyük harf | Sözlük saldırısına karşı |
-| Hashing | **bcrypt cost 12** (`bcryptjs` — Cloudflare Workers'da `bcrypt` native çalışmaz) | jose/bcryptjs kombinasyonu Workers uyumlu |
-| Salt | bcrypt otomatik (per password unique) | — |
-| Geçmiş şifre kontrolü | Son 3 şifre tekrar kullanılamaz | Reuse koruması (MVP'de basit hash listesi) |
-| Şifre değişim sıklığı zorunluluğu | **YOK** (NIST 2017+ önerisi) | Zorla değişim güvensiz şifrelere yol açar |
+| Hashing | **bcrypt cost 12** (`bcryptjs` — Workers uyumlu) | — |
+| Geçmiş şifre kontrolü | Son 3 şifre tekrar kullanılamaz | `users.passwordHistory` jsonb son 3 hash |
+| HIBP check | HaveIBeenPwned k-anonymity API | Bilinen veri sızıntısı şifreleri reddedilir |
+| Periyodik zorla değişim | **YOK** (NIST 2017+ önerisi) | Zorla değişim güvensiz şifrelere yol açar |
 
-UI'da şifre alanı altında **real-time strength indicator** (zayıf / orta / güçlü) — ek karakter sınıfı bonusu, sözlük kelime ceza.
+UI'da şifre alanı altında **real-time strength indicator** (zayıf / orta / güçlü) — ek karakter sınıfı bonusu, sözlük kelime ceza. **Tam form akışı:** `EKRAN-AUTH §3` (register) + `§5` (forgot password reset).
 
-#### 2.5.2 Brute Force Koruması
+#### 2.5.2 Brute Force Koruması (2026-05-15 sıkı policy — kullanıcı kararı)
+
+> **Tam akış detayı:** `EKRAN-AUTH §2 + §10` (kalan hak UX + lock mekaniği + recovery)
 
 | Tetik | Aksiyon |
 |---|---|
-| 5 başarısız login / 15 dk (IP başına) | Cloudflare Workers KV → **CAPTCHA** zorunlu (hCaptcha) |
-| 10 başarısız login / 15 dk (hesap başına) | Hesap **15 dk lock** + e-posta uyarı + audit log entry |
-| 3 ardışık lock döngüsü (45 dk içinde) | 24 saat **kalıcı lock** + süperadmin'e Telegram bildirim |
+| 5 başarısız login / 15 dk (IP başına) | Cloudflare Workers KV → **Cloudflare Turnstile** zorunlu (ek katman, hesap bazlı sayaçtan bağımsız) |
+| 3+ başarısız login (hesap bazlı) | Frontend "kalan hak" banner: 3 yanlışta "3 hakkın kaldı", 4'te "2 hakkın kaldı + Şifremi Unuttum", 5'te "1 hakkın kaldı + 1 saat lock uyarı" |
+| **5 başarısız login (hesap bazlı)** | Hesap **1 SAAT lock** + e-posta uyarı (IP/UA/şehir) + Telegram süperadmin alert + audit log |
+| 3 ardışık 1-saat lock (consecutiveLockCount=3) | **24 SAAT kalıcı lock** + acil e-posta + 🚨 Telegram süperadmin kritik alert |
+| Şifremi Unuttum tamamlama (lock aktifken bile çalışır) | failedLoginAttempts=0, consecutiveLockCount=0, lockedUntil=NULL — kullanıcı anında giriş yapabilir |
+| Süperadmin Toolbox "Kilidi Aç" | Aynı reset + audit + opsiyonel tenant'a Telegram bildirim |
 
-Implementation: `Cloudflare Workers KV` (free tier 1000 write/gün yeterli), key `login_attempts:{ip_or_userId}`, TTL 15 dk.
+**Sıfırlama:**
+- Başarılı login → failedLoginAttempts=0, consecutiveLockCount=0
+- Lock süresi geçti → failedLoginAttempts=0 reset (consecutiveLockCount korunur)
+- 7 gün hiç lock olmadıysa → consecutiveLockCount=0 (pg_cron weekly cleanup)
+
+**Implementation:**
+- IP rate-limit: Cloudflare Workers KV (`login_attempts:{ip}`, TTL 15 dk)
+- Hesap rate-limit: `users.failedLoginAttempts` + `lockedUntil` + `consecutiveLockCount` (DB state)
+- TOTP yanlışı sayılmaz (şifre doğru, sadece 2FA hatalı) — gerçek brute-force ayırt edilir
+
+**Neden 2 yanlışta banner gösterilmiyor?** Parmak hatasıyla 1-2 yanlış doğal; 3. yanlış gerçek kafa karışıklığı sinyali → kullanıcıya yardımcı olmak şart (kalan hak + Şifremi Unuttum CTA). Detay: `EKRAN-AUTH §2.3` UX pattern.
 
 #### 2.5.3 Şifre Sıfırlama
 

@@ -583,4 +583,97 @@
 
 ---
 
-*Son güncelleme: 2026-05-14 (2. tur tamamlandı). 11 yeni açık bulgu — toplam 30 (1. tur 19 ✅ + 2. tur 11 ⏳).*
+*Son güncelleme: 2026-05-14 (3. tur kullanıcı geri bildirimi + 4. tur Claude taramasıyla). Toplam 40 bulgu, hepsi ✅: 1. tur 19 + 2. tur 14 + 3. tur 2 + 4. tur 5.*
+
+---
+
+# 4. Tur — Claude Self-Tarama Yayılım Kontrolü (2026-05-14)
+
+**Yöntem:** 2. ve 3. tur 16 düzeltmenin yarattığı **yayılım hataları** + "karar verildi" işaretli ama **uygulanmamış** noktalar. Cross-doc grep + tablo/sayı tutarlılık kontrolü.
+
+**Tetikleyici:** CLAUDE.md "Sıradaki olası işler" listesinde *"4. tur mantık hata taraması (son düzeltmeler yeni çelişki yarattı mı?)"* — bu kapsam.
+
+## 🟡 Önemli (Yayılım Hatası — Yarım Kalmış Önceki Düzeltmeler)
+
+### YT-3: ✅ DATABASE-SCHEMA seed kategoriler KDV %18 kalmış (OT2-2 yayılım atlandı)
+
+- **Sorun:** OT2-2'de KDV %18 → %20 düzeltildi (EKRAN-AYARLAR + DATABASE-SCHEMA yorumu). Ama `DATABASE-SCHEMA.md §7` seed verilerinde **4 kategori hâlâ %18**:
+  ```sql
+  ($1, 'Aksesuar', 'aksesuar', '🎀', 18, false),   -- yanlış
+  ($1, 'Oyuncak', 'oyuncak', '🧸', 18, false),     -- yanlış
+  ($1, 'Kum', 'kum', '🪨', 18, false),             -- yanlış
+  ($1, 'Bakım', 'bakim', '🧴', 18, false),         -- yanlış
+  ```
+  Mama %10 (gıda) ✅ ve Sağlık %8 (özel oran) ✅ doğru kalıyor.
+- **Etkilenen dosya(lar):** `DATABASE-SCHEMA.md §7` (satır 1729-1735)
+- **Aksiyon:** 4 kategori %18 → %20 güncelle.
+- **Durum:** ✅ Çözüldü (2026-05-14) — `DATABASE-SCHEMA.md §7`: Aksesuar/Oyuncak/Kum/Bakım %20'ye güncellendi, OT2-2 + YT-3 yorum eklendi.
+
+### YT-4: ✅ "5 rapor" → "6 rapor" yayılımı 9 yerde yarım kaldı (OT2-3 atlama)
+
+- **Sorun:** OT2-3'te EKRAN-RAPORLAR.md 8 satır düzeltileceği söylendi ama uygulanmamış. Ayrıca yayılım `EKRAN-RAPORLAR.md` dışında **4 başka doc'a** sıçramış:
+  - `EKRAN-RAPORLAR.md` satır 11/26/52/253/266/297/301 — "5 rapor" string, kart listesinde 💳 Açık Krediler eksik, RPT-015/016/017/018 testleri yok
+  - `EKRAN-AYARLAR.md` satır 208 — plan kıyaslama tablosu "✓ 5 rapor"
+  - `PLAN-KADEMELERI.md` satır 92 — özellik karşılaştırma "5 rapor (satış/kâr/...)"
+  - `SPRINT-PLAN.md` satır 49 + 665-685 — Sprint 11 hedef + yapılacaklar
+  - `UI-MOCKUP-PLAN.md` satır 31/135/287/288 — raporlar.html brief
+- **Etkilenen dosya(lar):** 5 doc
+- **Aksiyon:** Tüm "5 rapor" → "6 rapor"; kart listesine 💳 Açık Krediler; RPT-015..018 yeni test; Sprint 11 yapılacaklar genişletildi (Krediyi Kapama akışı + 6 detay sayfa); API endpoint listesine `/open-credits` + `/settle`.
+- **Durum:** ✅ Çözüldü (2026-05-14) — 5 dosyada toplam 14 yer güncellendi, RPT-015..018 testleri eklendi.
+
+### YT-5: ✅ OT2-1 notification types EKRAN-AYARLAR §2.4 tablosuna eklenmedi
+
+- **Sorun:** OT2-1'de DATABASE-SCHEMA `notificationTypeEnum`'a 5 yeni event eklendi (`subscription_payment_failed`, `subscription_renewed`, `invoice_issued`, `vitrin_approved`, `vitrin_report_received`). Ama EKRAN-AYARLAR §2.4 "Bildirim tipleri" tablosu hâlâ **7 satır** — eski liste. Tenant ödemesi başarısız oluyorsa Telegram bildirim gönderilebilmesi için bu tablo eksikse UI gating'i karışır.
+- **Etkilenen dosya(lar):** `EKRAN-AYARLAR.md §2.4` (satır 298-307)
+- **Aksiyon:** Tabloya **5 yeni satır** ekle (Abonelik + Fatura: 3 satır; Vitrin: 2 satır). Trigger noktaları belgele (iyzico webhook → past_due → bildirim vs.). "Abonelik ödemesi başarısız" bildirimi **kapatılamaz** kuralı eklendi.
+- **Durum:** ✅ Çözüldü (2026-05-14) — Tablo `subscription_payment_failed` (zorunlu), `subscription_renewed`, `invoice_issued`, `vitrin_approved`, `vitrin_report_received` ile 12 satıra çıkarıldı. Trigger noktaları belgelendi.
+
+### YT-6: ✅ DEPLOYMENT.md dış servis listesi Sprint planıyla çelişiyor
+
+- **Sorun:** `DEPLOYMENT.md §1` mimari diyagramında "Dış servisler" listesi:
+  - "iyzico (TR ödeme — Faz 2)" — **yanlış**, Sprint 13 MVP'de
+  - "Nilvera (e-fatura — Faz 2)" — **yanlış**, Sprint 14 MVP'de
+  - "Paddle (yurt dışı — Faz 2)" — doğru (TR-only kararıyla Faz 2'ye taşındı)
+  - "Frankfurter (kur)" — yanlış, TR-only kararıyla **kaldırılmalı** (O5 + TECH-STACK)
+  - Cloudflare Workers AI (LLaVA, vitrin image moderation) — listede **yok** (YT-1 sonrası eklendi)
+- **Etkilenen dosya(lar):** `DEPLOYMENT.md §1` (satır 51-58)
+- **Aksiyon:** Liste yeniden yazıldı — MVP servisleri sprint sıralı; Faz 2'ye saklılar ayrı bölüm; Cloudflare Workers AI eklendi.
+- **Durum:** ✅ Çözüldü (2026-05-14)
+
+### YT-7: ✅ "2-tier yapı" kalıntı referansları 9 yerde otoritatif yanlış bilgi veriyor
+
+- **Sorun:** 2026-05-14'te 3-tier B (FREE 50 / PRO 500 / PRO+ ∞) geri açıldı ama 2026-05-13 "2-tier (FREE/PRO), PRO+ rafa" kararının yazılı kalıntıları **otoritatif metinlerde** kalmış:
+  - `EKRAN-PANO.md §11.7` (satır 345): "PRO (sınırsız) → ring yok ... (2-tier yapı, PRO+ rafa 2026-05-13)" — PRO+ ring kuralı eksik
+  - `EKRAN-PUBLIC-VITRIN.md` 3 yer (satır 460, 1028, 1051): "PRO+ rafa" gerekçesi yanıltıcı
+  - `SUPERADMIN-YETKILERI.md §3.1.1` (satır 211): **"Plan Tiers (2-tier — 2026-05-13)"** + FREE 50 / PRO ∞ 500₺ — süperadmin sistem ayarları sayfası 2-tier yapısında! Bu **çok kritik** çünkü süperadmin UI buna göre yazılır.
+  - `TECH-STACK.md §4.2` (satır 460): "2-tier yapı (FREE 50 / PRO sınırsız)" — final not
+  - `TASARIM-SISTEMI.md §7.7` (satır 512): `plan="FREE" | "PRO"` — **TypeScript type yanlış**, PRO_PLUS eksik
+  - `UI-MOCKUP-PLAN.md` 3 yer (satır 107, 122, 214, 273): mockup brief'lerinde 2-tier yazılmış — mockup yapan biri yanlış tablo çizer
+- **Etkilenen dosya(lar):** 6 doc, 9 yer
+- **Aksiyon:** Tüm "2-tier" yapı/yorum/tabloları "3-tier B (FREE 50 / PRO 500 750₺ / PRO+ ∞ 1.750₺, TR-only)" olarak güncelle. Tarih notu "2026-05-14 YT-7" ile işaretle. Pano ring kuralları 3 plana göre yeniden tanımla. TASARIM-SISTEMI PlanCard type union'a PRO_PLUS eklensin. SUPERADMIN sistem ayarları 3-tier'a güncellensin.
+- **Durum:** ✅ Çözüldü (2026-05-14) — 6 dosyada 9 yer güncellendi. PAYMENT-INTEGRATION.md ve DEPLOYMENT.md'deki 2-tier referansları **historical changelog** olarak korundu (tarih sırası bütünlüğü için).
+
+---
+
+## 4. Tur Özet
+
+**5 yeni bulgu, hepsi ✅ çözüldü (2026-05-14, toplam tüm turlar: 40 bulgu)**
+- 🟡 5 Önemli — YT-3 KDV seed yayılım / YT-4 5→6 rapor 5 doc / YT-5 notification types UI / YT-6 dış servis listesi / YT-7 2-tier kalıntı 6 doc
+
+**Atlanan ama doğrulanmış (kalıntı temiz):**
+- `is_superadmin` referansları: sadece **fonksiyon adı** olarak kalmış (`auth.is_superadmin()`, `petstockpro.auth_is_superadmin()`) — claim adı `user_role` ✅ tutarlı (KT2-1 doğru uygulandı)
+- `storefront_enabled` / `storefrontEnabled`: aktif kodda kalıntı yok ✅ (K1 + OT2-6 doğru)
+- STAFF gating notları: 5 ekran doc'unda var ✅ (OT2-5 doğru)
+- customer_ref / credit_paid_at UX: EKRAN-STOK-HAREKETLERI §7.1'de Veresiye akışı eklendi ✅ (OT2-4 doğru)
+
+**Tarama yöntemi:**
+- 7 hedefli grep: is_superadmin, %18/KDV, "5 rapor", storefront_enabled, STAFF, customer_ref, Paddle/Frankfurter
+- 2 hedefli enum cross-check: notificationTypeEnum DB ↔ UI tablosu
+- Plan tier tutarlılık: 2-tier vs 3-tier B 11 doc'ta
+- KDV oranı seed verisi: DATABASE-SCHEMA §7 INSERT
+
+**Sprint 0 öncesi:** 4. tur sonrası **dokümanlar arası tutarlı**. Yeni session'da işlem yapan biri çelişen bilgi okuyamaz.
+
+---
+
+*Son güncelleme: 2026-05-14 (4. tur Claude self-tarama). 40 toplam bulgu — 19 (1.) + 14 (2.) + 2 (3.) + 5 (4.) = ✅ hepsi çözüldü.*

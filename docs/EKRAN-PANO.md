@@ -342,7 +342,9 @@ WHERE bi.company_id = :tenantId
   - < %60 dolu → `--arrow` (yeşil)
   - %60-80 dolu → `--cat` (turuncu)
   - %80-100 dolu → `--danger` (kırmızı)
-  - PRO (sınırsız) → ring yok, "Sınırsız ∞" gösterilir (2-tier yapı, PRO+ rafa 2026-05-13)
+  - FREE (50 ürün) → ring + sayaç, eşik bazlı renk
+  - PRO (500 ürün) → ring + sayaç (47/500 gibi), eşik bazlı renk
+  - PRO+ (∞ sınırsız) → ring yok, "Sınırsız ∞" gösterilir (3-tier B, 2026-05-14)
 - **Foot mesajı:**
   - %0-60: `Plan'da yer var`
   - %60-80: `Limit'e {kalan} ürün kaldı`

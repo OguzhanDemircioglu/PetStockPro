@@ -39,7 +39,8 @@
            └─────────────────────┼──────────────────────┘
                                  │
                     ┌────────────▼──────────────────┐
-                    │   Supabase (mevcut proje)     │
+                    │   Supabase (eu-central-1)     │
+                    │   📍 Region: Frankfurt, DE     │
                     │   schema: petstockpro         │
                     │   • Postgres + RLS            │
                     │   • Auth                       │
@@ -48,14 +49,20 @@
                     │   • Edge Functions             │
                     └───────────────────────────────┘
 
-Dış servisler:
-  • Brevo SMTP (e-posta)
-  • Telegram Bot API
-  • Frankfurter (kur)
-  • Sentry (errors)
-  • iyzico (TR ödeme — Faz 2)
-  • Paddle (yurt dışı — Faz 2)
-  • Nilvera (e-fatura — Faz 2)
+Dış servisler (MVP):
+  • Brevo SMTP (e-posta) — Sprint 0'da bootstrap, Sprint 16 lansman için Pro tier $35/ay
+  • Telegram Bot API — Sprint 10'da admin bildirim entegrasyon
+  • Cloudflare Turnstile (bot koruması) — Sprint 2'de auth formlarında (register/forgot-password/change-email/login 5+ fail) — $0 limitsiz, TECH-STACK §3.9c
+  • Cloudflare Workers AI (LLaVA image moderation) — Sprint 12'de vitrin görsel doğrulama
+  • iyzico (TR ödeme) — Sprint 13'te subscription tahsilat
+  • Nilvera (e-Arşiv fatura) — Sprint 14'te e-Arşiv kesim (vergi mükellefi pet shop için opsiyonel)
+
+Opsiyonel / opsiyonelize (MVP'de aktif değil veya sade pattern):
+  • Sentry (errors) — MVP'de opsiyonel; Cloudflare Workers Logs + Telegram alert pattern $0 alternatif (DEPLOYMENT §8.5). Lansman sonrası 100+ event/gün olursa Sentry Team plan ($26/ay) değerlendir.
+
+Faz 2'ye saklı (TR-only kararı, 2026-05-14):
+  • Paddle (yurt dışı ödeme MoR) — yurt dışı talep gelirse açılır
+  • Frankfurter API (TRY/USD/EUR kur) — multi-currency aktive olursa
 ```
 
 ---
@@ -84,7 +91,54 @@ CNAME   www               petstockpro.com            ☁ Proxied
 - **Universal SSL:** Sadece `petstockpro.com` + `www.petstockpro.com` (wildcard kaldırıldı, MANTIK-HATALARI O1)
 - **HSTS:** Enabled, max-age 1 yıl, includeSubDomains, preload
 
-### 2.3 E-posta MX (Brevo için)
+### 2.3 Supabase Region — Frankfurt (eu-central-1) — 2026-05-14 onaylandı
+
+**Karar:** Tüm Supabase kaynakları (Postgres, Auth, Realtime, Storage, Edge Functions) **`eu-central-1` (Frankfurt, Almanya)** region'ında.
+
+**Neden Frankfurt:**
+
+| Faktör | Değer |
+|---|---|
+| TR latency (İstanbul ↔ Frankfurt) | ~30-40ms (kullanıcı algılayamaz) |
+| Supabase olgunluk | En stabil + feature-complete region |
+| Yurt dışı pet shop (Faz 2 Paddle) | Avrupa müşterilere yakın |
+| Veri koruma standardı | EU GDPR + KVKK uyumlu |
+| Maliyet | US East ile aynı seviye |
+
+**Cloudflare Workers region kararı YOK:** Workers global edge ağı — her müşteri en yakın edge node'dan hizmet alır (TR pet shop'ları otomatik İstanbul edge'inden, Almanya'dan bağlananlar Frankfurt edge'inden). Region seçimi sadece Supabase için anlamlı.
+
+#### KVKK Uyumu (Frankfurt = yurt dışı veri lokasyonu)
+
+Veri AB'de tutulduğu için KVKK Madde 9 **yurt dışı veri aktarımı** maddesi aktive olur. Çözüm — **3 katmanlı uyum**:
+
+1. **Kayıt formu (auth.html — Sprint 2):**
+   ```
+   ☐ Verilerimin Avrupa Birliği'nde (Almanya, Frankfurt) saklanmasına
+     açık rızam vardır. KVKK Madde 9 kapsamında detay → [Aydınlatma Metni]
+   ```
+   Bu checkbox **işaretlenmeden** kayıt tamamlanamaz (zorunlu).
+
+2. **Aydınlatma metni (`/legal/aydinlatma`):**
+   - "Veri lokasyonu: Almanya (Supabase Inc., eu-central-1 / Frankfurt)"
+   - Supabase'in DPA (Data Processing Agreement) referansı
+   - Veri sahibi hakları (silme, erişim, taşıma) — KVKK Madde 11
+   - İletişim: `kvkk@petstockpro.com` (Sprint 16 lansman öncesi açılır)
+
+3. **Sub-processor listesi:**
+   - Supabase Inc. (Postgres + Auth + Storage + Realtime — Frankfurt, AB)
+   - Cloudflare Inc. (CDN + Workers — global edge, ABD HQ)
+   - Brevo SAS (e-posta SMTP — Paris/AB)
+   - Sentry / Functional Software Inc. (hata izleme — ABD)
+   - iyzico (TR ödeme — TR)
+   - Nilvera (e-Arşiv — TR)
+
+**Müşteri tarafı (vitrin ziyaretçi) KVKK:** Anonim IP/cookie hash'leri vitrin metriği için Frankfurt'a gider. EKRAN-PUBLIC-VITRIN §13.5 opt-out modeliyle uyumlu (KVKK Md.5/2: "meşru menfaat" + minimum veri).
+
+**Önemli:** Bu karar **TR-only kararıyla çelişmiyor** — TR-only = TR müşteri + TR pet shop + TRY para birimi + TR vergi. Sunucu region veri lokasyonu ayrı bir mesele. Sub-processor listesinde Almanya zaten var (Supabase). KVKK Madde 9 açık rıza akışı bu nedenle TR-only kararında **kaldırılmadı** (yurt dışı **müşteri** akışı kaldırıldı — yurt dışı **veri lokasyonu** ayrı).
+
+---
+
+### 2.4 E-posta MX (Brevo için)
 
 ```
 Type    Name    Content                       Priority
@@ -545,38 +599,235 @@ Supabase düşerse:
 
 ---
 
-## 8. Monitoring + Alerts
+## 8. İzleme ve Gözlemlenebilirlik (Monitoring & Observability) Stratejisi
 
-### 8.1 Sentry
+> **2026-05-15 revize:** Tek geliştirici lens'iyle (CLAUDE.md #1 kural) sade ve maliyet-bilinçli strateji. Grafana / Datadog / New Relic gibi ek izleme katmanları **kapsam dışı** (§8.7 gerekçesi). Sentry Faz 2'ye saklı (§8.5).
 
-- Error tracking (frontend + backend)
-- Performance monitoring (Web Vitals)
-- Release tracking (GitHub Actions ile auto)
+### 8.0 Strateji Özeti — 4 Katman
 
-### 8.2 Cloudflare Analytics
+| # | Katman | Ne ölçer | Aracı | Maliyet | Erişim |
+|---|---|---|---|---|---|
+| 1 | **Edge / API** | Request count, error rate, P95 latency, CPU time, cache hit, geographic distribution, bot detection | Cloudflare Workers Analytics (built-in) | $0 | CF Dashboard + Analytics API |
+| 2 | **Database / Auth** | DB CPU, memory, connection pool, slow query, storage, auth event'ler, RLS denial | Supabase Dashboard → Reports | $0 (Free) / $25/ay (Pro daha detaylı) | Supabase Dashboard + REST API |
+| 3 | **Business** | Aktif tenant, plan dağılımı, davet rate, vitrin click, açık kredi, plan limit dolanlar | **Süperadmin Paneli KPI dashboard** (kendi kodumuz) | $0 (kendi yazıyoruz) | `/admin` SUPERADMIN role |
+| 4 | **Real-time Alert** | Kritik hata, payment failed, vitrin şikayet, plan past_due, AI mod hatası, DB CPU >70% | Telegram bot (zaten admin bildirim için kuruluyor) | $0 (Telegram free) | Telegram Bot API |
 
-- Bandwidth + request count
-- Cache hit ratio
-- Bot detection
-- Geographic distribution
+**Felsefe:** "Yerleşik dashboard'lar her zaman var. Eksik olan **birleştirilmiş business view**'i kendi süperadmin paneline koyuyoruz. Kritik durumlar Telegram'a fırlıyor."
 
-### 8.3 Uptime Monitor
+### 8.1 Katman 1 — Cloudflare Workers Analytics (Edge / API)
 
-- **UptimeRobot** free tier:
-  - 50 monitor
-  - 5 dk interval
-  - Alerts: Telegram + e-posta + Slack
+**Built-in, $0, zero-config.** Workers Dashboard'da otomatik:
+
+| Metric | Görüldüğü yer | Alert eşiği |
+|---|---|---|
+| Request count (5dk/1saat/1gün) | Workers Analytics → Overview | — |
+| Error rate (5xx, 4xx) | Workers Analytics → Errors | >%1 → Telegram (§8.4) |
+| P50/P95/P99 latency | Workers Analytics → Performance | P95 >500ms → süperadmin alert |
+| CPU time | Workers Analytics → Resources | >50ms ortalama → re-evaluation (TECH-STACK §6.7) |
+| Cache hit ratio | Workers Analytics → Cache | <%80 (vitrin static path için) → SEO impact |
+| Geographic distribution | Workers Analytics → Geo | TR <%90 → yurt dışı trafik başladı (Paddle Faz 2 tetikleyici) |
+| Bot detection | Workers Analytics → Security | Yüksek bot → DDoS, CF firewall kuralı ekle |
+
+**Süperadmin paneline embed:** Cloudflare GraphQL Analytics API → süperadmin KPI dashboard'a gömülür (24 saat request grafiği). Detay: `EKRAN-SUPERADMIN.md §1` KPI dashboard.
+
+### 8.2 Katman 2 — Supabase Dashboard (DB + Auth)
+
+**Built-in, Free tier'da temel + Pro tier'da detaylı.**
+
+| Metric | Free | Pro | Alert eşiği |
+|---|---|---|---|
+| DB CPU + Memory | Snapshot | Real-time grafik | CPU >70% sürekli → Telegram |
+| Connection pool | Sayı | + queries waiting | Pool >%80 dolu → re-evaluation (Hyperdrive ekle) |
+| Slow query log | Limitli | 30 gün retention | Aynı query >1sn × 100 → index ekle |
+| Storage | Sayı | + tablo bazlı | >%80 limit → upgrade |
+| Auth event'ler | Login/logout count | + IP geo + 2FA stats | Brute force >5/dk → IP block |
+| RLS policy denial | — | Audit log | Tenant cross-leak → kritik |
+
+**Süperadmin paneline embed:** Supabase Metrics REST API → DB connection pool gauge + slow query top 10 listesi (`EKRAN-SUPERADMIN §2.6`).
+
+### 8.3 Katman 3 — Süperadmin Paneli KPI Dashboard
+
+**Kendi kodumuz, $0 ek bağımlılık.** Mevcut planda (`EKRAN-SUPERADMIN.md §1`) zaten var — bu doc'tan zenginleştirilecek listesi:
+
+#### Sistem KPI (Top 4-6 Kart)
+- 🏢 **Aktif tenant** sayısı + plan dağılımı (FREE/PRO/PRO+) % pie chart
+- 📈 **24 saat request grafiği** (Cloudflare Analytics API embed, sparkline)
+- 💾 **DB connection pool** gauge (Supabase metrics REST API, anlık)
+- ⚠ **Son 50 hata feed** (Workers Logs → Supabase `system_errors` tablo → süperadmin)
+- 💳 **Webhook başarı oranı** (iyzico + Nilvera son 24 saat — başarı/başarısız ratio)
+- 📩 **Telegram bildirim log** (son 100, kim hangi event aldı)
+
+#### Business KPI
+- 👥 Yeni tenant kayıt/gün (son 30 gün line chart)
+- 📦 Toplam ürün × tenant × plan (3-tier B kompozisyon)
+- 🚪 Davet conversion (gönderilen vs kabul edilen, email vs link breakdown — 2026-05-14 hibrit)
+- 🚩 Vitrin şikayet hacmi (son 7 gün, otomatik gizlenen sayı)
+- 💰 MRR tahmini (PRO × 750₺ + PRO+ × 1.750₺)
+
+#### Operasyonel
+- 🔴 Past-due abonelik sayısı (kaç tenant ödeme bekliyor)
+- 🛑 Otomatik askıya alınan tenant
+- 📊 AI image moderation success rate (LLaVA Workers AI)
+- 🎫 Açık vitrin başvuru (manuel inceleme bekleyenler)
+
+**Implementasyon:** Sprint 7c (Süperadmin sistem ayarları) içinde KPI dashboard genişletme + Cloudflare Analytics API entegrasyonu + Supabase metrics REST API embed. Detay: `EKRAN-SUPERADMIN §1 + §2.6`.
+
+### 8.4 Katman 4 — Telegram Alert (Real-time)
+
+**Zaten admin bildirim için kuruluyor** (TECH-STACK §3.8). İzleme alert'leri aynı bot üzerinden, ek kurulum yok.
+
+#### Sistem-genel Alert (Süperadmin chat'ine)
+
+| Trigger | Önem | Kanal |
+|---|---|---|
+| Workers error rate >%1 (son 5dk) | 🔴 Kritik | Süperadmin Telegram + e-posta |
+| DB CPU >%70 sürekli (>5dk) | 🟡 Uyarı | Süperadmin Telegram |
+| DB connection pool >%80 | 🟡 Uyarı | Süperadmin Telegram |
+| Cloudflare DDoS attack tespiti | 🔴 Kritik | Süperadmin Telegram + SMS (gelecek) |
+| iyzico/Nilvera webhook başarı <%95 | 🟡 Uyarı | Süperadmin Telegram |
+| Yeni tenant kayıt | ℹ Bilgi | Süperadmin Telegram (sessiz) |
+| Süperadmin login (impersonation öncesi 2FA) | 🔴 Audit | Süperadmin Telegram |
+| Storage >%80 dolu | 🟡 Uyarı | Süperadmin Telegram (upgrade tetikleyici) |
+
+#### Tenant-bazlı Alert (Tenant'ın kendi chat'ine — `notificationTypeEnum`)
+
+Mevcut `notificationTypeEnum` event'leri (DATABASE-SCHEMA §3.5):
+- `subscription_payment_failed` — past_due → tenant Telegram (zorunlu, kapatılamaz)
+- `subscription_renewed` — başarılı tahsilat
+- `invoice_issued` — e-Arşiv kesildi
+- `vitrin_approved` — otomatik onay sonrası
+- `vitrin_report_received` — 3+ şikayet
+- `vitrin_auto_unpublished` — stok 0 → vitrin'den çekildi
+- `plan_limit_warning` — %80'i geçti
+- `low_stock_critical` / `out_of_stock` — ürün stok seviyesi
+- `daily_summary` / `weekly_summary`
+
+### 8.5 Hata İzleme Stratejisi (Sentry Faz 2'de)
+
+> **Karar (2026-05-15):** Sentry MVP'de **opsiyonel** — Free tier'da bırak veya hiç kullanma. Lansman sonrası 500+ tenant veya 100+ event/gün olursa Sentry Team plan ($26/ay) değerlendirilir. Detaylı gerekçe: `TECH-STACK §6` bağlamında ek bir alt-karar.
+
+#### Mevcut Hata İzleme Pattern'i (Sentry'siz $0)
+
+```typescript
+// app/api/[...path]/route.ts içinde error handler
+try {
+  // ... iş mantığı
+} catch (err) {
+  // 1. Workers Logs'a yapısal log (CF Dashboard'dan görülebilir, 24h retention)
+  console.error('[ERR]', {
+    route: req.url,
+    err: serializeError(err),
+    userId: ctx.user?.id,
+    tenantId: ctx.user?.companyId,
+    timestamp: Date.now()
+  });
+
+  // 2. Supabase system_errors tablosuna yaz (90 gün retention, süperadmin görünür)
+  await db.insert(systemErrors).values({
+    route, errorMessage: err.message, stack: err.stack,
+    userId: ctx.user?.id, severity: classify(err)
+  });
+
+  // 3. Kritik hatada Telegram (Workers + Supabase'e ek katman)
+  if (isCritical(err)) {
+    await sendTelegram(SUPERADMIN_CHAT_ID, formatError(err));
+  }
+
+  return Response.json({ error: 'Internal error' }, { status: 500 });
+}
+```
+
+#### Cloudflare Tail Worker (Opsiyonel Sprint 13+)
+
+Tail Worker bir Worker'ın output'unu dinler, log'ları başka yere fırlatabilir:
+```typescript
+// tail-worker.ts
+export default {
+  async tail(events: TraceItem[]) {
+    const errors = events.flatMap(e => e.exceptions);
+    if (errors.length > 0) {
+      await sendTelegram(SUPERADMIN_CHAT_ID, formatErrors(errors));
+    }
+  }
+};
+```
+
+#### Sentry'ye Geçiş Tetikleyicileri (Sprint 16 sonrası)
+
+- 100+ event/gün — manuel inceleme zorlaşır, dedup şart
+- Frontend karmaşık JS hatası — kullanıcı reproduce edemediği
+- Multi-developer ekip — kim hangi hatayı çözüyor takip
+
+### 8.6 Uptime Monitor
+
+**UptimeRobot Free tier:** 50 monitor, 5 dk interval, Telegram + e-posta alert.
 
 Kontrol edilen endpoint'ler:
-- `https://petstockpro.com` (200 OK)
-- `https://petstockpro.com/api/health` (özel health check endpoint)
+- `https://petstockpro.com` → 200 OK
+- `https://petstockpro.com/api/health` → özel health check (DB + Realtime + 3rd party ping)
+- `https://petstockpro.com/vitrin` → public vitrin landing
 
-### 8.4 Custom Alerts (Telegram'a)
+`/api/health` endpoint Sprint 0'da yazılır:
+```typescript
+// app/api/health/route.ts
+export async function GET() {
+  const checks = await Promise.allSettled([
+    db.execute(sql`SELECT 1`),                    // DB
+    supabase.from('plans').select('tier').limit(1), // Auth ping
+    fetch('https://api.iyzipay.com/health'),       // iyzico (Sprint 13+)
+  ]);
+  const allOk = checks.every(c => c.status === 'fulfilled');
+  return Response.json(
+    { status: allOk ? 'ok' : 'degraded', checks: ... },
+    { status: allOk ? 200 : 503 }
+  );
+}
+```
 
-- Plan limit doluyor → tenant'a
-- Hata oranı > %1 → sahibe (sen)
-- Süperadmin login → sahibe (security audit)
-- Yeni tenant kayıt → sahibe (notification)
+### 8.7 Neden Grafana / Datadog / New Relic Yok? — Karar Gerekçesi (2026-05-15)
+
+**Soru:** Pet shop SaaS'ı için Grafana / Datadog gibi profesyonel APM araçları ekleyelim mi?
+
+**Karar: HAYIR — MVP'de gereksiz, Faz 2'de re-evaluation.**
+
+#### Grafana
+
+| Argüman | Gerçek değer |
+|---|---|
+| "Görsel dashboard" | Süperadmin paneli zaten bu rolü üstleniyor — kendi kodumuzla. |
+| "Cloudflare + Supabase metric birleştir" | Süperadmin paneli embed yapıyor (Analytics API + Metrics REST API). |
+| "Custom business metric çizebilir" | Süperadmin paneli zaten çiziyor (MRR, tenant grafiği, davet conversion). |
+| "VPS gerekli mi?" | Hayır — Grafana Cloud free tier var, ama veri kaynağı (Prometheus) ayrı kurulum. |
+| "Maliyet?" | Grafana Cloud free → 14 gün retention. Pro $50+/ay. Tek geliştirici için fazla yük. |
+
+**Sonuç:** Grafana = sadece görselleştirme. Veri kaynağı (Prometheus, Loki) ayrı kurulum + Workers'a custom metric instrumentation kodu (`metrics.increment(...)`) gerek. **Süperadmin paneli zaten aynı işi yapıyor, ek context yok.** Sprint 16 sonrası 500+ tenant olursa Grafana Cloud free tier yeniden değerlendirilir.
+
+#### Datadog / New Relic / Honeycomb
+
+| Araç | Aylık | Bizim için değer |
+|---|---|---|
+| Datadog APM | $31/host (~5 host MVP'de) → $155/ay | Workers Analytics + Supabase Dashboard zaten kapsıyor |
+| New Relic Standard | $99/ay (kullanıcı bazlı) | Aynı |
+| Honeycomb Pro | $130/ay (event bazlı) | Distributed trace MVP'de gereksiz |
+
+**Bu araçlar enterprise (50+ developer ekip, 100K+ kullanıcı) için tasarlanmış.** Tek geliştirici + 1K tenant senaryosunda **överkill** ve **kuruluş maliyeti** kazanımdan fazla.
+
+### 8.8 Re-evaluation Tetikleyicileri
+
+Bu strateji **kalıcı değil**. Aşağıdaki sinyallerden 2+ aynı anda gelirse yeniden değerlendir:
+
+| Sinyal | Nasıl ölçülür | Aksiyon |
+|---|---|---|
+| Süperadmin paneli yetersiz geldiğinde (custom metric eklemek zor) | Geliştirme sürtünmesi | Grafana Cloud free tier dene |
+| 500+ event/gün hata | Süperadmin panel hata feed dolup taşıyor | Sentry Team plan ($26/ay) |
+| P95 latency >500ms ve trace gerekli | CF Analytics yeterli detay vermiyor | OpenTelemetry + Honeycomb |
+| Multi-tenant SaaS metrik (cohort analysis, churn rate) | Sürekli SQL yazıyorum süperadmin için | Metabase Cloud / Hex (BI tool) |
+| Compliance audit (SOC2/ISO27001) | Müşteri büyük kurumlardan gelir | Datadog Compliance veya benzeri |
+
+**Asla tetikleyici olmaz:**
+- *"Twitter'da X şirket Grafana kullanıyor"* — moda değil, ölçü
+- *"Profesyonel görünmek için"* — süperadmin paneli zaten profesyonel
+- *"İleride lazım olur belki"* — measure-then-act
 
 ---
 

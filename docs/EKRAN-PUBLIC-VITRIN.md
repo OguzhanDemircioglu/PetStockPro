@@ -457,7 +457,7 @@ Müşteri pet shop'a tıklayınca açılan sayfa (cross-tenant — pet shop'un k
 **Önemli:**
 - Pet shop'un **kendi sitesi DEĞİL** — bu PetStockPro'nun merkezi vitrindeki **profil sayfası**
 - Tek tema, tek tasarım (PetStockPro markası altında)
-- Custom CSS YOK, custom domain YOK (PRO+ rafa)
+- Custom CSS YOK, custom domain YOK (proje kapsamı dışı — 3-tier B'de hâlâ kapsam dışı, 2026-05-14)
 
 ---
 
@@ -895,11 +895,18 @@ PetStockPro **satıcı değil**, sadece dizin. Müşteri pet shop'a WhatsApp'tan
 Vitrin altında küçük disclaimer:
 *"PetStockPro pet shop'ları listeleyen bir dizin servisidir. Satış işlemleri ve kalite garantisi pet shop'un sorumluluğundadır."*
 
-### 13.5.5 GDPR Uyumu — Faz 2 (TR-only kararıyla şu an pasif)
+### 13.5.5 GDPR + KVKK Madde 9 Uyumu (2026-05-14 revize)
 
-> **2026-05-14 TR-only revize:** Lansman TR-only olduğu için (PLAN-KADEMELERI.md + DEPLOYMENT.md), GDPR opt-in cookie akışı şu an aktif değil. Sadece KVKK opt-out modeli geçerli. EN locale gizli, EU/US trafiği hedeflenmiyor, KVKK Madde 9 yurt dışı veri aktarım açık rızası da kullanılmıyor (veri TR sınırları içinde — Supabase EU bölge tercihi yapılsa bile pet shop ve müşteri TR'de).
+> **GDPR opt-in cookie akışı:** Lansman TR-only olduğu için (PLAN-KADEMELERI.md + DEPLOYMENT.md) **şu an pasif**. KVKK opt-out modeli aktif.
 >
-> **Faz 2 açılış koşulu:** EN locale açıldığında ve >%5 EU trafiği gelirse cookie banner'a "Reddet" butonu + GDPR opt-in akışı eklenir.
+> **KVKK Madde 9 (yurt dışı veri aktarımı):** ⚠ **AKTİF** — Supabase Frankfurt (`eu-central-1`) region'da olduğu için veri AB'ye aktarılıyor. Bu sebeple:
+> - **Kayıt formunda (auth.html — Sprint 2)** zorunlu açık rıza checkbox: *"Verilerimin Frankfurt (Almanya) veri merkezinde saklanmasına açık rızam vardır"* — işaretlenmeden kayıt tamamlanamaz
+> - **Aydınlatma metni** (`/legal/aydinlatma`): Veri lokasyonu + Supabase DPA referansı + sub-processor listesi
+> - **Vitrin ziyaretçi (anonim):** IP/cookie hash'leri Frankfurt'a gider, KVKK Madde 5/2 "meşru menfaat" + minimum veri ilkesi (vitrin metrik amaçlı, kişisel veri değil) gerekçesiyle opt-out modeli yeterli — açık rıza aranmaz.
+>
+> **Faz 2 açılış koşulu (GDPR opt-in):** EN locale açıldığında ve >%5 EU/US trafiği gelirse cookie banner'a "Reddet" butonu + GDPR opt-in akışı eklenir.
+>
+> Detaylı 3 katman uyum: `DEPLOYMENT.md §2.3`.
 
 ---
 
@@ -957,7 +964,263 @@ Otomatik filter:
 
 ---
 
-## 15. State + API
+## 15. WhatsApp Geri Bildirim Balonu (2026-05-15 eklendi)
+
+> **Karar (2026-05-15, kullanıcı onayı):** Müşteri vitrin'de WhatsApp tıkladıktan sonra sağ alt sticky balon belirir, **5 emoji seçenek** sunar, müşteri **tek tıklama** ile rating verir, balon yavaşça kapanır. Submit butonu YOK, dış tıklama dismiss etmez (sticky), yorum opsiyonu MVP'de YOK (Faz 2'ye saklı). Counter felsefesi: rating verilmese bile dismiss/closed_manually değerli sinyal.
+
+### 15.1 Neden Var? — DEVAM-REHBERI Karar B'nin Gerçek Çözümü
+
+DEVAM-REHBERI §⚠ "Karar B — WhatsApp Tıklama → İlgi Ölçümü Atfı" sorununu **gerçek dünya çözümüyle** kapatıyor:
+- Pet shop "47 tıklama, kaç görüşme dönüştü?" sorusu artık ölçülebilir
+- Müşteri tarafından doğrudan cevap (atıf, tahmin değil)
+- Pet shop kalite skoru somut (4.2/5 ortalama, %85 memnuniyet)
+- Süperadmin için tenant kalite kıyaslaması
+
+### 15.2 UX — Sticky Balon Davranışı
+
+```
+┌──────────────────────────────────────────────────┐
+│  [Vitrin sayfası — başka yere tıklayınca         │
+│   kapanmaz, müşteri ya cevap verir ya × ile      │
+│   manuel kapar]                                    │
+│                                                    │
+│                            ┌─────────────────────┐│
+│                            │ 💬 Görüşmen nasıl  ×││  ← Sticky balon
+│                            │    geçti?            ││  sağ alt, z-index 50
+│                            │ Mavi Pet Shop        ││
+│                            ├─────────────────────┤│
+│                            │ ○ 😊 Çok iyi         ││  ← Tek tıklama
+│                            │ ○ 🙂 İyi             ││     = submit
+│                            │ ○ 😐 Orta            ││
+│                            │ ○ 😕 Kötü            ││
+│                            │ ○ 😞 Ulaşamadım      ││
+│                            ├─────────────────────┤│
+│                            │ 🔒 Anonim           ││
+│                            └─────────────────────┘│
+└──────────────────────────────────────────────────┘
+```
+
+### 15.3 Akış Zinciri
+
+1. Müşteri vitrin'de pet shop profilinde `📞 WhatsApp` tıklar
+2. Yeni sekmede `wa.me/...` deep link açılır (mevcut davranış korunur)
+3. Vitrin sekmesinde **5 sn delay** sonra balon slide-up animasyonu (300ms ease-out, `translateY(20px)` → 0)
+4. `vitrin_events` tablosuna `feedback_balloon_shown` event yazılır (counter)
+5. Müşteri WhatsApp'tan dönünce balonu görür — sticky kaldığı için kaybolmamış
+6. **3 olası davranış:**
+   - **(a) Radio tıklama (en değerli):** Anlık POST `/api/vitrin/feedback` → DB INSERT `status='submitted', rating=X` → checkmark animasyonu 200ms → "Teşekkürler 🐾" mikro-toast 1.5sn → balon fade-out (500ms) → kaybolur. Event: `feedback_submitted`
+   - **(b) Manuel × tıklama:** Balon hızlı fade-out (200ms) → DB INSERT `status='closed_manually', rating=NULL` → counter. Event: `feedback_closed_manually`
+   - **(c) Sayfa kapatma (beforeunload sendBeacon):** DB INSERT `status='dismissed', rating=NULL` → counter. Event: `feedback_dismissed`
+7. **Esc tuşu** manuel kapama'ya eş davranır
+8. **localStorage:** `petstockpro_feedback_${companyId}_${YYYY-MM-DD}` set edilir — aynı tenant'a 24 saat içinde 2. kez gösterilmez
+
+### 15.4 5 Emoji Seçenek (Q1+Q2 Birleşik — Tek Soru)
+
+| Seçenek | Anlam (kullanıcı algısı) | Pet shop için sinyal | DB değer |
+|---|---|---|---|
+| 😊 **Çok iyi** | Hızlı ulaştı + ilgilendi | Mükemmel hizmet | `very_good` |
+| 🙂 **İyi** | Cevap aldım, sorum çözüldü | Standart başarı | `good` |
+| 😐 **Orta** | Yarım kaldı, eksik kaldı | İyileştirme noktası | `neutral` |
+| 😕 **Kötü** | Geç cevap veya ilgilenmediler | Müşteri kaybı uyarısı | `bad` |
+| 😞 **Hiç ulaşamadım** | Cevap yok | Cevap hızı sorunu | `unreached` |
+
+**Q1 ("görüşme yapıldı mı?") + Q2 ("kalite") birleşik:** 4 seçenek görüşme yapılmış varsayar (very_good/good/neutral/bad), 1 seçenek ulaşılamadığını söyler (unreached). Bu yapı 2 soruyu tek tıklamada birleştirir — friction sıfır.
+
+### 15.5 Counter Funnel (Pet Shop Dashboard'a Akış)
+
+```
+WhatsApp tıklama (whatsapp_click)              158        baseline
+        │ ▼ 5 sn delay
+        │
+Balon gösterimi (feedback_balloon_shown)       158 (%100)  her tıklamada (24h dedup hariç)
+        │ ▼ Etkileşim
+        ├── Radio tıklama (feedback_submitted)  72 (%46)   en değerli — gerçek rating
+        ├── Manuel × (feedback_closed_manually) 17 (%11)   "ilgilenmiyorum" sinyali
+        └── Sayfa kapatma (feedback_dismissed)  69 (%44)   pasif çıkış
+```
+
+**Pet shop'a sunulan ana metric:** Submit ratio = %46 (sektör benchmark: feedback %5-15 normal, %46 mükemmel).
+
+**Türetilen değerler** (Submit edenler üzerinden):
+- **Ulaşma oranı** = `(very_good + good + neutral + bad) / total submit` — müşterilerin yüzde kaçı pet shop'a ulaştı
+- **Memnuniyet oranı** = `(very_good + good) / (toplam - unreached)` — görüşme yapanlar arasında memnun olan
+- **Ortalama puan** = weighted average 5/4/3/2/1 (`unreached=1, very_good=5`)
+- **Cevap hızı sinyali** = `1 - unreached_ratio` (yüksek `unreached` = pet shop cevap vermiyor uyarısı)
+
+### 15.6 Anti-Spam + KVKK Uyumu
+
+**Rate-limit (3 katman):**
+
+| Katman | Kural | Yer |
+|---|---|---|
+| Cloudflare Workers KV | 1 IP × 1 tenant × 24 saat = 1 feedback | Workers middleware |
+| localStorage | Aynı tenant'a 24 saat içinde 2. kez balon gösterme | Frontend |
+| DB unique constraint | `(reporter_ip_hash, company_id, day)` UNIQUE | PostgreSQL |
+| Süperadmin alert | Aynı IP'den 10+ feedback farklı tenant'a → bot şüphesi → otomatik `flagged` | pg_cron daily |
+
+**KVKK uyumu — anonim veri:**
+- Rating (5 enum) — içerik, kişisel veri değil
+- IP hash (SHA256 + daily salt) — KVKK kişisel veri değil (bir yönlü hash)
+- User-agent — bot detection için saklanır
+- Country code (2 harf) — anonim geo
+- **Yorum metni YOK** (Faz 2'ye saklı — moderation yükü baştan kabul edilmez)
+
+**Açık rıza gerekmiyor çünkü:**
+1. Müşteri aktif olarak radio tıklamış (implicit consent)
+2. "🔒 Anonim" disclaimer balonda görünür
+3. Kişisel veri toplanmıyor (isim/email/telefon yok)
+
+**Aydınlatma metnine 1 satır not (Sprint 2 — `/legal/aydinlatma`):**
+> *"Pet shop ile WhatsApp görüşmesi sonrası size sunulan kısa geri bildirim formu anonim olarak saklanır. IP adresiniz hash'lenerek 1 yıl süreyle spam koruması için tutulur."*
+
+### 15.7 Mobile Davranışı
+
+| Özellik | Desktop | Mobile |
+|---|---|---|
+| Konum | `position: fixed; bottom: 24px; right: 24px` | `position: fixed; bottom: 16px; left: 16px; right: 16px` |
+| Boyut | max-width 320px, padding 20px | Full-width balon, padding 16px |
+| Radio sıralama | Dikey alt alta (mevcut) | Dikey alt alta (aynı) |
+| Tıklama hedefi | Min 44px (iOS recommendation) | Min 48px (Android Material) |
+| Animasyon | 300ms slide-up + fade | Aynı |
+
+### 15.8 Spec — Sticky Balon Bileşeni
+
+```typescript
+// app/vitrin/_components/feedback-balloon.tsx
+'use client';
+
+interface FeedbackBalloonProps {
+  companyId: string;
+  companyName: string;
+  branchId?: string;
+  vitrinEventId: string;  // whatsapp_click event ID
+}
+
+export function FeedbackBalloon(props: FeedbackBalloonProps) {
+  const [visible, setVisible] = useState(false);
+  const [closing, setClosing] = useState(false);
+
+  // localStorage check + 5 sn delay
+  useEffect(() => {
+    const key = `petstockpro_feedback_${props.companyId}_${new Date().toISOString().slice(0,10)}`;
+    if (localStorage.getItem(key)) return;
+    const t = setTimeout(() => setVisible(true), 5000);
+    return () => clearTimeout(t);
+  }, [props.companyId]);
+
+  // beforeunload — dismissed sendBeacon
+  useEffect(() => {
+    if (!visible) return;
+    const onBeforeUnload = () => {
+      navigator.sendBeacon('/api/vitrin/feedback', JSON.stringify({
+        companyId: props.companyId,
+        vitrinEventId: props.vitrinEventId,
+        status: 'dismissed',
+        rating: null,
+      }));
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [visible, props]);
+
+  // Esc tuşu
+  useEffect(() => {
+    if (!visible) return;
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') handleClose(); };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [visible]);
+
+  async function submit(rating: 'very_good' | 'good' | 'neutral' | 'bad' | 'unreached') {
+    // 1. Optimistic UI: checkmark
+    // 2. POST (rate-limit Workers KV'de)
+    // 3. localStorage set
+    // 4. 1.5sn toast → 500ms fade-out → unmount
+    // ...
+  }
+
+  function handleClose() {
+    // status='closed_manually'
+    // POST + localStorage + 200ms fade-out
+  }
+
+  if (!visible) return null;
+  return <div className={cx('balloon', { closing })}>...</div>;
+}
+```
+
+### 15.9 API Endpoint
+
+```typescript
+// app/api/vitrin/feedback/route.ts
+export async function POST(req: Request) {
+  const body = await req.json();
+  // body: { companyId, vitrinEventId, status, rating? }
+
+  // 1. Cloudflare KV rate-limit check (1 IP × 1 company × 24h)
+  const ipHash = hashIp(req.headers.get('cf-connecting-ip'));
+  const key = `feedback:${ipHash}:${body.companyId}:${todayStr()}`;
+  if (await env.KV.get(key)) return new Response('Already submitted', { status: 429 });
+
+  // 2. Validation
+  if (body.status === 'submitted' && !body.rating) return new Response('rating required', { status: 400 });
+  if (body.status !== 'submitted' && body.rating) return new Response('rating only for submitted', { status: 400 });
+
+  // 3. DB INSERT (RLS public anon — DATABASE-SCHEMA §4.3)
+  await db.insert(vitrinWhatsappFeedback).values({
+    companyId: body.companyId,
+    branchId: body.branchId,
+    vitrinEventId: body.vitrinEventId,
+    rating: body.rating,
+    status: body.status,
+    reporterIpHash: ipHash,
+    countryCode: req.headers.get('cf-ipcountry'),
+    userAgent: req.headers.get('user-agent'),
+  });
+
+  // 4. KV cache (24h TTL)
+  await env.KV.put(key, '1', { expirationTtl: 86400 });
+
+  // 5. vitrin_events log
+  await db.insert(vitrinEvents).values({
+    companyId: body.companyId,
+    eventType: `feedback_${body.status}`,
+    visitorIpHash: ipHash,
+  });
+
+  return new Response('OK', { status: 200 });
+}
+```
+
+### 15.10 Test Senaryoları
+
+- VIT-FB-001 Balon WhatsApp tıklamadan 5 sn sonra slide-up animasyonuyla belirir
+- VIT-FB-002 Aynı tenant'a 24 saat içinde 2. kez balon **gösterilmez** (localStorage)
+- VIT-FB-003 Radio tıklama → POST gönderilir → checkmark + "Teşekkürler" 1.5sn → 500ms fade-out
+- VIT-FB-004 Sayfanın başka yerine tıklama balon kapatmaz (sticky davranış)
+- VIT-FB-005 Manuel × tıklama → 200ms fade-out, `status='closed_manually'` POST
+- VIT-FB-006 Esc tuşu manuel kapamaya eşittir
+- VIT-FB-007 Sayfa kapatma (beforeunload) → sendBeacon ile `status='dismissed'`
+- VIT-FB-008 5 emoji seçenek sıralaması mobile + desktop tutarlı
+- VIT-FB-009 Aynı IP × aynı tenant 24h içinde 2. POST → 429 Too Many Requests
+- VIT-FB-010 Submit ise rating zorunlu, dismissed ise rating NULL kabul (CHECK constraint)
+- VIT-FB-011 Mobile'da balon full-width görünür (left+right 16px)
+- VIT-FB-012 Pet shop dashboard'da funnel: 158 click → 72 submit (%46) doğru hesaplanır
+- VIT-FB-013 Ulaşma oranı, memnuniyet oranı, ortalama puan SQL formülleri doğru
+- VIT-FB-014 Süperadmin spam tespiti: aynı IP 10+ feedback farklı tenant → otomatik flagged
+- VIT-FB-015 KVKK aydınlatma metninde anonim feedback satırı görünür
+
+### 15.11 İlgili Doc'lar
+
+- `DATABASE-SCHEMA.md §3.8.1` — `vitrin_whatsapp_feedback` tablosu + 2 enum
+- `DATABASE-SCHEMA.md §4.3` — RLS politikası (public anon INSERT + tenant SELECT + süperadmin moderation)
+- `EKRAN-AYARLAR.md §2.4` — Pet shop tarafı: Vitrin Metrikleri içinde WhatsApp Geri Bildirimleri KPI
+- `EKRAN-SUPERADMIN.md §1.1` — Süperadmin KPI: Müşteri Memnuniyeti kart + tenant ranking
+- `SPRINT-PLAN.md` Sprint 12 — Implementation task (~1 gün)
+
+---
+
+## 16. State + API
 
 | Endpoint | Method | Cache |
 |---|---|---|
@@ -976,7 +1239,7 @@ Otomatik filter:
 
 ---
 
-## 16. Plan Etkisi (3-tier B — 2026-05-14)
+## 17. Plan Etkisi (3-tier B — 2026-05-14)
 
 | Plan | Vitrin |
 |---|---|
@@ -988,7 +1251,7 @@ Otomatik filter:
 
 ---
 
-## 17. Test Senaryoları
+## 18. Test Senaryoları
 
 - VIT-001 Anasayfa: kategori grid + popüler ürünler + yakınlık
 - VIT-002 Konum izni: browser geolocation kabul/red
@@ -1016,7 +1279,7 @@ Otomatik filter:
 
 ---
 
-## 18. Faz 1 Kararlarıyla Uyum
+## 19. Faz 1 Kararlarıyla Uyum
 
 | Faz 1 | Bu doküman | Durum |
 |---|---|---|
@@ -1025,12 +1288,12 @@ Otomatik filter:
 | "Plan kısıtlaması YOK" | Vitrin tüm planlarda | ✅ |
 | i18n TR-only (2026-05-14) | Vitrin prefix-based `/tr/vitrin` aktif, `/en/discover` Faz 2 | ✅ |
 | Şube odaklı | Branch lat/lng PostGIS yakınlık sorgusu | ✅ |
-| **PRO+ rafa kaldırma (2026-05-13)** | Custom domain YOK, tenant subdomain YOK | ✅ |
-| **Merkezi tek vitrin (2026-05-13)** | `petstockpro.com/vitrin` Sahibinden modeli | ✅ |
+| **3-tier B (2026-05-14)** | FREE 50 / PRO 500 / PRO+ ∞ — custom domain hâlâ kapsam dışı | ✅ |
+| **Merkezi tek vitrin (2026-05-13)** | `petstockpro.com/vitrin` Sahibinden modeli, tenant subdomain YOK | ✅ |
 
 ---
 
-## 19. Önceki Tasarım Notu
+## 20. Önceki Tasarım Notu
 
 2026-05-12'de tenant subdomain (`{slug}.petstockpro.com`) + 5 hazır tema + custom domain (PRO+) tasarımı yapılmıştı. **2026-05-13 kararıyla tamamen iptal** — kullanıcı: *"Tek bir vitrin var, her kullanıcının ortak kullandığı tek bir vitrin var"* + *"PRO+ planını şimdilik rafa kaldıralım, satış olmasın, sadece stok takip uygulaması olarak ilerliyelim."*
 
@@ -1040,7 +1303,7 @@ Otomatik filter:
 
 ---
 
-## 20. Sıradaki
+## 21. Sıradaki
 
 ✅ EKRAN-PUBLIC-VITRIN.md (bu doküman — yeniden yazıldı 2026-05-13)
 ⏭ **preview/vitrin.html** legacy bilgisi → yeni merkezi vitrin mockup (Sprint 12 öncesi)
@@ -1048,4 +1311,4 @@ Otomatik filter:
 
 ---
 
-*Son güncelleme: 2026-05-13. **Merkezi tek vitrin (Sahibinden modeli) için yeniden yazıldı.** Tenant subdomain modeli iptal, PRO+ rafa kaldırıldı.*
+*Son güncelleme: 2026-05-14. **Merkezi tek vitrin (Sahibinden modeli) için yeniden yazıldı.** Tenant subdomain modeli iptal (2026-05-13). 3-tier B aktif (2026-05-14): FREE 50 / PRO 500 / PRO+ ∞. Custom domain ve custom CSS hâlâ proje kapsamı dışı.*

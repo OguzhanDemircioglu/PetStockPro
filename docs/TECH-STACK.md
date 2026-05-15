@@ -369,6 +369,63 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
 **False positive override:** Süperadmin Toolbox FAB > "AI Karar Override" → manuel onay (false negative durumda).
 
+### 3.9c 🆕 Bot Koruması: Cloudflare Turnstile (2026-05-15 — EKRAN-AUTH §9)
+
+> **Karar (2026-05-15):** Google reCAPTCHA yerine **Cloudflare Turnstile** kullanılır. Auth formlarında (register, forgot-password, change-email, 5+ başarısız login sonrası) bot koruması.
+
+**Neden Turnstile, reCAPTCHA değil?** Detaylı karşılaştırma `EKRAN-AUTH §9.1`. Özet: ücretsiz limitsiz, Workers native binding (sıfır latency), KVKK temiz (Cloudflare zaten sub-processor, ek anlaşma yok), Google'a veri göndermez.
+
+**Aktif olduğu formlar:**
+| Form | Mod | Sebep |
+|---|---|---|
+| `/register` | Managed (görünmez/widget) | Bot tenant kayıt önlenmeli |
+| `/forgot-password` | Managed | Email enumeration + spam koruma (kullanıcı vurgusu) |
+| `/change-email` | Managed | Hesap ele geçirme korumasında ek katman |
+| `/login` (5+ başarısız sonrası) | Managed | Brute-force ek katman; sürekli değil — UX bozar |
+| Vitrin "🚩 Bildir" | YOK | Cloudflare KV rate-limit yeter (anonim, low value target) |
+| WhatsApp Feedback Balonu | YOK | KV rate-limit yeter (1 IP × 1 tenant × 24h) |
+| Davet kabul (accept-invite) | YOK | Token tabanlı, brute-force korumalı (5/dk IP) |
+
+**Setup (Sprint 0 bootstrap):**
+1. Cloudflare dashboard → Turnstile → "Add Site" → domain: `petstockpro.com`
+2. Widget mode: **Managed** (Cloudflare otomatik invisible/widget seçer)
+3. Site Key → `env.NEXT_PUBLIC_TURNSTILE_SITE_KEY`
+4. Secret Key → `env.TURNSTILE_SECRET_KEY` (wrangler secret)
+
+**Workers binding (`wrangler.toml`):**
+```toml
+[vars]
+NEXT_PUBLIC_TURNSTILE_SITE_KEY = "0x4AAA..."
+
+# Secret olarak:
+# wrangler secret put TURNSTILE_SECRET_KEY
+```
+
+**Backend verify pattern** (EKRAN-AUTH §9.4):
+```typescript
+// lib/auth/verify-turnstile.ts
+export async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
+  const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+    method: 'POST',
+    body: new URLSearchParams({
+      secret: process.env.TURNSTILE_SECRET_KEY!,
+      response: token,
+      remoteip: ip,
+    }),
+  });
+  const data = await res.json() as { success: boolean };
+  return data.success === true;
+}
+```
+
+**Frontend paketi:** `@marsidev/react-turnstile` (React 19 uyumlu, TR locale destekli).
+
+**KVKK + Sub-processor:** Cloudflare zaten sub-processor listesinde (CDN olarak — PAYMENT-INTEGRATION §8.2). Turnstile için ek bildirim/açık rıza gerekmez.
+
+**Maliyet:** $0 — Cloudflare Turnstile sınırsız ücretsiz (1M+ doğrulama/ay'a kadar bildirilen limit yok).
+
+**Re-evaluation tetikleyici:** Eğer Turnstile false positive oranı >%2 olursa (gerçek müşteri bot olarak reddediliyor) → Cloudflare dashboard'da "interactive" moduna geç (basit puzzle). reCAPTCHA'ya geçiş şu an gerekmez.
+
 ### 3.10 PDF Üretimi (Faz 2 e-fatura için)
 **Yaklaşım:** Supabase Edge Function + React-PDF (server-side, Deno uyumlu) — uzun timeout (150sn) PDF üretmek için yeterli.
 
@@ -457,9 +514,11 @@ KAPSAM DIŞI (TR-only 2026-05-14):
 × GDPR uyum katmanı — sadece KVKK
 ```
 
-**2026-05-13 not:** Önceki "Cloudflare for SaaS / custom domain (PRO+)" stratejisi tamamen kaldırıldı. PRO+ tier proje kapsamı dışında — 2-tier yapı (FREE 50 / PRO sınırsız). Custom domain YOK.
+**2026-05-13 not (yarısı iptal):** Önceki "Cloudflare for SaaS / custom domain (PRO+)" stratejisi tamamen kaldırıldı. Custom domain hâlâ kapsam dışı. **2-tier (FREE/PRO) kararı 2026-05-14'te iptal edildi** — 3-tier B geri açıldı (aşağıdaki not).
 
 **2026-05-14 not:** TR-only kararı ile Paddle (yurt dışı ödeme) + Frankfurter API (currency rate) + EN locale dış servis/bağımlılık listesinden çıkarıldı. iyzico tek ödeme aracı, Nilvera tek e-Arşiv sağlayıcı, KVKK tek uyum referansı.
+
+**2026-05-14 plan tier güncellemesi (YT-7):** 3-tier B aktif — FREE 50 / PRO 500 (750₺ KDV dahil) / PRO+ ∞ (1.750₺ KDV dahil). Tek farklılaşma stok limiti, diğer tüm özellikler tüm planlarda açık. Custom domain / custom CSS / API erişimi / white-label hâlâ proje kapsamı dışı. Otoritatif: `PLAN-KADEMELERI.md §1`.
 ```
 
 ---
@@ -509,7 +568,112 @@ Eski Pet/ klasörü sadece **referans + Faz 1 docs**. Hiçbir kod kopyalanmıyor
 
 ---
 
-## 6. Sıradaki Adımlar (Tech Stack tamamlandı sonrası)
+## 6. Backend Dil/Framework Seçimi — Neden Next.js, Neden Go Değil
+
+**Karar (2026-05-15):** MVP'de **Next.js + Cloudflare Workers** korunur. İleride (10K+ tenant'a ulaşıldığında) performance-critical parçalar Strangler-Fig pattern ile Go mikroservis olarak çıkarılabilir. Bu doküman karar gerekçesini kalıcı olarak kaydeder, **6 ay sonra "neden Go değil" sorusu tekrar gelirse referans olur**.
+
+### 6.1 Düşünülen Alternatif: Go + VPS
+
+Tek geliştirici lens'i (CLAUDE.md #1 kural) ile değerlendirildi. Alternatif niyeti: *"yurt dışına açıldığında çok büyüyecek, Go + VPS daha sağlam"*.
+
+### 6.2 Yük Analizi — "Çok Büyüyecek" Hipotezi Sayısal
+
+PetStockPro hedef pazar (DEPLOYMENT §6.5): TR 1K tenant, Faz 2 yurt dışı +%10-20.
+
+| Metrik | 1K tenant (TR) | 10K tenant (5 yıl, yurt dışı dahil) | Bottleneck? |
+|---|---|---|---|
+| Aktif eşzamanlı user | ~200 | ~2K | — |
+| Request/saniye | ~50 (read-heavy) | ~500 | Workers free tier 100K req/gün **rahat altında**; paid $5/ay 10M req/gün |
+| DB write/saniye | ~10 (stok hareketleri seyrek, insan eli) | ~100 | Postgres rahat |
+| Realtime connection | ~150 | ~1.5K | Supabase Pro 500 → ek slot ekleme |
+| CPU-heavy işler | Raporlar (haftalık) | Aynı + multi-currency | Materialized view + Edge Function async |
+
+**Bottleneck Workers/Node değil — DB**. 10K tenant'a kadar Supabase + Hyperdrive (connection pooling) götürür. Bu durumda **Next.js veya Go fark etmez** çünkü darboğaz Postgres'in kendisi.
+
+### 6.3 Go'nun Cazip Görünmesi vs Gerçek Değer
+
+| İddia | Gerçek değer (PetStockPro bağlamında) |
+|---|---|
+| "10-100x hızlı binary" | Workers V8 isolates ~5ms warm, ~30ms cold. Pet shop API'sinde 5ms vs 50ms = kullanıcı algılayamaz. Bottleneck DB roundtrip (10-30ms), hesaplama değil. |
+| "Goroutines concurrency" | Workers per-request paralel isolation zaten var. DB connection pool darboğaz olur — Hyperdrive (Workers + Postgres) çözer. |
+| "Single binary deployment" | `wrangler deploy` saniyeler içinde — Go binary deploy'dan daha basit. |
+| "Düşük memory" | Workers'da memory ölçülmüyor, ödenmez. |
+| "Type safety" | TS strict mode + Drizzle/Zod runtime validation Go'ya çok yakın. |
+
+Go gerçek **performance-critical** use case'lerde anlamlı: high-frequency trading, real-time gaming, video transcoding, low-level systems. Pet shop CRUD + raporlar bu kategoride değil.
+
+### 6.4 VPS Aleyhine — Tek Geliştirici DevOps Yükü
+
+| Konu | Cloudflare Workers (mevcut) | VPS (alternatif) |
+|---|---|---|
+| Linux güncelleme + CVE | YOK | Senin işin (her hafta) |
+| SSL renewal | Otomatik | Certbot + cron + monitoring |
+| DDoS koruma | Workers built-in | Cloudflare proxy ek katman + VPS direkt erişilebilir |
+| Backup + restore drill | Supabase otomatik 30 gün | pg_dump + S3 + cron + restore test her ay |
+| Monitoring + alert | Sentry hazır | Prometheus + Grafana + Alertmanager + PagerDuty |
+| Scale (yatay) | Otomatik (edge) | Load balancer + ek VPS + state sync + sticky session |
+| Real-time | Supabase Realtime entegre | Kendi WebSocket sunucusu + Redis state |
+| **Lansman süresi** | **Şu plan (~24 hafta)** | **+3-6 ay (yeniden tasarım + Go öğrenme + DevOps kurulum)** |
+| Aylık maliyet (1K tenant) | ~$60 | ~$60-80 + **sınırsız zaman maliyeti** |
+
+CLAUDE.md #1 kural: *"3. parti tool > custom build"* + *"Maintenance yükü yüksekse sade tut"*. VPS bu kuralla doğrudan çelişir.
+
+### 6.5 Yurt Dışı Açılış Mimariyi Etkilemiyor
+
+Faz 2'de Paddle aktive olursa:
+- **Frontend:** EN locale unhide (next-intl zaten yapılı, kapatıldı)
+- **Backend:** Paddle webhook handler (Stripe-benzeri pattern, ~200 satır TS)
+- **Region:** Frankfurt (eu-central-1) zaten yurt dışı için ideal (~30ms EU, ~80ms US East)
+- **Multi-currency:** Frankfurter API + `currency_rates` tablosu (Faz 2 olarak şema'da hazır)
+
+**Mimari değişiklik YOK** — feature flag açılımı + content update.
+
+### 6.6 İleride Hibrit — Strangler-Fig Pattern (10K+ tenant)
+
+**Şartlar (hepsi sağlanırsa hibrit'e geç):**
+- 10K+ aktif tenant **veya**
+- Belirli bir endpoint'te P95 latency >500ms (Sentry/CF Analytics izleme)
+- DB CPU sürekli >70% (Supabase metric)
+- Maliyetler: ek Workers/Supabase $200+/ay yetersiz
+
+**Aday parçalar (Go mikroservis olarak çıkarılabilir):**
+| Parça | Sebep | Deployment |
+|---|---|---|
+| Materialized view refresh (raporlar) | CPU-heavy aggregation, scheduled | Cloudflare Containers veya fly.io Go cron |
+| Image moderation queue | LLaVA Workers AI yetmezse, batch processing | fly.io Go worker + Cloudflare R2 queue |
+| Bulk export jobs (PDF/Excel 100K+ satır) | Edge Function 5dk limit aşımı | Go processor + S3 upload + e-posta link |
+| Vitrin SEO sitemap pre-build | 500K+ URL üretim | Go binary + R2 yaz + Workers serve |
+
+**Şu an yapma** — premature optimization (Knuth: *"premature optimization is the root of all evil"*). Gerçek bottleneck ortaya çıkmadan extract edersen:
+1. İki dil context switch yükü erken yüklenir
+2. Frontend↔backend type safety bozulur (Drizzle ↔ GORM uyumsuzluğu)
+3. Lansman ertelenir
+4. Tek geliştirici lens'ine ters düşer
+
+### 6.7 Re-evaluation Tetikleyicileri (Yeniden Gözden Geçir)
+
+Bu karar **kalıcı değil**. Aşağıdaki sinyallerden 2+ aynı anda gelirse yeniden değerlendir:
+
+| Sinyal | Nasıl ölçülür | Aksiyon |
+|---|---|---|
+| Aktif tenant >10K | Süperadmin panel KPI | Hibrit Strangler-Fig planla (§6.6) |
+| P95 latency >500ms | Sentry performance + CF Analytics | Bottleneck endpoint izole et → Go extract aday |
+| Aylık altyapı maliyet >$500 | Stripe/CF/Supabase fatura | Cost optimization veya stack revize |
+| Cloudflare Workers limit (CPU veya memory) | Workers metric alarm | Hibrit Go service düşün |
+| TS/Node ekosisteminde bir teknoloji çürürse | Auth.js maintenance kesilirse vb. | Tek tek değiştir, dil değil |
+
+**Asla yeniden değerlendirme nedeni olmayanlar:**
+- *"Go daha cool"* — moda değil, ölçü
+- *"Twitter'da X şirket Go'ya geçti"* — vaka değil, evrensel kural
+- *"Performance lazım olur belki"* — measure, then optimize
+
+### 6.8 Karar Özeti (Tek Cümle)
+
+> **MVP'de Next.js + Cloudflare Workers (tek dil TS, sıfır DevOps), 10K+ tenant'ta veya P95>500ms'de Strangler-Fig ile Go mikroservis extract. VPS asla.**
+
+---
+
+## 7. Sıradaki Adımlar (Tech Stack tamamlandı sonrası)
 
 1. ✅ **Tech stack** — bu doküman
 2. ⏭ **Bekleyen detaylar** — UI lib (shadcn/ui kararı), chart, email vs. küçük seçimler

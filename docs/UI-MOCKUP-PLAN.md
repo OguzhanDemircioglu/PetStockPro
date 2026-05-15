@@ -28,9 +28,9 @@
 - `subeler.html` — EKRAN-SUBELER.md
 - `tedarikciler.html` — EKRAN-TEDARIKCILER.md
 - `kullanicilar.html` — EKRAN-KULLANICILAR.md
-- `raporlar.html` — EKRAN-RAPORLAR.md (ana liste + 5 rapor detay)
+- `raporlar.html` — EKRAN-RAPORLAR.md (ana liste + 6 rapor detay)
 - `ayarlar.html` — EKRAN-AYARLAR.md (6 bölüm + Vitrin Profili + Vitrin Metrikleri)
-- `auth.html` — Login + Register + Şifre sıfırlama + E-posta doğrulama + Onboarding
+- `auth.html` — Login + Register + Şifre sıfırlama + E-posta doğrulama + Email değiştirme + 2FA setup + Onboarding (3 adım) — **Detay: `EKRAN-AUTH.md` (2026-05-15)**
 
 **Public vitrin tarafı (yeni merkezi vitrin — 5 sayfa):**
 - `vitrin-anasayfa.html` — `/vitrin` ana
@@ -104,7 +104,7 @@ Her renk için 5 ton var: ana, açık (-2), koyu (-700), soft arka plan (-soft).
 **Önerim: (a) — Bana yaptır.** Sebepler:
 - Dokümanlar (EKRAN-*.md) zaten detaylı brief — direkt okuyup HTML üretebilirim
 - Mevcut mockup'larla aynı CSS variable + font sistemi
-- Plan tier, vitrin yapısı, KVKK, PRO+ rafa gibi son kararlara sadakat
+- Plan tier (3-tier B 2026-05-14), vitrin yapısı (merkezi tek 2026-05-13), KVKK, TR-only kararları gibi son kararlara sadakat
 - Tek seferde 14 mockup üretmek tek mesaj turn'ünde mümkün değil ama 2-3 turn'de hepsi hazır
 - Pet/ deki eski mockup-admin-premium-v3.html bana referans — pattern'i takip ederim
 
@@ -119,20 +119,20 @@ Sprint 0 öncesi yapılmalı (kod yazılmadan önce mockup tutarlı olsun):
 1. **`pano.html`** — Verdana + topbar'da 🌐 Vitrin link + KPI Aktif Ürün ring 47/50 + plan göstergesi yeni
 2. **`urunler.html`** — Verdana + Satışa Aç toggle + Doğrula validation + Bulk vitrine aç + plan limit 50/sınırsız
 3. **`stok-hareketleri.html`** — Verdana + minor güncellemeler
-4. **`super-admin.html`** — Verdana + Vitrin Modlama 4. sekme (otomatik onay yapısı) + 2-tier plan tablosu
+4. **`super-admin.html`** — Verdana + Vitrin Modlama 4. sekme (otomatik onay yapısı) + 3-tier B plan tablosu (FREE 50 / PRO 500 / PRO+ ∞, 2026-05-14 YT-7)
 
 ### 4.2 Faz 2 — Eksik admin mockup'lar (Sprint 0-7'de gerek)
 
 Sprint sırasına göre:
 
-5. **`auth.html`** — Sprint 2 için (Login + Register + Onboarding)
+5. **`auth.html`** — Sprint 2 için (Login + Register + Onboarding + 2FA + Turnstile + email değiştirme — `EKRAN-AUTH.md` detay)
 6. **`subeler.html`** — Sprint 6 için (lat/lng zorunlu vurgu + harita)
 7. **`sayim.html`** — Sprint 5 için (drawer + tam-sayfa)
 8. **`dusuk-stok.html`** — Sprint 8 için (R6 sade-tut)
 9. **`tedarikciler.html`** — Sprint 9 için (CRUD)
-10. **`kullanicilar.html`** — Sprint 9 için (davet + rol)
+10. **`kullanicilar.html`** — Sprint 9 için (hibrit davet: email/link toggle + rol seçici — 2026-05-14)
 11. **`ayarlar.html`** — Sprint 10 için (6 bölüm + Vitrin Profili + Vitrin Metrikleri)
-12. **`raporlar.html`** — Sprint 11 için (ana liste + 5 rapor detay)
+12. **`raporlar.html`** — Sprint 11 için (ana liste + 6 rapor detay — Açık Krediler dahil)
 
 ### 4.3 Faz 3 — Public vitrin mockup'lar (Sprint 12 için)
 
@@ -211,19 +211,30 @@ Sprint sırasına göre:
 - Otomatik onay vurgusu (KPI: %94 oto-onay)
 - Süperadmin felsefe banner (kişisel kontrol/müdahale, operasyonel müdür değil)
 - Toolbox FAB (sağ alt, 4 kategori yetki)
-- 2-tier plan tablosu (PRO+ kaldırıldı — preview/super-admin.html'de zaten temizledim ama kontrol)
+- 3-tier B plan tablosu (FREE 50 / PRO 500 750₺ / PRO+ ∞ 1.750₺, 2026-05-14 YT-7) — preview/super-admin.html güncellenmesi gerekir (önceki 2-tier mockup geçersiz)
 
 ---
 
 ### 5.5 auth.html (YENİ — Sprint 2 için)
 
-**Bileşenler:**
-- **Login** — sol panel (logo + slogan + mascot illustration), sağ form (email + şifre + Google OAuth + "Şifremi unuttum" + 2FA TOTP)
-- **Register** — sol panel + sağ form (şirket adı + email + şifre + il/ilçe dropdown + KVKK onay)
-- **E-posta doğrulama** — 6 haneli kod input + "Tekrar gönder" 60sn timer
-- **Şifremi unuttum** — email + sıfırlama linki gönder
-- **Şifre sıfırlama** — yeni şifre + onay
-- **Onboarding (kayıt sonrası)** — 3 adım (ilk şube ekle → ilk ürün → vitrin profili opsiyonel)
+**Doküman:** `EKRAN-AUTH.md` (2026-05-15 yeni doc — auth akışının tek source'u, 15 bölüm + 52 test)
+
+**Bileşenler (EKRAN-AUTH.md referansları):**
+- **Login (`§2`)** — sol panel (logo + slogan + mascot), sağ form (email + şifre + "Şifremi unuttum" + 2FA TOTP step). **5+ başarısız sonrası Turnstile widget görünür.** Google OAuth YOK (TR-only sadeleştirme).
+- **Register (`§3`)** — sol panel + sağ form (pet shop adı + email + şifre + şifre tekrar + **2 KVKK checkbox: Aydınlatma onayı + Frankfurt veri lokasyonu açık rıza**) + **Turnstile widget zorunlu**
+- **E-posta doğrulama bekleme (`§4.1`)** — info sayfa + "Yeniden Gönder" 60sn cooldown countdown + spam klasör notu
+- **E-posta doğrulama token tıklama (`§4.2`)** — başarılı/hatalı durum sayfası
+- **Şifremi unuttum (`§5.1`)** — email + **Turnstile zorunlu** + generic mesaj (enumeration koruma)
+- **Şifre sıfırlama (`§5.3`)** — yeni şifre + tekrar + HIBP check + "TÜM oturumlar kapanacak" uyarı
+- **Email değiştirme (`§6`)** — çift doğrulama (eski + yeni email)
+- **2FA setup wizard (`§7`)** — Adım 1 QR kod tara → Adım 2 6 haneli kod → Adım 3 8 recovery code (kopya/yazdır + checkbox)
+- **Account locked sayfası (`§10.2`)** — geri sayım + "Şifremi unuttum" alternatifi
+- **Onboarding (`§8`)** — 3 adım wizard (ilk şube → ilk ürün → vitrin profili opsiyonel)
+- **Davet kabul (`§EKRAN-KULLANICILAR §4.4`)** — hibrit davet token tıklama akışı (email veya link)
+
+**Cloudflare Turnstile bileşeni:** `@marsidev/react-turnstile` paketi, **TR locale**, theme=light, size=normal. Widget mode: Managed (Cloudflare otomatik invisible/widget seçer).
+
+**Test sayısı:** 52 AUTH-* senaryosu (EKRAN-AUTH §13)
 
 **Önemli:** Vergi no kayıt formunda **YOK** (2026-05-13 kararı)
 
@@ -261,7 +272,21 @@ Sprint sırasına göre:
 ### 5.10 kullanicilar.html (YENİ — Sprint 9 için)
 
 **Doküman:** `EKRAN-KULLANICILAR.md`
-**Bileşenler:** KPI (toplam + ADMIN + STAFF Faz 2) + tablo + davet mini modal (e-posta + rol + şube) + detay drawer (aktif oturumlar + 2FA durum)
+**Bileşenler:**
+- **KPI 3 kart:** Toplam kullanıcı + ADMIN sayısı + STAFF sayısı (kasiyer rolü MVP'de aktif, S1)
+- **Tablo:** ad-soyad, email, rol, şube, status, son giriş; hover satırda 👁/✏/🔑/⋯
+- **Davet mini modal (hibrit — 2026-05-14):**
+  - Email field + Gmail "+" alias notu (K3)
+  - Rol radio: Bayi sahibi / Şube müdürü / Kasiyer (STAFF)
+  - Şube dropdown (müdür/kasiyer için)
+  - **Davet yöntemi radio:**
+    - 📧 E-posta gönder (varsayılan, 7 gün TTL, Brevo otomatik)
+    - 🔗 Davet linki üret (24 saat TTL, admin elden iletir)
+  - Submit sonrası:
+    - Email yöntem: "✓ Davet email gönderildi" toast
+    - Link yöntem: Modal değişir → 🔗 URL + [📋 Linki Kopyala] butonu (clipboard write)
+- **Detay drawer:** aktif oturumlar + 2FA durum + rol/şube değiştir + yeniden davet (method seçici)
+- **Bekleyen davet badge'i:** "Davet bekliyor · 5 gün kaldı" sarı / "Süre doldu" kırmızı + "Yeniden Davet"
 
 ---
 
@@ -270,7 +295,7 @@ Sprint sırasına göre:
 **Doküman:** `EKRAN-AYARLAR.md`
 **Bileşenler:** Stripe-style sol sidebar bölüm seçici + sağ içerik. **6 bölüm + 2 alt-tab:**
 - Şirket Profili (vergi no opsiyonel notu)
-- Plan + Fatura (2-tier + Paddle KVKK uyarı)
+- Plan + Fatura (3-tier B FREE/PRO/PRO+ — TR-only, Paddle Faz 2'ye saklı 2026-05-14 YT-7)
 - **Vitrin** (yeni alt-tab grup):
   - **Vitrin Profili** (slug, logo, kapak, WhatsApp, çalışma saatleri, KVKK onay)
   - **Vitrin Metrikleri** (KPI + en çok ilgi gören + şehir dağılımı)
@@ -284,8 +309,8 @@ Sprint sırasına göre:
 ### 5.12 raporlar.html (YENİ — Sprint 11 için)
 
 **Doküman:** `EKRAN-RAPORLAR.md`
-**Bileşenler:** Hibrit kart grid (5 rapor özet kartı) + drilldown detay sayfası (filtre + ana chart + yan widget + tablo + export PDF/Excel)
-**5 rapor:** Satış / Kâr-Zarar / En Çok Satan / Ölü Stok / Şube Karşılaştırma
+**Bileşenler:** Hibrit kart grid (6 rapor özet kartı) + drilldown detay sayfası (filtre + ana chart + yan widget + tablo + export PDF/Excel)
+**6 rapor:** Satış / Kâr-Zarar / En Çok Satan / Ölü Stok / Şube Karşılaştırma / 💳 Açık Krediler (2026-05-14 S2)
 
 ---
 

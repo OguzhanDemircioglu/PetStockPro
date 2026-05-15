@@ -8,7 +8,7 @@
 **Erişim:** ADMIN (bayi sahibi tüm raporlar, şube müdürü sadece kendi şubesi). **STAFF (kasiyer) erişimi YOK** — sidebar'da Raporlar menüsü gizli, doğrudan URL ile 403 Forbidden (yetki matrisi: `EKRAN-KULLANICILAR.md §12.5`, 2026-05-14 OT2-5).
 **Referans:** Faz 1 `FAZ1-TASARIM-KARARLARI.md` §21-22 · Tasarım `TASARIM-SISTEMI.md`
 
-> Faz 1 R: **Hibrit yapı** (kart grid özet + drilldown detay). **Top 5 kritik rapor** MVP'de, diğer 5 (ABC, kategori, devir, tedarikçi, SKT) Faz 2'ye saklı.
+> Faz 1 R: **Hibrit yapı** (kart grid özet + drilldown detay). **Top 6 kritik rapor** MVP'de (Açık Krediler eklendi 2026-05-14 S2), diğer 5 (ABC, kategori, devir, tedarikçi, SKT) Faz 2'ye saklı.
 
 ---
 
@@ -23,7 +23,7 @@
 │         │                                                    │
 │         │ Bento grid (6 rapor kartı, col-4'er — Açık Krediler eklendi 2026-05-14 S2):│
 │         │ [📊 Satış] [💰 Kâr/Zarar] [🏆 En çok satan]      │
-│         │ [🪦 Ölü Stok] [🏢 Şube kıyas]                    │
+│         │ [🪦 Ölü Stok] [🏢 Şube kıyas] [💳 Açık Krediler] │
 │         │ Her kart: ana metrik + delta + sparkline + Detay→│
 └─────────┴──────────────────────────────────────────────────┘
 ```
@@ -49,7 +49,7 @@ Periyot:  ◉ Bu ay  ○ Geçen ay  ○ Son 7g  ○ Son 30g  ○ Özel [_]─[_]
 
 Tıklayınca ilgili detay rapora gider.
 
-## 4. 5 Rapor Kartı
+## 4. 6 Rapor Kartı (2026-05-14 — S2 + YT-4)
 
 ### 4.1 📊 Satış Raporu
 
@@ -250,12 +250,14 @@ const { data } = useQuery({
 
 | Endpoint | Method |
 |---|---|
-| `/api/admin/reports/summary` | GET (liste sayfası 5 kart + üst KPI) |
+| `/api/admin/reports/summary` | GET (liste sayfası 6 kart + üst KPI) |
 | `/api/admin/reports/sales` | GET (detay) |
 | `/api/admin/reports/profit-loss` | GET |
 | `/api/admin/reports/best-sellers` | GET |
 | `/api/admin/reports/dead-stock` | GET |
 | `/api/admin/reports/branch-comparison` | GET |
+| `/api/admin/reports/open-credits` | GET (Açık Krediler — 2026-05-14 S2) |
+| `/api/admin/reports/open-credits/[movementId]/settle` | POST → `credit_paid_at = NOW()` + audit `sale.credit_settled` |
 | `/api/admin/reports/[type]/export` | POST `{format: 'pdf'\|'xlsx'}` |
 | `/api/admin/reports/bulk-pdf` | POST → Edge Function tetikle |
 
@@ -263,7 +265,7 @@ const { data } = useQuery({
 
 | Rapor | Tipik süre | Strateji |
 |---|---|---|
-| Liste 5 kart | < 2s | Pre-aggregated `materialized view` (günlük cron) |
+| Liste 6 kart | < 2s | Pre-aggregated `materialized view` (günlük cron); Açık Krediler için ayrı sorgu (`payment_method='credit' AND credit_paid_at IS NULL`) |
 | Satış detay | 30g, < 2s | Index + filter optimization |
 | Kâr/Zarar | 30g, < 3s | Cost calculation cached |
 | Ölü stok | All-time, < 5s | Last_sold_at indexli |
@@ -294,11 +296,11 @@ Birkaç satış kaydı sonra raporlar dolacak.
 - Tedarikçi Performansı
 - SKT Yaklaşan (detaylı)
 
-Faz 1 R: "Top 5 MVP + gerçek kullanıcı talebine göre genişle"
+Faz 1 R: "Top 6 MVP (Açık Krediler 2026-05-14 eklendi) + gerçek kullanıcı talebine göre genişle"
 
 ## 11. Test Senaryoları
 
-- RPT-001 Liste sayfası 5 kart yüklenir
+- RPT-001 Liste sayfası 6 kart yüklenir (Açık Krediler dahil — 2026-05-14)
 - RPT-002 Üst KPI 3 metrik (net kâr, ciro, devir)
 - RPT-003 Periyot filtre değişimi tüm kartları günceller
 - RPT-004 Şube filtre: şube müdürü kendi şubesi gizli (zorla)
@@ -312,6 +314,10 @@ Faz 1 R: "Top 5 MVP + gerçek kullanıcı talebine göre genişle"
 - RPT-012 Toplu PDF async → e-posta linki
 - RPT-013 Excel export sheet'ler
 - RPT-014 Empty state: veri yetersiz mascot
+- RPT-015 Açık Krediler kartı: 12 açık kredi · ₺3.420 toplam · En eski 47g (2026-05-14 S2 + OT2-3)
+- RPT-016 Krediyi kapama → `credit_paid_at = NOW()` set + audit log `sale.credit_settled` + Telegram bildirim (opsiyonel)
+- RPT-017 Açık Krediler yaş analizi: 0-15/16-30/31-60/60+ gün band'ları doğru hesaplar
+- RPT-018 60+ gün kredi kırmızı uyarı + öncelik vurgusu
 
 ## 12. Faz 1 Uyumu
 

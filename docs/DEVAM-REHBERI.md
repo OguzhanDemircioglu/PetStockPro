@@ -1,8 +1,24 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-14
-**Önceki Session Tarihi:** 2026-05-13/14 (büyük revizyon — PRO+ kaldırıldı, vitrin merkezi tek modeli, ödeme entegrasyon dokümante)
-**Durum:** Sprint 0 öncesi son kontrol — **13 açık nokta + 4 mockup yenileme + Sprint 0 başlatma**
+**Tarih:** 2026-05-14 (4. tur Claude self-tarama tamamlandı)
+**Önceki Session Tarihleri:** 2026-05-13/14 (büyük revizyon — vitrin merkezi tek modeli + PAYMENT-INTEGRATION + 35 mantık hata çözümü)
+**Durum:** ✅ **Sprint 0'a hazır — 40 mantık hatası tamamen çözüldü, doc'lar arası tutarlı.** Bekleyen: kullanıcı blokerları (şirket kuruluş + Supabase Pro) + Sprint 0 bootstrap.
+
+---
+
+## 🎯 SPRINT 0 READINESS — 30 SANİYELİK ÖZET
+
+| Konu | Durum | Sıradaki |
+|---|---|---|
+| Tasarım dokümantasyon (24 doc) | ✅ Tamam | Mockup yapımı + Sprint 0 |
+| Mantık hata taraması (4 tur, 40 bulgu) | ✅ Hepsi çözüldü — `MANTIK-HATALARI-2026-05-14.md` | — |
+| Doc'lar arası tutarlılık | ✅ 4. tur sonrası temiz | Yeni karar çıkarsa tek noktadan revize |
+| Plan tier kararı | ✅ 3-tier B (FREE 50 / PRO 500 750₺ / PRO+ ∞ 1.750₺, TR-only) | — |
+| Vitrin yapısı | ✅ Merkezi tek (`/vitrin`, Sahibinden modeli) | Sprint 12 implementation |
+| Ödeme entegrasyonu | ✅ Dokümante (iyzico Sprint 13 + Nilvera Sprint 14) | Şirket kuruluş bekleniyor |
+| **Kullanıcı blokerları (2 adet)** | ⏳ Bekliyor | (1) Şirket kuruluş 2-4 hafta · (2) Supabase Pro $25/ay |
+| Sprint 0 bootstrap | ⏳ Hazır, başlatılmadı | Next.js + Drizzle + Auth.js + shadcn/ui skeleton |
+| Mockup yapımı (17 yeni mockup) | ⏳ Bekliyor | `UI-MOCKUP-PLAN.md` sırasıyla |
 
 ---
 
@@ -28,7 +44,65 @@ Yani önceki PetStockPro/docs/ tasarımı (2026-05-12) ile yeni kararlar arasın
 ### Mimari + Stack
 - ✅ Stack: Next.js 16 + Supabase + Drizzle + Auth.js v5 + shadcn/ui + Cloudflare Workers (TS end-to-end)
 - ✅ Schema: `petstockpro` (Supabase'te custom schema)
+- ✅ **Supabase region: Frankfurt (`eu-central-1`)** — TR latency ~30-40ms, KVKK Madde 9 açık rıza akışı kayıt formunda zorunlu (2026-05-14 onay, `DEPLOYMENT.md §2.3`)
 - ✅ Eski Pet/ klasörü **legacy referans** — kod kopyalanmıyor, dokümanları bile eski
+
+### Davet Akışı (2026-05-14 hibrit onay)
+- ✅ **Hibrit:** Admin email veya link yönteminden seçer
+- ✅ 📧 Email: Brevo SMTP otomatik gönderim, 7 gün TTL — şube müdürü için
+- ✅ 🔗 Link: 12-haneli token + URL kopya, 24 saat TTL, admin WhatsApp/SMS ile elden iletir — STAFF (kasiyer) için
+- ✅ `userInviteMethodEnum` ('email'/'link') + `invitedById` FK eklendi (`DATABASE-SCHEMA.md`)
+- ✅ Audit: `user.invited` event'inde `metadata.method` yazılır
+- ✅ Rate-limit: tenant saatte 10 davet, IP dakikada 5 accept-invite (Cloudflare KV)
+
+### Backend Dil/Framework Karar Gerekçesi (2026-05-15 C seçimi)
+- ✅ **MVP: Next.js + Cloudflare Workers** (mevcut karar) — tek dil TS, sıfır DevOps, lansman zamanında
+- ✅ **Go + VPS reddedildi:** tek geliştirici DevOps yükü + 3-6 ay lansman ertelenmesi + CLAUDE.md #1 kural çelişkisi
+- ✅ **İleride hibrit:** 10K+ tenant veya P95>500ms tetiklenirse Strangler-Fig pattern ile performance-critical parçalar Go mikroservis (raporlar, image moderation, bulk export, sitemap pre-build)
+- ✅ Re-evaluation tetikleyicileri dokümante: aktif tenant >10K / P95 >500ms / aylık altyapı >$500 / Workers limit / TS ekosistem çürüme
+- ✅ "Performance lazım olur belki" → measure-then-optimize, premature optimization yok
+- ✅ Detay: `TECH-STACK.md §6` (yeni bölüm — 6 ay sonra karar tekrar sorulursa referans)
+
+### Monitoring & Observability Stratejisi (2026-05-15)
+- ✅ **4 katman izleme:** (1) CF Workers Analytics (edge/API) + (2) Supabase Dashboard (DB) + (3) Süperadmin KPI dashboard (business) + (4) Telegram alert (real-time)
+- ✅ **Grafana/Datadog reddedildi:** Süperadmin paneli zenginleştirildi, aynı işi görür + sıfır ek bağımlılık. Re-evaluation 500+ tenant'ta
+- ✅ **Sentry MVP'de opsiyonel:** Free tier ile başla veya hiç. Lansman sonrası 100+ event/gün olursa Team plan ($26/ay) değerlendir
+- ✅ **Yeni tablo:** `system_errors` (severity enum: info/warning/error/critical) — Workers Logs + Edge Function exception'ları yapısal kayıt, pg_cron 90 gün retention, RLS sadece SUPERADMIN
+- ✅ **Süperadmin KPI dashboard zenginleştirildi** (`EKRAN-SUPERADMIN §1.1-1.3`): 6 sistem kart (Tenant + 24s Request + DB pool + Hata + Webhook + Telegram) + Business + Operasyonel + Real-time feed
+- ✅ **Sprint 7c implementation:** Cloudflare Analytics API binding + Supabase Metrics REST API embed + Real-time `superadmin_feed` channel
+- ✅ Detay: `DEPLOYMENT.md §8` (kapsamlı 8 alt-bölüm: 4 katman + hata stratejisi + uptime + neden Grafana yok + re-evaluation)
+
+### EKRAN-AUTH.md + Cloudflare Turnstile (2026-05-15 kullanıcı onayı)
+- ✅ **Yeni doc:** `EKRAN-AUTH.md` (15 bölüm + 52 AUTH-* test) — auth akışlarının tek toplu doc'u
+- ✅ **Kapsam:** Login + Register + Email Verification + Forgot Password + Email Change + 2FA Setup + Onboarding 3 adım + Account Lock + Turnstile + KVKK çift checkbox
+- ✅ **CAPTCHA = Cloudflare Turnstile** (Google reCAPTCHA değil) — `TECH-STACK §3.9c`: Workers native binding, $0 limitsiz, KVKK temiz (Cloudflare zaten sub-processor, ek anlaşma yok), Google'a veri göndermez
+- ✅ **Turnstile yerleştirme:** Register + Forgot Password + Change Email **zorunlu**; Login 5+ başarısız sonrası **conditional**; vitrin Bildir + WhatsApp Feedback + accept-invite **yok** (KV rate-limit yeterli)
+- ✅ **Email enumeration koruma:** Forgot password "Eğer kayıtlıysa link gönderildi" generic mesaj (kullanıcının özellikle sorduğu yer)
+- ✅ **HIBP password check:** Register + reset HaveIBeenPwned k-anonymity API (bilinen veri sızıntısı şifreleri reddedilir)
+- ✅ **Email doğrulama:** 24h TTL + resend 60sn cooldown + 24h max 5 + 7 gün grace period (sonra hesap kilitli, pg_cron)
+- ✅ **Şifremi unuttum:** 30dk TTL + tek kullanımlık token + tüm session invalidate + email uyarı
+- ✅ **Email değiştirme:** Çift doğrulama (eski email onay + yeni email confirm) + süperadmin Telegram alert ("iptal et" durumunda)
+- ✅ **KVKK çift checkbox:** Aydınlatma onayı (Md.10) + Frankfurt veri lokasyonu açık rıza (Md.9) — kayıt anında zorunlu, ayrı checkbox'lar
+- ✅ **users tablosuna 10 yeni field:** emailVerificationToken/ExpiresAt/ResendCount/LastSentAt + pendingEmail/Token/ExpiresAt + kvkkConsentedAt + dataLocationConsentedAt + onboardingCompletedAt
+- ✅ **Sprint 2 revize:** 1.5 → 2 hafta (10 iş günü) — EKRAN-AUTH detaylandırması + Turnstile setup + onboarding wizard + email değiştirme + 52 test
+- ✅ **EKRAN-AYARLAR §2.5 sadeleşti** — auth akışları EKRAN-AUTH'a taşındı, sadece "kullanıcı paneli üzerinden değiştirilebilir" ayarlar burada
+- ✅ Detay: `EKRAN-AUTH.md` (yeni doc, ~720 satır)
+
+### WhatsApp Geri Bildirim Balonu (2026-05-15 kullanıcı onayı)
+- ✅ **Sticky balon UX:** Müşteri vitrin'de WhatsApp tıkladıktan sonra sağ alt sticky balon belirir (5 sn delay slide-up animation). Dış tıklama **dismiss etmez** (sticky), sadece manuel × veya radio tıklama kapatır.
+- ✅ **5 emoji seçenek** (Q1 + Q2 birleşik tek soru): 😊 Çok iyi / 🙂 İyi / 😐 Orta / 😕 Kötü / 😞 Hiç ulaşamadım
+- ✅ **Tek tıklama = submit** (submit butonu YOK) → checkmark + "Teşekkürler 🐾" 1.5sn + 500ms fade-out
+- ✅ **Counter felsefesi (kullanıcı vurgusu):** "Çoğu insan anketi görmek bile istemez, tıklanma bizim için metrik" — `feedback_balloon_shown` / `feedback_submitted` / `feedback_closed_manually` / `feedback_dismissed` 4 ayrı event
+- ✅ **Yorum opsiyonu YOK MVP'de** (Faz 2'ye saklı — moderation yükü baştan kabul edilmez)
+- ✅ **Anti-spam 3 katman:** Cloudflare KV (1 IP × 1 tenant × 24h) + localStorage (frontend dedup) + DB unique constraint
+- ✅ **KVKK anonim:** Açık rıza checkbox gerekmiyor (kişisel veri yok, IP hash bir yönlü). Aydınlatma metnine 1 satır not
+- ✅ **Yeni tablo:** `vitrin_whatsapp_feedback` + 2 enum (`feedbackRatingEnum` 5 değer, `feedbackStatusEnum` 4 değer) + RLS public anon INSERT + tenant SELECT + süperadmin moderation. pg_cron 1 yıl retention (flagged süresiz)
+- ✅ **4 yeni `vitrinEventTypeEnum` değeri** — funnel takibi için
+- ✅ **Pet shop dashboard** (`EKRAN-AYARLAR §2.1.1`): Funnel (whatsapp_click → balloon_shown → submitted/closed/dismissed) + rating dağılımı + türetilen metric (ulaşma oranı, memnuniyet, ortalama puan, sinyaller)
+- ✅ **Süperadmin dashboard** (`EKRAN-SUPERADMIN §1.1`): Müşteri Memnuniyeti kart + cevap hızı sorunu alert (>%20 unreached) + düşük memnuniyet alert (<3/5) + tenant ranking (en iyi 50 + en kötü 10)
+- ✅ **Sprint 12 implementation** (+1 iş günü → 14 iş günü, plan ~24-24.5 hafta) — sticky komponent + POST endpoint + Cloudflare KV rate-limit + 15 VIT-FB test senaryosu
+- ✅ Toplam MVP tablo **35 → 36**
+- ✅ Detay: `EKRAN-PUBLIC-VITRIN.md §15` (11 alt-bölüm)
 
 ### Plan Tier (3-tier B — 2026-05-14 revize, TR-only)
 
@@ -83,11 +157,37 @@ Yani önceki PetStockPro/docs/ tasarımı (2026-05-12) ile yeni kararlar arasın
 
 ---
 
-## ⚠ BEKLEYEN KARARLAR — 13 AÇIK NOKTA
+## ⚠ BEKLEYEN KARARLAR — 13 NOKTA (Hepsi MANTIK-HATALARI'nda çözüldü, sadece 2 kullanıcı blokeri kaldı)
+
+> **2026-05-14 güncelleme:** Bu listedeki 13 noktanın **11'i** `MANTIK-HATALARI-2026-05-14.md` 1-4. turlarında çözüldü. Geriye **2 kullanıcı blokeri** (şirket kuruluş + Supabase Pro tier) kaldı. Aşağıda her noktanın çözüm haritası:
+
+### 🚦 Hızlı Çözüm Haritası
+
+| # | Konu | Çözüm Yeri | Durum |
+|---|---|---|---|
+| 1 | PetStockPro şirket/vergi/IBAN | Kullanıcı yapacak (2-4 hafta) | ⏳ **BLOKER** |
+| 2 | Komisyon hesabı net gelir | `DEPLOYMENT.md §6.4` | ✅ |
+| 3 | Vitrin metrikleri 4 ayrı etiket | `DATABASE-SCHEMA §3.8` + `EKRAN-PUBLIC-VITRIN §13` | ✅ |
+| 4 | Variant bazlı vitrin (parent-only kararı) | `EKRAN-URUNLER §5.5` + `DATABASE-SCHEMA §3.3` | ✅ |
+| 5 | Supabase Pro tier ($25/ay) | Kullanıcı yapacak (1 gün, lansman öncesi) | ⏳ **BLOKER** |
+| 6 | Bayi Admin email constraint (K3) | `EKRAN-KULLANICILAR §4` politika notu (Gmail + alias) | ✅ (Faz 3 refactor schema'da hazır) |
+| 7 | Vitrin currency = TRY only | `EKRAN-PUBLIC-VITRIN §13.6` | ✅ |
+| 8 | SEO sitemap pre-build pattern | `EKRAN-PUBLIC-VITRIN §10.2` + `SPRINT-PLAN §15` | ✅ |
+| 9 | Şifre kuralları + 2FA recovery | `EKRAN-AYARLAR §2.5` | ✅ |
+| 10 | Realtime + Brevo Pro tier | `TECH-STACK §3.5` + `DEPLOYMENT §6` | ✅ |
+| 11 | Logo varyantları (favicon/OG/dark) | Sprint 2 task | ⏭ Sprint 2 |
+| 12 | Onboarding 3 adım wizard | Sprint 2 (auth.html mockup) | ⏭ Sprint 2 |
+| 13 | Test senaryoları doc indeks | Her sprint başında | ⏭ Sprint 1+ |
+
+**Lansman'a giden kritik yol:**
+1. ⏳ Şirket kuruluş + vergi no + IBAN + mali müşavir (2-4 hafta) → bu olmadan Sprint 13/14 production'a geçemez
+2. ⏳ Supabase Pro $25/ay (1 gün, lansman öncesi) → 30 gün backup + PITR
+
+Aşağıdaki detaylar **arşiv** — çözüm dokümanları ile referansları korunur (sonradan tekrar açılırsa).
 
 ### 🔴 KRİTİK (Lansman Bloker — Çözülmezse Lansman Yapılamaz)
 
-#### 1. PetStockPro'nun Kendi Şirket/Vergi Durumu
+#### 1. ⏳ PetStockPro'nun Kendi Şirket/Vergi Durumu
 
 **Sorun:** iyzico Bayi Sözleşmesi + Paddle Vendor + Nilvera mali mühür **hepsi şirket vergi no + IBAN ister.** Bu kullanıcının (proje sahibi) yapacağı iş — şirket kuruldu mu? Şu an PetStockPro'nun yasal varlığı yok görünüyor.
 
@@ -235,7 +335,7 @@ Cloudflare R2'ya yaz → Workers oradan static serve eder
 - 2FA recovery: 8 kod hashed (SHA256), kullanılınca tükenir, yeniden üretilebilir
 - Login rate-limit: **5 deneme / 15 dk** (Cloudflare Workers KV)
 - Şifre sıfırlama linki: **30 dk geçerli**, tek kullanımlık
-- Brute force: 10 başarısız login → hesap **15 dk lock** + e-posta uyarı
+- Brute force (2026-05-15 sıkı policy — kullanıcı kararı): **5 başarısız login → hesap 1 SAAT lock** + e-posta uyarı + Telegram süperadmin alert. **2+ başarısız sonrası frontend "kalan hak" banner** (3 yanlışta "3 hakkın kaldı", 4'te "2 hakkın kaldı + Şifremi Unuttum", 5'te "1 hakkın kaldı + 1 saat lock uyarı"). 3 art arda lock → 24 saat kalıcı lock + acil email. TOTP yanlışı sayılmaz. Detay: `EKRAN-AUTH §10`.
 
 **Aksiyon (Claude düzeltir):** Yeni bölüm `EKRAN-AYARLAR §2.5 Güvenlik` detay revizyon + auth.html mockup planına eklensin.
 
@@ -311,49 +411,77 @@ Cloudflare R2'ya yaz → Workers oradan static serve eder
 
 ---
 
-## 🎯 SIRADAKİ ADIMLAR (Öncelik)
+## 🎯 SIRADAKİ ADIMLAR (Öncelik — 2026-05-14 güncellenmiş)
 
-### Adım 1 — 6 Düzeltme (Claude şimdi yapar, kullanıcı onaylar)
+### ✅ Adım 1 — Doküman Düzeltmeleri TAMAMLANDI (4 tur × 40 bulgu)
 
-Bu chat'te belirlenen kritik+önemli noktaların doküman güncellemesi:
+Tüm doc düzeltmeleri `MANTIK-HATALARI-2026-05-14.md`'de ✅ işaretli:
 
-| # | Konu | Etkilenen Dosya |
+| Tur | Bulgu Sayısı | Konu |
 |---|---|---|
-| #2 | Komisyon hesabı net gelir formülü | `DEPLOYMENT.md §6` |
-| #3 | Vitrin metrikleri 4 ayrı etiket | `DATABASE-SCHEMA.md §3.8` + `EKRAN-PUBLIC-VITRIN.md §13` |
-| #4 | Variant bazlı vitrin = parent-only kararı | `EKRAN-URUNLER.md §5.5` + `DATABASE-SCHEMA.md §3.3` |
-| #7 | Vitrin currency = TRY only politikası | `EKRAN-PUBLIC-VITRIN.md §13.6` (yeni) |
-| #8 | SEO sitemap pre-build pattern | `EKRAN-PUBLIC-VITRIN.md §10.2` + `SPRINT-PLAN.md §15` |
-| #9 | Şifre kuralları + 2FA recovery policy | `EKRAN-AYARLAR.md §2.5` + `DATABASE-SCHEMA.md §3.1` |
-| #10 | Realtime cleanup + Brevo Pro tier | `TECH-STACK.md §3.5` + `DEPLOYMENT.md §6` |
+| 1. tur | 19 (K1-5 + O1-8 + S1-6) | İlk geniş tarama (storefrontStatus, subscriptions, vitrin_reports, ...) |
+| 2. tur | 14 (KT2-1..3 + OT2-1..6 + ST2-1..5) | 1. tur yarım kalmaları + yayılım (user_role claim, KDV %20, ...) |
+| 3. tur | 2 (YT-1..2) | Kullanıcı geri bildirimi (hibrit foto AI moderation + "Verilerimi İndir") |
+| 4. tur | 5 (YT-3..7) | 2+3. tur yayılım hatları (KDV seed, 5→6 rapor, notification UI, dış servis, 2-tier kalıntı) |
+| **Toplam** | **40 bulgu** | **Hepsi ✅** |
 
-### Adım 2 — Kullanıcı Yapacak (Lansman Bloker)
+### ⏳ Adım 2 — Kullanıcı Yapacak (Lansman Bloker — Şirket + Altyapı)
 
-| # | Konu | Süre |
+| # | Konu | Süre | Aciliyet |
+|---|---|---|---|
+| #1 | PetStockPro şirket kuruluş + vergi no + IBAN + mali müşavir anlaşması | 2-4 hafta | Sprint 13/14 production öncesi şart |
+| #5 | Supabase Pro tier ($25/ay) abonelik — 30 gün backup + PITR | 1 gün | Sprint 16 lansman öncesi şart |
+
+Kullanıcı bu 2 işi yapana kadar Sprint 0-12 paralel ilerleyebilir (kod çalışması yapılabilir, sadece production deploy bloklu).
+
+### 📦 Adım 3 — Sprint Sırasında (İmplementation Aşamasında, kullanılacak yer hazır)
+
+| Konu | Sprint | Hazır referans |
 |---|---|---|
-| #1 | PetStockPro şirket kuruluş + vergi no + IBAN | 2-4 hafta |
-| #5 | Supabase Pro tier ($25/ay) abonelik (lansman öncesi) | 1 gün |
+| Logo varyantları (favicon, OG, light/dark, mono) | Sprint 2 | `MARKA-VARLIKLARI.md` brief'i mevcut |
+| Onboarding wizard 3 adım (ilk şube + ilk ürün + vitrin opsiyonel) | Sprint 2 | `UI-MOCKUP-PLAN.md §5.5 auth.html` |
+| Test senaryoları (her ekran 10-20) | Her sprint başında | Her EKRAN-*.md sonunda mevcut (örn: 18 RPT senaryo, 30 PROD senaryo) |
+| Bayi Admin user_memberships refactor | Faz 3 | `DATABASE-SCHEMA §3.9` schema hazır, UI yok |
 
-### Adım 3 — Faz 3 Not (Şimdi yazılır, sonra çözülür)
-
-| # | Konu | Etkilenen Dosya |
-|---|---|---|
-| #6 | Bayi Admin email constraint refactor (Faz 3) | `DATABASE-SCHEMA.md §3.9` |
-
-### Adım 4 — Sprint Sırasında (İmplementation Aşamasında)
-
-| # | Konu | Sprint |
-|---|---|---|
-| #11 | Logo varyantları (favicon, OG, light/dark, mono) | Sprint 2 |
-| #12 | Onboarding wizard 3 adım | Sprint 2 (auth.html mockup) |
-| #13 | Test senaryoları dokümanı | Her sprint başında |
-
-### Adım 5 — Mockup Yapımı (UI-MOCKUP-PLAN.md sırasıyla)
+### 🎨 Adım 4 — Mockup Yapımı (Sprint 0 paralel)
 
 Önerilen sıra:
 1. **`assets/tokens-v2.css`** masaüstünden kopyala (PetStockPro/assets/'e)
 2. **`pano.html`** Pano-v3 baz alarak yenile (Verdana + topbar 🌐 Vitrin link + 47/50 plan)
-3. Sırayla diğer 16 mockup (UI-MOCKUP-PLAN.md §4 öncelik tablosu)
+3. **`super-admin.html`** 3-tier B plan tablosuna güncelle (YT-7 — şu an 2-tier mockup yanlış)
+4. **`urunler.html`** v4 stile taşı + Satışa Aç toggle + Doğrula validation
+5. Sırayla diğer 13 yeni mockup (UI-MOCKUP-PLAN.md §4 öncelik tablosu — toplam 17 mockup)
+
+### 🚀 Adım 5 — Sprint 0 Bootstrap (Hazır, başlatılabilir)
+
+Mockup'lar bittikten **veya** paralel olarak başlatılabilir. `SPRINT-PLAN.md §3` Sprint 0:
+
+```
+1. npx create-next-app@latest . --typescript --tailwind --app --src-dir --turbopack
+2. ~30 paket: Auth.js v5, Drizzle, Supabase, shadcn/ui, TanStack Query, Zustand,
+   next-intl, Recharts, Leaflet, Vitest, Playwright, axe, Sentry, Brevo, jose, bcryptjs
+3. Supabase Dashboard'da petstockpro schema yarat + extensions:
+   - postgis (vitrin yakınlık)
+   - pg_trgm (search)
+   - moddatetime (updated_at trigger)
+   - unaccent (Türkçe karakter-insensitive arama)
+   - pg_jsonschema (jsonb validation)
+4. Drizzle config + connection test (.env hazır)
+5. Auth.js v5 + Drizzle adapter + JWT signer (user_role claim — KT2-1)
+6. Tailwind v4 + shadcn/ui init + TASARIM-SISTEMI tokenları (Verdana font)
+7. Cities + Districts seed (81 il + ~970 ilçe — Pet/'ten dönüşüm)
+8. Default categories seed (KDV %20 güncel — YT-3)
+9. Logo + favicon assets (yer tutucu, Sprint 2'de varyantlar)
+10. next.config.ts (i18n TR-only, image domains, CSP)
+11. lib/realtime/use-realtime-channel.ts helper (S5 ESLint pattern)
+12. lib/validation/vatNo.ts (O3 10/11 hane TC + VKN checksum)
+13. lib/constants/vat-rates.ts (OT2-2 %10/%20/%8 tek kaynak)
+14. messages/tr.json taslak (ST2-2 namespace pattern)
+15. GitHub Actions CI
+16. İlk commit: "chore: bootstrap PetStockPro skeleton"
+```
+
+**Sprint 0 ön-koşul:** Açık nokta yok (Adım 1 ✅). Mockup'lar paralel ilerleyebilir.
 
 ### Adım 6 — Sprint 0 Bootstrap (Mockup'lar bittikten sonra)
 
@@ -499,4 +627,4 @@ Kullanıcı (Oğuzhan) tek geliştirici. Kararları net verir, "rafa kaldır" gi
 
 ---
 
-*Son güncelleme: 2026-05-14. Bu doküman yeni session başlangıç noktasıdır. CLAUDE.md → DEVAM-REHBERI.md → diğer dokümanlar sırasıyla okunmalı.*
+*Son güncelleme: 2026-05-15 (4. tur Claude self-tarama + 5 yayılım hatası + 6 yeni mimari karar: Supabase Frankfurt region + davet hibrit + backend dil/framework gerekçesi `TECH-STACK §6` + Monitoring/Observability Stratejisi `DEPLOYMENT §8` + EKRAN-SUPERADMIN KPI dashboard zenginleştirme + `system_errors` tablo + WhatsApp Geri Bildirim Balonu `EKRAN-PUBLIC-VITRIN §15` + `vitrin_whatsapp_feedback` tablo + **EKRAN-AUTH.md yeni doc + Cloudflare Turnstile bot koruması** `TECH-STACK §3.9c` + users tablosuna 10 yeni auth field). Bu doküman yeni session başlangıç noktasıdır. CLAUDE.md → DEVAM-REHBERI.md → MANTIK-HATALARI-2026-05-14.md → diğer dokümanlar sırasıyla okunmalı. **40 mantık hatası + 6 mimari karar işlendi (36 tablo, 26 doc), Sprint 0 bootstrap'e hazır.***

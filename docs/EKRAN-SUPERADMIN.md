@@ -56,18 +56,192 @@ UI'da bu yetkiler **Süperadmin Toolbox FAB** (sağ alt floating button) üzerin
 ## 1. Layout
 
 ```
-┌─────────┬──────────────────────────────────────────────────┐
-│ Sidebar │ Topbar (PetStockPro · SUPERADMIN moduyla giriş)  │
-│         ├──────────────────────────────────────────────────┤
-│         │ ─ Sekmeler ────────────────────────────────────  │
-│         │ [Tenant'lar] [Audit] [Plan Onay] [Sistem ↗ Aiven]│
-│         │                                                    │
-│         │ Aktif sekme içeriği                                │
-│         │                                                    │
-└─────────┴──────────────────────────────────────────────────┘
+┌─────────┬──────────────────────────────────────────────────────┐
+│ Sidebar │ Topbar (PetStockPro · SUPERADMIN moduyla giriş)      │
+│         ├──────────────────────────────────────────────────────┤
+│         │ ⚡ KPI Dashboard Üst Bölümü (her zaman görünür)        │
+│         │ [🏢 Tenant] [📈 Req/sn] [💾 DB] [⚠ Hata] [💳 Webhook]│
+│         │                                                        │
+│         │ ─ Sekmeler ──────────────────────────────────────────  │
+│         │ [Tenant'lar] [Audit] [Plan Onay] [Vitrin Modlama]      │
+│         │                                                        │
+│         │ Aktif sekme içeriği                                    │
+│         │                                                        │
+│         │ ─ Sistem Sağlık Linkleri (Faz 2 ek) ────────────────  │
+│         │ [CF Analytics ↗] [Supabase Reports ↗] [UptimeRobot ↗] │
+│         │                                                        │
+└─────────┴──────────────────────────────────────────────────────┘
 
 + İmpersonation sticky bant (sayım aktifken her sayfada)
++ Süperadmin Toolbox FAB (sağ alt — §2)
 ```
+
+### 1.1 KPI Dashboard — Üst Bölüm (Monitoring Katman 3)
+
+> **2026-05-15 zenginleştirme (DEPLOYMENT §8.3):** Grafana yerine süperadmin paneli izleme katmanı. CF Workers Analytics + Supabase Metrics REST API + Supabase Realtime entegrasyonu. Sprint 7c'de implement.
+
+#### Sistem KPI (6 Kart, Her Zaman Görünür)
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│  🏢 Aktif Tenant      📈 24s Request    💾 DB Connection           │
+│      1.247              3.2K/saat          47/100 pool             │
+│      ▲ +12 bugün       ▲ +%8              ▓▓▓▓▓░░░░░ %47          │
+│      FREE 70%          P95: 142ms                                  │
+│      PRO 25%           Error: %0.3                                 │
+│      PRO+ 5%                                                       │
+│                                                                    │
+│  ⚠ Son 24s Hata       💳 Webhook         📩 Telegram Bildirim     │
+│      18 hata            iyzico: %98       324 gönderildi          │
+│      Kritik: 2          Nilvera: %96      Başarı: %99.6           │
+│      [Feed →]           [Detay →]         [Log →]                  │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+| Kart | Veri kaynağı | Refresh | Detay drilldown |
+|---|---|---|---|
+| 🏢 **Aktif Tenant + Plan Dağılımı** | `companies` tablo + GROUP BY plan | 5 dk cache | Tenant'lar sekmesine link |
+| 📈 **24s Request + P95 + Error rate** | Cloudflare GraphQL Analytics API | 1 dk cache | CF Dashboard ↗ harici |
+| 💾 **DB Connection Pool** | Supabase Metrics REST API (`/api/platform/projects/{ref}/metrics`) | 30 sn realtime | Supabase Reports ↗ harici |
+| ⚠ **Son 24s Hata** | `system_errors` tablo (Sprint 0'da yarat) — Workers logs + Edge Function errors | Realtime (Supabase Realtime channel) | Hata feed alt-bölüm |
+| 💳 **Webhook Başarı** | `processed_webhooks` tablo, son 24s ratio | 5 dk cache | iyzico + Nilvera detay sekme |
+| 📩 **Telegram Bildirim** | `notifications` WHERE channel='telegram' AND created_at > NOW() - 24h | 5 dk cache | Bildirim log sekme |
+
+#### Business KPI (Alt-Bölüm — Genişletilebilir Accordion)
+
+```
+▼ İş Metrikleri (son 30 gün)
+   👥 Yeni tenant kayıt — line chart (sparkline)
+   📦 Toplam ürün × plan — 3-tier B kompozisyon
+   🚪 Davet conversion — gönderilen vs kabul (email vs link breakdown)
+   🚩 Vitrin şikayet hacmi — son 7 gün, otomatik gizlenen sayı
+   💰 MRR tahmini — PRO × 750₺ + PRO+ × 1.750₺
+   📊 AI image moderation success — LLaVA Workers AI accept/reject ratio
+   🌟 Müşteri Memnuniyeti — WhatsApp Feedback Balonu ortalama puan + tenant ranking (2026-05-15 eklendi)
+```
+
+| Metric | Sorgu kaynağı | Renk vurgu |
+|---|---|---|
+| Yeni tenant kayıt/gün | `companies WHERE created_at > NOW() - 30d GROUP BY day` | Gri line chart |
+| Toplam ürün × plan | `products JOIN companies GROUP BY plan` | 3 renkli bar (FREE/PRO/PRO+) |
+| Davet conversion | `users WHERE invite_method IN (email/link) GROUP BY status` | Çift bar (email vs link, hibrit 2026-05-14) |
+| Vitrin şikayet hacmi | `vitrin_reports WHERE created_at > NOW() - 7d GROUP BY day + status` | Kırmızı bar (acil inceleme bekleyen) |
+| MRR tahmini | `subscriptions WHERE status='active' GROUP BY plan × tier price` | Yeşil sayı, ▲/▼ ay-ay delta |
+| AI moderation success rate | `audit_logs WHERE action='product.ai_moderation' GROUP BY result` | Donut chart |
+| Müşteri Memnuniyeti (2026-05-15) | `vitrin_whatsapp_feedback WHERE status='submitted' GROUP BY rating` — weighted average | Yıldız rating + tenant ranking |
+
+#### 🌟 Müşteri Memnuniyeti Kart Detayı (2026-05-15 — yeni)
+
+```
+┌────────────────────────────────────────────────┐
+│ 🌟 Müşteri Memnuniyeti (son 30 gün)             │
+├────────────────────────────────────────────────┤
+│ Ortalama: 4.1/5 (824 cevap, 1.247 click)        │
+│ ⭐⭐⭐⭐⭐ %42  ⭐⭐⭐⭐ %31  ⭐⭐⭐ %12  ⭐⭐ %8  ⭐ %7│
+│                                                 │
+│ Submit ratio: %66 (824/1.247)                   │
+│ Ulaşma ortalaması: %88 (cevap hızı sinyali)     │
+│                                                 │
+│ ⚠ Cevap hızı sorunu (>%20 unreached):           │
+│    12 tenant → [İncele →]                       │
+│                                                 │
+│ 🚩 Düşük memnuniyet (<3.0/5):                   │
+│    4 tenant → [Detay →]                         │
+│                                                 │
+│ 🥇 En iyi 3:                                    │
+│    Mavi Pet Shop (4.8/5, 47 cevap)              │
+│    Sarı Pet Shop (4.7/5, 32 cevap)              │
+│    Yeşil Pet Shop (4.6/5, 28 cevap)             │
+│                                                 │
+│ [Tüm tenant ranking →]                          │
+└────────────────────────────────────────────────┘
+```
+
+**Süperadmin moderation aksiyonları:**
+- Aynı IP × 10+ farklı tenant'a feedback → otomatik `flagged` (bot şüphesi)
+- Tenant "çok kötü" oranı %40+ aniden yükseliyor → kalite araştır (rakip sabotaj olabilir, manuel inceleme)
+- `closed_manually` oranı %60+ → tenant'a kullanılabilirlik öneri (örn. balon zamanlamasını değiştir)
+- 90+ gün hiç feedback gelmeyen aktif tenant → balon broken? (örn. WhatsApp link yanlış)
+
+**Tenant ranking sekmesi (drilldown):**
+```
+Ranking Tablosu (en yüksek 50 + en düşük 10)
+┌─────────────────────────────────────────────────┐
+│ Sıra │ Tenant       │ Puan │ Cevap │ Submit %  │
+├──────┼──────────────┼──────┼───────┼───────────┤
+│  1   │ Mavi Pet     │ 4.8  │  47   │   %72     │
+│  2   │ Sarı Pet     │ 4.7  │  32   │   %68     │
+│ ...  │              │      │       │           │
+│ 998  │ Yeşil Pet ⚠  │ 2.3  │  18   │   %42     │
+│ 999  │ Mor Pet 🚩   │ 2.1  │  31   │   %38     │
+└──────┴──────────────┴──────┴───────┴───────────┘
+[Tenant'a Mesaj Gönder] [Detay incele]
+```
+
+#### Operasyonel KPI (Alt-Bölüm)
+
+```
+▼ Operasyonel (acil aksiyon gerektiren)
+   🔴 Past-due abonelik — kaç tenant ödeme bekliyor [Liste →]
+   🛑 Otomatik askıya alınan tenant — son 7 gün [Liste →]
+   🎫 Açık vitrin başvuru — manuel inceleme bekleyen [Vitrin Modlama →]
+   📞 Açık destek talebi — Faz 2 (şu an Telegram'dan manuel)
+```
+
+#### Real-time Feed (Sağ Sidebar — Sticky)
+
+Süperadmin paneli sağ kenarında **sticky real-time feed** (Supabase Realtime channel: `superadmin_feed`):
+
+```
+┌──────────────────────────────┐
+│ 🔴 Real-time Feed            │
+├──────────────────────────────┤
+│ 14:32 🔴 Workers error rate  │
+│       %1.4 geçti (son 5dk)   │
+│ 14:28 🟡 DB CPU %72 sürekli  │
+│ 14:21 ℹ Yeni tenant kayıt:   │
+│       Mavi Pet Shop (FREE)   │
+│ 14:18 🚩 Vitrin şikayet:     │
+│       sahte ürün (3 IP)      │
+│ 14:15 ✅ iyzico webhook OK   │
+│ ...                          │
+│ [Tümünü Gör →]               │
+└──────────────────────────────┘
+```
+
+Hem `system_errors` hem `notifications` hem `audit_logs` tablolarından merge edilir, kronolojik gösterilir.
+
+### 1.2 Implementasyon Notları (Sprint 7c için)
+
+**Veri çekme stratejisi (CLAUDE.md #1 kural — sade):**
+
+| Veri kaynağı | Yöntem | Cache stratejisi |
+|---|---|---|
+| Cloudflare Analytics | Workers binding `env.ANALYTICS_API` (Workers içinden GraphQL fetch) | KV cache 60 sn |
+| Supabase Metrics | Service role JWT ile REST API `/platform/projects/{ref}/metrics` | KV cache 30 sn |
+| Internal DB metrics (tenant/ürün count) | Drizzle query | TanStack Query 5 dk |
+| Real-time feed | Supabase Realtime channel `superadmin_feed` | WebSocket subscription |
+
+**Workers AI / Analytics binding örneği (wrangler.toml):**
+```toml
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+
+[vars]
+SUPABASE_PROJECT_REF = "..."
+SUPABASE_METRICS_TOKEN = "..."  # service role read-only
+```
+
+**Cache invalidation:** Toolbox FAB'tan "🔄 Metrikleri Yenile" butonu — KV'ye yazılan cache'i temizler, fresh fetch tetikler (öncelikle hata sonrası teşhis için).
+
+**Performance bütçesi:** KPI dashboard yükleme **<1.5 sn** olmalı (6 kart paralel fetch). Kullanıcı süperadmin paneline her giriş bu bölümü görür — yavaş olursa nefret eder.
+
+### 1.3 Erişim ve Güvenlik
+
+- **Sadece SUPERADMIN** (`auth.jwt() ->> 'user_role' = 'SUPERADMIN'`). Diğer rol giriş 403 Forbidden.
+- **2FA zorunlu** (§4.1) — KPI dashboard hassas veri içerir (MRR, tenant listesi, hata mesajları).
+- **Audit log:** KPI dashboard görüntüleme `audit_logs.action = 'superadmin.kpi_view'` yazılır (3 ayda 1 kez bile olsa kim baktığı izlenir).
+- **Read-only:** Hiçbir mutation YOK — sadece view + drilldown navigation. Aksiyon Toolbox FAB üzerinden yapılır.
 
 ## 2. Süperadmin Toolbox FAB — Override Yetkileri
 

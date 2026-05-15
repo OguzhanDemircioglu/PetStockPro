@@ -2,8 +2,28 @@
 
 **Durum:** Domain alındı (petstockpro.com Cloudflare), Supabase proje hazır
 **Schema:** `petstockpro` (mevcut Supabase projesinde yeni schema)
+**Region:** 📍 **`eu-central-1` (Frankfurt, Almanya)** — 2026-05-14 onaylandı
 
 > Bu doküman Supabase projesinde **PetStockPro için özel schema** kurma, RLS aktivasyon ve Drizzle bağlantı adımlarını içerir.
+
+---
+
+## 0. Region — Frankfurt (eu-central-1)
+
+**Karar (2026-05-14):** Supabase projesi **Frankfurt (eu-central-1)** region'ında. Detaylı gerekçe: `DEPLOYMENT.md §2.3`.
+
+**Mevcut proje kontrol:** Supabase Dashboard → Project Settings → General → Region:
+- Eğer projeden `eu-central-1` görünüyorsa ✅ tamam
+- Eğer **farklı region** görünüyorsa → yeni proje aç (Supabase region migration desteği yok), eski projeyi sil
+
+**Latency benchmark (Sprint 0 verification):**
+```bash
+# İstanbul'dan ortalama:
+curl -w "@curl-format.txt" -o /dev/null -s https://[project-ref].supabase.co
+# Beklenen: ~30-50ms
+```
+
+**KVKK uyumu için kayıt formu checkbox + aydınlatma metni** Sprint 2'de (auth.html) implement edilir. Detay: `DEPLOYMENT.md §2.3` 3 katman.
 
 ---
 

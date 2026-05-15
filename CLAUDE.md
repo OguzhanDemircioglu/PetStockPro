@@ -36,10 +36,10 @@
 **2026-05-14 chat'i 2 kapsamlı revizyon turu yaptı.** Bağlam büyük, dokümante edildi:
 
 1. **`docs/DEVAM-REHBERI.md`** ⭐ — kararlar listesi + bekleyen açık noktalar (önce bunu oku!)
-2. **`docs/MANTIK-HATALARI-2026-05-14.md`** 🆕 — **35 mantık hatası çözüldü** (K1-5 + O1-8 + S1-6 + KT2-1/2/3 + OT2-1..6 + ST2-1..5 + YT-1/2). Tüm düzeltmeler doc'lara yansıtıldı, ✅ işaretli.
+2. **`docs/MANTIK-HATALARI-2026-05-14.md`** 🆕 — **40 mantık hatası çözüldü** (4 tur: K1-5 + O1-8 + S1-6 + KT2-1/2/3 + OT2-1..6 + ST2-1..5 + YT-1..7). Tüm düzeltmeler doc'lara yansıtıldı, ✅ işaretli.
 3. Bu CLAUDE.md (proje genel durumu)
 4. `docs/PLAN-KADEMELERI.md` (**3-tier B — FREE 50 / PRO 500 750₺ / PRO+ ∞ 1.750₺, TR-only** — 2026-05-14 revize, otoritatif)
-5. `docs/DATABASE-SCHEMA.md` (34 tablo MVP — 4 yeni: subscriptions/invoices/processed_webhooks/vitrin_reports; storefrontStatus enum; user_role JWT claim)
+5. `docs/DATABASE-SCHEMA.md` (36 tablo MVP — 6 yeni: subscriptions/invoices/processed_webhooks/vitrin_reports/system_errors/vitrin_whatsapp_feedback; storefrontStatus enum; user_role JWT claim)
 6. `docs/EKRAN-PUBLIC-VITRIN.md` (merkezi tek vitrin, hibrit fotoğraf moderation YT-1)
 7. `docs/PAYMENT-INTEGRATION.md` (iyzico + Nilvera — Paddle Faz 2'de pasif, TR-only)
 8. `docs/UI-MOCKUP-PLAN.md` (17 mockup brief)
@@ -62,6 +62,13 @@
 | **KDV** | %18 → **%20** (TR 2024 sonrası). Pet mama %10 özel oran. | `EKRAN-AYARLAR.md §2.3` |
 | **"İhracat Hazırla" → "Verilerimi İndir"** | KVKK veri taşıma hakkı, daha net terim. | `EKRAN-AYARLAR.md §2.6` |
 | **PostGIS tek extension** | earthdistance kaldırıldı, ST_DWithin tutarlı index. | `DATABASE-SCHEMA.md §6` |
+| **Supabase region: Frankfurt** (2026-05-14 onay) | `eu-central-1`. TR latency ~30-40ms. KVKK Madde 9 açık rıza akışı kayıt formunda zorunlu. | `DEPLOYMENT.md §2.3` + `SUPABASE-SETUP.md §0` |
+| **Davet hibrit** (2026-05-14 onay) | Admin seçer: 📧 Email (7 gün TTL, Brevo otomatik — şube müdürü için) veya 🔗 Link (24 saat TTL, admin elden iletir — STAFF kasiyer için). `userInviteMethodEnum` + `invitedById` field eklendi. | `EKRAN-KULLANICILAR.md §4` + `DATABASE-SCHEMA.md §3.1` |
+| **Backend dil/framework karar gerekçesi** (2026-05-15 C seçimi) | MVP: Next.js + Cloudflare Workers (mevcut). İleride 10K+ tenant'ta veya P95>500ms'de Strangler-Fig ile Go mikroservis extract. VPS asla. Re-evaluation tetikleyicileri dokümante. | `TECH-STACK.md §6` |
+| **Monitoring & Observability Stratejisi** (2026-05-15) | 4 katman: CF Workers Analytics + Supabase Dashboard + Süperadmin KPI dashboard (zenginleştirildi) + Telegram alert. Grafana/Datadog YOK (süperadmin paneli yeterli). Sentry MVP'de opsiyonel, lansman sonrası 100+ event/gün olursa Team plan. Yeni tablo: `system_errors` (90 gün retention, RLS sadece SUPERADMIN). Süperadmin paneli §1.1-1.3 6 sistem KPI + business + operasyonel + real-time feed. | `DEPLOYMENT.md §8` + `EKRAN-SUPERADMIN.md §1.1-1.3` + `DATABASE-SCHEMA.md §3.5` |
+| **WhatsApp Geri Bildirim Balonu** (2026-05-15 onay) | Müşteri vitrin'de WhatsApp tıkladıktan sonra sağ alt sticky balon (dış tıklama dismiss etmez). 5 emoji seçenek (😊/🙂/😐/😕/😞), **tek tıklama = submit** (submit butonu yok), yorum YOK (Faz 2). Counter felsefesi: closed_manually + dismissed bile değerli sinyal. Anti-spam: 1 IP × 1 tenant × 24h. Pet shop için funnel + rating dağılımı + ortalama puan. Süperadmin için tenant ranking + cevap hızı sorunu alert. Yeni tablo `vitrin_whatsapp_feedback` (1 yıl retention) + 2 enum + 4 yeni vitrinEvent type. Sprint 12'de implement (+1 iş günü = 14 iş günü). | `EKRAN-PUBLIC-VITRIN.md §15` + `DATABASE-SCHEMA.md §3.8.1` + `EKRAN-AYARLAR.md §2.1.1` + `EKRAN-SUPERADMIN.md §1.1` + `SPRINT-PLAN.md §15` |
+| **EKRAN-AUTH.md + Cloudflare Turnstile** (2026-05-15 onay) | Yeni doc (15 bölüm + 52 test): Login + Register + Email Verification + Forgot Password + Email Change + 2FA Setup + Onboarding 3 adım + Account Lock + KVKK çift checkbox. **Cloudflare Turnstile** (Google reCAPTCHA değil — Workers native, KVKK temiz, $0). Register + Forgot Password + Change Email **zorunlu**, Login 5+ fail sonrası **conditional**. Email enumeration koruma + HIBP password check + 7 gün grace period + 24h email verify TTL + 30dk password reset TTL. users tablosuna 10 yeni field. Sprint 2: 1.5 → 2 hafta. | `EKRAN-AUTH.md` (yeni) + `TECH-STACK.md §3.9c` + `DATABASE-SCHEMA.md §3.1` + `DEPLOYMENT.md §1` + `EKRAN-AYARLAR.md §2.5` (sadeleşti, AUTH'a referans) + `SPRINT-PLAN.md §5` (2 hafta) + `UI-MOCKUP-PLAN.md §5.5` |
+| **Brute-force sıkı policy** (2026-05-15 onay) | Önceki "10 başarısız → 15 dk" yetersiz görüldü, sıkılaştırıldı: **5 başarısız → 1 SAAT lock** + 3 art arda lock → 24 saat kalıcı + acil email. **Kalan hak UX:** 3. yanlıştan itibaren frontend banner ("3 hakkın kaldı" → "2 hakkın kaldı + Şifremi Unuttum" → "1 hakkın kaldı + lock uyarı"). 2. yanlışta banner yok (parmak hatası varsayımı). Şifremi Unuttum lock'u bypass eder. TOTP yanlışı sayılmaz. Test: 52 → 59. | `EKRAN-AUTH.md §2.2 + §2.3 + §10` + `EKRAN-AYARLAR.md §2.5.2` + `DATABASE-SCHEMA.md §3.1 users` |
 
 **Geride bekleyen (sen-yapacak):**
 - Şirket kuruluş + vergi no + IBAN (lansman bloker, 2-4 hafta)
@@ -71,7 +78,9 @@
 **Sıradaki olası işler:**
 - Sprint 0 bootstrap (Next.js + Supabase + Drizzle + Auth.js skeleton)
 - urunler.html v4 stiline taşıma (ertelendi — pano.html zaten v4)
-- 4. tur mantık hata taraması (son düzeltmeler yeni çelişki yarattı mı?)
+- ~~4. tur mantık hata taraması~~ ✅ **Tamamlandı 2026-05-14** — 5 yayılım hatası bulundu/düzeltildi (YT-3 KDV seed / YT-4 5→6 rapor / YT-5 notification UI / YT-6 dış servis / YT-7 2-tier kalıntı), `MANTIK-HATALARI-2026-05-14.md §4. Tur`
+- super-admin.html 2-tier mockup → 3-tier B'ye güncelle (YT-7'nin mockup tarafı)
+- Yeni mockup'lar UI-MOCKUP-PLAN.md sırasıyla (17 mockup)
 
 ---
 

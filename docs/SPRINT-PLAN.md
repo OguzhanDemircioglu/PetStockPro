@@ -46,7 +46,7 @@
 | **8** | Pano + Düşük Stok + PetPro Asistanı | 1.5 hafta | UX | Pano hero + asistan rules |
 | **9** | Tedarikçiler + Kullanıcılar (CRUD) | 1.5 hafta | CRUD | Davet + rol akışı |
 | **10** | Ayarlar (6 bölüm) + Telegram + Bildirim | 1.5 hafta | Sistem | Telegram bağlama, bildirimler |
-| **11** | Raporlar (5 rapor + export) | 2 hafta | Analitik | PDF + Excel export |
+| **11** | Raporlar (6 rapor + export) | 2 hafta | Analitik | PDF + Excel export (Açık Krediler 6. rapor — 2026-05-14 S2) |
 | **12** | Merkezi Vitrin + SEO + Cities/Districts seed | 2 hafta | Pazarlama | petstockpro.com/vitrin aktif (Sahibinden modeli) |
 | **13** | iyzico Subscription (TR ödeme) | 1.5 hafta | Ödeme | TR otomatik tahsilat |
 | **14** | Nilvera e-Arşiv (TR e-fatura) | 1 hafta | Fatura | TR e-Arşiv kesim |
@@ -254,66 +254,90 @@ Backend foundation hazır. Sprint 2'de auth ve frontend skeleton.
 
 ---
 
-## 5. Sprint 2 — Auth + 2FA + i18n + Frontend Skeleton (1.5 hafta)
+## 5. Sprint 2 — Auth + 2FA + Onboarding + Turnstile + Frontend Skeleton (2 hafta — 10 iş günü)
 
-**Hedef:** Login akışı + sidebar+topbar shell + i18n + 2FA.
+> **2026-05-15 revize:** Önceki "1.5 hafta" tahmini yetersizdi — EKRAN-AUTH.md detaylandırması ile gerçek iş genişledi: email değiştirme akışı + Turnstile setup + onboarding 3 adım wizard + HIBP check + email enumeration koruma + KVKK çift checkbox + 52 test senaryosu. Sprint 2 → 2 hafta.
+>
+> **Tam akış detayı:** `EKRAN-AUTH.md` (15 bölüm + 52 test).
+
+**Hedef:** EKRAN-AUTH.md akışlarının tamamı + sidebar/topbar shell + i18n TR-only + 2FA + onboarding wizard.
 
 ### Yapılacaklar
 
-1. **Auth.js detay (2 gün)**
-   - Credentials provider (email + password + 2FA TOTP)
-   - Google OAuth (Faz 2'ye sakla ama scaffold)
-   - Session callback (company_id + branch_id + role claim)
-   - Supabase JWT bridge (RLS için)
+1. **Auth.js v5 setup (1.5 gün)**
+   - Credentials provider (email + şifre + 2FA TOTP)
+   - Session callback → user_role + companyId + branchId claims (`KT2-1`: `user_role` claim, eski `is_superadmin` YOK)
+   - Supabase JWT bridge (RLS için, `SUPABASE-SETUP §5`)
+   - Cookie config (HttpOnly + Secure + SameSite=Lax + 7 gün)
+   - Google OAuth Faz 2'ye saklı (scaffold da YAPMA — TR-only sade)
 
-2. **Auth sayfaları (2 gün)**
-   - `/login` (TASARIM-SISTEMI mockup-v3 dilinde)
-   - `/register` (yeni şirket kayıt + onboarding tetikleyici)
-   - `/verify-email`
-   - `/forgot-password`
-   - `/reset-password`
-   - `/accept-invite` (kullanıcı davet)
-   - 2FA flow sayfaları (QR + recovery codes)
+2. **Cloudflare Turnstile entegrasyon (0.5 gün — 2026-05-15 yeni)**
+   - `@marsidev/react-turnstile` paket kurulum
+   - `env.NEXT_PUBLIC_TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY` config
+   - `lib/auth/verify-turnstile.ts` server-side verify helper
+   - TR locale + theme=light + size=normal config
+   - Detay: `TECH-STACK §3.9c`
 
-3. **Layout shell (2 gün)**
+3. **Auth sayfaları (3 gün — EKRAN-AUTH.md sırasıyla)**
+   - `/login` — email + şifre + 2FA step + 5+ fail Turnstile (`§2`)
+   - `/register` — pet shop adı + email + şifre + 2 KVKK checkbox + Turnstile zorunlu + HIBP check (`§3`)
+   - `/verify-email` bekleme + `/verify-email?token=` tıklama hedefi (`§4`)
+   - `/forgot-password` — email + Turnstile zorunlu + enumeration koruma (`§5.1`)
+   - `/reset-password?token=` — yeni şifre + tüm session invalidate (`§5.3`)
+   - `/accept-invite?token=` — hibrit davet kabul (email + opsiyonel email düzelt) (`EKRAN-KULLANICILAR §4.4`)
+   - `/account-locked` — 15dk geri sayım + alternatif aksiyonlar (`§10.2`)
+
+4. **2FA setup wizard (1 gün — `EKRAN-AUTH §7`)**
+   - 3 adım wizard: QR kod tara → 6 haneli kod doğrula → 8 recovery code (kopya/yazdır)
+   - `otplib` TOTP secret üret + `qrcode` QR
+   - Recovery codes 8 adet, SHA256 hash, tek kullanımlık
+   - SUPERADMIN için zorunlu enforce (`§4.1`)
+
+5. **Email değiştirme (0.5 gün — 2026-05-15 yeni — `EKRAN-AUTH §6`)**
+   - `/admin/settings/account/change-email` çift doğrulama akışı
+   - 3 endpoint: `/change-email/init`, `/verify`, `/cancel`
+   - Eski email "İptal Et" → süperadmin Telegram alert
+
+6. **Onboarding 3 adım wizard (1.5 gün — `EKRAN-AUTH §8`)**
+   - Adım 1: İlk şube (il/ilçe + adres + WhatsApp)
+   - Adım 2: İlk ürün (basit form, variant Sprint 3+)
+   - Adım 3: Vitrin profili (opsiyonel) veya "Sonra hallederim"
+   - "Atla" her adımda + onboardingCompletedAt set
+
+7. **Layout shell (2 gün)**
    - `/admin/layout.tsx`: Sidebar + Topbar + Outlet
-   - Sidebar component (5 grup, plan card, mascot)
-   - Topbar component (breadcrumb + ⌘K placeholder + 🔔 + 🌓 + avatar)
+   - Sidebar: 5 grup, plan card, mascot (TASARIM-SISTEMI Verdana)
+   - Topbar: breadcrumb + ⌘K placeholder + 🔔 + avatar (🌓 dark/light YOK MVP'de)
    - Glass morphism + mesh gradient + paw pattern bg
-   - Mascot illustration components (kedi+köpek SVG)
 
-4. **i18n setup (1 gün)**
+8. **i18n setup TR-only (0.5 gün)**
    - `next-intl` config
-   - `messages/tr.json`, `messages/en.json` (temel mesajlar)
-   - Locale prefix routing (public) + cookie (admin)
-   - Currency formatter (Intl.NumberFormat)
-   - Date formatter (date-fns + locale)
+   - `messages/tr.json` (auth strings dahil — `ST2-2` namespace pattern)
+   - EN locale gizli (next-intl yapısı korunur, Faz 2)
+   - Currency formatter `Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' })`
 
-5. **Theme (yarım gün)**
-   - `next-themes` setup
-   - light/dark token bridge
-
-6. **2FA kurulumu (1 gün)**
-   - TOTP secret üret (otplib)
-   - QR code generation (qrcode)
-   - Recovery codes (8 adet, hash)
-   - SUPERADMIN için zorunlu enforce
-
-7. **Test (1 gün)**
-   - Auth flow E2E (Playwright)
-   - 2FA setup + login
-   - Şifre sıfırlama
-   - Davet kabul
+9. **Test (1.5 gün — 52 AUTH-* senaryosu, `EKRAN-AUTH §13`)**
+   - Login (AUTH-001..010)
+   - Register (AUTH-011..020)
+   - Email Verification (AUTH-021..025)
+   - Forgot Password (AUTH-026..035)
+   - 2FA (AUTH-036..042)
+   - Email Change (AUTH-043..048)
+   - Onboarding (AUTH-049..052)
+   - E2E (Playwright)
 
 ### Verification
 
-- ✅ Email + password ile kayıt + login çalışıyor
-- ✅ E-posta doğrulama (Brevo SMTP)
-- ✅ 2FA setup + recovery codes
-- ✅ Şifre sıfırlama akışı
+- ✅ Email + şifre + 2 KVKK checkbox + Turnstile ile register çalışıyor
+- ✅ E-posta doğrulama (Brevo SMTP, 24h TTL, resend 60sn cooldown)
+- ✅ 2FA setup wizard + 8 recovery codes
+- ✅ Şifremi unuttum akışı (Turnstile + enumeration koruma + 30dk TTL + tek kullanımlık)
+- ✅ Email değiştirme çift doğrulama
+- ✅ Onboarding 3 adım wizard (atla seçenekleri çalışıyor)
+- ✅ Hesap kilidi **5 başarısız → 1 SAAT lock** (2026-05-15 sıkı policy) + 3 art arda lock → 24 saat + email + Telegram alert
+- ✅ Frontend kalan hak banner (3+ yanlış sonrası "X hakkın kaldı")
 - ✅ Sidebar + topbar görsel olarak mockup'a yakın
-- ✅ Locale switch TR/EN
-- ✅ Dark mode toggle
+- ✅ 59 AUTH-* test PASS (önceki 52 → brute-force testleri 7 arttı)
 - ✅ Logout
 
 ### Çıktı
@@ -662,28 +686,32 @@ Ledger'ın kalbi çalışıyor. Sprint 5'te sayım workflow.
 
 ## 14. Sprint 11 — Raporlar (2 hafta)
 
-**Hedef:** 5 rapor + export + materialized view performans.
+**Hedef:** 6 rapor + export + materialized view performans (2026-05-14 S2: Açık Krediler 6. rapor olarak eklendi).
 
 ### Yapılacaklar
 
-1. **Liste sayfası + 5 kart (1 gün)**
-2. **5 detay sayfası (5 gün)**
+1. **Liste sayfası + 6 kart (1 gün)**
+2. **6 detay sayfası (5-6 gün)**
    - Satış raporu
    - Kâr/zarar
    - En çok satan
    - Ölü stok
    - Şube karşılaştırma
+   - Açık Krediler (`payment_method='credit' AND credit_paid_at IS NULL` gruplama + yaş analizi 0-15/16-30/31-60/60+ gün band'ları)
 3. **Materialized view (1 gün)**
    - mv_daily_sales
    - inventory_snapshots
    - pg_cron refresh
-4. **PDF export (2 gün)**
+4. **Krediyi Kapama akışı (0.5 gün)**
+   - POST `/api/admin/reports/open-credits/[movementId]/settle`
+   - `credit_paid_at = NOW()` set + audit `sale.credit_settled` + opsiyonel Telegram
+5. **PDF export (2 gün)**
    - Supabase Edge Function
    - React-PDF
-   - Asenkron toplu PDF
-5. **Excel export (1 gün)**
-6. **Test (1 gün)**
-   - 14 RPT senaryosu
+   - Asenkron toplu PDF (6 rapor)
+6. **Excel export (1 gün)**
+7. **Test (1 gün)**
+   - 18 RPT senaryosu (RPT-001..018)
 
 ### Verification
 
@@ -693,10 +721,11 @@ Ledger'ın kalbi çalışıyor. Sprint 5'te sayım workflow.
 
 ---
 
-## 15. Sprint 12 — Merkezi Vitrin Dizini (2.5 hafta — 13 iş günü)
+## 15. Sprint 12 — Merkezi Vitrin Dizini (2.5-3 hafta — 14 iş günü)
 
 > **2026-05-13 revize:** Önceki "2 hafta" tahmini yetersizdi (13 iş günü iş, 10 iş günü ayrılmıştı). Vitrin Profili UI Sprint 11 (Ayarlar) içine kaydırılmadı çünkü vitrin'le bütünleşik akış. Sprint 12 → 2.5 hafta.
 > **2026-05-14 net:** TR-only kararıyla Sprint 14 (Paddle çıkarıldı) 1.5 → 1 hafta düştü; bu Sprint 12'nin 0.5 hafta artışını dengeledi. Toplam plan **24 hafta** (5.5-6 ay).
+> **2026-05-15 net:** WhatsApp Geri Bildirim Balonu task'ı (1 gün) eklendi → 13 → 14 iş günü. Toplam plan ~24-24.5 hafta (etki ihmal edilebilir, kullanıcı kararı bütün).
 
 **Hedef:** `petstockpro.com/vitrin` merkezi tek dizin (Sahibinden modeli), Cities/Districts seed, PostGIS yakınlık, WhatsApp deep link, cross-tenant kıyaslama.
 
@@ -717,11 +746,22 @@ Ledger'ın kalbi çalışıyor. Sprint 5'te sayım workflow.
 4. **WhatsApp deep link + vitrin_events tracking (1 gün)**
    - `wa.me/...` URL parametre encoding
    - Event kayıt (view, product_view, whatsapp_click)
-5. **Konum tespiti (1 gün)**
+5. **WhatsApp Geri Bildirim Balonu (1 gün — 2026-05-15 eklendi)**
+   - Sticky balon bileşeni (`app/vitrin/_components/feedback-balloon.tsx`)
+   - 5 emoji seçenek, tek tıklama submit, sticky davranış (dış tıklama dismiss etmez)
+   - 5 sn delay + localStorage dedup (1 IP × 1 tenant × 24h)
+   - POST `/api/vitrin/feedback` endpoint + Cloudflare KV rate-limit
+   - beforeunload sendBeacon (`dismissed` counter)
+   - Esc tuşu → manuel kapama
+   - 4 yeni `vitrin_events` event_type tracking (balloon_shown / submitted / closed_manually / dismissed)
+   - Mobile responsive (full-width balon)
+   - 15 VIT-FB test senaryosu — `EKRAN-PUBLIC-VITRIN.md §15.10`
+   - Detay: `EKRAN-PUBLIC-VITRIN.md §15` + `DATABASE-SCHEMA.md §3.8.1`
+6. **Konum tespiti (1 gün)**
    - Browser Geolocation API
    - MaxMind GeoLite2 IP fallback
    - PostGIS ST_DWithin sorgusu
-6. **SEO (2 gün) — sitemap pre-build pattern (2026-05-14 — DEVAM-REHBERI #8)**
+7. **SEO (2 gün) — sitemap pre-build pattern (2026-05-14 — DEVAM-REHBERI #8)**
    - Supabase Edge Function `generate-sitemap` (gece 03:00 pg_cron)
    - sitemap-index.xml + sitemap-{tenants,products,locations}-N.xml (her chunk 50K URL)
    - **İçerik filtresi:** sadece aktif tenant + vitrin_published ürün + min 3 ürünlü kategori×şehir kombinasyonu
@@ -731,10 +771,10 @@ Ledger'ın kalbi çalışıyor. Sprint 5'te sayım workflow.
    - robots.txt
    - Süperadmin Toolbox "Sitemap Şimdi Yenile" butonu (manuel rebuild — acil durum)
    - Detay: `EKRAN-PUBLIC-VITRIN.md §10.2`
-7. **Settings > Vitrin Profili yönetimi (1 gün)**
+8. **Settings > Vitrin Profili yönetimi (1 gün)**
    - KVKK onay + slug + logo + kapak + WhatsApp + saatler
-8. **ISR + Cloudflare cache stratejisi (1 gün)**
-9. **Test (1 gün)** — 23 VIT senaryosu
+9. **ISR + Cloudflare cache stratejisi (1 gün)**
+10. **Test (1 gün)** — 23 VIT + 15 VIT-FB = **38 senaryo** (WhatsApp Feedback Balonu testleri dahil — 2026-05-15)
 
 ### Verification
 
@@ -745,7 +785,8 @@ Ledger'ın kalbi çalışıyor. Sprint 5'te sayım workflow.
 - ✅ Stok visibility level çalışıyor
 - ✅ WhatsApp deep link (vitrin_events tracking)
 - ✅ Schema.org Product structured data
-- ✅ 23 VIT test PASS
+- ✅ WhatsApp Feedback Balonu sticky + 5 emoji + tek tap submit + 24h dedup (2026-05-15)
+- ✅ 38 test PASS (23 VIT + 15 VIT-FB)
 
 ---
 

@@ -208,13 +208,17 @@ Tüm tenant'ları etkileyen sistem ayarları.
 
 **6 bölüm:**
 
-##### 3.1.1 Plan Tiers (2-tier — 2026-05-13)
+##### 3.1.1 Plan Tiers (3-tier B — 2026-05-14, TR-only)
 ```
-FREE:  [50] ürün
-PRO:   [∞] ürün · [500] TL · [$20]
+FREE:    [50]  ürün · [0]      ₺/ay · KDV dahil
+PRO:     [500] ürün · [750]    ₺/ay · KDV dahil
+PRO+:    [∞]   ürün · [1.750]  ₺/ay · KDV dahil
 ```
 
+Tek farklılaşma: stok limiti. Diğer tüm özellikler (vitrin, çoklu şube, audit, 2FA, asistan, 6 rapor, Nilvera e-Arşiv) tüm planlarda açık.
+
 Tenant'a yansıma: Plan değişimi sonrası tüm tenant'lar yeni limit'i kullanır. Mevcut tenant'lara 30 gün geçiş süresi.
+Detay: `PLAN-KADEMELERI.md §1`.
 
 ##### 3.1.2 Feature Flags
 

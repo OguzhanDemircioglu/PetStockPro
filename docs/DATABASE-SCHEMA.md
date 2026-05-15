@@ -191,6 +191,12 @@ export const plans = pgTable('plans', {
 export const userRoleEnum = pgEnum('user_role', ['SUPERADMIN', 'ADMIN', 'STAFF', 'BAYI_ADMIN']);
 export const userStatusEnum = pgEnum('user_status', ['active', 'invited', 'inactive', 'expired_invite']);
 
+// 2026-05-14 davet hibrit akışı — admin email veya link iki yöntem seçer (kullanıcı kararı):
+//   email: Brevo SMTP ile otomatik gönderim (7 gün TTL) — şube müdürü, email aktif personel
+//   link:  Admin "Davet linki üret" tıklar, token + URL kopyalar, WhatsApp/SMS ile elden gönderir (24 saat TTL, tek kullanımlık) — STAFF kasiyer
+// Audit log: 'user.invited' event'inde metadata.method = 'email' | 'link'
+export const userInviteMethodEnum = pgEnum('user_invite_method', ['email', 'link']);
+
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   companyId: uuid('company_id').references(() => companies.id, { onDelete: 'cascade' }),  // SUPERADMIN için NULL
@@ -206,8 +212,11 @@ export const users = pgTable('users', {
   // isSuperadmin: KALDIRILDI (2026-05-14 O6) — role='SUPERADMIN' tek kaynak. RLS + JWT claim sadece `role` okur.
 
   status: userStatusEnum('status').default('active').notNull(),
-  inviteToken: varchar('invite_token', { length: 100 }),
-  inviteExpiresAt: timestamp('invite_expires_at', { withTimezone: true }),
+  // 2026-05-14 davet hibrit akışı — iki yöntem (email Brevo otomatik / link admin elden)
+  inviteToken: varchar('invite_token', { length: 100 }),                      // crypto.randomUUID() veya 12-haneli base32
+  inviteMethod: userInviteMethodEnum('invite_method'),                          // NULL = davet edilmemiş
+  inviteExpiresAt: timestamp('invite_expires_at', { withTimezone: true }),      // email: 7 gün, link: 24 saat
+  invitedById: uuid('invited_by_id').references(() => users.id, { onDelete: 'set null' }),  // hangi admin davet etti (audit + "Yeniden Davet")
 
   // 2FA (TOTP — RFC 6238)
   twoFaEnabled: boolean('two_fa_enabled').default(false).notNull(),
@@ -221,10 +230,16 @@ export const users = pgTable('users', {
   passwordResetToken: varchar('password_reset_token', { length: 100 }),  // JWT jti (tek kullanımlık blacklist için)
   passwordResetExpiresAt: timestamp('password_reset_expires_at', { withTimezone: true }),
 
-  // Brute-force koruma (2026-05-14)
-  failedLoginAttempts: integer('failed_login_attempts').default(0).notNull(),
-  failedLoginResetAt: timestamp('failed_login_reset_at', { withTimezone: true }),  // 15dk window reset
-  consecutiveLockCount: integer('consecutive_lock_count').default(0).notNull(),    // 3 art arda → 24h kalıcı
+  // Brute-force koruma (2026-05-15 sıkı policy — kullanıcı kararı):
+  //   5 başarısız → lockedUntil = NOW + 1 SAAT (önceki 10/15dk yetersiz görüldü)
+  //   3 art arda lock → 24 SAAT kalıcı lock + acil email + 🚨 süperadmin Telegram alert
+  //   2+ başarısız sonra response'da remainingAttempts döner → frontend "X hakkın kaldı" banner
+  //   TOTP yanlışı sayılmaz (şifre doğru, sadece 2FA hatalı)
+  //   Şifre sıfırlama tamamlandığında counter sıfırlanır + lockedUntil=NULL (kullanıcı anında giriş)
+  //   pg_cron weekly: 7 gün lock olmadıysa consecutiveLockCount=0 reset
+  failedLoginAttempts: integer('failed_login_attempts').default(0).notNull(),     // 0-5 arası counter
+  failedLoginResetAt: timestamp('failed_login_reset_at', { withTimezone: true }),  // ⚠ deprecated (sliding window kaldırıldı, lock geçince counter sıfır)
+  consecutiveLockCount: integer('consecutive_lock_count').default(0).notNull(),    // 3 art arda lock → 24h kalıcı
 
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
   lastLoginIp: varchar('last_login_ip', { length: 50 }),
@@ -234,6 +249,24 @@ export const users = pgTable('users', {
   // (SUPERADMIN-YETKILERI §4.4 + EKRAN-AYARLAR §2.5.2)
   lockedUntil: timestamp('locked_until', { withTimezone: true }),  // NULL = açık, datetime = kilitli
   lockedReason: text('locked_reason'),                              // 'BRUTE_FORCE_15M', 'BRUTE_FORCE_24H', 'SUPERADMIN_MANUAL', ...
+
+  // 2026-05-15 EKRAN-AUTH §4 Email Doğrulama akışı
+  emailVerificationToken: varchar('email_verification_token', { length: 100 }),    // crypto.randomUUID()
+  emailVerificationExpiresAt: timestamp('email_verification_expires_at', { withTimezone: true }),  // 24h TTL
+  emailVerificationResendCount: integer('email_verification_resend_count').default(0).notNull(),   // 24h içinde max 5
+  emailVerificationLastSentAt: timestamp('email_verification_last_sent_at', { withTimezone: true }), // 60sn cooldown
+
+  // 2026-05-15 EKRAN-AUTH §6 Email Değiştirme (çift doğrulama)
+  pendingEmail: varchar('pending_email', { length: 255 }),                          // yeni email, doğrulanmamış
+  pendingEmailToken: varchar('pending_email_token', { length: 100 }),               // yeni email tıklama hedefi
+  pendingEmailExpiresAt: timestamp('pending_email_expires_at', { withTimezone: true }), // 24h
+
+  // 2026-05-15 EKRAN-AUTH §12 KVKK Çift Açık Rıza (zorunlu kayıt anında)
+  kvkkConsentedAt: timestamp('kvkk_consented_at', { withTimezone: true }),          // Aydınlatma metni onayı (Md.10)
+  dataLocationConsentedAt: timestamp('data_location_consented_at', { withTimezone: true }), // Frankfurt veri lokasyonu açık rıza (Md.9)
+
+  // 2026-05-15 EKRAN-AUTH §8 Onboarding 3 adım wizard tamamlama
+  onboardingCompletedAt: timestamp('onboarding_completed_at', { withTimezone: true }), // NULL = ilk girişte /onboarding redirect
 
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -739,6 +772,67 @@ export const telegramBindings = pgTable('telegram_bindings', {
   testedAt: timestamp('tested_at', { withTimezone: true }),
 });
 
+// ─────────────────────────────────────────────────────────────────────
+// SYSTEM ERRORS — 2026-05-15 Monitoring & Observability Stratejisi
+// ─────────────────────────────────────────────────────────────────────
+// DEPLOYMENT.md §8.5 hata izleme pattern + EKRAN-SUPERADMIN §1.1 KPI dashboard
+// hata feed kaynağı. Workers Logs + Edge Function exception'ları yapısal kayıt.
+// Sentry'ye alternatif (TECH-STACK §6 + DEPLOYMENT §8.7 — Grafana/Sentry neden yok).
+// Retention: pg_cron 90 gün cleanup (kritik hatalar için yeterli — eski hatalar audit_logs'ta zaten var).
+
+export const systemErrorSeverityEnum = pgEnum('system_error_severity', [
+  'info',       // Bilgi (deprecation uyarısı, slow query >1sn vb.)
+  'warning',    // Uyarı (rate-limit, validation fail, retry success)
+  'error',      // Hata (5xx, exception caught + handled)
+  'critical'    // Kritik (DB connection lost, payment fail, security breach attempt)
+]);
+
+export const systemErrors = pgTable('system_errors', {
+  id: uuid('id').primaryKey().defaultRandom(),
+
+  // Konum
+  route: varchar('route', { length: 500 }).notNull(),           // örn: "POST /api/admin/users/invite"
+  workerRequestId: varchar('worker_request_id', { length: 100 }), // CF Workers Ray ID — log korelasyonu
+  environment: varchar('environment', { length: 20 }).default('production').notNull(),  // production/staging
+
+  // Hata içeriği
+  severity: systemErrorSeverityEnum('severity').default('error').notNull(),
+  errorName: varchar('error_name', { length: 200 }).notNull(),   // örn: "DatabaseError" / "RateLimitExceeded"
+  errorMessage: text('error_message').notNull(),
+  stack: text('stack'),                                            // opsiyonel — büyük stack trace
+
+  // Bağlam (forensics + tenant izolasyonu için)
+  companyId: uuid('company_id').references(() => companies.id, { onDelete: 'set null' }),  // anonim hata varsa NULL
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+
+  // İstek metadata
+  userAgent: text('user_agent'),
+  ipHash: varchar('ip_hash', { length: 64 }),                    // SHA256 hash (KVKK — IP doğrudan tutulmaz)
+  countryCode: varchar('country_code', { length: 2 }),           // CF geo header'dan
+
+  // Ek metadata (esnek)
+  metadata: jsonb('metadata'),                                     // { requestBody?, query?, headers? }
+
+  // Süperadmin müdahale
+  acknowledgedAt: timestamp('acknowledged_at', { withTimezone: true }),
+  acknowledgedById: uuid('acknowledged_by_id').references(() => users.id, { onDelete: 'set null' }),
+  resolutionNote: text('resolution_note'),                        // süperadmin "şu sebepten oldu, çözüldü" notu
+
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+// Index'ler (KPI dashboard sorgu performansı)
+//   CREATE INDEX idx_system_errors_severity_date ON system_errors(severity, created_at DESC);  -- süperadmin filter
+//   CREATE INDEX idx_system_errors_company ON system_errors(company_id, created_at DESC) WHERE company_id IS NOT NULL;  -- tenant bazlı debug
+//   CREATE INDEX idx_system_errors_unacknowledged ON system_errors(created_at DESC) WHERE acknowledged_at IS NULL;  -- "okunmamış" hata feed
+
+// RLS: §4.3'te POLICY tanımlı — sadece SUPERADMIN okur+yazar. Tenant kendi hatalarını GÖREMEZ
+// (forensics — kullanıcı hatalı request gönderirse stack trace görmemeli, güvenlik).
+
+// pg_cron retention (90 gün):
+//   SELECT cron.schedule('cleanup_system_errors', '0 3 * * *',
+//     $$ DELETE FROM petstockpro.system_errors WHERE created_at < NOW() - INTERVAL '90 days' $$);
+
 // Plan onay (manuel havale)
 export const planApprovalStatusEnum = pgEnum('plan_approval_status', ['pending', 'approved', 'rejected']);
 
@@ -912,6 +1006,11 @@ export const vitrinEventTypeEnum = pgEnum('vitrin_event_type', [
   'telegram_click',      // Telegram tıklama (admin paneline bildirim — müşteri tarafında görünmez)
   'directions_click',    // Google Maps "Yol tarifi al" deep link tıklama
   'search',              // vitrin'de arama yapılması (tenant'a atfedilmez)
+  // 2026-05-15 WhatsApp Geri Bildirim Balonu (EKRAN-PUBLIC-VITRIN §17 + DEPLOYMENT §8.3)
+  'feedback_balloon_shown',     // Sticky balon WhatsApp tıklamadan 5 sn sonra slide-up oldu
+  'feedback_submitted',         // Radio tıklandı → vitrin_whatsapp_feedback INSERT (single tap)
+  'feedback_closed_manually',   // Müşteri × ile balonu kapattı (rating yok, "ilgilenmiyorum" sinyali)
+  'feedback_dismissed',         // Müşteri sayfayı kapadı, balon görmezden gelindi (beforeunload sendBeacon)
 ]);
 
 export const vitrinEvents = pgTable('vitrin_events', {
@@ -972,6 +1071,117 @@ GROUP BY company_id, product_id, DATE_TRUNC('day', created_at);
 -- pg_cron ile 5 dakikada bir refresh
 SELECT cron.schedule('refresh_vitrin_metrics', '*/5 * * * *',
   $$ REFRESH MATERIALIZED VIEW CONCURRENTLY mv_vitrin_daily_metrics; $$);
+```
+
+### 3.8.1 WhatsApp Geri Bildirim Balonu — 2026-05-15
+
+> **Karar (2026-05-15):** Müşteri vitrin'de WhatsApp tıkladıktan sonra sağ alt sticky balon belirir, **5 emoji seçenek** sunar, müşteri **tek tıklama** ile rating verir, balon yavaşça kapanır. Submit butonu YOK, dış tıklama dismiss etmez (manuel × veya rating). Yorum opsiyonu MVP'de YOK (Faz 2'ye saklı). Detay UX: `EKRAN-PUBLIC-VITRIN.md §17`.
+
+```ts
+// db/schema/vitrin-feedback.ts
+
+// 5 emoji seçenek (Q1 "görüşme yapıldı mı" + Q2 "kalite" birleşik)
+export const feedbackRatingEnum = pgEnum('feedback_rating', [
+  'very_good',   // 😊 Çok iyi (hızlı ulaştı + ilgilendi)
+  'good',        // 🙂 İyi (cevap aldım, sorum çözüldü)
+  'neutral',     // 😐 Orta (yarım kaldı, eksik kaldı)
+  'bad',         // 😕 Kötü (geç cevap veya ilgilenmediler)
+  'unreached',   // 😞 Hiç ulaşamadım (cevap hızı sorunu sinyali)
+]);
+
+// Counter felsefesi: rating verilmese bile dismiss/closed_manually değerli sinyal
+export const feedbackStatusEnum = pgEnum('feedback_status', [
+  'submitted',           // ✅ Radio tıklandı, rating kayıt (en değerli)
+  'closed_manually',     // ✖ Manuel × ile kapatıldı (rating NULL, "ilgilenmiyorum" sinyali)
+  'dismissed',           // 👻 Sayfa kapatıldı, hiç etkileşim yok (beforeunload sendBeacon)
+  'flagged',             // 🚩 Süperadmin spam/kötü niyet işaretledi
+]);
+
+export const vitrinWhatsappFeedback = pgTable('vitrin_whatsapp_feedback', {
+  id: uuid('id').primaryKey().defaultRandom(),
+
+  // İlişki — hangi tıklamaya bağlı (forensics + funnel analiz için)
+  companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  branchId: uuid('branch_id').references(() => branches.id, { onDelete: 'set null' }),
+  vitrinEventId: uuid('vitrin_event_id').references(() => vitrinEvents.id, { onDelete: 'set null' }),  // whatsapp_click event
+
+  // Anket verisi (tek field, tek tıklama)
+  rating: feedbackRatingEnum('rating'),                              // NULL = closed_manually veya dismissed
+
+  // Faz 2 yorum akışı için yer tutucu (MVP'de doldurulmaz)
+  // commentText: text('comment_text'),                              // Faz 2'de eklenir, 500 char limit
+
+  // Anti-spam + KVKK uyum (anonim — IP hash bir yönlü, kişisel veri değil)
+  reporterIpHash: varchar('reporter_ip_hash', { length: 64 }).notNull(),  // SHA256(IP + daily_salt)
+  countryCode: varchar('country_code', { length: 2 }),
+  userAgent: text('user_agent'),
+
+  // Durum
+  status: feedbackStatusEnum('status').notNull(),                    // explicit set zorunlu (default yok)
+  flaggedById: uuid('flagged_by_id').references(() => users.id, { onDelete: 'set null' }),
+  flagReason: text('flag_reason'),
+
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+```
+
+**Index'ler:**
+```sql
+-- Anti-spam: 1 IP × 1 company × 24 saat = 1 feedback
+CREATE UNIQUE INDEX uq_feedback_ip_company_day
+  ON vitrin_whatsapp_feedback(reporter_ip_hash, company_id, (date_trunc('day', created_at)));
+
+-- Pet shop dashboard funnel sorgusu
+CREATE INDEX idx_feedback_company_date
+  ON vitrin_whatsapp_feedback(company_id, created_at DESC);
+
+-- Rating dağılımı sorgusu (sadece submit edilenler)
+CREATE INDEX idx_feedback_rating_company
+  ON vitrin_whatsapp_feedback(company_id, rating)
+  WHERE rating IS NOT NULL;
+
+-- Süperadmin moderation
+CREATE INDEX idx_feedback_flagged
+  ON vitrin_whatsapp_feedback(status, created_at DESC)
+  WHERE status = 'flagged';
+```
+
+**RLS politikası (§4.3'te SQL bloğunda):**
+- Public unauthenticated INSERT (müşteri rating verir, rate-limit Cloudflare KV'de)
+- Tenant kendi feedback'ini SELECT (ADMIN — vitrin metrikleri sayfasında görür, anonim)
+- SUPERADMIN tüm SELECT + UPDATE (moderation için flag)
+- DELETE yasak (KVKK 1 yıl + spam analizi)
+
+**pg_cron retention:** 1 yıl (rating trend için yeterli, KVKK için makul):
+```sql
+SELECT cron.schedule('cleanup_vitrin_feedback', '0 4 * * 0',  -- haftalık, Pazar 04:00
+  $$ DELETE FROM petstockpro.vitrin_whatsapp_feedback
+     WHERE created_at < NOW() - INTERVAL '1 year' AND status != 'flagged' $$);
+-- flagged kayıtlar süresiz tutulur (spam pattern analizi için)
+```
+
+**Türetilen metric'ler (pet shop dashboard — `EKRAN-AYARLAR §2.4` görüntüleme):**
+```sql
+-- Funnel: balloon_shown → submitted/closed_manually/dismissed
+SELECT
+  COUNT(*) FILTER (WHERE event_type = 'whatsapp_click') AS whatsapp_clicks,
+  COUNT(*) FILTER (WHERE event_type = 'feedback_balloon_shown') AS balloon_shown,
+  COUNT(*) FILTER (WHERE event_type = 'feedback_submitted') AS submitted,
+  COUNT(*) FILTER (WHERE event_type = 'feedback_closed_manually') AS closed_manually,
+  COUNT(*) FILTER (WHERE event_type = 'feedback_dismissed') AS dismissed
+FROM vitrin_events WHERE company_id = $1 AND created_at > NOW() - INTERVAL '30 days';
+
+-- Rating dağılımı + türetilen oran'lar
+SELECT
+  rating,
+  COUNT(*) AS count
+FROM vitrin_whatsapp_feedback
+WHERE company_id = $1 AND status = 'submitted' AND created_at > NOW() - INTERVAL '30 days'
+GROUP BY rating;
+
+-- Ulaşma oranı = (very_good + good + neutral + bad) / total
+-- Memnuniyet oranı = (very_good + good) / (toplam - unreached)
+-- Ortalama puan = SUM(rating_value × count) / SUM(count) where rating_value 5/4/3/2/1
 ```
 
 ### 3.9 Bayi Admin (Faz 3) — 2026-05-13 eklendi
@@ -1479,6 +1689,54 @@ CREATE POLICY "Superadmin reads reports" ON vitrin_reports
 CREATE POLICY "Superadmin updates report status" ON vitrin_reports
   FOR UPDATE USING (auth.is_superadmin()) WITH CHECK (auth.is_superadmin());
 -- DELETE: yasak (audit + KVKK 5 yıl)
+
+-- SYSTEM_ERRORS: Sadece SUPERADMIN okur ve INSERT yapar (Workers backend service role'üyle yazar)
+-- Tenant kendi hatalarını GÖREMEZ (stack trace güvenlik riski — kullanıcı schema bilgisi alabilir)
+-- 2026-05-15 Monitoring & Observability Stratejisi (DEPLOYMENT §8.5)
+ALTER TABLE system_errors ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Superadmin reads errors" ON system_errors
+  FOR SELECT USING (auth.is_superadmin());
+CREATE POLICY "Service role writes errors" ON system_errors
+  FOR INSERT WITH CHECK (auth.is_superadmin());  -- Workers backend service role JWT'siyle yazar
+CREATE POLICY "Superadmin acknowledges errors" ON system_errors
+  FOR UPDATE USING (auth.is_superadmin())
+  WITH CHECK (auth.is_superadmin() AND acknowledged_at IS NOT NULL);
+-- DELETE: pg_cron 90 gün retention (yukarıda sistem-genel cleanup job)
+
+-- VITRIN_WHATSAPP_FEEDBACK: Public anon INSERT (müşteri rating verir) + tenant SELECT (kendi) + süperadmin tüm
+-- 2026-05-15 WhatsApp Geri Bildirim Balonu (EKRAN-PUBLIC-VITRIN §17)
+-- Anti-spam rate-limit Cloudflare Workers KV'de uygulanır (RLS değil); DB unique constraint günde 1 IP×1 tenant
+ALTER TABLE vitrin_whatsapp_feedback ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public anon submits feedback" ON vitrin_whatsapp_feedback
+  FOR INSERT WITH CHECK (
+    -- Required field integrity
+    company_id IS NOT NULL
+    AND reporter_ip_hash IS NOT NULL
+    AND status IN ('submitted', 'closed_manually', 'dismissed')
+    -- Submitted ise rating zorunlu, diğer durumlarda NULL kabul
+    AND (
+      (status = 'submitted' AND rating IS NOT NULL)
+      OR (status IN ('closed_manually', 'dismissed') AND rating IS NULL)
+    )
+    -- flagged status sadece SUPERADMIN UPDATE ile set edilir
+    AND status != 'flagged'
+  );
+
+CREATE POLICY "Tenant reads own feedback (anonim)" ON vitrin_whatsapp_feedback
+  FOR SELECT USING (
+    company_id = auth.company_id()
+    -- Tenant kendi feedback'ini görür ama IP hash + UA görmez (anonim)
+    -- Frontend tarafında: rating + status + createdAt only SELECT
+  );
+
+CREATE POLICY "Superadmin reads all feedback" ON vitrin_whatsapp_feedback
+  FOR SELECT USING (auth.is_superadmin());
+
+CREATE POLICY "Superadmin flags feedback" ON vitrin_whatsapp_feedback
+  FOR UPDATE USING (auth.is_superadmin())
+  WITH CHECK (auth.is_superadmin() AND status = 'flagged');
+-- DELETE: pg_cron 1 yıl retention (flagged kayıtlar süresiz tutulur — spam analizi)
 ```
 
 ---
@@ -1726,13 +1984,14 @@ INSERT INTO plans (tier, product_limit, price_try_monthly, price_usd_monthly, fe
   ('PRO_PLUS', NULL, 1750, 0, '{"all_features": true}');
 
 -- Default kategoriler (tenant başına copy template — onboarding'de)
+-- 2026-05-14 MANTIK-HATALARI YT-3: KDV %18 → %20 (TR 2024 Temmuz oranı). Mama %10 gıda, Sağlık %8 özel oran.
 INSERT INTO categories (company_id, name, slug, emoji, vat_rate, skt_required) VALUES
   ($1, 'Mama', 'mama', '🍖', 10, true),
-  ($1, 'Aksesuar', 'aksesuar', '🎀', 18, false),
-  ($1, 'Oyuncak', 'oyuncak', '🧸', 18, false),
-  ($1, 'Kum', 'kum', '🪨', 18, false),
+  ($1, 'Aksesuar', 'aksesuar', '🎀', 20, false),
+  ($1, 'Oyuncak', 'oyuncak', '🧸', 20, false),
+  ($1, 'Kum', 'kum', '🪨', 20, false),
   ($1, 'Sağlık', 'saglik', '💊', 8, true),
-  ($1, 'Bakım', 'bakim', '🧴', 18, false);
+  ($1, 'Bakım', 'bakim', '🧴', 20, false);
 
 -- Default system_settings (2026-05-14 MANTIK-HATALARI O4: tablo adı `system_settings`, eski hatalı `site_settings` düzeltildi)
 INSERT INTO system_settings (key, value, category) VALUES
@@ -1963,7 +2222,7 @@ Her `migrate generate` Drizzle migration dosyası SemVer ile etiketlenir.
 
 ---
 
-## 14. Tablo Sayısı Özet (2026-05-14 revize — K2 düzeltmesi sonrası)
+## 14. Tablo Sayısı Özet (2026-05-15 revize — system_errors + vitrin_whatsapp_feedback eklendi)
 
 | Kategori | Tablo sayısı |
 |---|---|
@@ -1979,7 +2238,9 @@ Her `migrate generate` Drizzle migration dosyası SemVer ile etiketlenir.
 | **Bayi Admin** (Faz 3) | **1 (bayi_admin_relations) — schema hazır, UI Faz 3'te** |
 | **Abonelik & Fatura** (yeni — K2) | **3 (subscriptions, processed_webhooks, invoices)** |
 | **Vitrin Modlama** (yeni — K5) | **1 (vitrin_reports)** |
-| **Toplam MVP** | **33 tablo** (currency_rates MVP'de migrate edilmez, O5 düzeltmesi) |
+| **Monitoring** (yeni — 2026-05-15 Observability Stratejisi) | **1 (system_errors) — DEPLOYMENT §8.5** |
+| **WhatsApp Geri Bildirim** (yeni — 2026-05-15) | **1 (vitrin_whatsapp_feedback) — EKRAN-PUBLIC-VITRIN §17** |
+| **Toplam MVP** | **35 tablo** (currency_rates MVP'de migrate edilmez, O5 düzeltmesi) |
 | Faz 2 | + 3 tablo (auto_reorder_rules, customers, paddle_subscriptions) |
 
 ### 14.1 Süperadmin Yetki Sistemi DB Etkileri

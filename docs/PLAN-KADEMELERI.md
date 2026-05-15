@@ -89,7 +89,7 @@ PRO+ sınırsız parent → büyük chain için yeterli.
 | Düşük stok + akıllı sipariş | ✅ | ✅ | ✅ |
 | Sayım workflow | ✅ | ✅ | ✅ |
 | Transfer (şubeler arası) | ✅ | ✅ | ✅ |
-| 5 rapor (satış/kâr/...) | ✅ | ✅ | ✅ |
+| 6 rapor (satış/kâr/en çok satan/ölü stok/şube/açık krediler) | ✅ | ✅ | ✅ |
 | CSV/Excel export | ✅ | ✅ | ✅ |
 | PDF rapor | ✅ | ✅ | ✅ |
 | PetPro Asistanı (rule-based) | ✅ | ✅ | ✅ |
