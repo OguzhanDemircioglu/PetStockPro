@@ -8,13 +8,19 @@ import { DeleteBrandButton } from './delete-brand-button';
 export default async function BrandsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ created?: string; updated?: string }>;
+  searchParams: Promise<{ created?: string; updated?: string; q?: string }>;
 }) {
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
 
-  const items = await listBrands(session.user.companyId, db);
+  const allItems = await listBrands(session.user.companyId, db);
   const params = await searchParams;
+  const q = params.q?.trim().toLowerCase() ?? '';
+  const items = q
+    ? allItems.filter(
+        (b) => b.name.toLowerCase().includes(q) || b.slug.includes(q),
+      )
+    : allItems;
 
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-12">
@@ -27,7 +33,9 @@ export default async function BrandsPage({
             Markalar
           </h1>
           <p className="mt-1 text-sm text-ink-3">
-            {items.length === 0
+            {q
+              ? `${items.length}/${allItems.length} marka (filtreli)`
+              : items.length === 0
               ? 'Henüz marka yok'
               : `${items.length} marka tanımlı`}
           </p>
@@ -50,6 +58,27 @@ export default async function BrandsPage({
         <div className="rounded-xl border border-arrow/40 bg-arrow-soft px-4 py-3 text-sm font-bold text-arrow-7">
           ✅ Marka güncellendi.
         </div>
+      )}
+
+      {allItems.length > 5 && (
+        <form className="flex gap-2" action="/admin/brands" method="get">
+          <input
+            type="search"
+            name="q"
+            defaultValue={params.q ?? ''}
+            placeholder="🔍 Marka ara..."
+            data-testid="brand-search"
+            className="flex-1 rounded-xl border-[1.5px] border-line bg-white px-4 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          />
+          {q && (
+            <a
+              href="/admin/brands"
+              className="rounded-xl border border-line bg-white px-3 py-2.5 text-xs font-bold text-ink-3 hover:bg-line-soft"
+            >
+              × Temizle
+            </a>
+          )}
+        </form>
       )}
 
       {items.length === 0 ? (

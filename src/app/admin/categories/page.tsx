@@ -15,13 +15,19 @@ const VAT_LABEL: Record<string, string> = {
 export default async function CategoriesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ created?: string; updated?: string }>;
+  searchParams: Promise<{ created?: string; updated?: string; q?: string }>;
 }) {
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
 
-  const items = await listCategories(session.user.companyId, db);
+  const allItems = await listCategories(session.user.companyId, db);
   const params = await searchParams;
+  const q = params.q?.trim().toLowerCase() ?? '';
+  const items = q
+    ? allItems.filter(
+        (c) => c.name.toLowerCase().includes(q) || c.slug.includes(q),
+      )
+    : allItems;
 
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-12">
@@ -34,7 +40,9 @@ export default async function CategoriesPage({
             Kategoriler
           </h1>
           <p className="mt-1 text-sm text-ink-3">
-            {items.length} kategori · 16 default + kullanıcı eklemeleri
+            {q
+              ? `${items.length}/${allItems.length} kategori (filtreli)`
+              : `${items.length} kategori · 16 default + kullanıcı eklemeleri`}
           </p>
         </div>
         <Link
@@ -56,6 +64,25 @@ export default async function CategoriesPage({
           ✅ Kategori güncellendi.
         </div>
       )}
+
+      <form className="flex gap-2" action="/admin/categories" method="get">
+        <input
+          type="search"
+          name="q"
+          defaultValue={params.q ?? ''}
+          placeholder="🔍 Kategori veya slug ara..."
+          data-testid="category-search"
+          className="flex-1 rounded-xl border-[1.5px] border-line bg-white px-4 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+        />
+        {q && (
+          <a
+            href="/admin/categories"
+            className="rounded-xl border border-line bg-white px-3 py-2.5 text-xs font-bold text-ink-3 hover:bg-line-soft"
+          >
+            × Temizle
+          </a>
+        )}
+      </form>
 
       {items.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-line bg-paper py-16 text-center">
