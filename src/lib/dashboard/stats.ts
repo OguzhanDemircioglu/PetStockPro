@@ -35,13 +35,10 @@ export interface DashboardStats {
 export async function getDashboardStats(
   companyId: string,
   db: DbClient,
-  now: Date = new Date(),
 ): Promise<DashboardStats> {
-  // Tek SELECT'te tüm aggregates — performans için
-  const startOfDay = new Date(now);
-  startOfDay.setHours(0, 0, 0, 0);
-  const startOfDayISO = startOfDay.toISOString();
-
+  // Tek SELECT'te tüm aggregates — performans için.
+  // "Bugün" hesabı için DATE_TRUNC('day', NOW()) — Drizzle parametre
+  // marshalling'inde Date geçince postgres-js hata atıyor.
   const rows = await db
     .select({
       totalProducts: sql<number>`(
@@ -70,7 +67,7 @@ export async function getDashboardStats(
         WHERE ${stockMovements.companyId} = ${companyId}
           AND ${stockMovements.type} = 'stock_out'
           AND ${stockMovements.subtype} = 'sale'
-          AND ${stockMovements.createdAt} >= ${startOfDayISO}
+          AND ${stockMovements.createdAt} >= DATE_TRUNC('day', NOW())
           AND ${stockMovements.reversedById} IS NULL
       )`,
       todaySaleRevenue: sql<string | null>`(
@@ -79,7 +76,7 @@ export async function getDashboardStats(
         WHERE ${stockMovements.companyId} = ${companyId}
           AND ${stockMovements.type} = 'stock_out'
           AND ${stockMovements.subtype} = 'sale'
-          AND ${stockMovements.createdAt} >= ${startOfDayISO}
+          AND ${stockMovements.createdAt} >= DATE_TRUNC('day', NOW())
           AND ${stockMovements.reversedById} IS NULL
       )`,
       lowStockCount: sql<number>`(
