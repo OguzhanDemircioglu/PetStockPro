@@ -1,9 +1,16 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
-import { companies, users } from '@/db/schema';
+import {
+  branches,
+  brands,
+  categories,
+  companies,
+  suppliers,
+  users,
+} from '@/db/schema';
 
 export default async function SettingsHubPage() {
   const session = await auth();
@@ -11,7 +18,7 @@ export default async function SettingsHubPage() {
     redirect('/login' as never);
   }
 
-  const [companyRow, userRow] = await Promise.all([
+  const [companyRow, userRow, countsRow] = await Promise.all([
     db
       .select({
         name: companies.name,
@@ -30,10 +37,24 @@ export default async function SettingsHubPage() {
       .from(users)
       .where(eq(users.id, session.user.id))
       .limit(1),
+    db
+      .select({
+        categoryCount: sql<number>`(SELECT COUNT(*)::int FROM ${categories} WHERE ${categories.companyId} = ${session.user.companyId})`,
+        brandCount: sql<number>`(SELECT COUNT(*)::int FROM ${brands} WHERE ${brands.companyId} = ${session.user.companyId})`,
+        branchCount: sql<number>`(SELECT COUNT(*)::int FROM ${branches} WHERE ${branches.companyId} = ${session.user.companyId} AND ${branches.isActive} = true)`,
+        supplierCount: sql<number>`(SELECT COUNT(*)::int FROM ${suppliers} WHERE ${suppliers.companyId} = ${session.user.companyId} AND ${suppliers.isActive} = true)`,
+      })
+      .from(sql`(SELECT 1) AS dummy`),
   ]);
 
   const company = companyRow[0];
   const user = userRow[0];
+  const counts = countsRow[0] ?? {
+    categoryCount: 0,
+    brandCount: 0,
+    branchCount: 0,
+    supplierCount: 0,
+  };
   const vatMissing = !company?.vatNo;
   const twoFaActive = !!user?.twoFactorEnabledAt;
   const emailChangePending = !!user?.pendingEmail;
@@ -82,11 +103,50 @@ export default async function SettingsHubPage() {
         </p>
       </header>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {cards.map((c) => (
-          <SettingsCard key={c.href} {...c} />
-        ))}
-      </div>
+      <section>
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
+          👤 Hesap & Firma
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {cards.map((c) => (
+            <SettingsCard key={c.href} {...c} />
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
+          📂 Veri yönetimi
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <DataLink
+            href="/admin/categories"
+            emoji="📂"
+            title="Kategoriler"
+            count={counts.categoryCount}
+          />
+          <DataLink
+            href="/admin/brands"
+            emoji="🏷"
+            title="Markalar"
+            count={counts.brandCount}
+          />
+          <DataLink
+            href="/admin/branches"
+            emoji="🏪"
+            title="Şubeler"
+            count={counts.branchCount}
+            suffix="aktif"
+          />
+          <DataLink
+            href="/admin/suppliers"
+            emoji="🏢"
+            title="Tedarikçiler"
+            count={counts.supplierCount}
+            suffix="aktif"
+          />
+        </div>
+      </section>
 
       <Link
         href={'/admin' as never}
@@ -95,6 +155,41 @@ export default async function SettingsHubPage() {
         ← Pano&apos;ya dön
       </Link>
     </main>
+  );
+}
+
+function DataLink({
+  href,
+  emoji,
+  title,
+  count,
+  suffix,
+}: {
+  href: string;
+  emoji: string;
+  title: string;
+  count: number;
+  suffix?: string;
+}) {
+  return (
+    <Link
+      href={href as never}
+      data-data-link={href}
+      className="group flex items-center gap-3 rounded-2xl border border-line bg-white p-4 hover:border-cat hover:shadow-sm transition-shadow"
+    >
+      <span className="grid h-12 w-12 place-items-center rounded-xl bg-cat-soft text-2xl">
+        {emoji}
+      </span>
+      <div className="min-w-0 flex-1">
+        <h3 className="text-sm font-bold text-cart group-hover:text-cat">
+          {title}
+        </h3>
+        <p className="text-[11px] text-ink-3">
+          <strong className="font-mono text-ink">{count}</strong>{' '}
+          {suffix ?? 'kayıt'}
+        </p>
+      </div>
+    </Link>
   );
 }
 
