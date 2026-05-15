@@ -1,0 +1,315 @@
+/**
+ * Branches CRUD — Sprint 5
+ *
+ * listBranches + addBranch + updateBranch + deactivateBranch.
+ *
+ * İlk şube onboarding wizard'da `createFirstBranch` ile oluşur
+ * (lib/onboarding/actions.ts). Bu helper ek şube + edit + soft delete.
+ *
+ * Soft delete (isActive=false): stok hareketleri ve branch_inventory
+ * korunur, sadece dropdown'larda gözükmez.
+ */
+
+import { and, asc, eq, sql } from 'drizzle-orm';
+import { z } from 'zod';
+import type { DbClient } from '@/lib/db/client';
+import {
+  branches,
+  cities,
+  districts,
+  productVariants,
+  branchInventory,
+} from '@/db/schema';
+
+// ─────────────────────────────────────────────────────────────────
+// LIST
+// ─────────────────────────────────────────────────────────────────
+
+export interface BranchListItem {
+  id: string;
+  name: string;
+  cityId: number | null;
+  cityName: string | null;
+  districtId: string | null;
+  districtName: string | null;
+  address: string | null;
+  whatsappPhone: string | null;
+  isActive: boolean;
+  createdAt: Date;
+  variantInventoryCount: number;
+  totalStockQty: number;
+}
+
+export async function listBranches(
+  companyId: string,
+  db: DbClient,
+): Promise<BranchListItem[]> {
+  return db
+    .select({
+      id: branches.id,
+      name: branches.name,
+      cityId: branches.cityId,
+      cityName: cities.name,
+      districtId: branches.districtId,
+      districtName: districts.name,
+      address: branches.address,
+      whatsappPhone: branches.whatsappPhone,
+      isActive: branches.isActive,
+      createdAt: branches.createdAt,
+      variantInventoryCount: sql<number>`(
+        SELECT COUNT(*)::int FROM ${branchInventory}
+        WHERE ${branchInventory.branchId} = ${branches.id}
+      )`,
+      totalStockQty: sql<number>`(
+        SELECT COALESCE(SUM(${branchInventory.stockQty}), 0)::int FROM ${branchInventory}
+        WHERE ${branchInventory.branchId} = ${branches.id}
+      )`,
+    })
+    .from(branches)
+    .leftJoin(cities, eq(cities.id, branches.cityId))
+    .leftJoin(districts, eq(districts.id, branches.districtId))
+    .where(eq(branches.companyId, companyId))
+    .orderBy(asc(branches.createdAt));
+}
+
+export async function getBranchDetail(
+  companyId: string,
+  branchId: string,
+  db: DbClient,
+): Promise<BranchListItem | null> {
+  const rows = await listBranches(companyId, db);
+  return rows.find((b) => b.id === branchId) ?? null;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// CREATE
+// ─────────────────────────────────────────────────────────────────
+
+export const branchSchema = z.object({
+  name: z.string().min(2, 'Şube adı en az 2 karakter').max(120),
+  cityId: z.number().int().min(1).max(81),
+  districtId: z.string().uuid('Geçerli bir ilçe seç'),
+  address: z.string().max(500).nullable().optional(),
+  whatsappPhone: z
+    .string()
+    .max(20)
+    .regex(/^\+?\d{10,15}$/, 'Geçerli WhatsApp numarası gir (+90... veya 0...)')
+    .nullable()
+    .optional()
+    .or(z.literal('').transform(() => null)),
+});
+
+export type BranchInput = z.input<typeof branchSchema>;
+
+export type AddBranchResult =
+  | { ok: true; branchId: string }
+  | {
+      ok: false;
+      reason: 'invalid_input' | 'city_not_found' | 'district_mismatch' | 'unknown';
+      issues?: string[];
+    };
+
+export async function addBranch(
+  companyId: string,
+  input: BranchInput,
+  db: DbClient,
+): Promise<AddBranchResult> {
+  const parsed = branchSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      reason: 'invalid_input',
+      issues: parsed.error.issues.map((i) => i.message),
+    };
+  }
+  const data = parsed.data;
+
+  const cityRows = await db
+    .select({ id: cities.id })
+    .from(cities)
+    .where(eq(cities.id, data.cityId))
+    .limit(1);
+  if (cityRows.length === 0) return { ok: false, reason: 'city_not_found' };
+
+  const districtRows = await db
+    .select({ id: districts.id })
+    .from(districts)
+    .where(
+      and(eq(districts.id, data.districtId), eq(districts.cityId, data.cityId)),
+    )
+    .limit(1);
+  if (districtRows.length === 0) return { ok: false, reason: 'district_mismatch' };
+
+  try {
+    const [row] = await db
+      .insert(branches)
+      .values({
+        companyId,
+        name: data.name,
+        cityId: data.cityId,
+        districtId: data.districtId,
+        address: data.address ?? null,
+        whatsappPhone: data.whatsappPhone ?? null,
+        isActive: true,
+      })
+      .returning({ id: branches.id });
+    return { ok: true, branchId: row.id };
+  } catch {
+    return { ok: false, reason: 'unknown' };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// UPDATE
+// ─────────────────────────────────────────────────────────────────
+
+export type UpdateBranchResult =
+  | { ok: true }
+  | {
+      ok: false;
+      reason:
+        | 'invalid_input'
+        | 'not_found'
+        | 'city_not_found'
+        | 'district_mismatch'
+        | 'unknown';
+      issues?: string[];
+    };
+
+export async function updateBranch(
+  companyId: string,
+  branchId: string,
+  input: BranchInput,
+  db: DbClient,
+): Promise<UpdateBranchResult> {
+  const parsed = branchSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      reason: 'invalid_input',
+      issues: parsed.error.issues.map((i) => i.message),
+    };
+  }
+  const data = parsed.data;
+
+  const existing = await db
+    .select({ id: branches.id })
+    .from(branches)
+    .where(and(eq(branches.id, branchId), eq(branches.companyId, companyId)))
+    .limit(1);
+  if (existing.length === 0) return { ok: false, reason: 'not_found' };
+
+  const cityRows = await db
+    .select({ id: cities.id })
+    .from(cities)
+    .where(eq(cities.id, data.cityId))
+    .limit(1);
+  if (cityRows.length === 0) return { ok: false, reason: 'city_not_found' };
+
+  const districtRows = await db
+    .select({ id: districts.id })
+    .from(districts)
+    .where(
+      and(eq(districts.id, data.districtId), eq(districts.cityId, data.cityId)),
+    )
+    .limit(1);
+  if (districtRows.length === 0) return { ok: false, reason: 'district_mismatch' };
+
+  try {
+    await db
+      .update(branches)
+      .set({
+        name: data.name,
+        cityId: data.cityId,
+        districtId: data.districtId,
+        address: data.address ?? null,
+        whatsappPhone: data.whatsappPhone ?? null,
+      })
+      .where(eq(branches.id, branchId));
+    return { ok: true };
+  } catch {
+    return { ok: false, reason: 'unknown' };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// DEACTIVATE (soft delete)
+// ─────────────────────────────────────────────────────────────────
+
+export type ToggleActiveResult =
+  | { ok: true; isActive: boolean }
+  | {
+      ok: false;
+      reason: 'not_found' | 'last_active_branch' | 'unknown';
+    };
+
+/**
+ * Şubeyi pasifleştir (isActive=false). En son aktif şube pasifleştirilemez —
+ * tenant'ın her zaman en az 1 aktif şubesi olmalı (transfer/stok-in için zorunlu).
+ * Re-activate de yapılabilir (isActive=true).
+ */
+export async function setBranchActive(
+  companyId: string,
+  branchId: string,
+  active: boolean,
+  db: DbClient,
+): Promise<ToggleActiveResult> {
+  const existing = await db
+    .select({ id: branches.id, isActive: branches.isActive })
+    .from(branches)
+    .where(and(eq(branches.id, branchId), eq(branches.companyId, companyId)))
+    .limit(1);
+  if (existing.length === 0) return { ok: false, reason: 'not_found' };
+
+  // Aktiften pasife düşüyorsa, son aktif şube olmamalı
+  if (existing[0].isActive && !active) {
+    const activeCount = await db
+      .select({ c: sql<number>`COUNT(*)::int` })
+      .from(branches)
+      .where(
+        and(eq(branches.companyId, companyId), eq(branches.isActive, true)),
+      );
+    if ((activeCount[0]?.c ?? 0) <= 1) {
+      return { ok: false, reason: 'last_active_branch' };
+    }
+  }
+
+  try {
+    await db
+      .update(branches)
+      .set({ isActive: active })
+      .where(eq(branches.id, branchId));
+    return { ok: true, isActive: active };
+  } catch {
+    return { ok: false, reason: 'unknown' };
+  }
+}
+
+/**
+ * Şube'nin envanter durumu — silme öncesi uyarı için.
+ * Eğer aktif inventory varsa (stockQty > 0), kullanıcı önce transfer/sayım yapmalı.
+ */
+export async function getBranchInventorySummary(
+  companyId: string,
+  branchId: string,
+  db: DbClient,
+): Promise<{ totalStockQty: number; variantCount: number; productCount: number }> {
+  const rows = await db
+    .select({
+      totalStockQty: sql<number>`COALESCE(SUM(${branchInventory.stockQty}), 0)::int`,
+      variantCount: sql<number>`COUNT(DISTINCT ${branchInventory.variantId})::int`,
+      productCount: sql<number>`COUNT(DISTINCT ${productVariants.productId})::int`,
+    })
+    .from(branchInventory)
+    .leftJoin(
+      productVariants,
+      eq(productVariants.id, branchInventory.variantId),
+    )
+    .where(
+      and(
+        eq(branchInventory.companyId, companyId),
+        eq(branchInventory.branchId, branchId),
+      ),
+    );
+  return rows[0] ?? { totalStockQty: 0, variantCount: 0, productCount: 0 };
+}
