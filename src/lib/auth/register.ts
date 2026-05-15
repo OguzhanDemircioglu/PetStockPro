@@ -21,6 +21,7 @@ import { hashPassword, validateNewPassword } from './password';
 import { createVerificationToken } from './email-verification';
 import { sendBrevoEmail } from '@/lib/brevo/client';
 import { buildVerifyEmailTemplate } from '@/lib/brevo/templates';
+import { makeSlug } from '@/lib/utils/slug';
 import type { DbClient } from '@/lib/db/client';
 import { companies, users } from '@/db/schema';
 
@@ -41,24 +42,7 @@ export interface RegisterResult {
   issues?: string[];
 }
 
-/**
- * tr_slug helper — Türkçe slug üretimi.
- * DB'deki petstockpro.tr_slug() function ile aynı pattern.
- * Network round-trip yerine local hesaplama (slug çakışma kontrolü öncesi).
- */
-function makeSlug(input: string): string {
-  return input
-    .toLocaleLowerCase('tr-TR')
-    .replace(/ı/g, 'i')
-    .replace(/ş/g, 's')
-    .replace(/ğ/g, 'g')
-    .replace(/ü/g, 'u')
-    .replace(/ö/g, 'o')
-    .replace(/ç/g, 'c')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 90); // max 90, suffix için yer bırak
-}
+// makeSlug → @/lib/utils/slug (shared with seed script)
 
 /**
  * Slug çakışmazsa orijinali döner; çakışırsa rastgele 4-haneli suffix ekler.
@@ -198,5 +182,5 @@ export async function registerNewTenant(
   }
 }
 
-// Test export — slug helper
-export { makeSlug as _makeSlugForTesting };
+// Test export — slug helper (back-compat, prefers @/lib/utils/slug import going forward)
+export { makeSlug as _makeSlugForTesting } from '@/lib/utils/slug';

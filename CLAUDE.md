@@ -94,11 +94,12 @@
 - **Eski proje:** `D:/Projeler/Pet/` (PetToptan marketplace, legacy referans — yeni projeyle kod paylaşmıyor)
 - **Yeni proje:** `D:/Projeler/petstockpro/` (sıfırdan, TS stack)
 
-## 🚀 Şu Anki Durum: Sprint 2.5 Tamamlandı (2026-05-15)
+## 🚀 Şu Anki Durum: Sprint 2.6 Tamamlandı (2026-05-15)
 
-**Branch:** `cray61` — **16 commit ahead of origin** (push edilmedi, kullanıcı kararı bekliyor)
-**Test:** 368 passed (23 dosya, vitest)
+**Branch:** `cray61` — **17 commit ahead of origin** (push edilmedi, kullanıcı kararı bekliyor)
+**Test:** 380 passed (24 dosya, vitest)
 **Lint + typecheck:** 0 error
+**Seed:** 81 il + 974 ilçe Supabase Frankfurt'a aktarıldı (Pet/ legacy → turkey-locations.ts)
 
 ### ✅ Tamamlanan Sprint'ler
 
@@ -116,11 +117,13 @@
 | 2.3b Verify UI | e224ef9 | Schema migration (users +4 field) + register Brevo entegrasyon + /verify-email + /verify-email/[token] + browser test |
 | 2.4 Forgot/Reset Password | (yeni) | Schema migration 0003 (users +2 field) + password-reset helper (timing-safe, 30dk TTL) + forgot-password action (enumeration koruma, generic 200) + reset-password action (HIBP + failedLoginCount/lockedUntil reset) + /forgot-password + /reset-password/[token] page (server token check + client form) + passwordChanged Brevo template + Brevo mock URL log helper (dev kolaylığı) + 34 test (10 helper + 6 forgot + 10 reset + 8 template) + browser full flow doğrulama |
 | 2.5 2FA TOTP | (yeni) | Schema migration 0004 (users +5 field: secret + recoveryCodes jsonb + enabledAt + setupSecret + setupExpiresAt) + otpauth@9.5 + qrcode@1.5 paketleri + two-factor helper (generateSecret/buildOtpAuthUri/verifyTotp/generateRecoveryCodes 8 ABCD-EFGH/hashRecoveryCode SHA-256/verifyRecoveryCode timing-safe + tek-kullanımlık) + two-factor-setup orchestration (initSetup 10dk TTL + verifySetup + enable + disable) + custom AuthErrors (TwoFactorRequiredError + TwoFactorInvalidError code field) + authorize.ts TOTP step (şifre doğru sonrası 2FA enabled ise totp gerekli; recovery code dahil) + /2fa-setup 3-adım wizard (QR + manuel secret + 6haneli verify + recovery codes ekranı + clipboard/print) + login page TOTP step (requires2fa banner + readOnly email persist) + 53 test (33 helper + 14 setup + 6 authorize 2FA) + browser full flow (login → 2fa-setup → QR/secret → TOTP verify → recovery codes → enable → logout → login → 2fa banner → TOTP/recovery code login → kullanılmış recovery reject) |
+| 2.6 Onboarding + Cities/Districts Seed | (yeni) | Pet/ legacy turkeyDistricts.ts taşındı (src/db/seed/turkey-locations.ts) + makeSlug shared util (src/lib/utils/slug.ts) + seed script (db:seed npm command) 81 il + 974 ilçe Supabase'e idempotent insert + lib/onboarding/actions (createFirstBranch + saveStorefront + completeOnboarding) + /onboarding 2-adım wizard (şube zorunlu: ad+il+ilçe+adres+WA + vitrin opsiyonel: slug edit veya skip) + /api/locations/districts route (cityId → districts JSON) + / sayfasında auth+onboarding gate (onboardingCompletedAt NULL → /onboarding redirect) + 12 test (createFirstBranch 6 + saveStorefront 5 + completeOnboarding 1) + browser full flow (login 2FA → /onboarding → İstanbul/Kadıköy şube + slug → /?onboarding=complete → / direct artık) — **NOT:** "İlk ürün" 3. adım Sprint 1B sonrası (products tablosu yok) |
 
 ### 🛠 Stack Çalışan Durumda
 
-- **DB:** Supabase Frankfurt EU (`rjzhnfqrynalklsnnuym`), 9 tablo, 5 migration (0000 iskelet + 0001 enums + 0002 email-verify + 0003 password-reset + 0004 two-factor), hepsi RLS enabled
-- **Auth flow MVP:** /login (+ 2FA TOTP step) + /register + /verify-email + /verify-email/[token] + /forgot-password + /reset-password/[token] + /2fa-setup — tümü browser end-to-end geçti
+- **DB:** Supabase Frankfurt EU (`rjzhnfqrynalklsnnuym`), 9 tablo, 5 migration, hepsi RLS enabled, **cities (81) + districts (974) seed edildi**
+- **Auth flow MVP:** /login (+ 2FA TOTP) + /register + /verify-email + /verify-email/[token] + /forgot-password + /reset-password/[token] + /2fa-setup + /onboarding (2 adım) — tümü browser end-to-end geçti
+- **Onboarding flow:** Register → verify → login → /onboarding (otomatik redirect) → şube + opsiyonel vitrin → / dashboard
 - **Sandbox-ready integrations:** iyzico + Nilvera + Brevo (key gelince aktif)
 - **Memory:** test-first + ödeme integrity + sorusuz akış kuralları memory'de kayıtlı
 
@@ -128,12 +131,12 @@
 
 | Sprint | İçerik | Tahmin |
 |---|---|---|
-| **2.6** | Onboarding 3 adım wizard (ilk şube + ilk ürün + opsiyonel vitrin) | 1-2 saat |
-| 2.7 | Account locked page + 2+ remaining banner + brute-force banner UX (5 fail → 1h lock + email + Telegram) | 1-2 saat |
+| **2.7** | Account locked page + 2+ remaining banner + brute-force UX (5 fail → 1h lock + email + Telegram) | 1-2 saat |
 | 2.8 | Settings > Security: 2FA disable + recovery code regenerate (Sprint 9 settings'le birleşebilir) | 1 saat |
+| 1B | products + variants + branch_inventory + categories + brands + suppliers schema + 36 tablo komple | 3-4 saat |
+| 1B+ | Onboarding'e "İlk ürün" 3. adımı ekle (products tablosu hazır olunca) | 30 dk |
 | 14 sonu | Billing orchestrator (iyzico webhook → DB transaction → Nilvera invoice → audit) | 2-3 saat |
 | 14 sonu | E2E mock flow test (webhook → DB → invoice complete) | 1 saat |
-| 1B | Cities/Districts seed (Pet/'ten dönüşüm) + 36 tablo schema komple | 2-3 saat |
 
 ### 🔑 Bekleyen User Bloker
 
@@ -142,7 +145,7 @@
 - Brevo API key (production transactional email)
 - Supabase Pro tier upgrade ($25/ay, lansman öncesi)
 
-Hiçbiri Sprint 2.6 için bloker değil — devam edilebilir.
+Hiçbiri Sprint 2.7 için bloker değil — devam edilebilir.
 
 ## 🆕 2026-05-14 Karar Revizyonu (TR-only + 3-tier B geri açıldı) — OTORİTATİF
 

@@ -1,6 +1,25 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { eq } from 'drizzle-orm';
+import { auth } from '@/lib/auth/auth';
+import { db } from '@/lib/db/client';
+import { users } from '@/db/schema';
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth();
+
+  // Auth'lı user → onboardingCompletedAt kontrol → /onboarding redirect (eksikse)
+  if (session?.user?.id) {
+    const rows = await db
+      .select({ onboardingCompletedAt: users.onboardingCompletedAt })
+      .from(users)
+      .where(eq(users.id, session.user.id))
+      .limit(1);
+    if (rows[0] && !rows[0].onboardingCompletedAt) {
+      redirect('/onboarding' as never);
+    }
+  }
+
   return (
     <main className="flex flex-1 items-center justify-center px-6 py-16">
       <div className="max-w-2xl text-center">
