@@ -94,21 +94,54 @@
 - **Eski proje:** `D:/Projeler/Pet/` (PetToptan marketplace, legacy referans — yeni projeyle kod paylaşmıyor)
 - **Yeni proje:** `D:/Projeler/petstockpro/` (sıfırdan, TS stack)
 
-## ⏸ Şu Anki Durum: Tasarım Fazı Bitti, Sprint 0 Bekliyor
+## 🚀 Şu Anki Durum: Sprint 2.3 Tamamlandı (2026-05-15)
 
-Tasarım kapsamı %100 dokümante edildi. Kod yazımı henüz başlamadı.
+**Branch:** `cray61` — **14 commit ahead of origin** (push edilmedi, kullanıcı kararı bekliyor)
+**Test:** 281 passed (18 dosya, vitest)
+**Lint + typecheck:** 0 error
 
-### Tamamlanan
-- ✅ 19+ doküman `docs/` altında
-- ✅ 5 HTML mockup `preview/` altında (browser'da çalışıyor)
-- ✅ Logo `assets/logo/logo.png` ve `preview/logo.png`
-- ✅ `.env` (Supabase credentials yüklenmiş, **GİTLEMEYİN** — .gitignore'da)
-- ✅ `.claude/settings.local.json` (bash izinleri: npx, npm, git, node, mkdir, cp, ls, cat, wc)
-- ✅ **2026-05-13 ek kararlar** dokümantasyona entegre edildi (aşağıda)
+### ✅ Tamamlanan Sprint'ler
 
-### Beklemede
-- ⏭ **Sprint 0** — Next.js + Supabase + Drizzle + Auth.js + shadcn/ui project skeleton
-- ⏭ **Pet Shop Dizini** kararı **NETLEŞTİ** — `petstockpro.com/vitrin` **merkezi tek vitrin** (Sahibinden modeli). Tenant subdomain modeli iptal edildi. Bkz. EKRAN-PUBLIC-VITRIN.md (yeniden yazıldı 2026-05-13)
+| Sprint | Commit | İçerik |
+|---|---|---|
+| 0 bootstrap + hardening | 94b657b + aaeef4c | Next.js 16 + Drizzle + Auth.js + Tailwind v4 + vitest + 38 test |
+| 0 RLS baseline | (MCP) | 5 tablo RLS enabled, cities/districts public read |
+| 1A | a19b27b | Payment+audit schema (subscriptions/invoices/processed_webhooks/audit_logs) + 16 test |
+| 13 iyzico foundation | 4bd0cb0 | iyzipay@2.0.67 + config + client + Zod types + 19 test |
+| 13 iyzico operations | f7e0621 | subscription create/retrieve/cancel + webhook (signature+parse+eventId) + 36 test |
+| 14 Nilvera | c9092bd | HTTP client + retry + invoice create/retrieve/cancel + webhook + 51 test |
+| 2 Auth foundation | 3fdfccd | password (bcryptjs+HIBP) + brute-force + authorize + Auth.js full config + LoginPage React + browser test |
+| 2.2 Register | 33a5969 | registerNewTenant + RegisterPage + KVKK çift checkbox + 14 test + browser test |
+| 2.3a Email verify foundation | 4937317 | email-verification helper + Brevo client + templates + 42 test |
+| 2.3b Verify UI | e224ef9 | Schema migration (users +4 field) + register Brevo entegrasyon + /verify-email + /verify-email/[token] + browser test |
+
+### 🛠 Stack Çalışan Durumda
+
+- **DB:** Supabase Frankfurt EU (`rjzhnfqrynalklsnnuym`), 9 tablo, 3 migration, hepsi RLS enabled
+- **Auth flow MVP:** /login + /register + /verify-email + /verify-email/[token] — browser'da end-to-end test geçti
+- **Sandbox-ready integrations:** iyzico + Nilvera + Brevo (key gelince aktif)
+- **Memory:** test-first + ödeme integrity + sorusuz akış kuralları memory'de kayıtlı
+
+### ⏭ Sıradaki — Yeni Session
+
+| Sprint | İçerik | Tahmin |
+|---|---|---|
+| **2.4** | Forgot password + reset flow (schema 2 field + helper + 2 page + Brevo template) | 1-2 saat |
+| 2.5 | 2FA setup wizard (TOTP + QR + 8 recovery code) | 2-3 saat |
+| 2.6 | Onboarding 3 adım wizard | 1-2 saat |
+| 2.7 | Account locked page + 2+ remaining banner | 1 saat |
+| 14 sonu | Billing orchestrator (iyzico webhook → DB transaction → Nilvera invoice → audit) | 2-3 saat |
+| 14 sonu | E2E mock flow test (webhook → DB → invoice complete) | 1 saat |
+| 1B | Cities/Districts seed (Pet/'ten dönüşüm) + 36 tablo schema komple | 2-3 saat |
+
+### 🔑 Bekleyen User Bloker
+
+- iyzico sandbox + production API key (kullanıcı canlıya çıkmadan verecek)
+- Nilvera API key + mali mühür sertifikası (şirket kuruluş sonrası)
+- Brevo API key (production transactional email)
+- Supabase Pro tier upgrade ($25/ay, lansman öncesi)
+
+Hiçbiri Sprint 2.4 için bloker değil — devam edilebilir.
 
 ## 🆕 2026-05-14 Karar Revizyonu (TR-only + 3-tier B geri açıldı) — OTORİTATİF
 
