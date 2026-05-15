@@ -1,29 +1,70 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { eq, asc } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { listProducts } from '@/lib/catalog/products';
+import { categories, brands } from '@/db/schema';
 import { ListRowToggle } from './list-row-toggle';
+import { FilterBar } from './filter-bar';
 
 /**
- * /admin/products — Sprint 3.0 minimal list
+ * /admin/products list page.
  *
- * Server component: products list table.
- * Sprint 3.1+: search/filter/pagination + bulk actions + grid view.
+ * Sprint 3.5: search (?q=) + category/brand/status/vitrin filters.
+ * Sprint 3.6+: pagination + bulk actions.
  */
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ created?: string; updated?: string; deleted?: string }>;
+  searchParams: Promise<{
+    created?: string;
+    updated?: string;
+    deleted?: string;
+    q?: string;
+    category?: string;
+    brand?: string;
+    status?: 'active' | 'inactive' | 'all';
+    vitrin?: 'on' | 'off';
+  }>;
 }) {
   const session = await auth();
   if (!session?.user?.companyId) {
     redirect('/login' as never);
   }
 
-  const items = await listProducts(session.user.companyId, db);
   const params = await searchParams;
   const justCreated = params.created === 'success';
+
+  // Parallel: filtered list + filter options (category + brand)
+  const [items, categoryOptions, brandOptions] = await Promise.all([
+    listProducts(session.user.companyId, db, {
+      query: params.q,
+      categoryId: params.category,
+      brandId: params.brand,
+      status: params.status,
+      vitrinPublished:
+        params.vitrin === 'on' ? true : params.vitrin === 'off' ? false : undefined,
+      limit: 100,
+    }),
+    db
+      .select({ id: categories.id, name: categories.name, emoji: categories.emoji })
+      .from(categories)
+      .where(eq(categories.companyId, session.user.companyId))
+      .orderBy(asc(categories.displayOrder)),
+    db
+      .select({ id: brands.id, name: brands.name })
+      .from(brands)
+      .where(eq(brands.companyId, session.user.companyId))
+      .orderBy(asc(brands.name)),
+  ]);
+
+  const hasActiveFilter =
+    !!params.q ||
+    !!params.category ||
+    !!params.brand ||
+    !!params.status ||
+    !!params.vitrin;
 
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-12">
@@ -36,7 +77,8 @@ export default async function ProductsPage({
             Ürün kataloğun
           </h1>
           <p className="mt-1 text-sm text-ink-3">
-            {items.length} ürün · FREE plan 50 ürün limit
+            {items.length} ürün
+            {hasActiveFilter ? ' (filtreli)' : ' · FREE plan 50 ürün limit'}
           </p>
         </div>
         <Link
@@ -65,18 +107,34 @@ export default async function ProductsPage({
         </div>
       )}
 
+      <FilterBar
+        categories={categoryOptions}
+        brands={brandOptions}
+        initial={{
+          q: params.q ?? '',
+          category: params.category ?? '',
+          brand: params.brand ?? '',
+          status: params.status ?? 'all',
+          vitrin: params.vitrin ?? '',
+        }}
+      />
+
       {items.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-line bg-paper py-16 text-center">
           <div className="text-6xl">🐾</div>
-          <h2 className="mt-4 text-xl font-bold text-cart">Henüz ürün yok</h2>
+          <h2 className="mt-4 text-xl font-bold text-cart">
+            {hasActiveFilter ? 'Filtreye uyan ürün yok' : 'Henüz ürün yok'}
+          </h2>
           <p className="mt-2 text-sm text-ink-3">
-            İlk ürününü ekleyerek başla — Royal Canin 2kg, kedi kumu, oyuncak vs.
+            {hasActiveFilter
+              ? 'Filtreleri temizle veya farklı bir arama dene.'
+              : 'İlk ürününü ekleyerek başla — Royal Canin 2kg, kedi kumu, oyuncak vs.'}
           </p>
           <Link
-            href={'/admin/products/new' as never}
+            href={hasActiveFilter ? ('/admin/products' as never) : ('/admin/products/new' as never)}
             className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-cat to-cat-2 px-5 py-2.5 text-sm font-bold text-white shadow-[var(--shadow-cat)]"
           >
-            + İlk ürünü ekle
+            {hasActiveFilter ? '× Filtreyi temizle' : '+ İlk ürünü ekle'}
           </Link>
         </div>
       ) : (

@@ -148,12 +148,57 @@ export interface ProductListItem {
   createdAt: Date;
 }
 
+export interface ListProductsOptions {
+  /** Ürün adı veya SKU içinde geçen — ILIKE substring (case-insensitive) */
+  query?: string;
+  categoryId?: string;
+  brandId?: string;
+  /** 'active' yalnız aktifler / 'inactive' yalnız pasifler / 'all' hepsi */
+  status?: 'active' | 'inactive' | 'all';
+  vitrinPublished?: boolean;
+  limit?: number;
+}
+
 export async function listProducts(
   companyId: string,
   db: DbClient,
-  limit: number = 50,
+  opts: ListProductsOptions = {},
 ): Promise<ProductListItem[]> {
-  // Drizzle SQL — products + category name + brand name + default variant price + variant count
+  const conditions = [
+    eq(products.companyId, companyId),
+    sql`${products.deletedAt} IS NULL`,
+  ];
+
+  if (opts.query && opts.query.trim().length > 0) {
+    const pattern = `%${opts.query.trim()}%`;
+    conditions.push(
+      sql`(
+        ${products.name} ILIKE ${pattern}
+        OR EXISTS (
+          SELECT 1 FROM ${productVariants} pv
+          WHERE pv.product_id = ${products.id}
+            AND pv.sku ILIKE ${pattern}
+        )
+      )`,
+    );
+  }
+  if (opts.categoryId) {
+    conditions.push(eq(products.categoryId, opts.categoryId));
+  }
+  if (opts.brandId) {
+    conditions.push(eq(products.brandId, opts.brandId));
+  }
+  if (opts.status === 'active') {
+    conditions.push(eq(products.isActive, true));
+  } else if (opts.status === 'inactive') {
+    conditions.push(eq(products.isActive, false));
+  }
+  if (opts.vitrinPublished === true) {
+    conditions.push(eq(products.vitrinPublished, true));
+  } else if (opts.vitrinPublished === false) {
+    conditions.push(eq(products.vitrinPublished, false));
+  }
+
   const rows = await db
     .select({
       id: products.id,
@@ -182,9 +227,9 @@ export async function listProducts(
     .from(products)
     .leftJoin(categories, eq(categories.id, products.categoryId))
     .leftJoin(brands, eq(brands.id, products.brandId))
-    .where(and(eq(products.companyId, companyId), sql`${products.deletedAt} IS NULL`))
+    .where(and(...conditions))
     .orderBy(desc(products.createdAt))
-    .limit(limit);
+    .limit(opts.limit ?? 50);
 
   return rows;
 }
