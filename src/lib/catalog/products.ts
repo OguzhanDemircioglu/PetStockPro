@@ -188,3 +188,207 @@ export async function listProducts(
 
   return rows;
 }
+
+// ─────────────────────────────────────────────────────────────────
+// DETAIL + EDIT (Sprint 3.1)
+// ─────────────────────────────────────────────────────────────────
+
+export interface ProductDetail {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  categoryId: string | null;
+  brandId: string | null;
+  isActive: boolean;
+  vitrinPublished: boolean;
+  defaultVariant: {
+    id: string;
+    valueLabel: string;
+    sku: string;
+    barcode: string | null;
+    costPrice: string;
+    salePrice: string;
+    threshold: number;
+  } | null;
+}
+
+/**
+ * Tek ürün + default variant detayı. Edit page server-side load için.
+ */
+export async function getProductDetail(
+  companyId: string,
+  productId: string,
+  db: DbClient,
+): Promise<ProductDetail | null> {
+  const productRows = await db
+    .select({
+      id: products.id,
+      name: products.name,
+      slug: products.slug,
+      description: products.description,
+      categoryId: products.categoryId,
+      brandId: products.brandId,
+      isActive: products.isActive,
+      vitrinPublished: products.vitrinPublished,
+    })
+    .from(products)
+    .where(
+      and(
+        eq(products.companyId, companyId),
+        eq(products.id, productId),
+        sql`${products.deletedAt} IS NULL`,
+      ),
+    )
+    .limit(1);
+
+  const product = productRows[0];
+  if (!product) return null;
+
+  const variantRows = await db
+    .select({
+      id: productVariants.id,
+      valueLabel: productVariants.valueLabel,
+      sku: productVariants.sku,
+      barcode: productVariants.barcode,
+      costPrice: productVariants.costPrice,
+      salePrice: productVariants.salePrice,
+      threshold: productVariants.threshold,
+    })
+    .from(productVariants)
+    .where(
+      and(
+        eq(productVariants.productId, productId),
+        eq(productVariants.isDefault, true),
+      ),
+    )
+    .limit(1);
+
+  return {
+    ...product,
+    defaultVariant: variantRows[0] ?? null,
+  };
+}
+
+export const updateProductSchema = z.object({
+  name: z.string().min(3, 'Ürün adı en az 3 karakter').max(255),
+  description: z.string().max(2000).nullable().optional(),
+  categoryId: z.string().uuid().nullable().optional(),
+  brandId: z.string().uuid().nullable().optional(),
+  isActive: z.boolean().optional(),
+  variant: z.object({
+    valueLabel: z.string().min(1).max(50),
+    sku: z.string().min(1).max(100),
+    barcode: z.string().max(13).nullable().optional(),
+    costPrice: z.string().regex(/^\d+(\.\d{1,2})?$/),
+    salePrice: z.string().regex(/^\d+(\.\d{1,2})?$/),
+    threshold: z.number().int().min(0).max(9999),
+  }),
+});
+
+export type UpdateProductInput = z.input<typeof updateProductSchema>;
+
+export type UpdateProductResult =
+  | { ok: true }
+  | { ok: false; reason: 'invalid_input' | 'not_found' | 'sku_taken' | 'unknown'; issues?: string[] };
+
+export async function updateProduct(
+  companyId: string,
+  productId: string,
+  variantId: string,
+  input: UpdateProductInput,
+  db: DbClient,
+  now: Date = new Date(),
+): Promise<UpdateProductResult> {
+  const parsed = updateProductSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, reason: 'invalid_input', issues: parsed.error.issues.map((i) => i.message) };
+  }
+  const data = parsed.data;
+
+  // Mevcut product check (tenant izolasyonu)
+  const existing = await db
+    .select({ id: products.id })
+    .from(products)
+    .where(
+      and(
+        eq(products.id, productId),
+        eq(products.companyId, companyId),
+        sql`${products.deletedAt} IS NULL`,
+      ),
+    )
+    .limit(1);
+  if (existing.length === 0) {
+    return { ok: false, reason: 'not_found' };
+  }
+
+  // SKU çakışma kendi variantId hariç
+  const skuConflict = await db
+    .select({ id: productVariants.id })
+    .from(productVariants)
+    .where(
+      and(
+        eq(productVariants.companyId, companyId),
+        eq(productVariants.sku, data.variant.sku),
+        sql`${productVariants.id} != ${variantId}`,
+      ),
+    )
+    .limit(1);
+  if (skuConflict.length > 0) {
+    return { ok: false, reason: 'sku_taken' };
+  }
+
+  try {
+    await db.transaction(async (tx) => {
+      await tx
+        .update(products)
+        .set({
+          name: data.name,
+          description: data.description ?? null,
+          categoryId: data.categoryId ?? null,
+          brandId: data.brandId ?? null,
+          isActive: data.isActive ?? true,
+          updatedAt: now,
+        })
+        .where(eq(products.id, productId));
+
+      await tx
+        .update(productVariants)
+        .set({
+          valueLabel: data.variant.valueLabel,
+          sku: data.variant.sku,
+          barcode: data.variant.barcode ?? null,
+          costPrice: data.variant.costPrice,
+          salePrice: data.variant.salePrice,
+          threshold: data.variant.threshold,
+          updatedAt: now,
+        })
+        .where(eq(productVariants.id, variantId));
+    });
+    return { ok: true };
+  } catch {
+    return { ok: false, reason: 'unknown' };
+  }
+}
+
+/**
+ * Soft delete — products.deletedAt = now.
+ * Variant + branch_inventory + stock_movements korunur (audit + raporlar için).
+ */
+export async function softDeleteProduct(
+  companyId: string,
+  productId: string,
+  db: DbClient,
+  now: Date = new Date(),
+): Promise<{ ok: boolean }> {
+  await db
+    .update(products)
+    .set({
+      deletedAt: now,
+      isActive: false,
+      vitrinPublished: false,
+      updatedAt: now,
+    })
+    .where(and(eq(products.id, productId), eq(products.companyId, companyId)));
+  return { ok: true };
+}

@@ -13,7 +13,7 @@ import { listProducts } from '@/lib/catalog/products';
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ created?: string }>;
+  searchParams: Promise<{ created?: string; updated?: string; deleted?: string }>;
 }) {
   const session = await auth();
   if (!session?.user?.companyId) {
@@ -52,6 +52,18 @@ export default async function ProductsPage({
         </div>
       )}
 
+      {params.updated === 'success' && (
+        <div className="rounded-xl border border-arrow/40 bg-arrow-soft px-4 py-3 text-sm font-bold text-arrow-7">
+          ✅ Ürün güncellendi.
+        </div>
+      )}
+
+      {params.deleted === 'success' && (
+        <div className="rounded-xl border border-cat/40 bg-cat-soft px-4 py-3 text-sm font-bold text-cart">
+          🗑 Ürün silindi (soft delete — raporlarda görünür).
+        </div>
+      )}
+
       {items.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-line bg-paper py-16 text-center">
           <div className="text-6xl">🐾</div>
@@ -84,7 +96,12 @@ export default async function ProductsPage({
               {items.map((item) => (
                 <tr key={item.id} className={`hover:bg-line-soft ${!item.isActive ? 'opacity-50' : ''}`}>
                   <td className="px-4 py-3">
-                    <div className="font-bold text-ink">{item.name}</div>
+                    <Link
+                      href={`/admin/products/${item.id}/edit` as never}
+                      className="font-bold text-ink hover:text-cart"
+                    >
+                      {item.name}
+                    </Link>
                     <div className="font-mono text-[10.5px] text-ink-4">{item.slug}</div>
                   </td>
                   <td className="px-4 py-3 text-ink-2">{item.categoryName ?? '—'}</td>

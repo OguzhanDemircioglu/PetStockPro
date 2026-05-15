@@ -94,9 +94,9 @@
 - **Eski proje:** `D:/Projeler/Pet/` (PetToptan marketplace, legacy referans — yeni projeyle kod paylaşmıyor)
 - **Yeni proje:** `D:/Projeler/petstockpro/` (sıfırdan, TS stack)
 
-## 🚀 Şu Anki Durum: Sprint 3.0 Tamamlandı (2026-05-15)
+## 🚀 Şu Anki Durum: Sprint 3.1 Tamamlandı (2026-05-15)
 
-**Branch:** `cray61` — **22 commit ahead of origin** (push edilmedi, kullanıcı kararı bekliyor)
+**Branch:** `cray61` — **23 commit ahead of origin** (push edilmedi, kullanıcı kararı bekliyor)
 **Test:** 424 passed (28 dosya, vitest)
 **Lint + typecheck:** 0 error
 **Seed:** 81 il + 974 ilçe + 16 default category (her yeni tenant'a otomatik)
@@ -124,6 +124,7 @@
 | 2.9 Email Change | (yeni) | Schema migration 0006 (users +3 field: pendingEmail varchar + pendingEmailToken + pendingEmailExpiresAt 24h TTL) + lib/auth/change-email.ts (initEmailChange password re-auth + same/taken check + 2 Brevo email; verifyEmailChange email=pendingEmail + final notify; cancelEmailChange Telegram critical alert) + 3 Brevo template (buildEmailChangeRequestNewTemplate doğrula CTA + buildEmailChangeNotifyOldTemplate "İptal Et" CTA + buildEmailChangedFinalTemplate eski email final notify) + buildEmailChangeCancelledAlert Telegram critical (hesap ele geçirme şüphesi) + /admin/account (server gate + collapsible form: yeni email + şifre re-auth + dual-email uyarı) + /verify-email-change/[token] server (email finalize + final email) + /cancel-email-change/[token] server (pendingEmail NULL + Telegram alert + Şifremi Sıfırla CTA + saldırı şüphesi banner) + 19 test (12 change-email helper + 7 brevo templates) + browser full flow (init → 2 email log → cancel link → "iptal edildi" UI + 🚨 CRITICAL Telegram log → ikinci init → verify link → "değiştirildi" UI + final notify → yeni email ile login OK → eski email reject) |
 | 1B.1 Catalog + Stock Foundation | (yeni) | Schema migration 0007: 5 enum (animal_type 7 değer + movement_type 5 değer + movement_subtype 7 değer + payment_method 4 değer + supplier_payment_terms 4 değer) + 8 tablo (categories: parent self-ref + slug unique per tenant + vatRate %10/%20 + sktRequired; brands: slug unique; suppliers: vatNo + leadTime + paymentTerms + IBAN; products: parent vitrinPublished + categoryId/brandId nullable + animalTypes jsonb + soft delete + denormalize totalStockQty; product_variants: SKU unique per tenant + costPrice/salePrice + threshold per branch jsonb + isDefault tek "default" variant; product_images: isPrimary + displayOrder; branch_inventory: (branchId, variantId) unique + stockQty + expiryDate; stock_movements: immutable ledger + type+subtype + transferGroupId + reversesId/reversedById + payment_method credit veresiye + audit superadmin) + 18 index (FK + slug unique + barcode + low-stock + transfer-group + vitrin partial) + lib/catalog/default-categories.ts (16 kategori: kuru-mama/yas-mama/odul-snack %10 KDV, aksesuar+oyuncak+sağlık %20 KDV; mama+ilaç+şampuan SKT) + seedDefaultCategoriesForCompany helper + 10 test (DEFAULT_CATEGORIES shape: 16 unique slug + kebab-case + vatRate 10/20 + 3 food %10 + 5+ SKT + diger displayOrder=99 + emoji + 1-15+99 sıralama; seed helper companyId rows insert) + UI/seed entegrasyonu **Sprint 3+ (ürün CRUD UI)** — schema + foundation hazır, register'da otomatik seed sonra |
 | 3.0 Product CRUD Minimal | (yeni) | lib/catalog/products.ts (createProduct: Zod validate + slug üret + SKU çakışma check + Drizzle transaction product + default variant; listProducts: leftJoin category/brand + variantCount subquery + defaultSalePrice subquery + soft delete filter) + Register entegrasyonu (16 default category transaction içinde INSERT — yeni tenant otomatik kategori) + /admin/products list (empty state mascot + table: name+slug, category, brand, variant count, stock 0 highlight, default sale price, vitrin badge) + /admin/products/new (server SSR: 16 kategori + 0 marka load + emoji prefix; client 2-section form: temel bilgiler + variant SKU/cost/sale/threshold; collapse Sprint 3.1+'da: 6 daha section) + Onboarding wizard 3 step'e büyüdü (Step 1 şube + Step 2 ilk ürün opsiyonel/atla + Step 3 vitrin opsiyonel/atla — step indicator + getCalls otomatik wizard navigation) + firstProductAction (skip ya da create) + browser full flow (yeni user register → verify → login → /onboarding Step 1 İzmir+ilçe → Step 2 Royal Canin 2kg 180₺ → Step 3 vitrin atla → /?onboarding=skipped-storefront → /admin/products list 1 ürün → /admin/products/new ikinci ürün Mama Kabı kategori + 2499.99₺ → list 2 satır → duplicate SKU reject "Bu SKU zaten kullanılıyor") + 0 yeni test (mevcut 14 register testi yeni category INSERT chain ile yeşil kaldı, 424 total) — **NOT:** Edit/delete/image upload/Satışa Aç toggle Sprint 3.1+ |
+| 3.1 Product Edit + Soft Delete | (yeni) | lib/catalog/products.ts: getProductDetail (product + default variant join + soft delete filter) + updateProduct (Zod validate + ownership check + SKU çakışma kendi variantId hariç + Drizzle transaction product+variant) + softDeleteProduct (deletedAt + isActive=false + vitrinPublished=false) + /admin/products/[id]/edit (server SSR: product detail + categories+brands; client 2-section form pre-populated; update action bound productId/variantId; delete form ayrı section) + List'te edit linkleri (name → /edit) + updated=success + deleted=success banner'lar + browser full flow (edit name+price → ✅ banner + list updated → duplicate SKU edit reject "başka variant kullanıyor" → soft delete → 🗑 banner + list 1 satıra düştü) + 424 test passing (lint+typecheck temiz, helper testleri Sprint 3.2'de) — **NOT:** Multi-variant editor Sprint 3.2, image upload Sprint 3.3, Satışa Aç toggle Sprint 3.4 |
 
 ### 🛠 Stack Çalışan Durumda
 
@@ -139,8 +140,9 @@
 
 | Sprint | İçerik | Tahmin |
 |---|---|---|
-| **3.1** | Product edit + delete + multi-variant editor (variant ekle/sil/sırala) + image upload (Supabase Storage) | 3-4 saat |
-| 3.2 | Satışa Aç toggle + Doğrula validation gate (vitrin için: en az 1 görsel + makul fiyat + vergi no) | 2 saat |
+| **3.2** | Multi-variant editor (variant ekle/sil/sırala, isDefault toggle, branch_thresholds jsonb) | 2-3 saat |
+| 3.3 | Image upload — Supabase Storage bucket + signed URL + thumbnail + product_images CRUD | 2-3 saat |
+| 3.4 | Satışa Aç toggle + Doğrula validation gate (vitrin için: en az 1 görsel + makul fiyat + vergi no) | 2 saat |
 | 4 | Stok hareketleri UI + immutable ledger (4 drawer: stock-in/out/transfer/stocktake) + trigger'lar (append-only, branch_inventory auto-update, stock-0 vitrin çekme) | 3-4 saat |
 | 1B.2 | stocktakes + stocktake_items + sessions (Auth.js Drizzle adapter) + vitrin_events tablolar | 1-2 saat |
 | 2.10 | Settings sidebar layout (account / security / billing) — Sprint 9 ile birleşebilir | 1-2 saat |
@@ -156,7 +158,7 @@
 - Brevo API key (production transactional email)
 - Supabase Pro tier upgrade ($25/ay, lansman öncesi)
 
-Hiçbiri Sprint 3.1 için bloker değil — devam edilebilir.
+Hiçbiri Sprint 3.2 için bloker değil — devam edilebilir.
 
 ## 🆕 2026-05-14 Karar Revizyonu (TR-only + 3-tier B geri açıldı) — OTORİTATİF
 
