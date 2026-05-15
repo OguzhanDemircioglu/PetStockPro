@@ -8,16 +8,23 @@ import {
   recordStockIn,
   recordStockOut,
   recordTransfer,
+  recordStocktakeAdjustment,
   type StockMovementResult,
   type TransferResult,
+  type StocktakeResult,
 } from '@/lib/stock/movements';
 
 export interface MovementActionState {
   ok: boolean;
-  scope: 'stock_in' | 'stock_out' | 'transfer' | null;
+  scope: 'stock_in' | 'stock_out' | 'transfer' | 'stocktake' | null;
   message: string | null;
   issues: string[];
-  meta: { available?: number; requested?: number; afterQty?: number } | null;
+  meta: {
+    available?: number;
+    requested?: number;
+    afterQty?: number;
+    delta?: number;
+  } | null;
 }
 
 const EMPTY: MovementActionState = {
@@ -44,31 +51,38 @@ function reasonToMessage(reason: string, fallback: string): string {
     not_found: 'Variant veya şube bulunamadı',
     insufficient_stock: 'Yetersiz stok',
     invalid_state: 'Geçersiz durum',
+    no_change: 'Sayım sistemdeki miktarla aynı — düzeltme yok',
     unknown: 'Kaydedilemedi, tekrar dene',
   };
   return map[reason] ?? fallback;
 }
 
-function buildState<R extends StockMovementResult | TransferResult>(
+function buildState<
+  R extends StockMovementResult | TransferResult | StocktakeResult,
+>(
   scope: NonNullable<MovementActionState['scope']>,
   result: R,
 ): MovementActionState {
   if (result.ok) {
     const afterQty = 'afterQty' in result ? result.afterQty : undefined;
+    const delta = 'delta' in result ? result.delta : undefined;
     return {
       ok: true,
       scope,
       message: 'Kaydedildi',
       issues: [],
-      meta: afterQty !== undefined ? { afterQty } : null,
+      meta:
+        afterQty !== undefined || delta !== undefined
+          ? { afterQty, delta }
+          : null,
     };
   }
   return {
     ...EMPTY,
     scope,
     message: reasonToMessage(result.reason, 'Hata'),
-    issues: result.issues ?? [],
-    meta: result.meta ?? null,
+    issues: 'issues' in result ? result.issues ?? [] : [],
+    meta: 'meta' in result ? result.meta ?? null : null,
   };
 }
 
@@ -237,4 +251,43 @@ export async function transferAction(
     revalidatePath('/admin/products');
   }
   return buildState('transfer', result);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// STOCKTAKE — sayım sonucu düzeltme
+// ─────────────────────────────────────────────────────────────────
+
+export async function stocktakeAction(
+  _prev: MovementActionState | null,
+  formData: FormData,
+): Promise<MovementActionState> {
+  const session = await auth();
+  if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+
+  const branchId = asStr(formData.get('branchId'));
+  const variantId = asStr(formData.get('variantId'));
+  const countedQty = asInt(formData.get('countedQty'));
+  const reason = asStr(formData.get('reason'));
+  const note = asStr(formData.get('note'));
+
+  if (!branchId || !variantId || countedQty === null) {
+    return {
+      ...EMPTY,
+      scope: 'stocktake',
+      message: 'Şube, variant ve sayım miktarı zorunlu',
+    };
+  }
+
+  const result = await recordStocktakeAdjustment(
+    session.user.companyId,
+    session.user.id,
+    { branchId, variantId, countedQty, reason, note },
+    db,
+  );
+
+  if (result.ok) {
+    revalidatePath('/admin/stock-movements');
+    revalidatePath('/admin/products');
+  }
+  return buildState('stocktake', result);
 }

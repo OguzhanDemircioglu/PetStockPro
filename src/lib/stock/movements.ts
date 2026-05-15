@@ -454,6 +454,109 @@ export async function recordStockOut(
 }
 
 // ─────────────────────────────────────────────────────────────────
+// STOCKTAKE — sayım sonucu düzeltme
+// ─────────────────────────────────────────────────────────────────
+
+export const stocktakeAdjustmentSchema = baseContextSchema.extend({
+  countedQty: z.number().int().min(0).max(1_000_000),
+  reason: z.string().max(500).nullable().optional(),
+});
+
+export type StocktakeAdjustmentInput = z.input<typeof stocktakeAdjustmentSchema>;
+
+export type StocktakeResult =
+  | { ok: true; movementId: string; delta: number; afterQty: number }
+  | {
+      ok: false;
+      reason: 'invalid_input' | 'not_found' | 'no_change' | 'unknown';
+      issues?: string[];
+    };
+
+/**
+ * Sayım sırasında bulunan miktar ile sistemdeki miktar arasındaki farkı
+ * stock_movements'a 'stocktake' türünde kayıt yazar. delta = counted - current.
+ *
+ * - delta=0 → no_change (kayıt yapılmaz, çağıran biliyor olmalı).
+ * - delta+ → giriş yönlü düzeltme (eksik sayım hatası).
+ * - delta- → çıkış yönlü düzeltme (fazla sayım hatası); branch_inventory
+ *   stockQty=countedQty olarak doğrudan set edilir, eksiye düşmez (countedQty
+ *   negatif olamaz Zod gate ile).
+ *
+ * vitrin auto-unpublish stock-out yönüne benzer: countedQty=0 + vitrinPublished
+ * → auto-unpublish trigger'lanır.
+ */
+export async function recordStocktakeAdjustment(
+  companyId: string,
+  userId: string,
+  input: StocktakeAdjustmentInput,
+  db: DbClient,
+  now: Date = new Date(),
+): Promise<StocktakeResult> {
+  const parsed = stocktakeAdjustmentSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      reason: 'invalid_input',
+      issues: parsed.error.issues.map((i) => i.message),
+    };
+  }
+  const data = parsed.data;
+
+  const info = await fetchVariantStockInfo(
+    companyId,
+    data.branchId,
+    data.variantId,
+    db,
+  );
+  if (!info) return { ok: false, reason: 'not_found' };
+
+  const beforeQty = info.currentQty;
+  const delta = data.countedQty - beforeQty;
+  if (delta === 0) {
+    return { ok: false, reason: 'no_change' };
+  }
+
+  const isOutgoing = delta < 0;
+  const afterQty = data.countedQty;
+
+  try {
+    const movementId = await db.transaction(async (tx) => {
+      const [m] = await tx
+        .insert(stockMovements)
+        .values({
+          companyId,
+          branchId: data.branchId,
+          variantId: data.variantId,
+          type: 'stocktake',
+          subtype: null,
+          quantity: delta,
+          beforeQty,
+          afterQty,
+          reason: data.reason ?? null,
+          note: data.note ?? null,
+          createdById: userId,
+          createdAt: now,
+        })
+        .returning({ id: stockMovements.id });
+
+      await applyInventoryChange(
+        tx as unknown as DbClient,
+        info,
+        delta,
+        info.productId,
+        now,
+        isOutgoing,
+      );
+      return m.id;
+    });
+
+    return { ok: true, movementId, delta, afterQty };
+  } catch {
+    return { ok: false, reason: 'unknown' };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
 // TRANSFER — iki entry, aynı transferGroupId
 // ─────────────────────────────────────────────────────────────────
 

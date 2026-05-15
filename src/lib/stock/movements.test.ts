@@ -3,10 +3,12 @@ import {
   recordStockIn,
   recordStockOut,
   recordTransfer,
+  recordStocktakeAdjustment,
   InsufficientStockError,
   stockInSchema,
   stockOutSchema,
   transferSchema,
+  stocktakeAdjustmentSchema,
 } from './movements';
 import type { DbClient } from '@/lib/db/client';
 
@@ -603,6 +605,157 @@ describe('recordTransfer', () => {
         variantId: VARIANT,
         quantity: 5,
       },
+      db,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe('not_found');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// recordStocktakeAdjustment
+// ─────────────────────────────────────────────────────────────────
+
+describe('stocktakeAdjustmentSchema', () => {
+  it('countedQty 0 kabul', () => {
+    const res = stocktakeAdjustmentSchema.safeParse({
+      branchId: BRANCH,
+      variantId: VARIANT,
+      countedQty: 0,
+    });
+    expect(res.success).toBe(true);
+  });
+
+  it('countedQty negatif reddedilir', () => {
+    const res = stocktakeAdjustmentSchema.safeParse({
+      branchId: BRANCH,
+      variantId: VARIANT,
+      countedQty: -1,
+    });
+    expect(res.success).toBe(false);
+  });
+});
+
+describe('recordStocktakeAdjustment', () => {
+  it('eksik sayım (delta +) → stock_in yönlü düzeltme', async () => {
+    const select = makeSelectChain([
+      [
+        {
+          variantId: VARIANT,
+          productId: PRODUCT,
+          variantCompanyId: COMPANY,
+          branchCompanyId: COMPANY,
+          currentQty: 8,
+          inventoryRowId: 'inv-1',
+        },
+      ],
+    ]);
+    const { tx, insertImpl, updateImpl } = makeTxMock();
+    const transaction = vi
+      .fn()
+      .mockImplementation(async (cb: (t: unknown) => Promise<unknown>) => cb(tx));
+    const db = { select, transaction } as unknown as DbClient;
+
+    const result = await recordStocktakeAdjustment(
+      COMPANY,
+      USER,
+      { branchId: BRANCH, variantId: VARIANT, countedQty: 10 },
+      db,
+      NOW,
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.delta).toBe(2);
+      expect(result.afterQty).toBe(10);
+    }
+    expect(insertImpl).toHaveBeenCalledTimes(1);
+    expect(updateImpl).toHaveBeenCalledTimes(2); // inventory + product totalStockQty
+  });
+
+  it('fazla sayım (delta -) → stock_out yönlü, auto-unpublish tetiklenebilir', async () => {
+    const select = makeSelectChain([
+      [
+        {
+          variantId: VARIANT,
+          productId: PRODUCT,
+          variantCompanyId: COMPANY,
+          branchCompanyId: COMPANY,
+          currentQty: 5,
+          inventoryRowId: 'inv-1',
+        },
+      ],
+    ]);
+    const { tx, updateImpl } = makeTxMock();
+    const transaction = vi
+      .fn()
+      .mockImplementation(async (cb: (t: unknown) => Promise<unknown>) => cb(tx));
+    const db = { select, transaction } as unknown as DbClient;
+
+    const result = await recordStocktakeAdjustment(
+      COMPANY,
+      USER,
+      {
+        branchId: BRANCH,
+        variantId: VARIANT,
+        countedQty: 3,
+        reason: 'Sayımda 3 bulundu',
+      },
+      db,
+      NOW,
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.delta).toBe(-2);
+    // 3 update: inventory + totalStockQty + auto-unpublish kontrolü
+    expect(updateImpl).toHaveBeenCalledTimes(3);
+  });
+
+  it('delta 0 → no_change (kayıt yok)', async () => {
+    const select = makeSelectChain([
+      [
+        {
+          variantId: VARIANT,
+          productId: PRODUCT,
+          variantCompanyId: COMPANY,
+          branchCompanyId: COMPANY,
+          currentQty: 10,
+          inventoryRowId: 'inv-1',
+        },
+      ],
+    ]);
+    const db = { select, transaction: vi.fn() } as unknown as DbClient;
+
+    const result = await recordStocktakeAdjustment(
+      COMPANY,
+      USER,
+      { branchId: BRANCH, variantId: VARIANT, countedQty: 10 },
+      db,
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe('no_change');
+  });
+
+  it('variant başka tenant → not_found', async () => {
+    const select = makeSelectChain([
+      [
+        {
+          variantId: VARIANT,
+          productId: PRODUCT,
+          variantCompanyId: 'other',
+          branchCompanyId: COMPANY,
+          currentQty: 5,
+          inventoryRowId: null,
+        },
+      ],
+    ]);
+    const db = { select } as unknown as DbClient;
+
+    const result = await recordStocktakeAdjustment(
+      COMPANY,
+      USER,
+      { branchId: BRANCH, variantId: VARIANT, countedQty: 7 },
       db,
     );
     expect(result.ok).toBe(false);

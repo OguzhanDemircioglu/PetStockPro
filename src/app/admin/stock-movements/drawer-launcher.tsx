@@ -9,8 +9,9 @@ import type {
 import { StockInDrawer } from './stock-in-drawer';
 import { StockOutDrawer } from './stock-out-drawer';
 import { TransferDrawer } from './transfer-drawer';
+import { StocktakeDrawer } from './stocktake-drawer';
 
-type DrawerKind = 'stock_in' | 'stock_out' | 'transfer' | null;
+type DrawerKind = 'stock_in' | 'stock_out' | 'transfer' | 'stocktake' | null;
 
 interface Props {
   branches: BranchOption[];
@@ -55,6 +56,14 @@ export function DrawerLauncher({ branches, variants, suppliers }: Props) {
         >
           🔁 Transfer
         </LaunchButton>
+        <LaunchButton
+          onClick={() => setOpen('stocktake')}
+          disabled={disabled}
+          className="border-2 border-line bg-white text-cart hover:bg-line-soft"
+          testid="open-stocktake"
+        >
+          📋 Sayım
+        </LaunchButton>
       </div>
 
       {open === 'stock_in' && (
@@ -74,6 +83,13 @@ export function DrawerLauncher({ branches, variants, suppliers }: Props) {
       )}
       {open === 'transfer' && (
         <TransferDrawer
+          branches={branches}
+          variants={variants}
+          onClose={() => setOpen(null)}
+        />
+      )}
+      {open === 'stocktake' && (
+        <StocktakeDrawer
           branches={branches}
           variants={variants}
           onClose={() => setOpen(null)}
