@@ -69,13 +69,22 @@ export default async function LowStockPage() {
                     {group.variantLabel} · <span className="font-mono">SKU {group.sku}</span>
                   </div>
                 </div>
-                <Link
-                  href={`/admin/stock-movements` as never}
-                  className="rounded-xl bg-gradient-to-br from-arrow to-arrow-2 px-4 py-2 text-xs font-bold text-white shadow-sm hover:-translate-y-0.5 transition-transform"
-                  data-testid={`stock-in-${variantId}`}
-                >
-                  📥 Stok girişi yap →
-                </Link>
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    href={`/admin/stock-movements?variant=${variantId}` as never}
+                    className="rounded-xl border border-line bg-white px-3 py-2 text-[11px] font-bold text-cart hover:bg-cat-soft"
+                    data-testid={`history-${variantId}`}
+                  >
+                    🕒 Geçmiş
+                  </Link>
+                  <Link
+                    href={`/admin/stock-movements` as never}
+                    className="rounded-xl bg-gradient-to-br from-arrow to-arrow-2 px-4 py-2 text-xs font-bold text-white shadow-sm hover:-translate-y-0.5 transition-transform"
+                    data-testid={`stock-in-${variantId}`}
+                  >
+                    📥 Stok girişi yap →
+                  </Link>
+                </div>
               </header>
 
               <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">

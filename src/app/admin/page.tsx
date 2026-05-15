@@ -116,29 +116,35 @@ export default async function AdminDashboardPage() {
                 {lowStock.map((item) => (
                   <li
                     key={`${item.variantId}-${item.branchId}`}
-                    className="flex items-center justify-between gap-2 py-2"
                     data-low-stock-id={item.variantId}
                   >
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate font-bold text-ink">
-                        {item.productName}
+                    <Link
+                      href={
+                        `/admin/stock-movements?variant=${item.variantId}&branch=${item.branchId}` as never
+                      }
+                      className="flex items-center justify-between gap-2 py-2 hover:bg-line-soft"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-bold text-ink">
+                          {item.productName}
+                        </div>
+                        <div className="text-[11px] text-ink-3">
+                          {item.variantLabel} · {item.branchName}
+                        </div>
                       </div>
-                      <div className="text-[11px] text-ink-3">
-                        {item.variantLabel} · {item.branchName}
+                      <div className="text-right">
+                        <div
+                          className={`font-mono text-base font-bold ${
+                            item.stockQty === 0 ? 'text-danger-7' : 'text-cat'
+                          }`}
+                        >
+                          {item.stockQty}
+                        </div>
+                        <div className="text-[10px] text-ink-4">
+                          / {item.threshold} eşik
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <div
-                        className={`font-mono text-base font-bold ${
-                          item.stockQty === 0 ? 'text-danger-7' : 'text-cat'
-                        }`}
-                      >
-                        {item.stockQty}
-                      </div>
-                      <div className="text-[10px] text-ink-4">
-                        / {item.threshold} eşik
-                      </div>
-                    </div>
+                    </Link>
                   </li>
                 ))}
               </ul>
