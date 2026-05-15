@@ -1,0 +1,154 @@
+@import "tailwindcss";
+
+/* ============================================================
+   PetStockPro — Design Tokens v2 (logo-tuned)
+   Otoritatif: docs/TASARIM-SISTEMI.md + assets/tokens-v2.css
+   ============================================================ */
+
+:root {
+  /* Brand palette — 5 semantik tema (logodan) */
+  --cat: #d44a14;
+  --cat-2: #ed6a2c;
+  --cat-7: #93310a;
+  --cat-soft: #fae7da;
+
+  --cart: #1a5588;
+  --cart-2: #2d72a8;
+  --cart-7: #0e3c66;
+  --cart-soft: #e2ecf4;
+
+  --arrow: #16a08a;
+  --arrow-2: #2cc0a6;
+  --arrow-7: #0d7a68;
+  --arrow-soft: #def4ef;
+
+  --bars: #3090d0;
+  --bars-2: #5fa9dd;
+  --bars-7: #1d6ba6;
+  --bars-soft: #e0eff8;
+
+  --dog: #3c3c3c;
+  --dog-2: #5a5a5a;
+  --dog-7: #1f1f1f;
+  --dog-soft: #e8e8e8;
+
+  --danger: #c4453a;
+  --danger-2: #d56960;
+  --danger-7: #8e2e25;
+  --danger-soft: #f6e5e3;
+
+  /* Neutrals — warmer, paper-like */
+  --ink: #1a2530;
+  --ink-2: #344050;
+  --ink-3: #5f6b7c;
+  --ink-4: #94a0b0;
+
+  --line: #dfe4ec;
+  --line-soft: #ecf0f5;
+  --bg: #f4f3ee;
+  --paper: #ffffff;
+  --paper-glass: rgba(255,255,255,0.62);
+  --paper-glass-strong: rgba(255,255,255,0.84);
+
+  /* Radius */
+  --r-xs: 8px;
+  --r-sm: 12px;
+  --r-md: 18px;
+  --r-lg: 24px;
+  --r-xl: 32px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(20,40,55,.06), 0 1px 1px rgba(20,40,55,.04);
+  --shadow-md: 0 4px 14px rgba(20,40,55,.08), 0 2px 4px rgba(20,40,55,.05);
+  --shadow-lg: 0 18px 48px rgba(20,40,55,.14), 0 8px 16px rgba(20,40,55,.07);
+  --shadow-cat: 0 12px 28px rgba(212,74,20,.34), 0 4px 10px rgba(212,74,20,.20);
+  --shadow-cart: 0 12px 28px rgba(26,85,136,.32), 0 4px 10px rgba(26,85,136,.18);
+  --shadow-arrow: 0 12px 28px rgba(22,160,138,.32), 0 4px 10px rgba(22,160,138,.18);
+
+  /* Fonts — Verdana saf (sistem font tercihi) */
+  --font-sans: Verdana, Geneva, Tahoma, sans-serif;
+  --font-mono: Consolas, "Lucida Console", Monaco, monospace;
+}
+
+/* Tailwind v4 theme — utility class generation */
+@theme inline {
+  --color-cat: var(--cat);
+  --color-cat-2: var(--cat-2);
+  --color-cat-7: var(--cat-7);
+  --color-cat-soft: var(--cat-soft);
+
+  --color-cart: var(--cart);
+  --color-cart-2: var(--cart-2);
+  --color-cart-7: var(--cart-7);
+  --color-cart-soft: var(--cart-soft);
+
+  --color-arrow: var(--arrow);
+  --color-arrow-2: var(--arrow-2);
+  --color-arrow-7: var(--arrow-7);
+  --color-arrow-soft: var(--arrow-soft);
+
+  --color-bars: var(--bars);
+  --color-bars-2: var(--bars-2);
+  --color-bars-7: var(--bars-7);
+  --color-bars-soft: var(--bars-soft);
+
+  --color-dog: var(--dog);
+  --color-dog-soft: var(--dog-soft);
+
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-ink-4: var(--ink-4);
+
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-paper: var(--paper);
+  --color-bg: var(--bg);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --radius-xs: var(--r-xs);
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-xl: var(--r-xl);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  color: var(--ink);
+  background: var(--bg);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  position: relative;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Subtle mesh gradient — body */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 0% 0%, rgba(212,74,20,.08), transparent 60%),
+    radial-gradient(ellipse 50% 50% at 100% 0%, rgba(48,144,208,.10), transparent 60%),
+    radial-gradient(ellipse 60% 60% at 100% 100%, rgba(22,160,138,.08), transparent 60%),
+    radial-gradient(ellipse 50% 50% at 0% 100%, rgba(26,85,136,.08), transparent 60%),
+    linear-gradient(180deg, #faf9f4 0%, #f0eee8 100%);
+  z-index: -2;
+  pointer-events: none;
+}

@@ -1,0 +1,63 @@
+{
+  "common": {
+    "appName": "PetStockPro",
+    "tagline": "Pet shop'unun her şeyi tek panelde",
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "confirm": "Onayla",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "back": "Geri",
+    "next": "İleri",
+    "loading": "Yükleniyor...",
+    "error": "Hata",
+    "success": "Başarılı"
+  },
+  "auth": {
+    "loginTitle": "Hesabına giriş yap",
+    "loginLead": "Pet shop'unu yönet — stok, satış, vitrin tek panelde.",
+    "registerTitle": "Ücretsiz başla",
+    "registerLead": "FREE 50 ürün · kredi kartı gerekmez · 2 dakikada hazır.",
+    "email": "E-posta",
+    "password": "Şifre",
+    "passwordConfirm": "Şifre tekrar",
+    "shopName": "Pet shop adı",
+    "rememberMe": "Beni hatırla",
+    "forgotPassword": "Şifremi unuttum?",
+    "loginSubmit": "Hesabıma giriş yap",
+    "registerSubmit": "Pet shop'umu oluştur",
+    "noAccount": "Hesabın yok mu?",
+    "haveAccount": "Zaten hesabın var mı?",
+    "switchToRegister": "Pet shop'unu ücretsiz ekle",
+    "switchToLogin": "Giriş yap",
+    "kvkkConsent": "KVKK Aydınlatma Metni'ni okudum, kişisel verilerimin işlenmesini onaylıyorum.",
+    "dataLocationConsent": "Verilerin Avrupa Birliği bölgesinde işlenmesine açık rıza veriyorum.",
+    "invalidCredentials": "E-posta veya şifre hatalı",
+    "accountLocked": "Hesap kilitli — {minutes} dakika sonra tekrar dene",
+    "remainingAttempts": "{count} hakkın kaldı"
+  },
+  "plan": {
+    "free": "FREE",
+    "pro": "PRO",
+    "proPlus": "PRO+",
+    "productLimit": "Ürün limiti",
+    "of": "/",
+    "upgrade": "PRO'ya geç"
+  },
+  "nav": {
+    "dashboard": "Pano",
+    "inventory": "Envanter",
+    "operations": "Operasyon",
+    "resources": "Kaynaklar",
+    "analytics": "Analiz",
+    "vitrin": "Vitrin",
+    "settings": "Ayarlar"
+  },
+  "validation": {
+    "required": "Bu alan zorunlu",
+    "invalidEmail": "Geçersiz e-posta adresi",
+    "passwordMin": "Şifre en az 8 karakter olmalı",
+    "passwordWeak": "Şifre yeterince güçlü değil — 1 büyük harf + 1 rakam gerekli",
+    "invalidVatNo": "Geçersiz vergi numarası (10 hane VKN veya 11 hane TC)"
+  }
+}
