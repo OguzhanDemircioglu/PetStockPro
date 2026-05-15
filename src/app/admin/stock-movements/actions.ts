@@ -9,6 +9,7 @@ import {
   recordStockOut,
   recordTransfer,
   recordStocktakeAdjustment,
+  reverseStockMovement,
   type StockMovementResult,
   type TransferResult,
   type StocktakeResult,
@@ -290,4 +291,49 @@ export async function stocktakeAction(
     revalidatePath('/admin/products');
   }
   return buildState('stocktake', result);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// REVERSAL — 24 saat içinde geri alma (R1)
+// ─────────────────────────────────────────────────────────────────
+
+export interface ReversalActionState {
+  ok: boolean;
+  message: string | null;
+  meta: { available?: number; requested?: number } | null;
+}
+
+export async function reverseMovementAction(
+  movementId: string,
+): Promise<ReversalActionState> {
+  const session = await auth();
+  if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+
+  const result = await reverseStockMovement(
+    session.user.companyId,
+    movementId,
+    session.user.id,
+    db,
+  );
+
+  if (result.ok) {
+    revalidatePath('/admin/stock-movements');
+    revalidatePath('/admin/products');
+    return { ok: true, message: 'Geri alındı', meta: null };
+  }
+
+  const msg: Record<string, string> = {
+    not_found: 'Hareket bulunamadı',
+    already_reversed: 'Bu hareket zaten geri alınmış',
+    is_reversal: 'Bir geri alma kaydı tekrar geri alınamaz',
+    window_expired: '24 saat geçti — süperadmin müdahalesi gerekli',
+    insufficient_stock: 'Stok yetersiz — sonraki satış geri alındıktan sonra dene',
+    transfer_requires_pair: 'Transfer geri alma yakında (Sprint 4.6)',
+    unknown: 'Geri alınamadı, tekrar dene',
+  };
+  return {
+    ok: false,
+    message: msg[result.reason] ?? 'Hata',
+    meta: 'meta' in result ? result.meta ?? null : null,
+  };
 }

@@ -454,6 +454,168 @@ export async function recordStockOut(
 }
 
 // ─────────────────────────────────────────────────────────────────
+// REVERSAL — 24 saat içinde geri alma (R1)
+// ─────────────────────────────────────────────────────────────────
+
+export const REVERSAL_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+export type ReverseResult =
+  | { ok: true; reversalMovementId: string }
+  | {
+      ok: false;
+      reason:
+        | 'not_found'
+        | 'already_reversed'
+        | 'is_reversal'
+        | 'window_expired'
+        | 'insufficient_stock'
+        | 'transfer_requires_pair'
+        | 'unknown';
+      meta?: { available?: number; requested?: number };
+    };
+
+/**
+ * Bir stok hareketini "geri alır":
+ * - Orijinali immutable kalır; reversedById ile işaretlenir (audit izi).
+ * - Yeni bir movement (type=orijinalle aynı veya 'stocktake' için 'stocktake'),
+ *   ters yönde quantity ile insert edilir. reversesId orijinali işaret eder.
+ * - branch_inventory eski haline döndürülür.
+ *
+ * Kurallar:
+ * - 24 saat içinde herkes (R1). Sprint 7b süperadmin için süresiz override
+ *   ayrı tool — burada `isSuperadmin` flag ile by-pass edilir.
+ * - Zaten geri alınmış movement bir daha geri alınamaz.
+ * - Reversal kaydının kendisi geri alınamaz ("is_reversal" reddi).
+ * - Stock-in'in geri alınması = ters yönde çıkış: yeterli stok olmalı
+ *   (insufficient_stock).
+ * - Transfer reversal'ı şimdilik desteklenmiyor (iki entry pair gerekir):
+ *   transfer_requires_pair döner; Sprint 4.6'da iki yönü birlikte geri alma.
+ */
+export async function reverseStockMovement(
+  companyId: string,
+  movementId: string,
+  userId: string,
+  db: DbClient,
+  opts: { isSuperadmin?: boolean; reason?: string | null } = {},
+  now: Date = new Date(),
+): Promise<ReverseResult> {
+  // Orijinal movement'ı çek + tenant ownership
+  const rows = await db
+    .select({
+      id: stockMovements.id,
+      type: stockMovements.type,
+      subtype: stockMovements.subtype,
+      branchId: stockMovements.branchId,
+      variantId: stockMovements.variantId,
+      quantity: stockMovements.quantity,
+      beforeQty: stockMovements.beforeQty,
+      afterQty: stockMovements.afterQty,
+      createdAt: stockMovements.createdAt,
+      reversedById: stockMovements.reversedById,
+      reversesId: stockMovements.reversesId,
+    })
+    .from(stockMovements)
+    .where(
+      and(
+        eq(stockMovements.id, movementId),
+        eq(stockMovements.companyId, companyId),
+      ),
+    )
+    .limit(1);
+  const original = rows[0];
+  if (!original) return { ok: false, reason: 'not_found' };
+  if (original.reversedById) return { ok: false, reason: 'already_reversed' };
+  if (original.reversesId) return { ok: false, reason: 'is_reversal' };
+  if (original.type === 'transfer') {
+    return { ok: false, reason: 'transfer_requires_pair' };
+  }
+
+  // 24h pencere kontrolü — süperadmin bypass
+  if (!opts.isSuperadmin) {
+    const ageMs = now.getTime() - new Date(original.createdAt).getTime();
+    if (ageMs > REVERSAL_WINDOW_MS) {
+      return { ok: false, reason: 'window_expired' };
+    }
+  }
+
+  const info = await fetchVariantStockInfo(
+    companyId,
+    original.branchId,
+    original.variantId,
+    db,
+  );
+  if (!info) return { ok: false, reason: 'not_found' };
+
+  // Ters yön = -orijinal.quantity
+  const reverseDelta = -original.quantity;
+  if (info.currentQty + reverseDelta < 0) {
+    return {
+      ok: false,
+      reason: 'insufficient_stock',
+      meta: {
+        available: info.currentQty,
+        requested: Math.abs(reverseDelta),
+      },
+    };
+  }
+
+  const newBefore = info.currentQty;
+  const newAfter = info.currentQty + reverseDelta;
+  const isOutgoing = reverseDelta < 0;
+
+  try {
+    const reversalMovementId = await db.transaction(async (tx) => {
+      const [m] = await tx
+        .insert(stockMovements)
+        .values({
+          companyId,
+          branchId: original.branchId,
+          variantId: original.variantId,
+          type: original.type, // aynı tür — audit netliği için
+          subtype: original.subtype,
+          quantity: reverseDelta,
+          beforeQty: newBefore,
+          afterQty: newAfter,
+          reversesId: original.id,
+          reason: opts.reason ?? 'Geri alma',
+          createdById: userId,
+          performedAsSuperadmin: !!opts.isSuperadmin,
+          createdAt: now,
+        })
+        .returning({ id: stockMovements.id });
+
+      // Orijinali işaretle (immutable mantığı korunur — sadece reversedById set)
+      await tx
+        .update(stockMovements)
+        .set({ reversedById: m.id })
+        .where(eq(stockMovements.id, original.id));
+
+      await applyInventoryChange(
+        tx as unknown as DbClient,
+        info,
+        reverseDelta,
+        info.productId,
+        now,
+        isOutgoing,
+      );
+
+      return m.id;
+    });
+
+    return { ok: true, reversalMovementId };
+  } catch (err) {
+    if (err instanceof InsufficientStockError) {
+      return {
+        ok: false,
+        reason: 'insufficient_stock',
+        meta: { available: err.available, requested: err.requested },
+      };
+    }
+    return { ok: false, reason: 'unknown' };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
 // STOCKTAKE — sayım sonucu düzeltme
 // ─────────────────────────────────────────────────────────────────
 

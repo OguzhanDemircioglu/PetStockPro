@@ -1,7 +1,12 @@
 import type { StockMovementListItem } from '@/lib/stock/list';
+import { ReverseButton } from './reverse-button';
+
+const REVERSAL_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 interface Props {
   movements: StockMovementListItem[];
+  /** Server'da set edildi — render anındaki zaman (Date.now() client'ta forbidden) */
+  now?: Date;
 }
 
 const TYPE_BADGES: Record<string, { label: string; classes: string }> = {
@@ -29,7 +34,8 @@ const PAYMENT_LABEL: Record<string, string> = {
   credit: '📝 Veresiye',
 };
 
-export function MovementsTable({ movements }: Props) {
+export function MovementsTable({ movements, now }: Props) {
+  const nowMs = (now ?? new Date()).getTime();
   return (
     <div className="overflow-x-auto rounded-2xl border border-line bg-white">
       <table className="w-full text-sm">
@@ -43,6 +49,7 @@ export function MovementsTable({ movements }: Props) {
             <th className="px-4 py-3 text-right">Δ</th>
             <th className="px-4 py-3 text-right">Sonra</th>
             <th className="px-4 py-3">Notlar</th>
+            <th className="px-4 py-3 text-right">İşlem</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-line-soft">
@@ -121,6 +128,29 @@ export function MovementsTable({ movements }: Props) {
                     <span className="ml-1 text-[10px] text-ink-4">
                       (TG:{m.transferGroupId.slice(0, 6)})
                     </span>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-right whitespace-nowrap">
+                  {reversed ? (
+                    <span className="text-[10px] font-bold text-ink-4">
+                      ✓ Geri alındı
+                    </span>
+                  ) : m.reversesId ? (
+                    <span
+                      className="text-[10px] text-ink-4"
+                      title="Bu kayıt zaten bir geri alma"
+                    >
+                      ↶ Geri alma
+                    </span>
+                  ) : (
+                    <ReverseButton
+                      movementId={m.id}
+                      withinWindow={
+                        nowMs - new Date(m.createdAt).getTime() <=
+                        REVERSAL_WINDOW_MS
+                      }
+                      isTransfer={m.type === 'transfer'}
+                    />
                   )}
                 </td>
               </tr>

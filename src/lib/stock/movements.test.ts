@@ -4,11 +4,13 @@ import {
   recordStockOut,
   recordTransfer,
   recordStocktakeAdjustment,
+  reverseStockMovement,
   InsufficientStockError,
   stockInSchema,
   stockOutSchema,
   transferSchema,
   stocktakeAdjustmentSchema,
+  REVERSAL_WINDOW_MS,
 } from './movements';
 import type { DbClient } from '@/lib/db/client';
 
@@ -760,6 +762,289 @@ describe('recordStocktakeAdjustment', () => {
     );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe('not_found');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// reverseStockMovement
+// ─────────────────────────────────────────────────────────────────
+
+const MOVEMENT_ID = '55555555-5555-5555-5555-555555555555';
+
+describe('reverseStockMovement', () => {
+  it('happy path — stok-in geri al (1 saat eski, içeride)', async () => {
+    const original = {
+      id: MOVEMENT_ID,
+      type: 'stock_in',
+      subtype: null,
+      branchId: BRANCH,
+      variantId: VARIANT,
+      quantity: 10,
+      beforeQty: 0,
+      afterQty: 10,
+      createdAt: new Date(NOW.getTime() - 60 * 60 * 1000), // 1 saat önce
+      reversedById: null,
+      reversesId: null,
+    };
+    const select = makeSelectChain([
+      [original],
+      [
+        // fetchVariantStockInfo
+        {
+          variantId: VARIANT,
+          productId: PRODUCT,
+          variantCompanyId: COMPANY,
+          branchCompanyId: COMPANY,
+          currentQty: 10,
+          inventoryRowId: 'inv-1',
+        },
+      ],
+    ]);
+    const { tx, insertImpl, updateImpl } = makeTxMock();
+    const transaction = vi
+      .fn()
+      .mockImplementation(async (cb: (t: unknown) => Promise<unknown>) => cb(tx));
+    const db = { select, transaction } as unknown as DbClient;
+
+    const result = await reverseStockMovement(
+      COMPANY,
+      MOVEMENT_ID,
+      USER,
+      db,
+      {},
+      NOW,
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.reversalMovementId).toBe('new-movement-id');
+    // 1 movement insert (reversal kaydı)
+    expect(insertImpl).toHaveBeenCalledTimes(1);
+    // updates: orijinali işaretle + inventory + product totalStockQty +
+    //         auto-unpublish (stock-in geri alındığı için -10 → 0, isOutgoing=true)
+    expect(updateImpl.mock.calls.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('25 saat eski → window_expired', async () => {
+    const original = {
+      id: MOVEMENT_ID,
+      type: 'stock_in',
+      subtype: null,
+      branchId: BRANCH,
+      variantId: VARIANT,
+      quantity: 5,
+      beforeQty: 0,
+      afterQty: 5,
+      createdAt: new Date(NOW.getTime() - 25 * 60 * 60 * 1000),
+      reversedById: null,
+      reversesId: null,
+    };
+    const select = makeSelectChain([[original]]);
+    const db = { select } as unknown as DbClient;
+
+    const result = await reverseStockMovement(
+      COMPANY,
+      MOVEMENT_ID,
+      USER,
+      db,
+      {},
+      NOW,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe('window_expired');
+  });
+
+  it('25 saat eski + isSuperadmin → bypass, geri alınır', async () => {
+    const original = {
+      id: MOVEMENT_ID,
+      type: 'stock_in',
+      subtype: null,
+      branchId: BRANCH,
+      variantId: VARIANT,
+      quantity: 5,
+      beforeQty: 0,
+      afterQty: 5,
+      createdAt: new Date(NOW.getTime() - 25 * 60 * 60 * 1000),
+      reversedById: null,
+      reversesId: null,
+    };
+    const select = makeSelectChain([
+      [original],
+      [
+        {
+          variantId: VARIANT,
+          productId: PRODUCT,
+          variantCompanyId: COMPANY,
+          branchCompanyId: COMPANY,
+          currentQty: 5,
+          inventoryRowId: 'inv-1',
+        },
+      ],
+    ]);
+    const { tx } = makeTxMock();
+    const transaction = vi
+      .fn()
+      .mockImplementation(async (cb: (t: unknown) => Promise<unknown>) => cb(tx));
+    const db = { select, transaction } as unknown as DbClient;
+
+    const result = await reverseStockMovement(
+      COMPANY,
+      MOVEMENT_ID,
+      USER,
+      db,
+      { isSuperadmin: true },
+      NOW,
+    );
+    expect(result.ok).toBe(true);
+  });
+
+  it('zaten geri alınmış → already_reversed', async () => {
+    const original = {
+      id: MOVEMENT_ID,
+      type: 'stock_in',
+      subtype: null,
+      branchId: BRANCH,
+      variantId: VARIANT,
+      quantity: 10,
+      beforeQty: 0,
+      afterQty: 10,
+      createdAt: new Date(NOW.getTime() - 60 * 1000),
+      reversedById: 'some-reversal-id',
+      reversesId: null,
+    };
+    const select = makeSelectChain([[original]]);
+    const db = { select } as unknown as DbClient;
+
+    const result = await reverseStockMovement(
+      COMPANY,
+      MOVEMENT_ID,
+      USER,
+      db,
+      {},
+      NOW,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe('already_reversed');
+  });
+
+  it('reversal kaydının kendisi geri alınamaz → is_reversal', async () => {
+    const original = {
+      id: MOVEMENT_ID,
+      type: 'stock_in',
+      subtype: null,
+      branchId: BRANCH,
+      variantId: VARIANT,
+      quantity: -10,
+      beforeQty: 10,
+      afterQty: 0,
+      createdAt: new Date(NOW.getTime() - 60 * 1000),
+      reversedById: null,
+      reversesId: 'original-id',
+    };
+    const select = makeSelectChain([[original]]);
+    const db = { select } as unknown as DbClient;
+
+    const result = await reverseStockMovement(
+      COMPANY,
+      MOVEMENT_ID,
+      USER,
+      db,
+      {},
+      NOW,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe('is_reversal');
+  });
+
+  it('transfer → transfer_requires_pair (Sprint 4.6)', async () => {
+    const original = {
+      id: MOVEMENT_ID,
+      type: 'transfer',
+      subtype: null,
+      branchId: BRANCH,
+      variantId: VARIANT,
+      quantity: -5,
+      beforeQty: 10,
+      afterQty: 5,
+      createdAt: new Date(NOW.getTime() - 60 * 1000),
+      reversedById: null,
+      reversesId: null,
+    };
+    const select = makeSelectChain([[original]]);
+    const db = { select } as unknown as DbClient;
+
+    const result = await reverseStockMovement(
+      COMPANY,
+      MOVEMENT_ID,
+      USER,
+      db,
+      {},
+      NOW,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe('transfer_requires_pair');
+  });
+
+  it('stok-in geri al — şube yetersiz (satılmış) → insufficient_stock', async () => {
+    // Şube'de 10 girdi → 8 satıldı → şu an 2 var. Stok-in geri almaya çalışırsak
+    // 10 çıkartmak isteriz; mevcut 2 yetersiz.
+    const original = {
+      id: MOVEMENT_ID,
+      type: 'stock_in',
+      subtype: null,
+      branchId: BRANCH,
+      variantId: VARIANT,
+      quantity: 10,
+      beforeQty: 0,
+      afterQty: 10,
+      createdAt: new Date(NOW.getTime() - 60 * 1000),
+      reversedById: null,
+      reversesId: null,
+    };
+    const select = makeSelectChain([
+      [original],
+      [
+        {
+          variantId: VARIANT,
+          productId: PRODUCT,
+          variantCompanyId: COMPANY,
+          branchCompanyId: COMPANY,
+          currentQty: 2,
+          inventoryRowId: 'inv-1',
+        },
+      ],
+    ]);
+    const db = { select, transaction: vi.fn() } as unknown as DbClient;
+
+    const result = await reverseStockMovement(
+      COMPANY,
+      MOVEMENT_ID,
+      USER,
+      db,
+      {},
+      NOW,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe('insufficient_stock');
+      expect(result.meta?.available).toBe(2);
+    }
+  });
+
+  it('not_found', async () => {
+    const select = makeSelectChain([[]]);
+    const db = { select } as unknown as DbClient;
+    const result = await reverseStockMovement(
+      COMPANY,
+      MOVEMENT_ID,
+      USER,
+      db,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe('not_found');
+  });
+
+  it('REVERSAL_WINDOW_MS = 24 saat', () => {
+    expect(REVERSAL_WINDOW_MS).toBe(24 * 60 * 60 * 1000);
   });
 });
 
