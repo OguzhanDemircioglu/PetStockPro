@@ -329,3 +329,130 @@ Sen denemiyorsan destek: ${supportEmail}
     textContent: text,
   };
 }
+
+// ─────────────────────────────────────────────────────────────────
+// Sprint 2.9 — Email Change (3 template: new-confirm + old-notify + completed)
+// ─────────────────────────────────────────────────────────────────
+
+export interface EmailChangeRequestNewInput {
+  verifyUrl: string;
+  newEmail: string;
+  currentEmail: string;
+  expiresInHours: number;
+}
+
+/** YENİ email'e gönderilen "doğrula" mesajı. */
+export function buildEmailChangeRequestNewTemplate(
+  input: EmailChangeRequestNewInput,
+): VerifyEmailTemplate {
+  const html = emailShell(`
+    <h2 style="margin:0 0 16px;font-size:22px;color:${BRAND_CART};letter-spacing:-.3px;">
+      Yeni e-postanı doğrula
+    </h2>
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.6;">Merhaba,</p>
+    <p style="margin:0 0 24px;font-size:14px;line-height:1.6;">
+      <strong>${input.currentEmail}</strong> adresine ait PetStockPro hesabının
+      e-postasını <strong>${input.newEmail}</strong> olarak değiştirme isteği
+      başlatıldı. Bu adresin gerçekten sana ait olduğunu doğrulamak için butona tıkla:
+    </p>
+    <table cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td align="center" style="padding:8px 0 24px;">
+      <a href="${input.verifyUrl}" style="display:inline-block;background:${BRAND_CAT};color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-weight:bold;font-size:14px;box-shadow:0 8px 20px rgba(212,74,20,.32);">
+        ✓ Yeni e-postamı doğrula
+      </a>
+    </td></tr></table>
+    <p style="margin:0 0 8px;font-size:12px;color:#5f6b7c;line-height:1.5;">
+      Bu link <strong>${input.expiresInHours} saat</strong> geçerli. Sen başlatmadıysan
+      bu e-postayı yok say — değişiklik tamamlanmaz.
+    </p>
+  `);
+
+  return {
+    subject: 'PetStockPro · Yeni e-postanı doğrula',
+    htmlContent: html,
+    textContent: `Yeni e-postanı doğrula\n\n${input.currentEmail} adresine ait PetStockPro hesabının e-postası ${input.newEmail} olarak değiştirilmek isteniyor.\n\nDoğrula: ${input.verifyUrl}\n\n${input.expiresInHours} saat geçerli. Sen başlatmadıysan bu e-postayı yok say.\n\n— © 2026 PetStockPro`,
+  };
+}
+
+export interface EmailChangeNotifyOldInput {
+  cancelUrl: string;
+  newEmail: string;
+  currentEmail: string;
+}
+
+/** ESKİ email'e gönderilen "değişiklik isteği başlatıldı — iptal et" mesajı. */
+export function buildEmailChangeNotifyOldTemplate(
+  input: EmailChangeNotifyOldInput,
+): VerifyEmailTemplate {
+  const html = emailShell(`
+    <h2 style="margin:0 0 16px;font-size:22px;color:${BRAND_CART};letter-spacing:-.3px;">
+      E-posta değişikliği isteği
+    </h2>
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.6;">Merhaba,</p>
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.6;">
+      PetStockPro hesabının e-postası <strong>${input.currentEmail}</strong>
+      adresinden <strong>${input.newEmail}</strong> adresine taşınmak isteniyor.
+    </p>
+    <p style="margin:0 0 24px;font-size:14px;line-height:1.6;">
+      Bunu sen başlattıysan herhangi bir şey yapmana gerek yok. Yeni e-postaya
+      gönderilen linkten onaylanınca değişiklik tamamlanır.
+    </p>
+    <div style="border-left:4px solid ${BRAND_CAT};padding:12px 16px;background:#fff5ef;border-radius:0 8px 8px 0;margin:0 0 24px;">
+      <strong style="display:block;font-size:13px;color:${BRAND_CART};margin-bottom:6px;">
+        ⚠ Bunu sen başlatmadıysan
+      </strong>
+      <span style="font-size:13px;color:#5f6b7c;line-height:1.6;">
+        Birisi hesabına erişmiş olabilir. Aşağıdaki butona tıklayarak değişikliği iptal et
+        ve hemen şifreni değiştir.
+      </span>
+    </div>
+    <table cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td align="center" style="padding:8px 0 24px;">
+      <a href="${input.cancelUrl}" style="display:inline-block;background:#d63939;color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-weight:bold;font-size:14px;">
+        🚫 Değişikliği İptal Et
+      </a>
+    </td></tr></table>
+    <p style="margin:0 0 8px;font-size:12px;color:#5f6b7c;line-height:1.5;">
+      Bu otomatik bilgilendirme mesajıdır. Süperadmin'e de bildirim gönderilir.
+    </p>
+  `);
+
+  return {
+    subject: 'PetStockPro · ⚠ E-posta değişikliği isteği',
+    htmlContent: html,
+    textContent: `E-posta değişikliği isteği\n\nPetStockPro hesabının e-postası ${input.currentEmail} → ${input.newEmail} olarak değiştirilmek isteniyor.\n\nBunu sen başlattıysan bir şey yapmana gerek yok. Sen başlatmadıysan İPTAL ET:\n${input.cancelUrl}\n\n— © 2026 PetStockPro`,
+  };
+}
+
+export interface EmailChangedFinalInput {
+  oldEmail: string;
+  newEmail: string;
+}
+
+/** Email değişikliği tamamlandı — eski email'e final bilgi. */
+export function buildEmailChangedFinalTemplate(input: EmailChangedFinalInput): VerifyEmailTemplate {
+  const html = emailShell(`
+    <h2 style="margin:0 0 16px;font-size:22px;color:${BRAND_CART};letter-spacing:-.3px;">
+      ✓ E-posta değişikliği tamamlandı
+    </h2>
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.6;">Merhaba,</p>
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.6;">
+      PetStockPro hesabının e-postası başarıyla değiştirildi:
+    </p>
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 24px;background:${BRAND_BG};border-radius:8px;">
+      <tr><td style="padding:12px 16px;font-size:13px;color:#5f6b7c;line-height:1.8;">
+        <strong style="color:${BRAND_INK};">Eski:</strong> ${input.oldEmail}<br>
+        <strong style="color:${BRAND_INK};">Yeni:</strong> ${input.newEmail}
+      </td></tr>
+    </table>
+    <p style="margin:0 0 8px;font-size:12px;color:#5f6b7c;line-height:1.5;">
+      Bundan sonra giriş için yeni e-postanı kullan. Sen yapmadıysan
+      <a href="mailto:destek@petstockpro.com" style="color:${BRAND_CART};font-weight:bold;">destek</a>
+      ile iletişime geç.
+    </p>
+  `);
+
+  return {
+    subject: 'PetStockPro · ✓ E-posta değiştirildi',
+    htmlContent: html,
+    textContent: `E-posta değişikliği tamamlandı\n\nEski: ${input.oldEmail}\nYeni: ${input.newEmail}\n\nGiriş için yeni e-postanı kullan. Sen yapmadıysan destek@petstockpro.com\n\n— © 2026 PetStockPro`,
+  };
+}

@@ -50,6 +50,38 @@ export interface TwoFactorDisabledAlertInput {
   companyName: string | null;
 }
 
+export interface EmailChangeCancelledAlertInput {
+  currentEmail: string;
+  attemptedEmail: string;
+  companyName: string | null;
+}
+
+/**
+ * Email değişikliği iptal edildi (eski email sahibi "iptal et" tıkladı).
+ *
+ * Hesap ele geçirme şüphesi — saldırgan değişiklik başlatmış olabilir.
+ * Süperadmin için kritik öncelik (impersonate ile bak + kullanıcıyla iletişim).
+ */
+export function buildEmailChangeCancelledAlert(input: EmailChangeCancelledAlertInput): TelegramSendRequest {
+  return {
+    text: [
+      '🚨 <b>Email değişikliği İPTAL edildi</b>',
+      '<i>(hesap ele geçirme şüphesi)</i>',
+      '',
+      `<b>Hesap email:</b> <code>${input.currentEmail}</code>`,
+      `<b>Değiştirilmeye çalışılan:</b> <code>${input.attemptedEmail}</code>`,
+      input.companyName ? `<b>Tenant:</b> ${input.companyName}` : '',
+      '',
+      '<i>Eski email sahibi iptal etti — başka biri hesabı ele geçirmeye çalışmış olabilir. İmpersonate ile incele.</i>',
+    ]
+      .filter(Boolean)
+      .join('\n'),
+    parseMode: 'HTML',
+    severity: 'critical',
+    disableNotification: false,
+  };
+}
+
 export function buildTwoFactorDisabledAlert(input: TwoFactorDisabledAlertInput): TelegramSendRequest {
   return {
     text: [

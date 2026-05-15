@@ -143,6 +143,10 @@ export const users = petstockproSchema.table('users', {
   // Password reset (Sprint 2.4 — EKRAN-AUTH §5)
   passwordResetToken: varchar('password_reset_token', { length: 100 }),
   passwordResetExpiresAt: timestamp('password_reset_expires_at', { withTimezone: true }),
+  // Email change (Sprint 2.9 — EKRAN-AUTH §6)
+  pendingEmail: varchar('pending_email', { length: 255 }), // doğrulama bekliyor
+  pendingEmailToken: varchar('pending_email_token', { length: 100 }),
+  pendingEmailExpiresAt: timestamp('pending_email_expires_at', { withTimezone: true }),
   // 2FA TOTP (Sprint 2.5 — EKRAN-AUTH §7)
   // twoFactorEnabled (yukarıda mevcut) — 2FA aktif mi?
   twoFactorSecret: text('two_factor_secret'),                                       // base32 secret (Faz 2'de at-rest encrypted)
@@ -156,6 +160,7 @@ export const users = petstockproSchema.table('users', {
   index('idx_users_company').on(t.companyId),
   index('idx_users_verification_token').on(t.emailVerificationToken),
   index('idx_users_password_reset_token').on(t.passwordResetToken),
+  index('idx_users_pending_email_token').on(t.pendingEmailToken),
 ]);
 
 /** 2FA recovery code shape — hashed (SHA-256), tek kullanımlık. */

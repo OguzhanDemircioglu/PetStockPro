@@ -43,6 +43,13 @@
       "when": 1778856861313,
       "tag": "0005_sprint_2_7_account_lock",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1778858924906,
+      "tag": "0006_sprint_2_9_email_change",
+      "breakpoints": true
     }
   ]
 }

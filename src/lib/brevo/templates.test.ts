@@ -3,6 +3,9 @@ import {
   buildVerifyEmailTemplate,
   buildResetPasswordTemplate,
   buildPasswordChangedTemplate,
+  buildEmailChangeRequestNewTemplate,
+  buildEmailChangeNotifyOldTemplate,
+  buildEmailChangedFinalTemplate,
 } from './templates';
 
 describe('buildVerifyEmailTemplate', () => {
@@ -147,5 +150,69 @@ describe('buildPasswordChangedTemplate', () => {
     const t = buildPasswordChangedTemplate(sampleInput);
     expect(t.textContent).toContain('203.0.113.42');
     expect(t.textContent).toContain('destek@petstockpro.com');
+  });
+});
+
+describe('buildEmailChangeRequestNewTemplate', () => {
+  const input = {
+    verifyUrl: 'https://petstockpro.com/verify-email-change/abc',
+    newEmail: 'new@ps.com',
+    currentEmail: 'old@ps.com',
+    expiresInHours: 24,
+  };
+
+  it('Subject "yeni e-postanı doğrula"', () => {
+    const t = buildEmailChangeRequestNewTemplate(input);
+    expect(t.subject).toMatch(/Yeni e-posta/);
+  });
+
+  it('HTML verify URL + 2 email + saat içerir', () => {
+    const t = buildEmailChangeRequestNewTemplate(input);
+    expect(t.htmlContent).toContain(input.verifyUrl);
+    expect(t.htmlContent).toContain('new@ps.com');
+    expect(t.htmlContent).toContain('old@ps.com');
+    expect(t.htmlContent).toContain('24 saat');
+  });
+});
+
+describe('buildEmailChangeNotifyOldTemplate', () => {
+  const input = {
+    cancelUrl: 'https://petstockpro.com/cancel-email-change/abc',
+    newEmail: 'new@ps.com',
+    currentEmail: 'old@ps.com',
+  };
+
+  it('Subject "E-posta" + isteği bilgisi', () => {
+    const t = buildEmailChangeNotifyOldTemplate(input);
+    expect(t.subject).toMatch(/E-posta/);
+    expect(t.subject).toMatch(/⚠/);
+  });
+
+  it('İptal CTA + uyarı bloku', () => {
+    const t = buildEmailChangeNotifyOldTemplate(input);
+    expect(t.htmlContent).toContain(input.cancelUrl);
+    expect(t.htmlContent).toContain('İptal Et');
+    // "Bunu sen başlatmadıysan" uyarısı (Unicode-safe substring)
+    expect(t.htmlContent.includes('Bunu sen ba')).toBe(true);
+  });
+
+  it('Eski + yeni email gösterilir', () => {
+    const t = buildEmailChangeNotifyOldTemplate(input);
+    expect(t.htmlContent).toContain('old@ps.com');
+    expect(t.htmlContent).toContain('new@ps.com');
+  });
+});
+
+describe('buildEmailChangedFinalTemplate', () => {
+  it('Subject "değiştirildi"', () => {
+    const t = buildEmailChangedFinalTemplate({ oldEmail: 'old@ps.com', newEmail: 'new@ps.com' });
+    expect(t.subject).toContain('değiştirildi');
+  });
+
+  it('Eski + yeni email + destek bilgisi', () => {
+    const t = buildEmailChangedFinalTemplate({ oldEmail: 'old@ps.com', newEmail: 'new@ps.com' });
+    expect(t.htmlContent).toContain('old@ps.com');
+    expect(t.htmlContent).toContain('new@ps.com');
+    expect(t.htmlContent).toContain('destek@petstockpro.com');
   });
 });
