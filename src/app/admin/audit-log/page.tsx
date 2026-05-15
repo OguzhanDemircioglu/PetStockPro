@@ -33,11 +33,43 @@ const ACTION_LABELS: Record<string, { label: string; cls: string }> = {
   'company.vat_no_set': { label: '⚙ Vergi no atandı', cls: 'bg-arrow-soft text-arrow-7' },
 };
 
-export default async function AuditLogPage() {
+const ACTION_GROUPS: { value: string; label: string }[] = [
+  { value: '', label: 'Tüm aksiyonlar' },
+  { value: 'product.created', label: '🐾 Ürün eklendi' },
+  { value: 'product.updated', label: '✎ Ürün güncellendi' },
+  { value: 'product.deleted', label: '🗑 Ürün silindi' },
+  { value: 'stock.in', label: '📥 Stok girişi' },
+  { value: 'stock.out', label: '📤 Stok çıkışı' },
+  { value: 'stock.transfer', label: '🔁 Transfer' },
+  { value: 'stock.stocktake', label: '📋 Sayım' },
+  { value: 'stock.reversed', label: '↶ Geri alma' },
+  { value: 'storefront.published', label: '🌐 Vitrin açıldı' },
+  { value: 'storefront.unpublished', label: '🔒 Vitrin kapatıldı' },
+  { value: 'brand.created', label: '🏷 Marka eklendi' },
+  { value: 'category.created', label: '📂 Kategori eklendi' },
+  { value: 'supplier.created', label: '🏢 Tedarikçi eklendi' },
+  { value: 'branch.created', label: '🏪 Şube eklendi' },
+  { value: 'company.updated', label: '⚙ Firma güncellendi' },
+];
+
+export default async function AuditLogPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ action?: string; entity?: string }>;
+}) {
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
 
-  const items = await listAuditLogs(session.user.companyId, db, { limit: 100 });
+  const params = await searchParams;
+  const validAction = ACTION_GROUPS.find((g) => g.value === params.action)?.value;
+
+  const items = await listAuditLogs(session.user.companyId, db, {
+    limit: 100,
+    action: validAction || undefined,
+    entityType: params.entity || undefined,
+  });
+
+  const hasFilter = !!validAction || !!params.entity;
 
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-12">
@@ -49,18 +81,89 @@ export default async function AuditLogPage() {
           Audit log
         </h1>
         <p className="mt-1 text-sm text-ink-3">
-          Son {items.length} aksiyon · Append-only (KVKK 5 yıl saklama)
+          Son {items.length} aksiyon
+          {hasFilter ? ' (filtreli)' : ' · Append-only (KVKK 5 yıl saklama)'}
         </p>
       </header>
+
+      <form
+        className="flex flex-wrap items-end gap-3 rounded-2xl border border-line bg-white p-4"
+        action="/admin/audit-log"
+        method="get"
+        data-testid="audit-filter"
+      >
+        <div className="min-w-[220px] flex-1">
+          <label
+            htmlFor="action-select"
+            className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+          >
+            Aksiyon
+          </label>
+          <select
+            id="action-select"
+            name="action"
+            defaultValue={validAction ?? ''}
+            data-testid="audit-action"
+            className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          >
+            {ACTION_GROUPS.map((g) => (
+              <option key={g.value} value={g.value}>
+                {g.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="min-w-[180px]">
+          <label
+            htmlFor="entity-select"
+            className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+          >
+            Hedef türü
+          </label>
+          <select
+            id="entity-select"
+            name="entity"
+            defaultValue={params.entity ?? ''}
+            data-testid="audit-entity"
+            className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          >
+            <option value="">Hepsi</option>
+            <option value="product">Ürün</option>
+            <option value="stock_movement">Stok hareketi</option>
+            <option value="transfer_group">Transfer</option>
+            <option value="brand">Marka</option>
+            <option value="category">Kategori</option>
+            <option value="supplier">Tedarikçi</option>
+            <option value="branch">Şube</option>
+            <option value="company">Firma</option>
+          </select>
+        </div>
+        <button
+          type="submit"
+          className="rounded-xl bg-cat px-5 py-2.5 text-sm font-bold text-white shadow-sm"
+        >
+          Filtrele
+        </button>
+        {hasFilter && (
+          <Link
+            href={'/admin/audit-log' as never}
+            className="rounded-xl border border-line bg-white px-3 py-2.5 text-xs font-bold text-ink-3 hover:bg-line-soft"
+          >
+            × Temizle
+          </Link>
+        )}
+      </form>
 
       {items.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-line bg-paper py-16 text-center">
           <div className="text-6xl">📜</div>
           <h2 className="mt-4 text-xl font-bold text-cart">
-            Henüz audit kaydı yok
+            {hasFilter ? 'Filtreye uyan kayıt yok' : 'Henüz audit kaydı yok'}
           </h2>
           <p className="mt-2 text-sm text-ink-3">
-            Ürün ekleme, stok hareketi gibi aksiyonlar otomatik kayıt olur.
+            {hasFilter
+              ? 'Filtreyi temizleyerek tüm aksiyonları görüntüle.'
+              : 'Ürün ekleme, stok hareketi gibi aksiyonlar otomatik kayıt olur.'}
           </p>
         </div>
       ) : (
