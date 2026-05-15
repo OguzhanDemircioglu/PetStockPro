@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>PetStockPro · Giriş / Kayıt</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/tokens-v2.css">
+<style>
+  body { background: #fafaf7; overflow: hidden; }
+  body::before, body::after { display: none; }
+
+  /* ============ APP SHELL — 2 sütun ============ */
+  .login-shell {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ============ SOL HERO PANEL ============ */
+  .hero {
+    position: relative;
+    overflow: hidden;
+    padding: 56px 56px 64px;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    background:
+      radial-gradient(ellipse 80% 50% at 90% 5%, rgba(255,255,255,.16), transparent 55%),
+      radial-gradient(ellipse 60% 50% at 5% 95%, rgba(0,0,0,.14), transparent 60%),
+      linear-gradient(135deg, #d44a14 0%, #ed6a2c 55%, #c25510 100%);
+  }
+
+  /* Zenginleştirilmiş paw pattern (full-bleed tasarımdan getirildi) */
+  .hero::before {
+    content: "";
+    position: absolute; inset: -20%;
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'><g fill='%23ffffff' fill-opacity='0.06'><ellipse cx='44' cy='62' rx='11' ry='14'/><ellipse cx='70' cy='46' rx='8' ry='11'/><ellipse cx='20' cy='46' rx='8' ry='11'/><ellipse cx='30' cy='24' rx='7' ry='9'/><ellipse cx='60' cy='24' rx='7' ry='9'/><ellipse cx='144' cy='154' rx='11' ry='14'/><ellipse cx='170' cy='138' rx='8' ry='11'/><ellipse cx='120' cy='138' rx='8' ry='11'/><ellipse cx='130' cy='116' rx='7' ry='9'/><ellipse cx='160' cy='116' rx='7' ry='9'/></g></svg>");
+    background-size: 320px 320px;
+    animation: paw-rotate 90s linear infinite;
+    z-index: 0;
+    pointer-events: none;
+  }
+  @keyframes paw-rotate {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+
+  .hero::after {
+    content: "";
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: 6px;
+    background: linear-gradient(90deg,
+      var(--cart) 0% 22%,
+      var(--bars) 22% 44%,
+      var(--arrow) 44% 66%,
+      var(--cat-7) 66% 88%,
+      #fff 88% 100%
+    );
+    z-index: 2;
+  }
+
+  .hero-mascot {
+    position: absolute;
+    right: -50px; bottom: -30px;
+    width: 320px; height: 320px;
+    opacity: .1;
+    transform: rotate(-8deg);
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 200'><ellipse cx='80' cy='130' rx='52' ry='56' fill='%23fff'/><path d='M50 88 L42 60 L66 78 Z M110 88 L118 60 L94 78 Z' fill='%23fff'/><circle cx='66' cy='124' r='5' fill='%23d44a14'/><circle cx='94' cy='124' r='5' fill='%23d44a14'/><path d='M75 142 Q80 148 85 142' stroke='%23d44a14' stroke-width='3' fill='none' stroke-linecap='round'/><ellipse cx='170' cy='135' rx='52' ry='52' fill='%23fff'/><ellipse cx='142' cy='110' rx='14' ry='22' fill='%23fff' transform='rotate(-25 142 110)'/><ellipse cx='198' cy='110' rx='14' ry='22' fill='%23fff' transform='rotate(25 198 110)'/><circle cx='156' cy='130' r='5' fill='%23d44a14'/><circle cx='184' cy='130' r='5' fill='%23d44a14'/><ellipse cx='170' cy='150' rx='8' ry='5' fill='%23d44a14'/></svg>");
+    background-size: contain;
+    background-repeat: no-repeat;
+  }
+
+  /* TOP: Logo + tagline */
+  .hero-top {
+    position: relative; z-index: 1;
+    display: flex; align-items: center; gap: 20px;
+  }
+  .hero-logo-mark {
+    width: 104px; height: 104px;
+    background: rgba(255,255,255,.97);
+    border-radius: 24px;
+    padding: 10px;
+    box-shadow:
+      0 16px 40px rgba(0,0,0,.22),
+      0 0 0 1px rgba(255,255,255,.6) inset;
+    transform: rotate(-3deg);
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    transition: transform .3s ease, box-shadow .3s ease;
+  }
+  .hero-logo-mark:hover {
+    transform: rotate(0deg) scale(1.04);
+    box-shadow:
+      0 22px 50px rgba(0,0,0,.28),
+      0 0 0 1px rgba(255,255,255,.7) inset;
+  }
+  .hero-logo-mark img {
+    width: 100%; height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  /* Fallback: if image fails to load, show a styled monogram */
+  .hero-logo-mark::after {
+    content: "P";
+    position: absolute;
+    font-size: 56px;
+    font-weight: bold;
+    color: var(--cat);
+    letter-spacing: -2px;
+    line-height: 1;
+    z-index: -1;
+  }
+  .hero-brand-block { line-height: 1.15; }
+  .hero-brand-name {
+    font-size: 26px;
+    font-weight: bold;
+    letter-spacing: -.5px;
+    line-height: 1;
+  }
+  .hero-brand-tag {
+    margin-top: 8px;
+    font-size: 12px;
+    letter-spacing: .5px;
+    opacity: .9;
+    font-weight: bold;
+  }
+
+  /* MID: Slogan */
+  .hero-mid {
+    position: relative; z-index: 1;
+    margin-top: 48px;
+  }
+  .hero-h1 {
+    margin: 0;
+    font-size: 44px;
+    font-weight: bold;
+    letter-spacing: -1.2px;
+    line-height: 1.06;
+  }
+  .hero-h1 .reveal { display: inline-block; opacity: 0; animation: char-in .6s ease-out forwards; }
+  @keyframes char-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .hero-h1 .accent {
+    background: linear-gradient(135deg, #ffd9c2 0%, #ffffff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero-sub {
+    margin: 16px 0 0;
+    font-size: 15px; opacity: .92;
+    line-height: 1.55;
+    max-width: 480px;
+  }
+  .hero-sub strong {
+    background: rgba(255,255,255,.18);
+    padding: 1px 8px;
+    border-radius: 6px;
+    font-weight: bold;
+  }
+
+  /* FEATURE kartlar — 2x2 grid */
+  .feat-grid {
+    position: relative; z-index: 1;
+    margin-top: 40px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .feat-card {
+    background: rgba(255,255,255,.11);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 16px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform .25s ease, background .25s ease, border-color .25s ease;
+    cursor: default;
+  }
+  .feat-card:hover {
+    transform: translateY(-2px);
+    background: rgba(255,255,255,.16);
+    border-color: rgba(255,255,255,.32);
+  }
+  .feat-card .feat-ic {
+    width: 38px; height: 38px;
+    border-radius: 11px;
+    background: rgba(255,255,255,.18);
+    border: 1px solid rgba(255,255,255,.2);
+    display: grid; place-items: center;
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
+  .feat-card .feat-title {
+    font-size: 14.5px;
+    font-weight: bold;
+    letter-spacing: -.2px;
+    line-height: 1.2;
+  }
+  .feat-card .feat-sub {
+    margin-top: 4px;
+    font-size: 11.5px;
+    opacity: .78;
+    line-height: 1.4;
+  }
+
+  /* BOTTOM: Tech credibility strip */
+  .hero-bottom {
+    position: relative; z-index: 1;
+    margin-top: auto;
+    padding-top: 24px;
+    display: flex; flex-wrap: wrap;
+    align-items: center;
+    font-size: 11px;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    opacity: .78;
+    font-weight: bold;
+  }
+  .hero-bottom .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 0;
+  }
+  .hero-bottom .sep {
+    display: inline-block;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.4);
+    margin: 0 12px;
+  }
+
+  /* ============ SAĞ FORM PANELİ — slide animation ============ */
+  .form-side {
+    background: #fafaf7;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Zenginleştirilmiş paw pattern (form-side için subtle versiyon) */
+  .form-side::before {
+    content: "";
+    position: absolute; inset: -10%;
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'><g fill='%231a5588' fill-opacity='0.04'><ellipse cx='44' cy='62' rx='11' ry='14'/><ellipse cx='70' cy='46' rx='8' ry='11'/><ellipse cx='20' cy='46' rx='8' ry='11'/><ellipse cx='30' cy='24' rx='7' ry='9'/><ellipse cx='60' cy='24' rx='7' ry='9'/><ellipse cx='144' cy='154' rx='11' ry='14'/><ellipse cx='170' cy='138' rx='8' ry='11'/><ellipse cx='120' cy='138' rx='8' ry='11'/><ellipse cx='130' cy='116' rx='7' ry='9'/><ellipse cx='160' cy='116' rx='7' ry='9'/></g></svg>");
+    background-size: 280px 280px;
+    animation: paw-rotate 120s linear infinite reverse;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .form-side::after {
+    content: "";
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 40% 30% at 100% 0%, rgba(212,74,20,.05), transparent 60%),
+      radial-gradient(ellipse 40% 30% at 0% 100%, rgba(26,85,136,.04), transparent 60%);
+    pointer-events: none;
+  }
+
+  .form-wrap {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    z-index: 2;
+  }
+
+  .form-side .ribbon {
+    position: absolute;
+    top: -160px; right: -200px;
+    width: 600px; height: 400px;
+    background: linear-gradient(135deg, rgba(212,74,20,.05), rgba(26,85,136,.04));
+    border-radius: 200px;
+    transform: rotate(-12deg);
+    transition: 1.2s cubic-bezier(.6,.2,.2,1);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .form-side.active .ribbon {
+    transform: rotate(8deg) translate(-220px, 200px);
+  }
+
+  .form-card {
+    position: absolute;
+    width: 100%; max-width: 440px;
+    z-index: 3;
+    transition: opacity .5s ease, transform .5s ease, filter .5s ease;
+  }
+
+  /* LOGIN — visible by default */
+  .form-card.login {
+    transform: translateX(0);
+    opacity: 1;
+    filter: blur(0);
+  }
+  .form-side.active .form-card.login {
+    transform: translateX(-50%);
+    opacity: 0;
+    filter: blur(10px);
+    pointer-events: none;
+  }
+
+  /* REGISTER — hidden by default */
+  .form-card.register {
+    transform: translateX(50%);
+    opacity: 0;
+    filter: blur(10px);
+    pointer-events: none;
+  }
+  .form-side.active .form-card.register {
+    transform: translateX(0);
+    opacity: 1;
+    filter: blur(0);
+    pointer-events: auto;
+  }
+
+  /* Stagger items */
+  .form-card .stagger {
+    transition: transform .55s ease, opacity .55s ease, filter .55s ease;
+    transition-delay: calc(.05s * var(--s, 0));
+  }
+  .form-side:not(.active) .form-card.register .stagger {
+    transform: translateX(20px);
+    opacity: 0;
+    filter: blur(6px);
+  }
+  .form-side.active .form-card.login .stagger {
+    transform: translateX(-20px);
+    opacity: 0;
+    filter: blur(6px);
+  }
+
+  /* ============ FORM CONTENT ============ */
+  .form-eye {
+    font-size: 11px; color: var(--cat); font-weight: bold;
+    text-transform: uppercase; letter-spacing: .8px;
+    margin-bottom: 10px;
+  }
+  .form-title {
+    margin: 0;
+    font-size: 30px; font-weight: bold;
+    color: var(--ink);
+    letter-spacing: -.5px;
+    line-height: 1.1;
+  }
+  .form-lead {
+    margin: 8px 0 0;
+    font-size: 13.5px; color: var(--ink-3);
+    line-height: 1.5;
+  }
+  .form-body {
+    margin-top: 28px;
+    display: flex; flex-direction: column;
+    gap: 14px;
+  }
+  .lbl {
+    font-size: 11.5px;
+    font-weight: bold;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .inp-wrap { position: relative; }
+  .inp-wrap > .ic {
+    position: absolute; left: 14px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--ink-4);
+    pointer-events: none;
+    display: flex;
+  }
+  .inp {
+    width: 100%;
+    padding: 13px 16px 13px 44px;
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    font: inherit; font-size: 14px;
+    background: #fff;
+    color: var(--ink);
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .inp:hover { border-color: var(--ink-4); }
+  .inp:focus {
+    outline: none;
+    border-color: var(--cat);
+    box-shadow: 0 0 0 4px rgba(212,74,20,.14);
+  }
+  .inp-wrap .eye-toggle {
+    position: absolute; right: 10px; top: 50%;
+    transform: translateY(-50%);
+    border: 0; background: transparent;
+    color: var(--ink-4); cursor: pointer;
+    padding: 6px;
+    border-radius: 8px;
+    display: flex;
+  }
+  .inp-wrap .eye-toggle:hover {
+    color: var(--cart);
+    background: var(--line-soft);
+  }
+  .form-meta-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 2px;
+  }
+  .remember {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12.5px; color: var(--ink-2);
+    cursor: pointer;
+  }
+  .remember input { width: 16px; height: 16px; accent-color: var(--cat); }
+  .forgot-link {
+    font-size: 12.5px;
+    color: var(--cart);
+    font-weight: bold;
+    text-decoration: none;
+    border-bottom: 1px dashed transparent;
+  }
+  .forgot-link:hover { border-bottom-color: var(--cart); }
+
+  .kvkk {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 14px;
+    background: var(--line-soft);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    font-size: 12px;
+    color: var(--ink-2);
+    line-height: 1.5;
+    cursor: pointer;
+  }
+  .kvkk input {
+    width: 18px; height: 18px; accent-color: var(--cat);
+    margin-top: 1px; flex-shrink: 0;
+  }
+  .kvkk strong { color: var(--cart); }
+  .kvkk a { color: var(--cat); font-weight: bold; text-decoration: none; }
+  .kvkk a:hover { text-decoration: underline; }
+
+  .b-primary {
+    width: 100%;
+    padding: 14px 24px;
+    margin-top: 6px;
+    background: linear-gradient(135deg, var(--cat), var(--cat-2));
+    color: #fff;
+    border: 0;
+    border-radius: 14px;
+    font: inherit; font-size: 14.5px; font-weight: bold;
+    cursor: pointer;
+    box-shadow: var(--shadow-cat);
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 8px;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .b-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 18px 36px rgba(212,74,20,.38);
+  }
+  .b-primary .arrow { transition: transform .2s ease; }
+  .b-primary:hover .arrow { transform: translateX(4px); }
+
+  .form-foot {
+    margin-top: 22px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--ink-3);
+  }
+  .form-foot .link-action {
+    background: none; border: 0;
+    color: var(--cart);
+    font: inherit;
+    font-weight: bold;
+    cursor: pointer;
+    border-bottom: 1px dashed var(--cart);
+    padding: 0;
+  }
+  .form-foot .link-action:hover {
+    color: var(--cat);
+    border-bottom-color: var(--cat);
+  }
+
+  .trust-strip {
+    margin-top: 28px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line-soft);
+    display: flex; flex-wrap: wrap;
+    gap: 8px 18px;
+    justify-content: center;
+    font-size: 10.5px;
+    color: var(--ink-4);
+    letter-spacing: .3px;
+  }
+  .trust-strip .item {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-weight: bold;
+  }
+
+  .form-note {
+    margin-top: 14px;
+    font-size: 11px;
+    color: var(--ink-4);
+    text-align: center;
+    line-height: 1.5;
+  }
+  .form-note strong { color: var(--cart); }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 1100px) {
+    .hero { padding: 44px 40px 56px; }
+    .hero-h1 { font-size: 38px; }
+    .feat-card { padding: 14px 16px; }
+    .feat-card .feat-title { font-size: 13px; }
+    .feat-card .feat-sub { font-size: 11px; }
+  }
+  @media (max-width: 880px) {
+    body { overflow: auto; }
+    .login-shell {
+      grid-template-columns: 1fr;
+      height: auto;
+      min-height: 100vh;
+    }
+    .hero { padding: 36px 28px 48px; }
+    .hero-h1 { font-size: 32px; }
+    .feat-grid { gap: 10px; }
+    .form-side { min-height: 80vh; }
+    .form-wrap { position: relative; inset: auto; padding: 36px 28px; }
+  }
+  @media (max-width: 480px) {
+    .feat-grid { grid-template-columns: 1fr; }
+    .hero-h1 { font-size: 26px; }
+    .form-title { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="login-shell">
+
+  <!-- ============ SOL HERO PANEL ============ -->
+  <div class="hero">
+    <div class="hero-mascot"></div>
+
+    <div class="hero-top">
+      <div class="hero-logo-mark">
+        <img src="../assets/logo.png" alt="PetStockPro" onerror="this.style.display='none'">
+      </div>
+      <div class="hero-brand-block">
+        <div class="hero-brand-name">PetStockPro</div>
+        <div class="hero-brand-tag">Pet shop'unun her şeyi tek panelde</div>
+      </div>
+    </div>
+
+    <div class="hero-mid">
+      <h1 class="hero-h1">
+        <span class="reveal" style="animation-delay:0ms">Stoktan</span>
+        <span class="reveal" style="animation-delay:60ms">satışa,</span>
+        <br>
+        <span class="reveal" style="animation-delay:120ms">vitrinden</span>
+        <span class="reveal accent" style="animation-delay:180ms">rapora.</span>
+      </h1>
+      <p class="hero-sub">
+        Pet shop'unun envanteri, satışı, vitrini ve raporları —
+        <strong>tek panelde, sade</strong>. Cloudflare edge altyapısında çalışır.
+      </p>
+    </div>
+
+    <div class="feat-grid">
+      <div class="feat-card">
+        <div class="feat-ic">📦</div>
+        <div class="feat-title">Stok Takip</div>
+        <div class="feat-sub">Çoklu şube, sayım, immutable ledger</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-ic">🏪</div>
+        <div class="feat-title">Vitrin</div>
+        <div class="feat-sub">Müşteri bul, WhatsApp ile sat</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-ic">📊</div>
+        <div class="feat-title">6 Rapor</div>
+        <div class="feat-sub">Kâr-zarar, KDV, en çok satan</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-ic">🤖</div>
+        <div class="feat-title">PetPro Asistan</div>
+        <div class="feat-sub">Sipariş + transfer + indirim önerisi</div>
+      </div>
+    </div>
+
+    <div class="hero-bottom">
+      <span class="badge">⚡ Cloudflare Workers</span>
+      <span class="sep"></span>
+      <span class="badge">🔒 KVKK uyumlu</span>
+    </div>
+  </div>
+
+  <!-- ============ SAĞ FORM PANELİ ============ -->
+  <div class="form-side" id="formSide">
+
+    <span class="ribbon"></span>
+
+    <div class="form-wrap">
+
+      <!-- ============ LOGIN ============ -->
+      <div class="form-card login">
+        <div class="stagger" style="--s:0">
+          <div class="form-eye">Giriş</div>
+          <h2 class="form-title">Hesabına giriş yap</h2>
+          <p class="form-lead">Pet shop'unu yönet — stok, satış, vitrin tek panelde.</p>
+        </div>
+
+        <form class="form-body" onsubmit="event.preventDefault(); demoLogin();">
+          <div class="stagger" style="--s:1">
+            <label class="lbl" for="login-email">E-posta</label>
+            <div class="inp-wrap">
+              <span class="ic">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1 0 2 1 2 2v12c0 1-1 2-2 2H4c-1 0-2-1-2-2V6c0-1 1-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              </span>
+              <input id="login-email" type="email" class="inp" placeholder="ornek@petshop.com" autocomplete="email">
+            </div>
+          </div>
+
+          <div class="stagger" style="--s:2">
+            <label class="lbl" for="login-password">Şifre</label>
+            <div class="inp-wrap">
+              <span class="ic">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+              </span>
+              <input id="login-password" type="password" class="inp" placeholder="••••••••" autocomplete="current-password">
+              <button type="button" class="eye-toggle" onclick="togglePass('login-password')" aria-label="Şifreyi göster">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="stagger form-meta-row" style="--s:3">
+            <label class="remember">
+              <input type="checkbox" checked>
+              Beni hatırla
+            </label>
+            <a class="forgot-link" href="#">Şifremi unuttum?</a>
+          </div>
+
+          <button class="b-primary stagger" type="submit" style="--s:4">
+            Hesabıma giriş yap
+            <span class="arrow">→</span>
+          </button>
+        </form>
+
+        <div class="form-foot stagger" style="--s:5">
+          Hesabın yok mu? <button type="button" class="link-action" onclick="switchToRegister()">Pet shop'unu ücretsiz ekle</button>
+        </div>
+
+        <div class="trust-strip stagger" style="--s:6">
+          <span class="item">🔒 Cloudflare Turnstile</span>
+          <span class="item">✓ KVKK uyumlu</span>
+          <span class="item">🆓 FREE 50 ürün</span>
+        </div>
+      </div>
+
+      <!-- ============ REGISTER ============ -->
+      <div class="form-card register">
+        <div class="stagger" style="--s:0">
+          <div class="form-eye">Pet shop ekle</div>
+          <h2 class="form-title">Ücretsiz başla</h2>
+          <p class="form-lead">FREE 50 ürün · kredi kartı gerekmez · 2 dakikada hazır.</p>
+        </div>
+
+        <form class="form-body" onsubmit="event.preventDefault(); demoRegister();">
+          <div class="stagger" style="--s:1">
+            <label class="lbl" for="reg-shop">Pet shop adı</label>
+            <div class="inp-wrap">
+              <span class="ic">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M15 9h.01M9 13h.01M15 13h.01M9 17h.01M15 17h.01"/></svg>
+              </span>
+              <input id="reg-shop" type="text" class="inp" placeholder="Mavi Pet Shop" autocomplete="organization">
+            </div>
+          </div>
+
+          <div class="stagger" style="--s:2">
+            <label class="lbl" for="reg-email">E-posta</label>
+            <div class="inp-wrap">
+              <span class="ic">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1 0 2 1 2 2v12c0 1-1 2-2 2H4c-1 0-2-1-2-2V6c0-1 1-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              </span>
+              <input id="reg-email" type="email" class="inp" placeholder="ornek@petshop.com" autocomplete="email">
+            </div>
+          </div>
+
+          <div class="stagger" style="--s:3">
+            <label class="lbl" for="reg-password">Şifre</label>
+            <div class="inp-wrap">
+              <span class="ic">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+              </span>
+              <input id="reg-password" type="password" class="inp" placeholder="En az 8 karakter, 1 büyük + 1 rakam" autocomplete="new-password">
+              <button type="button" class="eye-toggle" onclick="togglePass('reg-password')" aria-label="Şifreyi göster">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <label class="kvkk stagger" style="--s:4">
+            <input type="checkbox">
+            <span><strong>KVKK Aydınlatma Metni</strong>'ni okudum, kişisel verilerimin işlenmesini onaylıyorum (Md. 10). <a href="#">Detay</a></span>
+          </label>
+
+          <label class="kvkk stagger" style="--s:5">
+            <input type="checkbox">
+            <span>Verilerin <strong>Avrupa Birliği bölgesinde</strong> işlenmesine açık rıza veriyorum (KVKK Md. 9). <a href="#">Detay</a></span>
+          </label>
+
+          <button class="b-primary stagger" type="submit" style="--s:6">
+            Pet shop'umu oluştur
+            <span class="arrow">→</span>
+          </button>
+        </form>
+
+        <div class="form-foot stagger" style="--s:7">
+          Zaten hesabın var mı? <button type="button" class="link-action" onclick="switchToLogin()">Giriş yap</button>
+        </div>
+
+        <div class="form-note stagger" style="--s:8">
+          <strong>Cloudflare Turnstile</strong> bot koruması + <strong>HIBP</strong> şifre sızıntı kontrolü Sprint 2'de aktif olacak.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const formSide = document.getElementById('formSide');
+
+  function switchToRegister() { formSide.classList.add('active'); }
+  function switchToLogin() { formSide.classList.remove('active'); }
+
+  function togglePass(id) {
+    const pw = document.getElementById(id);
+    pw.type = pw.type === 'password' ? 'text' : 'password';
+  }
+
+  function demoLogin() {
+    const btn = document.querySelector('.form-card.login .b-primary');
+    btn.disabled = true;
+    btn.innerHTML = '<span style="font-size:11px;letter-spacing:.5px">Bağlanılıyor...</span>';
+    btn.style.opacity = '.7';
+    setTimeout(() => { window.location.href = 'pano.html'; }, 600);
+  }
+  function demoRegister() {
+    const btn = document.querySelector('.form-card.register .b-primary');
+    btn.disabled = true;
+    btn.innerHTML = '<span style="font-size:11px;letter-spacing:.5px">Hesap oluşturuluyor...</span>';
+    btn.style.opacity = '.7';
+    setTimeout(() => { window.location.href = 'pano.html'; }, 800);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && formSide.classList.contains('active')) {
+      switchToLogin();
+    }
+  });
+</script>
+
+</body>
+</html>

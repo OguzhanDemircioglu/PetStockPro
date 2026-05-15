@@ -219,7 +219,9 @@
   }
   .pt-pill.free { background: var(--bars-soft); color: var(--cart); }
   .pt-pill.pro { background: var(--cat-soft); color: var(--cat-7); }
+  .pt-pill.proplus { background: linear-gradient(135deg, var(--cart) 0%, var(--cart-7) 100%); color: #fff; box-shadow: 0 2px 6px rgba(26,85,136,.32); }
   .pt-pill.removed { background: var(--line-soft); color: var(--ink-4); text-decoration: line-through; }
+  .pt-pill.future { background: var(--dog-soft); color: var(--dog-7); font-style: italic; }
 
   /* Toolbox FAB */
   .toolbox-fab {
@@ -353,7 +355,7 @@
     <div class="nav-group">
       <div class="nav-group-label">Operasyon</div>
       <a class="nav-item" href="#">📧 E-posta Şablonları</a>
-      <a class="nav-item" href="#">💳 Paddle Webhook</a>
+      <a class="nav-item" href="#">💳 iyzico Webhook</a>
       <a class="nav-item" href="#">📊 KPI / Metrik</a>
       <a class="nav-item" href="#">⚙ Feature Flag</a>
     </div>
@@ -437,10 +439,10 @@
         <div data-pane="tab-tenant" style="display:none">
           <div class="auto-kpi-strip">
             <div class="auto-kpi"><div class="lbl">Toplam Tenant</div><div class="num">428</div><div class="sub">↑ 14 bu hafta</div></div>
-            <div class="auto-kpi"><div class="lbl">FREE</div><div class="num">386</div><div class="sub">%90 · ortalama 32 ürün</div></div>
-            <div class="auto-kpi"><div class="lbl">PRO</div><div class="num">42</div><div class="sub">%10 · 38 aktif</div></div>
-            <div class="auto-kpi"><div class="lbl">Aktif Bugün</div><div class="num">312</div><div class="sub">son 24 saat</div></div>
-            <div class="auto-kpi"><div class="lbl">MRR</div><div class="num">12.6K ₺</div><div class="sub">↑ 18% aylık</div></div>
+            <div class="auto-kpi"><div class="lbl">FREE</div><div class="num">300</div><div class="sub">%70 · ortalama 28 ürün</div></div>
+            <div class="auto-kpi"><div class="lbl">PRO</div><div class="num">107</div><div class="sub">%25 · ortalama 142 ürün</div></div>
+            <div class="auto-kpi"><div class="lbl">PRO+</div><div class="num">21</div><div class="sub">%5 · ortalama 380 ürün</div></div>
+            <div class="auto-kpi"><div class="lbl">MRR</div><div class="num">117K ₺</div><div class="sub">↑ 18% aylık · KDV dahil</div></div>
           </div>
           <div class="card">
             <p>Tenant arama, filtre ve detay — burada tüm tenant'ların özet görünümü, son login, plan, ürün sayısı, vitrin durumu. (Tab içeriği örnek — diğer 3 sekme aktif.)</p>
@@ -486,29 +488,37 @@
 
         <!-- ============================ TAB: PLAN ONAY ============================ -->
         <div data-pane="tab-plan" style="display:none">
-          <h3 style="margin:0 0 14px;font-size:14px">Plan Tablosu — 2-tier yapı</h3>
+          <h3 style="margin:0 0 14px;font-size:14px">Plan Tablosu — 3-tier B (TR-only, 2026-05-14)</h3>
           <div class="plan-table">
             <div class="plan-table-head">
               <span>Özellik</span>
               <span>FREE</span>
               <span>PRO</span>
               <span>PRO+</span>
-              <span>Limit</span>
+              <span>Not</span>
               <span>Durum</span>
+            </div>
+            <div class="plan-row-pt">
+              <span><span class="nm">Aylık fiyat</span><div class="nm-sub">KDV dahil · TRY</div></span>
+              <span class="pt-pill free">0 ₺</span>
+              <span class="pt-pill pro">750 ₺</span>
+              <span class="pt-pill proplus">1.750 ₺</span>
+              <span class="small muted">iyzico abonelik</span>
+              <span><span class="pill green">Aktif</span></span>
             </div>
             <div class="plan-row-pt">
               <span><span class="nm">Ürün limiti</span><div class="nm-sub">aktif ürün sayısı</div></span>
               <span class="pt-pill free">50</span>
-              <span class="pt-pill pro">Sınırsız</span>
-              <span class="pt-pill removed">Sınırsız</span>
-              <span class="small muted">—</span>
+              <span class="pt-pill pro">500</span>
+              <span class="pt-pill proplus">Sınırsız</span>
+              <span class="small muted">tek farklılaşma</span>
               <span><span class="pill green">Aktif</span></span>
             </div>
             <div class="plan-row-pt">
               <span><span class="nm">Şube</span><div class="nm-sub">çoklu lokasyon</div></span>
-              <span class="pt-pill free">3</span>
+              <span class="pt-pill free">Sınırsız</span>
               <span class="pt-pill pro">Sınırsız</span>
-              <span class="pt-pill removed">Sınırsız</span>
+              <span class="pt-pill proplus">Sınırsız</span>
               <span class="small muted">—</span>
               <span><span class="pill green">Aktif</span></span>
             </div>
@@ -516,44 +526,68 @@
               <span><span class="nm">Vitrin</span><div class="nm-sub">petstockpro.com/vitrin</div></span>
               <span class="pt-pill free">✓</span>
               <span class="pt-pill pro">✓</span>
-              <span class="pt-pill removed">Özel tema</span>
-              <span class="small muted">tek tema</span>
+              <span class="pt-pill proplus">✓</span>
+              <span class="small muted">tek tema, eşit</span>
               <span><span class="pill green">Aktif</span></span>
             </div>
             <div class="plan-row-pt">
-              <span><span class="nm">PetPro Asistan</span><div class="nm-sub">öneri sistemi</div></span>
-              <span class="pt-pill free">Sınırlı</span>
-              <span class="pt-pill pro">Tam</span>
-              <span class="pt-pill removed">+ AI sohbet</span>
+              <span><span class="nm">PetPro Asistan</span><div class="nm-sub">rule-based öneri</div></span>
+              <span class="pt-pill free">✓</span>
+              <span class="pt-pill pro">✓</span>
+              <span class="pt-pill proplus">✓</span>
               <span class="small muted">—</span>
               <span><span class="pill green">Aktif</span></span>
             </div>
             <div class="plan-row-pt">
-              <span><span class="nm">Bayi Admin</span><div class="nm-sub">çoklu bayi yönetimi</div></span>
+              <span><span class="nm">2FA · Audit · 6 Rapor</span><div class="nm-sub">tam özellik</div></span>
+              <span class="pt-pill free">✓</span>
+              <span class="pt-pill pro">✓</span>
+              <span class="pt-pill proplus">✓</span>
+              <span class="small muted">her planda açık</span>
+              <span><span class="pill green">Aktif</span></span>
+            </div>
+            <div class="plan-row-pt">
+              <span><span class="nm">Nilvera e-Arşiv</span><div class="nm-sub">opsiyonel entegrasyon</div></span>
+              <span class="pt-pill free">✓</span>
+              <span class="pt-pill pro">✓</span>
+              <span class="pt-pill proplus">✓</span>
+              <span class="small muted">pet shop kendi yükümlülüğü</span>
+              <span><span class="pill green">Aktif</span></span>
+            </div>
+            <div class="plan-row-pt">
+              <span><span class="nm">Bayi Admin (multi-tenant)</span><div class="nm-sub">çoklu bayi viewer</div></span>
               <span class="pt-pill removed">—</span>
               <span class="pt-pill removed">—</span>
-              <span class="pt-pill removed">✓</span>
-              <span class="small muted">—</span>
+              <span class="pt-pill future">Faz 3</span>
+              <span class="small muted">schema hazır, UI bekliyor</span>
               <span><span class="pill outline">Faz 3 disable</span></span>
             </div>
-            <div class="plan-row-pt" style="background:var(--danger-soft)">
-              <span><span class="nm" style="color:var(--danger-7)">PRO+ Tier</span><div class="nm-sub" style="color:var(--danger-7)">2026-05-13 kararı: kaldırıldı</div></span>
-              <span colspan="3" style="grid-column:span 3" class="small muted">Yeni 2-tier yapı: FREE 50 ürün + PRO sınırsız. PRO+ ihtiyacı oluşmadı.</span>
+            <div class="plan-row-pt">
+              <span><span class="nm">Custom domain · API · White-label</span><div class="nm-sub">PRO+ premium ek</div></span>
+              <span class="pt-pill removed">—</span>
+              <span class="pt-pill removed">—</span>
+              <span class="pt-pill removed">—</span>
+              <span class="small muted">kapsam dışı (CLAUDE.md #1)</span>
+              <span><span class="pill outline">Yok</span></span>
+            </div>
+            <div class="plan-row-pt" style="background:var(--bars-soft)">
+              <span><span class="nm" style="color:var(--cart)">3-tier B revize</span><div class="nm-sub" style="color:var(--cart)">2026-05-14 · TR-only (Paddle Faz 2'ye saklı)</div></span>
+              <span style="grid-column:span 3" class="small" style="color:var(--cart);font-weight:bold">FREE 50 deneme · PRO 500 orta segment esas pazar · PRO+ ∞ büyük zincirler · Tek farklılaşma stok limiti, diğer özellikler eşit.</span>
               <span></span>
-              <span><span class="pill red">Kaldırıldı</span></span>
+              <span><span class="pill blue">Otoritatif</span></span>
             </div>
           </div>
 
-          <h3 style="margin:24px 0 12px;font-size:14px">Bekleyen Yükseltme Onayları</h3>
+          <h3 style="margin:24px 0 12px;font-size:14px">Bekleyen Yükseltme Onayları <span class="small muted" style="font-weight:normal">— iyzico abonelik onaylı, manuel kontrol gerekiyor</span></h3>
           <div class="queue-wrap">
             <div class="queue-item">
               <div class="thumb">🐕</div>
               <div class="who-info">
                 <div class="nm">Patpat Pet</div>
-                <div class="sub">Beşiktaş · İstanbul · 5 ürün hakkına ulaştı</div>
+                <div class="sub">Beşiktaş · İstanbul · 48/50 ürüne ulaştı, limit dolmak üzere</div>
               </div>
-              <div class="meta"><strong>FREE → PRO</strong><br><span class="small muted">Aylık 199₺</span></div>
-              <div class="meta">Paddle ödeme: <span class="pill green">✓ Onaylandı</span></div>
+              <div class="meta"><strong>FREE → PRO</strong><br><span class="small muted">Aylık 750 ₺ KDV dahil</span></div>
+              <div class="meta">iyzico ödeme: <span class="pill green">✓ Onaylandı</span></div>
               <div class="row gap-6">
                 <button class="btn btn-ghost btn-sm">Reddet</button>
                 <button class="btn btn-success btn-sm">✓ Onayla & Aktif Et</button>
@@ -565,10 +599,23 @@
                 <div class="nm">Sevgi Pet Shop</div>
                 <div class="sub">Bornova · İzmir · Vergi no doğrulama bekliyor</div>
               </div>
-              <div class="meta"><strong>FREE → PRO</strong><br><span class="small muted">Yıllık 1.990₺</span></div>
-              <div class="meta">Paddle ödeme: <span class="pill cat">Bekliyor</span></div>
+              <div class="meta"><strong>FREE → PRO</strong><br><span class="small muted">Aylık 750 ₺</span></div>
+              <div class="meta">iyzico ödeme: <span class="pill cat">Bekliyor</span></div>
               <div class="row gap-6">
                 <button class="btn btn-ghost btn-sm">Detay →</button>
+              </div>
+            </div>
+            <div class="queue-item">
+              <div class="thumb">🐈</div>
+              <div class="who-info">
+                <div class="nm">Mama Dünyası Zinciri</div>
+                <div class="sub">Levent · İstanbul · 3 şube · 487/500 ürüne ulaştı</div>
+              </div>
+              <div class="meta"><strong>PRO → PRO+</strong><br><span class="small muted">Aylık 1.750 ₺ KDV dahil</span></div>
+              <div class="meta">iyzico ödeme: <span class="pill green">✓ Onaylandı</span></div>
+              <div class="row gap-6">
+                <button class="btn btn-ghost btn-sm">Reddet</button>
+                <button class="btn btn-success btn-sm">✓ Onayla & Aktif Et</button>
               </div>
             </div>
           </div>
@@ -927,7 +974,7 @@
               <div class="card" style="padding:32px;text-align:center">
                 <div style="font-size:48px;margin-bottom:12px;opacity:.4">🏢</div>
                 <h3 style="margin:0 0 8px;color:var(--cart)">Bayi Admin Sekmesi — Faz 3'te aktif olacak</h3>
-                <p class="small muted" style="max-width:520px;margin:0 auto">PRO+ tier ile gelecek olan çoklu bayi yönetimi (1 ana tenant + N alt bayi) burada yönetilecek. Faz 3'e kadar disabled.</p>
+                <p class="small muted" style="max-width:520px;margin:0 auto">Faz 3'te gelecek olan çoklu bayi yönetimi (1 ana tenant + N alt bayi · user_memberships refactor) burada yönetilecek. Schema hazır, UI Faz 3'e kadar disabled.</p>
               </div>
             </div>
 
