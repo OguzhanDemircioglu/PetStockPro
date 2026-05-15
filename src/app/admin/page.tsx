@@ -68,7 +68,7 @@ export default async function AdminDashboardPage() {
           <QuickLink href="/admin/products" label="🐾 Ürünler" />
           <QuickLink href="/admin/branches" label="🏪 Şubeler" />
           <QuickLink href="/admin/suppliers" label="🏢 Tedarikçiler" />
-          <QuickLink href="/admin/settings/company" label="⚙ Ayarlar" />
+          <QuickLink href="/admin/settings" label="⚙ Ayarlar" />
         </div>
       </header>
 
