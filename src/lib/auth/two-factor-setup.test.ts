@@ -4,6 +4,7 @@ import {
   verifyTwoFactorSetup,
   enableTwoFactor,
   disableTwoFactor,
+  regenerateRecoveryCodes,
 } from './two-factor-setup';
 import {
   generateTotpSecret,
@@ -17,6 +18,7 @@ import type { RecoveryCode } from '@/db/schema';
 interface UserRow {
   id: string;
   email?: string;
+  companyId?: string | null;
   twoFactorEnabled?: boolean;
   twoFactorSecret?: string | null;
   twoFactorRecoveryCodes?: RecoveryCode[] | null;
@@ -229,6 +231,7 @@ describe('disableTwoFactor', () => {
   const secret = generateTotpSecret();
   const validRow: UserRow = {
     id: 'user_1',
+    email: 'test@petshop.com',
     twoFactorEnabled: true,
     twoFactorSecret: secret,
   };
@@ -259,6 +262,51 @@ describe('disableTwoFactor', () => {
       userRow: { ...validRow, twoFactorEnabled: false },
     });
     const result = await disableTwoFactor('user_1', '123456', db);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe('not_enabled');
+  });
+});
+
+describe('regenerateRecoveryCodes', () => {
+  const secret = generateTotpSecret();
+  const validRow: UserRow = {
+    id: 'user_1',
+    twoFactorEnabled: true,
+    twoFactorSecret: secret,
+  };
+
+  it('Doğru TOTP → 8 yeni recovery code + DB update', async () => {
+    const { db, updateSet } = makeMockDb({ userRow: validRow });
+    const code = generateTotpCode(secret);
+
+    const result = await regenerateRecoveryCodes('user_1', code, db);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.recoveryCodes).toHaveLength(8);
+      for (const c of result.recoveryCodes) {
+        expect(c).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+      }
+    }
+
+    const setCall = updateSet.mock.calls[0]?.[0];
+    expect(setCall.twoFactorRecoveryCodes).toHaveLength(8);
+    expect(setCall.twoFactorRecoveryCodes[0].hash).toMatch(/^[a-f0-9]{64}$/);
+    expect(setCall.twoFactorRecoveryCodes[0].usedAt).toBeNull();
+  });
+
+  it('Yanlış TOTP → invalid_code, kodlar değişmez', async () => {
+    const { db, updateSet } = makeMockDb({ userRow: validRow });
+    const result = await regenerateRecoveryCodes('user_1', '000000', db);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe('invalid_code');
+    expect(updateSet).not.toHaveBeenCalled();
+  });
+
+  it('2FA aktif değil → not_enabled', async () => {
+    const { db } = makeMockDb({
+      userRow: { ...validRow, twoFactorEnabled: false },
+    });
+    const result = await regenerateRecoveryCodes('user_1', '123456', db);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe('not_enabled');
   });

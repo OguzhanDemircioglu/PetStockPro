@@ -94,10 +94,10 @@
 - **Eski proje:** `D:/Projeler/Pet/` (PetToptan marketplace, legacy referans — yeni projeyle kod paylaşmıyor)
 - **Yeni proje:** `D:/Projeler/petstockpro/` (sıfırdan, TS stack)
 
-## 🚀 Şu Anki Durum: Sprint 2.7 Tamamlandı (2026-05-15)
+## 🚀 Şu Anki Durum: Sprint 2.8 Tamamlandı (2026-05-15)
 
-**Branch:** `cray61` — **18 commit ahead of origin** (push edilmedi, kullanıcı kararı bekliyor)
-**Test:** 382 passed (24 dosya, vitest)
+**Branch:** `cray61` — **19 commit ahead of origin** (push edilmedi, kullanıcı kararı bekliyor)
+**Test:** 395 passed (26 dosya, vitest)
 **Lint + typecheck:** 0 error
 **Seed:** 81 il + 974 ilçe Supabase Frankfurt'a aktarıldı (Pet/ legacy → turkey-locations.ts)
 
@@ -119,13 +119,15 @@
 | 2.5 2FA TOTP | (yeni) | Schema migration 0004 (users +5 field: secret + recoveryCodes jsonb + enabledAt + setupSecret + setupExpiresAt) + otpauth@9.5 + qrcode@1.5 paketleri + two-factor helper (generateSecret/buildOtpAuthUri/verifyTotp/generateRecoveryCodes 8 ABCD-EFGH/hashRecoveryCode SHA-256/verifyRecoveryCode timing-safe + tek-kullanımlık) + two-factor-setup orchestration (initSetup 10dk TTL + verifySetup + enable + disable) + custom AuthErrors (TwoFactorRequiredError + TwoFactorInvalidError code field) + authorize.ts TOTP step (şifre doğru sonrası 2FA enabled ise totp gerekli; recovery code dahil) + /2fa-setup 3-adım wizard (QR + manuel secret + 6haneli verify + recovery codes ekranı + clipboard/print) + login page TOTP step (requires2fa banner + readOnly email persist) + 53 test (33 helper + 14 setup + 6 authorize 2FA) + browser full flow (login → 2fa-setup → QR/secret → TOTP verify → recovery codes → enable → logout → login → 2fa banner → TOTP/recovery code login → kullanılmış recovery reject) |
 | 2.6 Onboarding + Cities/Districts Seed | (yeni) | Pet/ legacy turkeyDistricts.ts taşındı (src/db/seed/turkey-locations.ts) + makeSlug shared util (src/lib/utils/slug.ts) + seed script (db:seed npm command) 81 il + 974 ilçe Supabase'e idempotent insert + lib/onboarding/actions (createFirstBranch + saveStorefront + completeOnboarding) + /onboarding 2-adım wizard (şube zorunlu: ad+il+ilçe+adres+WA + vitrin opsiyonel: slug edit veya skip) + /api/locations/districts route (cityId → districts JSON) + / sayfasında auth+onboarding gate (onboardingCompletedAt NULL → /onboarding redirect) + 12 test (createFirstBranch 6 + saveStorefront 5 + completeOnboarding 1) + browser full flow (login 2FA → /onboarding → İstanbul/Kadıköy şube + slug → /?onboarding=complete → / direct artık) — **NOT:** "İlk ürün" 3. adım Sprint 1B sonrası (products tablosu yok) |
 | 2.7 Account Lock UX | (yeni) | Schema migration 0005 (users +3 field: lockedReason varchar + recentLockCount int + lastLockedAt) + brute-force.ts genişletildi (24h window stale check, recentLockCount, lockedReason BRUTE_FORCE_1H/24H, newRecentLockCount + newLastLockedAt result fields) + Custom errors (AccountLockedError lockedSecondsRemaining+lockedReason field + InvalidCredentialsError remainingAttempts field) + authorize.ts (locked iken AccountLockedError throw, fail lock'u tetiklerse Brevo email gönderim + AccountLockedError throw, fail lock olmazsa InvalidCredentialsError throw remainingAttempts ile) + buildAccountLockedTemplate (BRUTE_FORCE_1H ve 24H iki varyant + IP block + reset CTA + "sen denemiyorsan destek" uyarı) + login action (remainingAttempts state + account_locked code → cookie lock state + redirect /account-locked + invalid_credentials code → state.remainingAttempts) + login page kalan hak banner (3/2/1 hak zinciri, renkli) + /account-locked sayfa (server cookie read + LockedCountdown client component HH:MM:SS countdown + Şifremi Sıfırla CTA + destek email + permanent variant kırmızı) + 6 yeni test (brute-force +3: 24h stale reset + recentLockCount korunur + permanent lock; authorize +1: 5. yanlış AccountLockedError throw) + browser full flow (5 yanlış zinciri → banner 3/2/1 → lock → /account-locked countdown → Brevo email + log → /forgot-password lock bypass → reset → yeni şifreyle login OK → /onboarding) — `pp_lock_state` cookie 5dk TTL + HttpOnly + secure |
+| 2.8 Security Settings + Telegram Alert | (yeni) | lib/telegram/client.ts (Bot API + dev mock fallback console log + severity info/warning/critical) + lib/telegram/messages.ts (buildAccountLockedAlert BRUTE_FORCE_1H warning + BRUTE_FORCE_24H critical + buildTwoFactorDisabledAlert info sessiz) + authorize.ts (5. yanlış lock'ta Telegram alert fire-and-forget) + two-factor-setup.ts (disableTwoFactor Telegram alert + companyName lookup, regenerateRecoveryCodes TOTP doğrulamayla yeni 8 kod) + /admin/security 3-panel server+client (status panel: aktive zamanı + kalan recovery count + warning badge 2/0 kaldı, disable panel + regen panel — collapsible) + 13 yeni test (telegram client 4 + telegram messages 6 + 2fa setup +3 regenerate) + browser full flow (2FA aktif user login → /admin/security → "6/8 kullanılmamış" → regen TOTP → 8 yeni kod ekranı → disable TOTP → success banner + PASİF status + Telegram mock "🛡 2FA kapatıldı" log) |
 
 ### 🛠 Stack Çalışan Durumda
 
 - **DB:** Supabase Frankfurt EU (`rjzhnfqrynalklsnnuym`), 9 tablo, 6 migration (0000-0005), hepsi RLS enabled, **cities (81) + districts (974) seed edildi**
-- **Auth flow MVP:** /login (+ 2FA TOTP + remaining banner) + /register + /verify-email + /verify-email/[token] + /forgot-password + /reset-password/[token] + /2fa-setup + /onboarding (2 adım) + /account-locked (countdown) — tümü browser end-to-end geçti
+- **Auth flow MVP:** /login (+ 2FA TOTP + remaining banner) + /register + /verify-email + /verify-email/[token] + /forgot-password + /reset-password/[token] + /2fa-setup + /onboarding (2 adım) + /account-locked (countdown) + /admin/security (disable/regen) — tümü browser end-to-end geçti
 - **Onboarding flow:** Register → verify → login → /onboarding (otomatik redirect) → şube + opsiyonel vitrin → / dashboard
-- **Brute-force güvenlik:** 5 fail → 1h lock + Brevo email + cookie state, 3 art arda lock → 24h kalıcı, /forgot-password lock bypass eder
+- **Brute-force güvenlik:** 5 fail → 1h lock + Brevo email + Telegram alert + cookie state, 3 art arda lock → 24h kalıcı, /forgot-password lock bypass eder
+- **Telegram:** Süperadmin alert kanalı stub (account_locked + 2fa_disabled) — config gelince production ready
 - **Sandbox-ready integrations:** iyzico + Nilvera + Brevo (key gelince aktif)
 - **Memory:** test-first + ödeme integrity + sorusuz akış kuralları memory'de kayıtlı
 
@@ -133,8 +135,8 @@
 
 | Sprint | İçerik | Tahmin |
 |---|---|---|
-| **2.8** | Settings > Security: 2FA disable + recovery code regenerate (Sprint 9 settings'le birleşebilir) + Telegram süperadmin alert (lock event'leri) | 1-2 saat |
-| 2.9 | Email değiştirme akışı (settings > account, çift doğrulama + süperadmin alert) | 1-2 saat |
+| **2.9** | Email değiştirme akışı (settings > account, çift doğrulama eski+yeni email + Telegram alert) | 1-2 saat |
+| 2.10 | Onboarding'e "İlk ürün" 3. adımı (Sprint 1B products schema sonrası) | 30 dk |
 | 1B | products + variants + branch_inventory + categories + brands + suppliers schema + 36 tablo komple | 3-4 saat |
 | 1B+ | Onboarding'e "İlk ürün" 3. adımı ekle (products tablosu hazır olunca) | 30 dk |
 | 14 sonu | Billing orchestrator (iyzico webhook → DB transaction → Nilvera invoice → audit) | 2-3 saat |
@@ -147,7 +149,7 @@
 - Brevo API key (production transactional email)
 - Supabase Pro tier upgrade ($25/ay, lansman öncesi)
 
-Hiçbiri Sprint 2.8 için bloker değil — devam edilebilir.
+Hiçbiri Sprint 2.9 için bloker değil — devam edilebilir.
 
 ## 🆕 2026-05-14 Karar Revizyonu (TR-only + 3-tier B geri açıldı) — OTORİTATİF
 

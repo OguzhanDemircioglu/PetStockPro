@@ -20,8 +20,10 @@ import {
   generateRecoveryCodes,
   TWO_FACTOR_SETUP_TTL_MS,
 } from './two-factor';
+import { sendTelegramAlert } from '@/lib/telegram/client';
+import { buildTwoFactorDisabledAlert } from '@/lib/telegram/messages';
 import type { DbClient } from '@/lib/db/client';
-import { users } from '@/db/schema';
+import { users, companies } from '@/db/schema';
 
 // ─────────────────────────────────────────────────────────────────
 // 1. INIT — geçici secret + QR
@@ -206,8 +208,10 @@ export async function disableTwoFactor(
 ): Promise<DisableTwoFactorResult> {
   const rows = await db
     .select({
+      email: users.email,
       twoFactorEnabled: users.twoFactorEnabled,
       twoFactorSecret: users.twoFactorSecret,
+      companyId: users.companyId,
     })
     .from(users)
     .where(eq(users.id, userId))
@@ -235,5 +239,69 @@ export async function disableTwoFactor(
     })
     .where(eq(users.id, userId));
 
+  // Sprint 2.8 — Telegram süperadmin alert (fire-and-forget)
+  try {
+    let companyName: string | null = null;
+    if (user.companyId) {
+      const companyRows = await db
+        .select({ name: companies.name })
+        .from(companies)
+        .where(eq(companies.id, user.companyId))
+        .limit(1);
+      companyName = companyRows[0]?.name ?? null;
+    }
+    await sendTelegramAlert(
+      buildTwoFactorDisabledAlert({ email: user.email, companyName }),
+    );
+  } catch (err) {
+    console.warn(`[two-factor-setup] Telegram alert fail user=${userId}:`, err);
+  }
+
   return { ok: true };
+}
+
+// ─────────────────────────────────────────────────────────────────
+// REGENERATE RECOVERY CODES — Sprint 2.8
+// ─────────────────────────────────────────────────────────────────
+
+export type RegenerateRecoveryResult =
+  | { ok: true; recoveryCodes: string[] }
+  | { ok: false; reason: 'not_enabled' | 'invalid_code' };
+
+/**
+ * Recovery code'larını yenile. 2FA hala aktif, sadece eski kodlar invalidate +
+ * 8 yeni kod üretilir. TOTP doğrulamasıyla korunur (cebde Authenticator olsa
+ * yeter — recovery kaybetti senaryosu).
+ */
+export async function regenerateRecoveryCodes(
+  userId: string,
+  totpCode: string,
+  db: DbClient,
+  now: Date = new Date(),
+): Promise<RegenerateRecoveryResult> {
+  const rows = await db
+    .select({
+      twoFactorEnabled: users.twoFactorEnabled,
+      twoFactorSecret: users.twoFactorSecret,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  const user = rows[0];
+
+  if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
+    return { ok: false, reason: 'not_enabled' };
+  }
+
+  if (!verifyTotp(user.twoFactorSecret, totpCode)) {
+    return { ok: false, reason: 'invalid_code' };
+  }
+
+  const { plain, hashed } = generateRecoveryCodes();
+  await db
+    .update(users)
+    .set({ twoFactorRecoveryCodes: hashed, updatedAt: now })
+    .where(eq(users.id, userId));
+
+  return { ok: true, recoveryCodes: plain };
 }

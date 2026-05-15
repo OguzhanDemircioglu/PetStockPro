@@ -31,6 +31,8 @@ import {
 } from './errors';
 import { sendBrevoEmail } from '@/lib/brevo/client';
 import { buildAccountLockedTemplate } from '@/lib/brevo/templates';
+import { sendTelegramAlert } from '@/lib/telegram/client';
+import { buildAccountLockedAlert } from '@/lib/telegram/messages';
 import type { DbClient } from '@/lib/db/client';
 import { users } from '@/db/schema';
 
@@ -135,6 +137,19 @@ export async function authorizeCredentials(
         });
       } catch (err) {
         console.warn(`[authorize] Account locked email fail user=${user.id}:`, err);
+      }
+
+      // Sprint 2.8 — Telegram süperadmin alert (lock event'i)
+      try {
+        const alertReq = buildAccountLockedAlert({
+          email: user.email,
+          reason: result.lockedReason as 'BRUTE_FORCE_1H' | 'BRUTE_FORCE_24H',
+          recentLockCount: result.newRecentLockCount,
+          ipAddress: null, // authorize Auth.js req'i geçmediği için
+        });
+        await sendTelegramAlert(alertReq);
+      } catch (err) {
+        console.warn(`[authorize] Telegram alert fail user=${user.id}:`, err);
       }
 
       throw new AccountLockedError(
