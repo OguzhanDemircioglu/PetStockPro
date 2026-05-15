@@ -22,8 +22,9 @@ import { createVerificationToken } from './email-verification';
 import { sendBrevoEmail } from '@/lib/brevo/client';
 import { buildVerifyEmailTemplate } from '@/lib/brevo/templates';
 import { makeSlug } from '@/lib/utils/slug';
+import { DEFAULT_CATEGORIES } from '@/lib/catalog/default-categories';
 import type { DbClient } from '@/lib/db/client';
-import { companies, users } from '@/db/schema';
+import { categories, companies, users } from '@/db/schema';
 
 export const registerSchema = z.object({
   shopName: z.string().min(2, 'Pet shop adı en az 2 karakter').max(200),
@@ -145,6 +146,19 @@ export async function registerNewTenant(
           emailVerificationLastSentAt: now,
         })
         .returning({ id: users.id });
+
+      // Sprint 1B.1 — Default categories seed (16 kategori, kullanıcı sonra düzenleyebilir/silebilir)
+      await tx.insert(categories).values(
+        DEFAULT_CATEGORIES.map((c) => ({
+          companyId: company.id,
+          name: c.name,
+          slug: c.slug,
+          emoji: c.emoji,
+          vatRate: c.vatRate,
+          sktRequired: c.sktRequired,
+          displayOrder: c.displayOrder,
+        })),
+      );
 
       return { companyId: company.id, userId: user.id };
     });
