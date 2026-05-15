@@ -20,6 +20,7 @@ import {
   jsonb,
   index,
   uniqueIndex,
+  date,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
@@ -75,6 +76,32 @@ export const superadminActionTypeEnum = petstockproSchema.enum('superadmin_actio
   'dbfix',         // DB Inspector ile veri düzeltme
   'system',        // sistem config değişikliği
   'user',          // uzak kullanıcı yönetimi (şifre/2FA/oturum/kilit)
+]);
+
+// Sprint 1B.1 — Katalog + stok enum'ları
+export const animalTypeEnum = petstockproSchema.enum('animal_type', [
+  'cat', 'dog', 'bird', 'fish', 'rabbit', 'reptile', 'other',
+]);
+
+export const movementTypeEnum = petstockproSchema.enum('movement_type', [
+  'stock_in',          // tedarikçiden giriş
+  'stock_out',         // satış, fire, hediye, iade, vs (subtype'a göre)
+  'transfer',          // şubeler arası
+  'stocktake',         // sayım sırasında düzeltme
+  'stocktake_initial', // sayım başlangıç snapshot'ı
+]);
+
+export const movementSubtypeEnum = petstockproSchema.enum('movement_subtype', [
+  'sale', 'waste', 'gift', 'sample', 'return', 'internal_use', 'other',
+]);
+
+// 'credit' = veresiye — payment_method='credit' → customer_ref NULL OLAMAZ (DB CHECK Sprint 4)
+export const paymentMethodEnum = petstockproSchema.enum('payment_method', [
+  'cash', 'card', 'bank_transfer', 'credit',
+]);
+
+export const supplierPaymentTermsEnum = petstockproSchema.enum('supplier_payment_terms', [
+  'cash', 'net_30', 'net_60', 'other',
 ]);
 
 // ═══════════════════════════════════════════════════════════════
@@ -334,10 +361,280 @@ export const auditLogs = petstockproSchema.table('audit_logs', {
 ]);
 
 // ═══════════════════════════════════════════════════════════════
-// TODO Sprint 1B+ (sırayla eklenecek)
+// TABLES — Sprint 1B.1 (Katalog + Stok foundation, UI Sprint 3+)
 // ═══════════════════════════════════════════════════════════════
-// products, product_variants, branch_inventory, stock_movements,
-// suppliers, categories, brands, stocktakes, stocktake_items, sessions,
+// Otoritatif: DATABASE-SCHEMA.md §3.2 (branchInventory) + §3.3 (katalog) + §3.4 (operasyon)
+
+/**
+ * CATEGORIES — Ürün kategorileri (tenant başına)
+ *
+ * Hierarchical: parentId nullable self-reference. MVP'de 1-2 derinlik kullanılır.
+ * vatRate: %1 (özel) / %10 (gıda - pet mama) / %20 (genel). lib/constants/vat-rates.ts ile uyum.
+ * sktRequired: true ise stok_movements'da expiryDate zorunlu (Sprint 4 trigger).
+ *
+ * RLS: tenant SELECT/INSERT/UPDATE/DELETE kendi categories'lerini, super_admin all access.
+ */
+export const categories = petstockproSchema.table('categories', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  parentId: uuid('parent_id'), // self-reference (FK constraint Drizzle relations.ts'te)
+  name: varchar('name', { length: 100 }).notNull(),
+  slug: varchar('slug', { length: 100 }).notNull(),
+  emoji: varchar('emoji', { length: 10 }),
+  displayOrder: integer('display_order').notNull().default(0),
+  vatRate: decimal('vat_rate', { precision: 5, scale: 2 }), // 1.00 / 10.00 / 20.00
+  sktRequired: boolean('skt_required').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('idx_categories_company_slug').on(t.companyId, t.slug),
+  index('idx_categories_parent').on(t.parentId),
+]);
+
+/**
+ * BRANDS — Ürün markaları (tenant başına)
+ */
+export const brands = petstockproSchema.table('brands', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 100 }).notNull(),
+  slug: varchar('slug', { length: 100 }).notNull(),
+  logoUrl: text('logo_url'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('idx_brands_company_slug').on(t.companyId, t.slug),
+]);
+
+/**
+ * SUPPLIERS — Tedarikçiler (tenant başına)
+ *
+ * Stock-in movement'larında supplierId FK. Soft delete: isActive.
+ */
+export const suppliers = petstockproSchema.table('suppliers', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 255 }).notNull(),
+  vatNo: varchar('vat_no', { length: 20 }),
+  vatOffice: varchar('vat_office', { length: 100 }),
+
+  contactName: varchar('contact_name', { length: 100 }),
+  phone: varchar('phone', { length: 20 }),
+  email: varchar('email', { length: 255 }),
+
+  city: varchar('city', { length: 100 }),
+  district: varchar('district', { length: 100 }),
+  addressLine: text('address_line'),
+
+  leadTimeDays: integer('lead_time_days').notNull().default(7),
+  paymentTerms: supplierPaymentTermsEnum('payment_terms').notNull().default('net_30'),
+  iban: varchar('iban', { length: 34 }),
+
+  isActive: boolean('is_active').notNull().default(true),
+  note: text('note'),
+
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('idx_suppliers_company').on(t.companyId),
+]);
+
+/**
+ * PRODUCTS — Ürün parent (variant'larla 1-N)
+ *
+ * vitrinPublished PARENT-LEVEL. Variant bazlı vitrin toggle YOK (Faz 2).
+ * isActive: soft delete. isPublished: taslak/yayın.
+ *
+ * Stok 0 → otomatik vitrin'den çekme (Sprint 4 trigger). Manuel "Satışa Aç" ile geri açılır.
+ */
+export const products = petstockproSchema.table('products', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 255 }).notNull(),
+  slug: varchar('slug', { length: 255 }).notNull(),
+  description: text('description'),
+  categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'set null' }),
+  brandId: uuid('brand_id').references(() => brands.id, { onDelete: 'set null' }),
+  animalTypes: jsonb('animal_types').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+  tags: jsonb('tags').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+  isActive: boolean('is_active').notNull().default(true),
+  isPublished: boolean('is_published').notNull().default(true),
+  isFeatured: boolean('is_featured').notNull().default(false),
+  adminNote: text('admin_note'),
+
+  // Vitrin toggle (parent-level)
+  vitrinPublished: boolean('vitrin_published').notNull().default(false),
+  vitrinPublishedAt: timestamp('vitrin_published_at', { withTimezone: true }),
+  vitrinPublishedById: uuid('vitrin_published_by_id').references(() => users.id, { onDelete: 'set null' }),
+  vitrinAutoUnpublishedAt: timestamp('vitrin_auto_unpublished_at', { withTimezone: true }),
+  vitrinAutoUnpublishedReason: varchar('vitrin_auto_unpublished_reason', { length: 50 }),
+
+  // Denormalized stats (background job — Sprint 4)
+  totalStockQty: integer('total_stock_qty').notNull().default(0),
+  lastSupplierId: uuid('last_supplier_id').references(() => suppliers.id, { onDelete: 'set null' }),
+
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  deletedAt: timestamp('deleted_at', { withTimezone: true }),
+}, (t) => [
+  uniqueIndex('idx_products_company_slug').on(t.companyId, t.slug),
+  index('idx_products_company_active').on(t.companyId, t.isActive),
+  index('idx_products_category').on(t.categoryId),
+  index('idx_products_brand').on(t.brandId),
+  index('idx_products_vitrin').on(t.companyId, t.vitrinPublished).where(sql`${t.vitrinPublished} = true`),
+]);
+
+/**
+ * PRODUCT_VARIANTS — Boyut/Ambalaj varyantı (MVP'de tek axis)
+ *
+ * SKU per-tenant unique. Fiyat + threshold variant bazlı.
+ * isDefault: varyantsız ürünler için tek "default" variant (UX kolaylığı).
+ */
+export const productVariants = petstockproSchema.table('product_variants', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  productId: uuid('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
+
+  axisLabel: varchar('axis_label', { length: 50 }).notNull().default('Boyut'),
+  valueLabel: varchar('value_label', { length: 50 }).notNull(),
+
+  sku: varchar('sku', { length: 100 }).notNull(),
+  barcode: varchar('barcode', { length: 13 }), // EAN-13
+
+  costPrice: decimal('cost_price', { precision: 10, scale: 2 }).notNull().default('0'),
+  salePrice: decimal('sale_price', { precision: 10, scale: 2 }).notNull().default('0'),
+
+  threshold: integer('threshold').notNull().default(5), // genel düşük stok eşiği
+  branchThresholds: jsonb('branch_thresholds').$type<Record<string, number>>(), // { branchId: number }
+
+  isActive: boolean('is_active').notNull().default(true),
+  isDefault: boolean('is_default').notNull().default(false),
+  displayOrder: integer('display_order').notNull().default(0),
+
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('idx_variants_company_sku').on(t.companyId, t.sku),
+  index('idx_variants_product').on(t.productId),
+  index('idx_variants_barcode').on(t.barcode),
+]);
+
+/**
+ * PRODUCT_IMAGES — Ürün görselleri
+ *
+ * isPrimary: ana görsel (vitrin thumbnail). displayOrder: gallery sıralama.
+ */
+export const productImages = petstockproSchema.table('product_images', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  productId: uuid('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
+  url: text('url').notNull(),
+  isPrimary: boolean('is_primary').notNull().default(false),
+  displayOrder: integer('display_order').notNull().default(0),
+  altText: varchar('alt_text', { length: 200 }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('idx_product_images_product').on(t.productId, t.displayOrder),
+]);
+
+/**
+ * BRANCH_INVENTORY — Şube bazlı stok sayısı (per-branch + per-variant)
+ *
+ * Tek satır per (branch, variant). stockQty güncel toplam.
+ * Stok hareketi yapılınca trigger ile güncellenir (Sprint 4).
+ *
+ * unique (branchId, variantId) — aynı şubede aynı variant için tek satır.
+ */
+export const branchInventory = petstockproSchema.table('branch_inventory', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  branchId: uuid('branch_id').notNull().references(() => branches.id, { onDelete: 'cascade' }),
+  variantId: uuid('variant_id').notNull().references(() => productVariants.id, { onDelete: 'cascade' }),
+
+  stockQty: integer('stock_qty').notNull().default(0),
+  expiryDate: date('expiry_date'), // SKT — sktRequired kategoriler için zorunlu (Sprint 4 trigger)
+  lotNumber: varchar('lot_number', { length: 100 }),
+
+  // Background job stats
+  lastSoldAt: timestamp('last_sold_at', { withTimezone: true }),
+  lastReceivedAt: timestamp('last_received_at', { withTimezone: true }),
+  totalSoldQty: integer('total_sold_qty').notNull().default(0),
+
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('idx_branch_inventory_unique').on(t.branchId, t.variantId),
+  index('idx_branch_inventory_company').on(t.companyId),
+  index('idx_branch_inventory_low').on(t.branchId, t.stockQty),
+]);
+
+/**
+ * STOCK_MOVEMENTS — Immutable ledger (her stok değişimi)
+ *
+ * UPDATE/DELETE bloklanır (Sprint 4 trigger). Sadece INSERT.
+ * type+subtype: stock_in/stock_out (sale/waste/gift/sample/return/internal_use/other)/transfer/stocktake/stocktake_initial.
+ *
+ * reversesId / reversedById: geri alma (R1 — 24 saat içinde herkes, süresiz SUPERADMIN).
+ * transferGroupId: kaynak + hedef entry'leri eşleştirir.
+ *
+ * RLS: tenant SELECT kendi movement'larını, INSERT backend (service_role).
+ */
+export const stockMovements = petstockproSchema.table('stock_movements', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'restrict' }),
+  branchId: uuid('branch_id').notNull().references(() => branches.id, { onDelete: 'restrict' }),
+  variantId: uuid('variant_id').notNull().references(() => productVariants.id, { onDelete: 'restrict' }),
+
+  type: movementTypeEnum('type').notNull(),
+  subtype: movementSubtypeEnum('subtype'), // sadece stock_out için
+
+  quantity: integer('quantity').notNull(), // + giriş, - çıkış
+  beforeQty: integer('before_qty').notNull(),
+  afterQty: integer('after_qty').notNull(),
+
+  unitCost: decimal('unit_cost', { precision: 10, scale: 2 }),
+  unitPrice: decimal('unit_price', { precision: 10, scale: 2 }),
+  discountAmount: decimal('discount_amount', { precision: 10, scale: 2 }),
+
+  // Bağlam (tipe göre dolar)
+  supplierId: uuid('supplier_id').references(() => suppliers.id, { onDelete: 'set null' }), // stock_in
+  customerRef: varchar('customer_ref', { length: 100 }), // sale — "Misafir alıcı" / telefon / ad
+  paymentMethod: paymentMethodEnum('payment_method'), // sale (credit ise customer_ref zorunlu — Sprint 4 CHECK)
+  creditPaidAt: timestamp('credit_paid_at', { withTimezone: true }), // veresiye kapama
+  documentNo: varchar('document_no', { length: 100 }), // irsaliye
+  lotNumber: varchar('lot_number', { length: 100 }),
+  expiryDate: date('expiry_date'),
+
+  reason: text('reason'), // serbest metin (waste sebebi vs)
+  note: text('note'),
+
+  // Transfer
+  transferGroupId: uuid('transfer_group_id'),
+  transferTargetBranchId: uuid('transfer_target_branch_id').references(() => branches.id, { onDelete: 'set null' }),
+
+  // Reversal
+  reversesId: uuid('reverses_id'),
+  reversedById: uuid('reversed_by_id'),
+
+  // Audit
+  createdById: uuid('created_by_id').notNull().references(() => users.id, { onDelete: 'restrict' }),
+  performedAsSuperadmin: boolean('performed_as_superadmin').notNull().default(false),
+  superadminSessionId: uuid('superadmin_session_id'),
+  ipAddress: varchar('ip_address', { length: 50 }),
+  userAgent: text('user_agent'),
+
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  // updatedAt YOK — immutable
+}, (t) => [
+  index('idx_stock_movements_company_date').on(t.companyId, t.createdAt),
+  index('idx_stock_movements_branch_date').on(t.branchId, t.createdAt),
+  index('idx_stock_movements_variant').on(t.variantId),
+  index('idx_stock_movements_transfer_group').on(t.transferGroupId),
+  index('idx_stock_movements_supplier').on(t.supplierId),
+  index('idx_stock_movements_type').on(t.type, t.subtype),
+]);
+
+// ═══════════════════════════════════════════════════════════════
+// TODO Sprint 1B.2+ (sırayla eklenecek)
+// ═══════════════════════════════════════════════════════════════
+// stocktakes, stocktake_items, sessions (Auth.js Drizzle adapter),
 // vitrin_events, vitrin_reports, vitrin_whatsapp_feedback,
-// storefront_settings, product_images, notifications, telegram_bindings,
+// storefront_settings, notifications, telegram_bindings,
 // system_settings, system_broadcasts, system_errors, ...

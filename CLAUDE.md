@@ -94,12 +94,13 @@
 - **Eski proje:** `D:/Projeler/Pet/` (PetToptan marketplace, legacy referans — yeni projeyle kod paylaşmıyor)
 - **Yeni proje:** `D:/Projeler/petstockpro/` (sıfırdan, TS stack)
 
-## 🚀 Şu Anki Durum: Sprint 2.9 Tamamlandı (2026-05-15)
+## 🚀 Şu Anki Durum: Sprint 1B.1 Tamamlandı (2026-05-15)
 
-**Branch:** `cray61` — **20 commit ahead of origin** (push edilmedi, kullanıcı kararı bekliyor)
-**Test:** 414 passed (27 dosya, vitest)
+**Branch:** `cray61` — **21 commit ahead of origin** (push edilmedi, kullanıcı kararı bekliyor)
+**Test:** 424 passed (28 dosya, vitest)
 **Lint + typecheck:** 0 error
 **Seed:** 81 il + 974 ilçe Supabase Frankfurt'a aktarıldı (Pet/ legacy → turkey-locations.ts)
+**Catalog schema:** 8 tablo (categories, brands, suppliers, products, product_variants, product_images, branch_inventory, stock_movements) + 5 enum migration 0007 applied
 
 ### ✅ Tamamlanan Sprint'ler
 
@@ -121,10 +122,11 @@
 | 2.7 Account Lock UX | (yeni) | Schema migration 0005 (users +3 field: lockedReason varchar + recentLockCount int + lastLockedAt) + brute-force.ts genişletildi (24h window stale check, recentLockCount, lockedReason BRUTE_FORCE_1H/24H, newRecentLockCount + newLastLockedAt result fields) + Custom errors (AccountLockedError lockedSecondsRemaining+lockedReason field + InvalidCredentialsError remainingAttempts field) + authorize.ts (locked iken AccountLockedError throw, fail lock'u tetiklerse Brevo email gönderim + AccountLockedError throw, fail lock olmazsa InvalidCredentialsError throw remainingAttempts ile) + buildAccountLockedTemplate (BRUTE_FORCE_1H ve 24H iki varyant + IP block + reset CTA + "sen denemiyorsan destek" uyarı) + login action (remainingAttempts state + account_locked code → cookie lock state + redirect /account-locked + invalid_credentials code → state.remainingAttempts) + login page kalan hak banner (3/2/1 hak zinciri, renkli) + /account-locked sayfa (server cookie read + LockedCountdown client component HH:MM:SS countdown + Şifremi Sıfırla CTA + destek email + permanent variant kırmızı) + 6 yeni test (brute-force +3: 24h stale reset + recentLockCount korunur + permanent lock; authorize +1: 5. yanlış AccountLockedError throw) + browser full flow (5 yanlış zinciri → banner 3/2/1 → lock → /account-locked countdown → Brevo email + log → /forgot-password lock bypass → reset → yeni şifreyle login OK → /onboarding) — `pp_lock_state` cookie 5dk TTL + HttpOnly + secure |
 | 2.8 Security Settings + Telegram Alert | (yeni) | lib/telegram/client.ts (Bot API + dev mock fallback console log + severity info/warning/critical) + lib/telegram/messages.ts (buildAccountLockedAlert BRUTE_FORCE_1H warning + BRUTE_FORCE_24H critical + buildTwoFactorDisabledAlert info sessiz) + authorize.ts (5. yanlış lock'ta Telegram alert fire-and-forget) + two-factor-setup.ts (disableTwoFactor Telegram alert + companyName lookup, regenerateRecoveryCodes TOTP doğrulamayla yeni 8 kod) + /admin/security 3-panel server+client (status panel: aktive zamanı + kalan recovery count + warning badge 2/0 kaldı, disable panel + regen panel — collapsible) + 13 yeni test (telegram client 4 + telegram messages 6 + 2fa setup +3 regenerate) + browser full flow (2FA aktif user login → /admin/security → "6/8 kullanılmamış" → regen TOTP → 8 yeni kod ekranı → disable TOTP → success banner + PASİF status + Telegram mock "🛡 2FA kapatıldı" log) |
 | 2.9 Email Change | (yeni) | Schema migration 0006 (users +3 field: pendingEmail varchar + pendingEmailToken + pendingEmailExpiresAt 24h TTL) + lib/auth/change-email.ts (initEmailChange password re-auth + same/taken check + 2 Brevo email; verifyEmailChange email=pendingEmail + final notify; cancelEmailChange Telegram critical alert) + 3 Brevo template (buildEmailChangeRequestNewTemplate doğrula CTA + buildEmailChangeNotifyOldTemplate "İptal Et" CTA + buildEmailChangedFinalTemplate eski email final notify) + buildEmailChangeCancelledAlert Telegram critical (hesap ele geçirme şüphesi) + /admin/account (server gate + collapsible form: yeni email + şifre re-auth + dual-email uyarı) + /verify-email-change/[token] server (email finalize + final email) + /cancel-email-change/[token] server (pendingEmail NULL + Telegram alert + Şifremi Sıfırla CTA + saldırı şüphesi banner) + 19 test (12 change-email helper + 7 brevo templates) + browser full flow (init → 2 email log → cancel link → "iptal edildi" UI + 🚨 CRITICAL Telegram log → ikinci init → verify link → "değiştirildi" UI + final notify → yeni email ile login OK → eski email reject) |
+| 1B.1 Catalog + Stock Foundation | (yeni) | Schema migration 0007: 5 enum (animal_type 7 değer + movement_type 5 değer + movement_subtype 7 değer + payment_method 4 değer + supplier_payment_terms 4 değer) + 8 tablo (categories: parent self-ref + slug unique per tenant + vatRate %10/%20 + sktRequired; brands: slug unique; suppliers: vatNo + leadTime + paymentTerms + IBAN; products: parent vitrinPublished + categoryId/brandId nullable + animalTypes jsonb + soft delete + denormalize totalStockQty; product_variants: SKU unique per tenant + costPrice/salePrice + threshold per branch jsonb + isDefault tek "default" variant; product_images: isPrimary + displayOrder; branch_inventory: (branchId, variantId) unique + stockQty + expiryDate; stock_movements: immutable ledger + type+subtype + transferGroupId + reversesId/reversedById + payment_method credit veresiye + audit superadmin) + 18 index (FK + slug unique + barcode + low-stock + transfer-group + vitrin partial) + lib/catalog/default-categories.ts (16 kategori: kuru-mama/yas-mama/odul-snack %10 KDV, aksesuar+oyuncak+sağlık %20 KDV; mama+ilaç+şampuan SKT) + seedDefaultCategoriesForCompany helper + 10 test (DEFAULT_CATEGORIES shape: 16 unique slug + kebab-case + vatRate 10/20 + 3 food %10 + 5+ SKT + diger displayOrder=99 + emoji + 1-15+99 sıralama; seed helper companyId rows insert) + UI/seed entegrasyonu **Sprint 3+ (ürün CRUD UI)** — schema + foundation hazır, register'da otomatik seed sonra |
 
 ### 🛠 Stack Çalışan Durumda
 
-- **DB:** Supabase Frankfurt EU (`rjzhnfqrynalklsnnuym`), 9 tablo, 7 migration (0000-0006), hepsi RLS enabled, **cities (81) + districts (974) seed edildi**
+- **DB:** Supabase Frankfurt EU (`rjzhnfqrynalklsnnuym`), 17 tablo, 8 migration (0000-0007), hepsi RLS enabled, **cities (81) + districts (974) seed edildi**, catalog 8 tablo hazır (UI yok)
 - **Auth flow MVP:** /login (+ 2FA TOTP + remaining banner) + /register + /verify-email + /verify-email/[token] + /forgot-password + /reset-password/[token] + /2fa-setup + /onboarding (2 adım) + /account-locked (countdown) + /admin/security (disable/regen) + /admin/account + /verify-email-change/[token] + /cancel-email-change/[token] — tümü browser end-to-end geçti
 - **Onboarding flow:** Register → verify → login → /onboarding (otomatik redirect) → şube + opsiyonel vitrin → / dashboard
 - **Brute-force güvenlik:** 5 fail → 1h lock + Brevo email + Telegram alert + cookie state, 3 art arda lock → 24h kalıcı, /forgot-password lock bypass eder
@@ -136,9 +138,10 @@
 
 | Sprint | İçerik | Tahmin |
 |---|---|---|
-| **2.10** | Settings sidebar layout (account / security / billing) — Sprint 9 ile birleşebilir | 1-2 saat |
-| 1B | products + variants + branch_inventory + categories + brands + suppliers schema + 36 tablo komple | 3-4 saat |
-| 1B+ | Onboarding'e "İlk ürün" 3. adımı ekle (products tablosu hazır olunca) | 30 dk |
+| **3** | Ürün CRUD UI (products list + variant editor + image upload + Satışa Aç toggle) | 3-4 saat |
+| 4 | Stok hareketleri UI + immutable ledger (4 drawer: stock-in/out/transfer/stocktake) + trigger'lar (append-only, branch_inventory auto-update, stock-0 vitrin çekme) | 3-4 saat |
+| 1B.2 | stocktakes + stocktake_items + sessions (Auth.js Drizzle adapter) + vitrin_events tablolar | 1-2 saat |
+| 2.10 | Settings sidebar layout (account / security / billing) — Sprint 9 ile birleşebilir | 1-2 saat |
 | 1B | products + variants + branch_inventory + categories + brands + suppliers schema + 36 tablo komple | 3-4 saat |
 | 1B+ | Onboarding'e "İlk ürün" 3. adımı ekle (products tablosu hazır olunca) | 30 dk |
 | 14 sonu | Billing orchestrator (iyzico webhook → DB transaction → Nilvera invoice → audit) | 2-3 saat |
@@ -151,7 +154,7 @@
 - Brevo API key (production transactional email)
 - Supabase Pro tier upgrade ($25/ay, lansman öncesi)
 
-Hiçbiri Sprint 2.10/1B için bloker değil — devam edilebilir.
+Hiçbiri Sprint 3 için bloker değil — devam edilebilir.
 
 ## 🆕 2026-05-14 Karar Revizyonu (TR-only + 3-tier B geri açıldı) — OTORİTATİF
 
