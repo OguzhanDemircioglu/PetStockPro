@@ -152,3 +152,78 @@ Bu isteği sen yapmadıysan e-postayı yok say.
     textContent: text,
   };
 }
+
+export interface PasswordChangedTemplateInput {
+  userName: string | null;
+  changedAt: Date;
+  ipAddress?: string | null;
+  supportUrl?: string;
+}
+
+/**
+ * Şifre değiştirildi bilgi/uyarı email'i (Sprint 2.4).
+ *
+ * EKRAN-AUTH §5.4: Reset başarılı sonrası kullanıcıya gönderilir.
+ * "Sen değiştirdiysen tamam, sen değiştirmediysen destek" — saldırı tespit yolu.
+ */
+export function buildPasswordChangedTemplate(input: PasswordChangedTemplateInput): VerifyEmailTemplate {
+  const greeting = input.userName ? `Merhaba ${input.userName},` : 'Merhaba,';
+  const changedAtTr = input.changedAt.toLocaleString('tr-TR', {
+    dateStyle: 'long',
+    timeStyle: 'short',
+    timeZone: 'Europe/Istanbul',
+  });
+  const supportUrl = input.supportUrl ?? 'mailto:destek@petstockpro.com';
+
+  const html = emailShell(`
+    <h2 style="margin:0 0 16px;font-size:22px;color:${BRAND_CART};letter-spacing:-.3px;">
+      Şifren değiştirildi
+    </h2>
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.6;">${greeting}</p>
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.6;">
+      PetStockPro hesabının şifresi <strong>${changedAtTr}</strong> tarihinde
+      değiştirildi. Tüm açık oturumların kapatıldı, yeni şifreyle tekrar giriş
+      yapman gerekiyor.
+    </p>
+    ${input.ipAddress ? `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 24px;background:${BRAND_BG};border-radius:8px;">
+      <tr><td style="padding:12px 16px;font-size:12px;color:#5f6b7c;">
+        <strong style="color:${BRAND_INK};">İşlem bilgileri</strong><br>
+        IP: ${input.ipAddress}<br>
+        Zaman: ${changedAtTr}
+      </td></tr>
+    </table>
+    ` : ''}
+    <div style="border-left:4px solid ${BRAND_CAT};padding:12px 16px;background:#fff5ef;border-radius:0 8px 8px 0;margin:0 0 24px;">
+      <strong style="display:block;font-size:13px;color:${BRAND_CART};margin-bottom:6px;">
+        ⚠ Bu işlemi sen yapmadıysan
+      </strong>
+      <span style="font-size:13px;color:#5f6b7c;line-height:1.6;">
+        Birisi hesabına erişmiş olabilir. Hemen
+        <a href="${supportUrl}" style="color:${BRAND_CART};font-weight:bold;">destek ekibine ulaş</a>
+        ve hesabını kurtarmak için bizimle iletişime geç.
+      </span>
+    </div>
+    <p style="margin:16px 0 0;font-size:11px;color:#94a0b0;line-height:1.5;">
+      Bu otomatik bilgilendirme mesajıdır. Hesap güvenliği için her şifre
+      değişikliğinde gönderilir.
+    </p>
+  `);
+
+  const ipLine = input.ipAddress ? `\nIP: ${input.ipAddress}\n` : '\n';
+  const text = `${greeting}
+
+PetStockPro hesabının şifresi ${changedAtTr} tarihinde değiştirildi.
+Tüm açık oturumların kapatıldı, yeni şifreyle tekrar giriş yapman gerekiyor.
+${ipLine}
+Bu işlemi sen yapmadıysan hemen destek ekibine ulaş: ${supportUrl}
+
+—
+© 2026 PetStockPro`;
+
+  return {
+    subject: 'PetStockPro · Şifren değiştirildi',
+    htmlContent: html,
+    textContent: text,
+  };
+}

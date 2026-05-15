@@ -94,10 +94,10 @@
 - **Eski proje:** `D:/Projeler/Pet/` (PetToptan marketplace, legacy referans — yeni projeyle kod paylaşmıyor)
 - **Yeni proje:** `D:/Projeler/petstockpro/` (sıfırdan, TS stack)
 
-## 🚀 Şu Anki Durum: Sprint 2.3 Tamamlandı (2026-05-15)
+## 🚀 Şu Anki Durum: Sprint 2.4 Tamamlandı (2026-05-15)
 
-**Branch:** `cray61` — **14 commit ahead of origin** (push edilmedi, kullanıcı kararı bekliyor)
-**Test:** 281 passed (18 dosya, vitest)
+**Branch:** `cray61` — **15 commit ahead of origin** (push edilmedi, kullanıcı kararı bekliyor)
+**Test:** 315 passed (21 dosya, vitest)
 **Lint + typecheck:** 0 error
 
 ### ✅ Tamamlanan Sprint'ler
@@ -114,11 +114,12 @@
 | 2.2 Register | 33a5969 | registerNewTenant + RegisterPage + KVKK çift checkbox + 14 test + browser test |
 | 2.3a Email verify foundation | 4937317 | email-verification helper + Brevo client + templates + 42 test |
 | 2.3b Verify UI | e224ef9 | Schema migration (users +4 field) + register Brevo entegrasyon + /verify-email + /verify-email/[token] + browser test |
+| 2.4 Forgot/Reset Password | (yeni) | Schema migration 0003 (users +2 field) + password-reset helper (timing-safe, 30dk TTL) + forgot-password action (enumeration koruma, generic 200) + reset-password action (HIBP + failedLoginCount/lockedUntil reset) + /forgot-password + /reset-password/[token] page (server token check + client form) + passwordChanged Brevo template + Brevo mock URL log helper (dev kolaylığı) + 34 test (10 helper + 6 forgot + 10 reset + 8 template) + browser full flow doğrulama |
 
 ### 🛠 Stack Çalışan Durumda
 
-- **DB:** Supabase Frankfurt EU (`rjzhnfqrynalklsnnuym`), 9 tablo, 3 migration, hepsi RLS enabled
-- **Auth flow MVP:** /login + /register + /verify-email + /verify-email/[token] — browser'da end-to-end test geçti
+- **DB:** Supabase Frankfurt EU (`rjzhnfqrynalklsnnuym`), 9 tablo, 4 migration (0000 iskelet + 0001 enums + 0002 email-verify + 0003 password-reset), hepsi RLS enabled
+- **Auth flow MVP:** /login + /register + /verify-email + /verify-email/[token] + /forgot-password + /reset-password/[token] — browser'da end-to-end test geçti (register → verify → login → forgot → reset → eski-şifre-fail → yeni-şifre-success → token-reuse-invalid)
 - **Sandbox-ready integrations:** iyzico + Nilvera + Brevo (key gelince aktif)
 - **Memory:** test-first + ödeme integrity + sorusuz akış kuralları memory'de kayıtlı
 
@@ -126,10 +127,9 @@
 
 | Sprint | İçerik | Tahmin |
 |---|---|---|
-| **2.4** | Forgot password + reset flow (schema 2 field + helper + 2 page + Brevo template) | 1-2 saat |
-| 2.5 | 2FA setup wizard (TOTP + QR + 8 recovery code) | 2-3 saat |
-| 2.6 | Onboarding 3 adım wizard | 1-2 saat |
-| 2.7 | Account locked page + 2+ remaining banner | 1 saat |
+| **2.5** | 2FA setup wizard (TOTP + QR + 8 recovery code) | 2-3 saat |
+| 2.6 | Onboarding 3 adım wizard (ilk şube + ilk ürün + opsiyonel vitrin) | 1-2 saat |
+| 2.7 | Account locked page + 2+ remaining banner + brute-force banner UX | 1 saat |
 | 14 sonu | Billing orchestrator (iyzico webhook → DB transaction → Nilvera invoice → audit) | 2-3 saat |
 | 14 sonu | E2E mock flow test (webhook → DB → invoice complete) | 1 saat |
 | 1B | Cities/Districts seed (Pet/'ten dönüşüm) + 36 tablo schema komple | 2-3 saat |
@@ -141,7 +141,7 @@
 - Brevo API key (production transactional email)
 - Supabase Pro tier upgrade ($25/ay, lansman öncesi)
 
-Hiçbiri Sprint 2.4 için bloker değil — devam edilebilir.
+Hiçbiri Sprint 2.5 için bloker değil — devam edilebilir.
 
 ## 🆕 2026-05-14 Karar Revizyonu (TR-only + 3-tier B geri açıldı) — OTORİTATİF
 

@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { buildVerifyEmailTemplate, buildResetPasswordTemplate } from './templates';
+import {
+  buildVerifyEmailTemplate,
+  buildResetPasswordTemplate,
+  buildPasswordChangedTemplate,
+} from './templates';
 
 describe('buildVerifyEmailTemplate', () => {
   const sampleInput = {
@@ -90,5 +94,58 @@ describe('buildResetPasswordTemplate', () => {
   it('userName null ise generic', () => {
     const t = buildResetPasswordTemplate({ ...sampleInput, userName: null });
     expect(t.htmlContent).toContain('Merhaba,');
+  });
+});
+
+describe('buildPasswordChangedTemplate', () => {
+  const sampleInput = {
+    userName: 'Ali',
+    changedAt: new Date('2026-05-15T07:30:00Z'), // 10:30 Istanbul
+    ipAddress: '203.0.113.42',
+  };
+
+  it('subject "şifren değiştirildi" mesajı', () => {
+    const t = buildPasswordChangedTemplate(sampleInput);
+    expect(t.subject).toBe('PetStockPro · Şifren değiştirildi');
+  });
+
+  it('Istanbul saatine göre tarih formatlanır', () => {
+    const t = buildPasswordChangedTemplate(sampleInput);
+    // tr-TR locale "Mayıs" + saat "10:30" (Europe/Istanbul UTC+3)
+    expect(t.htmlContent).toMatch(/Mayıs/);
+    expect(t.htmlContent).toContain('10:30');
+  });
+
+  it('IP adresi verildi ise HTML\'de bulunur', () => {
+    const t = buildPasswordChangedTemplate(sampleInput);
+    expect(t.htmlContent).toContain('203.0.113.42');
+  });
+
+  it('IP adresi yoksa İşlem bilgileri bloku render edilmez', () => {
+    const t = buildPasswordChangedTemplate({ ...sampleInput, ipAddress: null });
+    expect(t.htmlContent).not.toContain('İşlem bilgileri');
+    expect(t.htmlContent).not.toContain('203.0.113');
+  });
+
+  it('"sen yapmadıysan" uyarı bölümü içerir', () => {
+    const t = buildPasswordChangedTemplate(sampleInput);
+    expect(t.htmlContent).toContain('sen yapmadıysan');
+  });
+
+  it('destek URL default mailto', () => {
+    const t = buildPasswordChangedTemplate(sampleInput);
+    expect(t.htmlContent).toContain('mailto:destek@petstockpro.com');
+  });
+
+  it('userName null ise generic greeting', () => {
+    const t = buildPasswordChangedTemplate({ ...sampleInput, userName: null });
+    expect(t.htmlContent).toContain('Merhaba,');
+    expect(t.htmlContent).not.toContain('Merhaba null');
+  });
+
+  it('text fallback IP ve uyarı içerir', () => {
+    const t = buildPasswordChangedTemplate(sampleInput);
+    expect(t.textContent).toContain('203.0.113.42');
+    expect(t.textContent).toContain('destek@petstockpro.com');
   });
 });

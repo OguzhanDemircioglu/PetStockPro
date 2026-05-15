@@ -52,6 +52,12 @@ export async function sendBrevoEmail(req: BrevoEmailRequest): Promise<BrevoSendR
     console.log(
       `[brevo:mock] To: ${req.to.email} | Subject: "${req.subject}" | Tags: ${req.tags?.join(',') ?? 'none'}`,
     );
+    // Dev kolaylığı: HTML içeriğindeki ilk action link'i (verify-email / reset-password) log'la,
+    // tarayıcı flow testi sırasında URL'i hızlıca yakalamak için. Production'da bu branch çalışmaz.
+    const hrefMatch = req.htmlContent.match(/https?:\/\/[^"'<>\s]+/);
+    if (hrefMatch) {
+      console.log(`[brevo:mock] Action link: ${hrefMatch[0]}`);
+    }
     return { ok: true, mock: true };
   }
 

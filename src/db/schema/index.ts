@@ -137,11 +137,15 @@ export const users = petstockproSchema.table('users', {
   emailVerificationExpiresAt: timestamp('email_verification_expires_at', { withTimezone: true }),
   emailVerificationResendCount: integer('email_verification_resend_count').notNull().default(0),
   emailVerificationLastSentAt: timestamp('email_verification_last_sent_at', { withTimezone: true }),
+  // Password reset (Sprint 2.4 — EKRAN-AUTH §5)
+  passwordResetToken: varchar('password_reset_token', { length: 100 }),
+  passwordResetExpiresAt: timestamp('password_reset_expires_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index('idx_users_company').on(t.companyId),
   index('idx_users_verification_token').on(t.emailVerificationToken),
+  index('idx_users_password_reset_token').on(t.passwordResetToken),
 ]);
 
 // Şubeler (multi-location)
