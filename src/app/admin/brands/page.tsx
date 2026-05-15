@@ -116,7 +116,17 @@ export default async function BrandsPage({
                     {b.slug}
                   </td>
                   <td className="px-4 py-3 text-right font-mono text-ink">
-                    {b.productCount}
+                    {b.productCount > 0 ? (
+                      <Link
+                        href={`/admin/products?brand=${b.id}` as never}
+                        className="text-cat hover:underline"
+                        title="Bu markadaki ürünleri göster"
+                      >
+                        {b.productCount}
+                      </Link>
+                    ) : (
+                      <span className="text-ink-4">{b.productCount}</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <DeleteBrandButton

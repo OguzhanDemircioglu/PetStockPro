@@ -143,7 +143,17 @@ export default async function CategoriesPage({
                     {c.displayOrder}
                   </td>
                   <td className="px-4 py-3 text-right font-mono text-ink">
-                    {c.productCount}
+                    {c.productCount > 0 ? (
+                      <Link
+                        href={`/admin/products?category=${c.id}` as never}
+                        className="text-cat hover:underline"
+                        title="Bu kategorideki ürünleri göster"
+                      >
+                        {c.productCount}
+                      </Link>
+                    ) : (
+                      <span className="text-ink-4">{c.productCount}</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <DeleteCategoryButton
