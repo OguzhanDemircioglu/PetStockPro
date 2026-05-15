@@ -64,12 +64,9 @@ export default async function AdminDashboardPage() {
           </h1>
         </div>
         <div className="flex flex-wrap gap-2">
-          <QuickLink href="/admin/stock-movements" label="📦 Stok hareketleri" />
           <QuickLink href="/admin/products" label="🐾 Ürünler" />
-          <QuickLink href="/admin/branches" label="🏪 Şubeler" />
-          <QuickLink href="/admin/categories" label="📂 Kategoriler" />
-          <QuickLink href="/admin/brands" label="🏷 Markalar" />
-          <QuickLink href="/admin/suppliers" label="🏢 Tedarikçiler" />
+          <QuickLink href="/admin/stock-movements" label="📦 Stok hareketleri" />
+          <QuickLink href="/admin/low-stock" label="⚠ Düşük stok" />
           <QuickLink href="/admin/reports" label="📊 Raporlar" />
           <QuickLink href="/admin/settings" label="⚙ Ayarlar" />
         </div>
