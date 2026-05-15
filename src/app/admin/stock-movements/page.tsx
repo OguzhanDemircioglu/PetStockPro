@@ -10,17 +10,48 @@ import {
 } from '@/lib/stock/options';
 import { MovementsTable } from './movements-table';
 import { DrawerLauncher } from './drawer-launcher';
+import { MovementsFilterBar } from './movements-filter-bar';
 
-export default async function StockMovementsPage() {
+const VALID_TYPES = [
+  'stock_in',
+  'stock_out',
+  'transfer',
+  'stocktake',
+  'stocktake_initial',
+] as const;
+type MovementType = (typeof VALID_TYPES)[number];
+
+export default async function StockMovementsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    branch?: string;
+    variant?: string;
+    type?: string;
+  }>;
+}) {
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
 
+  const params = await searchParams;
+  const typeFilter =
+    params.type && (VALID_TYPES as readonly string[]).includes(params.type)
+      ? (params.type as MovementType)
+      : undefined;
+
   const [movements, branches, variants, suppliers] = await Promise.all([
-    listStockMovements(session.user.companyId, db, { limit: 100 }),
+    listStockMovements(session.user.companyId, db, {
+      branchId: params.branch,
+      variantId: params.variant,
+      type: typeFilter,
+      limit: 100,
+    }),
     listBranchOptions(session.user.companyId, db),
     listVariantOptions(session.user.companyId, db),
     listSupplierOptions(session.user.companyId, db),
   ]);
+
+  const activeFilter = !!(params.branch || params.variant || params.type);
 
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-12">
@@ -46,13 +77,35 @@ export default async function StockMovementsPage() {
         />
       </header>
 
+      <MovementsFilterBar
+        branches={branches}
+        variants={variants}
+        initial={{
+          branch: params.branch ?? '',
+          variant: params.variant ?? '',
+          type: params.type ?? '',
+        }}
+      />
+
       {movements.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-line bg-paper py-16 text-center">
           <div className="text-6xl">📦</div>
-          <h2 className="mt-4 text-xl font-bold text-cart">Henüz hareket yok</h2>
+          <h2 className="mt-4 text-xl font-bold text-cart">
+            {activeFilter ? 'Filtreye uyan hareket yok' : 'Henüz hareket yok'}
+          </h2>
           <p className="mt-2 text-sm text-ink-3">
-            Stok giriş yaparak başla — sağ üstten <strong>Yeni Hareket</strong>.
+            {activeFilter
+              ? 'Filtreleri temizle veya farklı bir kriter dene.'
+              : 'Stok giriş yaparak başla — sağ üstten Yeni Hareket.'}
           </p>
+          {activeFilter && (
+            <Link
+              href={'/admin/stock-movements' as never}
+              className="mt-6 inline-flex items-center gap-2 rounded-xl border border-line bg-white px-4 py-2 text-xs font-bold text-ink-3 hover:bg-line-soft"
+            >
+              × Filtreyi temizle
+            </Link>
+          )}
         </div>
       ) : (
         <MovementsTable movements={movements} />
