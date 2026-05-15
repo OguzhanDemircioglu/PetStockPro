@@ -38,13 +38,22 @@ export default async function SuppliersPage({
             {items.length} tedarikçi · {activeCount} aktif
           </p>
         </div>
-        <Link
-          href={'/admin/suppliers/new' as never}
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-cat to-cat-2 px-5 py-2.5 text-sm font-bold text-white shadow-[var(--shadow-cat)] hover:-translate-y-0.5 transition-transform"
-          data-testid="add-supplier"
-        >
-          + Yeni Tedarikçi
-        </Link>
+        <div className="flex gap-2">
+          <a
+            href="/admin/suppliers/export"
+            download
+            className="rounded-xl border border-line bg-white px-3 py-2.5 text-xs font-bold text-cart hover:bg-cat-soft"
+          >
+            ⬇ CSV
+          </a>
+          <Link
+            href={'/admin/suppliers/new' as never}
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-cat to-cat-2 px-5 py-2.5 text-sm font-bold text-white shadow-[var(--shadow-cat)] hover:-translate-y-0.5 transition-transform"
+            data-testid="add-supplier"
+          >
+            + Yeni Tedarikçi
+          </Link>
+        </div>
       </header>
 
       {params.created === 'success' && (

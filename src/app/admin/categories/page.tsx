@@ -45,13 +45,22 @@ export default async function CategoriesPage({
               : `${items.length} kategori · 16 default + kullanıcı eklemeleri`}
           </p>
         </div>
-        <Link
-          href={'/admin/categories/new' as never}
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-cat to-cat-2 px-5 py-2.5 text-sm font-bold text-white shadow-[var(--shadow-cat)] hover:-translate-y-0.5 transition-transform"
-          data-testid="add-category"
-        >
-          + Yeni kategori
-        </Link>
+        <div className="flex gap-2">
+          <a
+            href="/admin/categories/export"
+            download
+            className="rounded-xl border border-line bg-white px-3 py-2.5 text-xs font-bold text-cart hover:bg-cat-soft"
+          >
+            ⬇ CSV
+          </a>
+          <Link
+            href={'/admin/categories/new' as never}
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-cat to-cat-2 px-5 py-2.5 text-sm font-bold text-white shadow-[var(--shadow-cat)] hover:-translate-y-0.5 transition-transform"
+            data-testid="add-category"
+          >
+            + Yeni kategori
+          </Link>
+        </div>
       </header>
 
       {params.created === 'success' && (

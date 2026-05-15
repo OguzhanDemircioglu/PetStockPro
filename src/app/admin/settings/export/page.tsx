@@ -51,6 +51,34 @@ export default async function ExportHubPage() {
       desc: 'Tüm aksiyonlar — kim ne zaman ne yaptı (KVKK 5 yıl saklama)',
       filename: 'audit-log-<tarih>.csv',
     },
+    {
+      href: '/admin/branches/export',
+      emoji: '🏪',
+      title: 'Şubeler',
+      desc: 'Şube listesi — şehir / ilçe / WhatsApp / aktif variant / toplam stok',
+      filename: 'subeler-<tarih>.csv',
+    },
+    {
+      href: '/admin/suppliers/export',
+      emoji: '🏢',
+      title: 'Tedarikçiler',
+      desc: 'Tedarikçi listesi — VKN / yetkili / IBAN / lead time / ödeme koşulu',
+      filename: 'tedarikciler-<tarih>.csv',
+    },
+    {
+      href: '/admin/categories/export',
+      emoji: '📂',
+      title: 'Kategoriler',
+      desc: 'Kategori listesi — emoji / KDV oranı / SKT zorunluluğu / sıralama',
+      filename: 'kategoriler-<tarih>.csv',
+    },
+    {
+      href: '/admin/brands/export',
+      emoji: '🏷',
+      title: 'Markalar',
+      desc: 'Marka listesi — slug / logo URL / ürün sayısı',
+      filename: 'markalar-<tarih>.csv',
+    },
   ];
 
   return (
