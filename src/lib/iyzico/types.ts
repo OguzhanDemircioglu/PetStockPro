@@ -171,8 +171,12 @@ export type IyzicoWebhookPayload = z.infer<typeof iyzicoWebhookPayloadSchema>;
 // Type aliases (re-export için)
 // ══════════════════════════════════════════════════════════════
 
-export type IyzicoCustomerCreateRequest = z.infer<typeof iyzicoCustomerCreateRequestSchema>;
+// Request type'ları için z.input kullan — Zod `.default()` değerleri caller'a optional görünür.
+// Function içinde `.parse(input)` çağrılınca default'lar doldurulur, output her zaman required.
+export type IyzicoCustomerCreateRequest = z.input<typeof iyzicoCustomerCreateRequestSchema>;
+export type IyzicoSubscriptionCreateRequest = z.input<typeof iyzicoSubscriptionCreateRequestSchema>;
+export type IyzicoSubscriptionCancelRequest = z.input<typeof iyzicoSubscriptionCancelRequestSchema>;
+
+// Response type'ları için z.infer — iyzico'dan dönen tüm field'lar required (Zod parse sonrası)
 export type IyzicoCustomerResponse = z.infer<typeof iyzicoCustomerResponseSchema>;
-export type IyzicoSubscriptionCreateRequest = z.infer<typeof iyzicoSubscriptionCreateRequestSchema>;
 export type IyzicoSubscriptionResponse = z.infer<typeof iyzicoSubscriptionResponseSchema>;
-export type IyzicoSubscriptionCancelRequest = z.infer<typeof iyzicoSubscriptionCancelRequestSchema>;
