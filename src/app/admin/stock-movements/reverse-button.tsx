@@ -12,30 +12,22 @@ interface Props {
 
 /**
  * Ledger satırında "↶ Geri al" buton.
- * Pencere/transfer kontrolü server'da hesaplanır (Date.now() render içinde
+ * Pencere kontrolü server'da hesaplanır (Date.now() render içinde
  * imkansız — React purity). confirm() ile onay alır.
+ * Transfer pair olarak birlikte geri alınır (Sprint 4.6).
  */
 export function ReverseButton({ movementId, withinWindow, isTransfer }: Props) {
   const [pending, startTransition] = useTransition();
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const router = useRouter();
 
-  if (!withinWindow || isTransfer) {
-    if (isTransfer) {
-      return (
-        <span
-          title="Transfer geri alma Sprint 4.6'da"
-          className="text-[10px] text-ink-4"
-        >
-          —
-        </span>
-      );
-    }
-    return null;
-  }
+  if (!withinWindow) return null;
 
   const handleReverse = () => {
-    if (!confirm('Bu hareketi geri al? Stok eski haline döner, ledger\'da iz kalır.')) {
+    const message = isTransfer
+      ? 'Transfer geri alınacak — her iki şubede stok eski haline döner. Onaylıyor musun?'
+      : 'Bu hareketi geri al? Stok eski haline döner, ledger\'da iz kalır.';
+    if (!confirm(message)) {
       return;
     }
     setErrMsg(null);

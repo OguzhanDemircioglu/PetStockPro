@@ -460,7 +460,7 @@ export async function recordStockOut(
 export const REVERSAL_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export type ReverseResult =
-  | { ok: true; reversalMovementId: string }
+  | { ok: true; reversalMovementId: string; reversalPairId?: string }
   | {
       ok: false;
       reason:
@@ -469,7 +469,7 @@ export type ReverseResult =
         | 'is_reversal'
         | 'window_expired'
         | 'insufficient_stock'
-        | 'transfer_requires_pair'
+        | 'transfer_pair_missing'
         | 'unknown';
       meta?: { available?: number; requested?: number };
     };
@@ -488,8 +488,10 @@ export type ReverseResult =
  * - Reversal kaydının kendisi geri alınamaz ("is_reversal" reddi).
  * - Stock-in'in geri alınması = ters yönde çıkış: yeterli stok olmalı
  *   (insufficient_stock).
- * - Transfer reversal'ı şimdilik desteklenmiyor (iki entry pair gerekir):
- *   transfer_requires_pair döner; Sprint 4.6'da iki yönü birlikte geri alma.
+ * - Transfer reversal (Sprint 4.6): aynı transferGroupId iki entry pair
+ *   olarak birlikte geri alınır. Hedef şubede yetersiz stok → reject.
+ *   Tek movement reversed olarak görünmez — pair'in DİĞER entry'sini
+ *   bulamazsa transfer_pair_missing döner.
  */
 export async function reverseStockMovement(
   companyId: string,
@@ -513,6 +515,7 @@ export async function reverseStockMovement(
       createdAt: stockMovements.createdAt,
       reversedById: stockMovements.reversedById,
       reversesId: stockMovements.reversesId,
+      transferGroupId: stockMovements.transferGroupId,
     })
     .from(stockMovements)
     .where(
@@ -526,8 +529,17 @@ export async function reverseStockMovement(
   if (!original) return { ok: false, reason: 'not_found' };
   if (original.reversedById) return { ok: false, reason: 'already_reversed' };
   if (original.reversesId) return { ok: false, reason: 'is_reversal' };
+
+  // Transfer → pair handling (Sprint 4.6)
   if (original.type === 'transfer') {
-    return { ok: false, reason: 'transfer_requires_pair' };
+    return reverseTransferPair(
+      companyId,
+      original,
+      userId,
+      db,
+      opts,
+      now,
+    );
   }
 
   // 24h pencere kontrolü — süperadmin bypass
@@ -603,6 +615,209 @@ export async function reverseStockMovement(
     });
 
     return { ok: true, reversalMovementId };
+  } catch (err) {
+    if (err instanceof InsufficientStockError) {
+      return {
+        ok: false,
+        reason: 'insufficient_stock',
+        meta: { available: err.available, requested: err.requested },
+      };
+    }
+    return { ok: false, reason: 'unknown' };
+  }
+}
+
+/**
+ * Transfer pair'inin iki entry'sini birlikte geri alır.
+ *
+ * Transfer iki immutable entry üretir: kaynak çıkış (-N) + hedef giriş (+N),
+ * aynı transferGroupId. Geri alma her iki entry'ye reversedById set eder ve
+ * iki ters movement insert eder:
+ *   - kaynak şubeye +N (giriş yönü)
+ *   - hedef şubeden -N (çıkış yönü)
+ *
+ * Hedef şubede şu an N adet stok yoksa (zaten satıldı/transfer edildi)
+ * insufficient_stock döner — kullanıcı önce hedef hareketleri geri almalı.
+ */
+async function reverseTransferPair(
+  companyId: string,
+  original: {
+    id: string;
+    branchId: string;
+    variantId: string;
+    quantity: number;
+    createdAt: Date;
+    transferGroupId: string | null;
+  },
+  userId: string,
+  db: DbClient,
+  opts: { isSuperadmin?: boolean; reason?: string | null },
+  now: Date,
+): Promise<ReverseResult> {
+  if (!original.transferGroupId) {
+    return { ok: false, reason: 'transfer_pair_missing' };
+  }
+
+  // 24h pencere
+  if (!opts.isSuperadmin) {
+    const ageMs = now.getTime() - new Date(original.createdAt).getTime();
+    if (ageMs > REVERSAL_WINDOW_MS) {
+      return { ok: false, reason: 'window_expired' };
+    }
+  }
+
+  // Pair'i bul — aynı transferGroupId + reversesId NULL + id != original.id
+  const pairRows = await db
+    .select({
+      id: stockMovements.id,
+      branchId: stockMovements.branchId,
+      variantId: stockMovements.variantId,
+      quantity: stockMovements.quantity,
+      reversedById: stockMovements.reversedById,
+      reversesId: stockMovements.reversesId,
+    })
+    .from(stockMovements)
+    .where(
+      and(
+        eq(stockMovements.companyId, companyId),
+        eq(stockMovements.transferGroupId, original.transferGroupId),
+        sql`${stockMovements.id} != ${original.id}`,
+        sql`${stockMovements.reversesId} IS NULL`,
+      ),
+    )
+    .limit(1);
+  const pair = pairRows[0];
+  if (!pair) {
+    return { ok: false, reason: 'transfer_pair_missing' };
+  }
+  if (pair.reversedById) {
+    return { ok: false, reason: 'already_reversed' };
+  }
+
+  // Her iki entry için fetchVariantStockInfo (kaynak + hedef şube)
+  const originalInfo = await fetchVariantStockInfo(
+    companyId,
+    original.branchId,
+    original.variantId,
+    db,
+  );
+  const pairInfo = await fetchVariantStockInfo(
+    companyId,
+    pair.branchId,
+    pair.variantId,
+    db,
+  );
+  if (!originalInfo || !pairInfo) {
+    return { ok: false, reason: 'not_found' };
+  }
+
+  const originalReverseDelta = -original.quantity;
+  const pairReverseDelta = -pair.quantity;
+
+  // Çıkış yönü olan tarafta (negative delta) stok yetmiyorsa reject
+  const originalIsOutgoing = originalReverseDelta < 0;
+  const pairIsOutgoing = pairReverseDelta < 0;
+
+  if (originalIsOutgoing && originalInfo.currentQty + originalReverseDelta < 0) {
+    return {
+      ok: false,
+      reason: 'insufficient_stock',
+      meta: {
+        available: originalInfo.currentQty,
+        requested: Math.abs(originalReverseDelta),
+      },
+    };
+  }
+  if (pairIsOutgoing && pairInfo.currentQty + pairReverseDelta < 0) {
+    return {
+      ok: false,
+      reason: 'insufficient_stock',
+      meta: {
+        available: pairInfo.currentQty,
+        requested: Math.abs(pairReverseDelta),
+      },
+    };
+  }
+
+  try {
+    const result = await db.transaction(async (tx) => {
+      // Yeni reversal pair için yeni transferGroupId
+      const reversalTransferGroupId = crypto.randomUUID();
+
+      const [origRev] = await tx
+        .insert(stockMovements)
+        .values({
+          companyId,
+          branchId: original.branchId,
+          variantId: original.variantId,
+          type: 'transfer',
+          subtype: null,
+          quantity: originalReverseDelta,
+          beforeQty: originalInfo.currentQty,
+          afterQty: originalInfo.currentQty + originalReverseDelta,
+          transferGroupId: reversalTransferGroupId,
+          transferTargetBranchId: pair.branchId,
+          reversesId: original.id,
+          reason: opts.reason ?? 'Transfer geri alma',
+          createdById: userId,
+          performedAsSuperadmin: !!opts.isSuperadmin,
+          createdAt: now,
+        })
+        .returning({ id: stockMovements.id });
+
+      const [pairRev] = await tx
+        .insert(stockMovements)
+        .values({
+          companyId,
+          branchId: pair.branchId,
+          variantId: pair.variantId,
+          type: 'transfer',
+          subtype: null,
+          quantity: pairReverseDelta,
+          beforeQty: pairInfo.currentQty,
+          afterQty: pairInfo.currentQty + pairReverseDelta,
+          transferGroupId: reversalTransferGroupId,
+          transferTargetBranchId: original.branchId,
+          reversesId: pair.id,
+          reason: opts.reason ?? 'Transfer geri alma',
+          createdById: userId,
+          performedAsSuperadmin: !!opts.isSuperadmin,
+          createdAt: now,
+        })
+        .returning({ id: stockMovements.id });
+
+      // Orijinalleri işaretle
+      await tx
+        .update(stockMovements)
+        .set({ reversedById: origRev.id })
+        .where(eq(stockMovements.id, original.id));
+      await tx
+        .update(stockMovements)
+        .set({ reversedById: pairRev.id })
+        .where(eq(stockMovements.id, pair.id));
+
+      // Branch inventory iki şubede güncelle
+      await applyInventoryChange(
+        tx as unknown as DbClient,
+        originalInfo,
+        originalReverseDelta,
+        originalInfo.productId,
+        now,
+        originalIsOutgoing,
+      );
+      await applyInventoryChange(
+        tx as unknown as DbClient,
+        pairInfo,
+        pairReverseDelta,
+        pairInfo.productId,
+        now,
+        pairIsOutgoing,
+      );
+
+      return { reversalMovementId: origRev.id, reversalPairId: pairRev.id };
+    });
+
+    return { ok: true, ...result };
   } catch (err) {
     if (err instanceof InsufficientStockError) {
       return {

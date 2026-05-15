@@ -328,7 +328,7 @@ export async function reverseMovementAction(
     is_reversal: 'Bir geri alma kaydı tekrar geri alınamaz',
     window_expired: '24 saat geçti — süperadmin müdahalesi gerekli',
     insufficient_stock: 'Stok yetersiz — sonraki satış geri alındıktan sonra dene',
-    transfer_requires_pair: 'Transfer geri alma yakında (Sprint 4.6)',
+    transfer_pair_missing: 'Transfer eşi bulunamadı (veri tutarsız)',
     unknown: 'Geri alınamadı, tekrar dene',
   };
   return {

@@ -955,7 +955,7 @@ describe('reverseStockMovement', () => {
     if (!result.ok) expect(result.reason).toBe('is_reversal');
   });
 
-  it('transfer → transfer_requires_pair (Sprint 4.6)', async () => {
+  it('transfer pair eşi yoksa → transfer_pair_missing', async () => {
     const original = {
       id: MOVEMENT_ID,
       type: 'transfer',
@@ -968,8 +968,12 @@ describe('reverseStockMovement', () => {
       createdAt: new Date(NOW.getTime() - 60 * 1000),
       reversedById: null,
       reversesId: null,
+      transferGroupId: 'tg-1',
     };
-    const select = makeSelectChain([[original]]);
+    const select = makeSelectChain([
+      [original],
+      [], // pair bulunamadı
+    ]);
     const db = { select } as unknown as DbClient;
 
     const result = await reverseStockMovement(
@@ -981,7 +985,186 @@ describe('reverseStockMovement', () => {
       NOW,
     );
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.reason).toBe('transfer_requires_pair');
+    if (!result.ok) expect(result.reason).toBe('transfer_pair_missing');
+  });
+
+  it('transfer pair geri alma — iki entry reversed + iki şube restore', async () => {
+    const original = {
+      id: MOVEMENT_ID,
+      type: 'transfer',
+      subtype: null,
+      branchId: BRANCH,
+      variantId: VARIANT,
+      quantity: -10, // kaynak çıkış
+      beforeQty: 20,
+      afterQty: 10,
+      createdAt: new Date(NOW.getTime() - 30 * 60 * 1000),
+      reversedById: null,
+      reversesId: null,
+      transferGroupId: 'tg-pair-1',
+    };
+    const pair = {
+      id: 'pair-id',
+      branchId: BRANCH_2,
+      variantId: VARIANT,
+      quantity: 10, // hedef giriş
+      reversedById: null,
+      reversesId: null,
+    };
+    const select = makeSelectChain([
+      [original],
+      [pair],
+      // originalInfo
+      [
+        {
+          variantId: VARIANT,
+          productId: PRODUCT,
+          variantCompanyId: COMPANY,
+          branchCompanyId: COMPANY,
+          currentQty: 10,
+          inventoryRowId: 'inv-source',
+        },
+      ],
+      // pairInfo (hedef şubede 10 var)
+      [
+        {
+          variantId: VARIANT,
+          productId: PRODUCT,
+          variantCompanyId: COMPANY,
+          branchCompanyId: COMPANY,
+          currentQty: 10,
+          inventoryRowId: 'inv-target',
+        },
+      ],
+    ]);
+    const { tx, insertImpl, updateImpl } = makeTxMock();
+    const transaction = vi
+      .fn()
+      .mockImplementation(async (cb: (t: unknown) => Promise<unknown>) => cb(tx));
+    const db = { select, transaction } as unknown as DbClient;
+
+    const result = await reverseStockMovement(
+      COMPANY,
+      MOVEMENT_ID,
+      USER,
+      db,
+      {},
+      NOW,
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.reversalMovementId).toBe('new-movement-id');
+      expect(result.reversalPairId).toBe('new-movement-id');
+    }
+    // 2 insert (orig reversal + pair reversal)
+    expect(insertImpl).toHaveBeenCalledTimes(2);
+    // updates: 2 orijinali işaretle + 2 applyInventoryChange (her biri
+    //   inventory update + product totalStockQty + olası auto-unpublish)
+    expect(updateImpl.mock.calls.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('transfer reversal — hedef şube yetersiz (zaten satıldı) → insufficient_stock', async () => {
+    const original = {
+      id: MOVEMENT_ID,
+      type: 'transfer',
+      subtype: null,
+      branchId: BRANCH,
+      variantId: VARIANT,
+      quantity: -10,
+      beforeQty: 20,
+      afterQty: 10,
+      createdAt: new Date(NOW.getTime() - 30 * 60 * 1000),
+      reversedById: null,
+      reversesId: null,
+      transferGroupId: 'tg-2',
+    };
+    const pair = {
+      id: 'pair-id',
+      branchId: BRANCH_2,
+      variantId: VARIANT,
+      quantity: 10,
+      reversedById: null,
+      reversesId: null,
+    };
+    const select = makeSelectChain([
+      [original],
+      [pair],
+      [
+        {
+          variantId: VARIANT,
+          productId: PRODUCT,
+          variantCompanyId: COMPANY,
+          branchCompanyId: COMPANY,
+          currentQty: 5, // kaynak şu an 5
+          inventoryRowId: 'inv-source',
+        },
+      ],
+      [
+        {
+          variantId: VARIANT,
+          productId: PRODUCT,
+          variantCompanyId: COMPANY,
+          branchCompanyId: COMPANY,
+          currentQty: 3, // hedefte 3 kaldı, ama 10 çıkarmaya çalışacağız → fail
+          inventoryRowId: 'inv-target',
+        },
+      ],
+    ]);
+    const db = { select, transaction: vi.fn() } as unknown as DbClient;
+
+    const result = await reverseStockMovement(
+      COMPANY,
+      MOVEMENT_ID,
+      USER,
+      db,
+      {},
+      NOW,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe('insufficient_stock');
+      expect(result.meta?.available).toBe(3);
+      expect(result.meta?.requested).toBe(10);
+    }
+  });
+
+  it('transfer pair zaten reversed → already_reversed', async () => {
+    const original = {
+      id: MOVEMENT_ID,
+      type: 'transfer',
+      subtype: null,
+      branchId: BRANCH,
+      variantId: VARIANT,
+      quantity: -5,
+      beforeQty: 10,
+      afterQty: 5,
+      createdAt: new Date(NOW.getTime() - 60 * 1000),
+      reversedById: null,
+      reversesId: null,
+      transferGroupId: 'tg-3',
+    };
+    const pair = {
+      id: 'pair-id',
+      branchId: BRANCH_2,
+      variantId: VARIANT,
+      quantity: 5,
+      reversedById: 'someone-reversed',
+      reversesId: null,
+    };
+    const select = makeSelectChain([[original], [pair]]);
+    const db = { select } as unknown as DbClient;
+
+    const result = await reverseStockMovement(
+      COMPANY,
+      MOVEMENT_ID,
+      USER,
+      db,
+      {},
+      NOW,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe('already_reversed');
   });
 
   it('stok-in geri al — şube yetersiz (satılmış) → insufficient_stock', async () => {
