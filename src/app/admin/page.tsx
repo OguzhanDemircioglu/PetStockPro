@@ -98,68 +98,250 @@ export default async function AdminDashboardPage() {
   const planLimit = rawPlanLimit === Infinity ? 0 : rawPlanLimit;
   const planLimitLabel = planLimitDisplay(company?.plan ?? 'FREE');
 
-  return (
-    <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-12">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <div className="text-[11.5px] font-bold uppercase tracking-wider text-cat">
-            Admin · Pano
-          </div>
-          <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
-            Merhaba, {company?.name ?? 'Pet shop'}
-          </h1>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <NotificationBell unreadCount={unreadNotifications} />
-          {userIsSuperadmin && (
-            <Link
-              href={'/admin/superadmin' as never}
-              data-superadmin-link
-              className="rounded-xl border-2 border-cat bg-cat-soft px-3 py-2 text-xs font-bold text-cart hover:bg-cat hover:text-white"
-            >
-              🛡 Süperadmin
-            </Link>
-          )}
-          <QuickLink href="/admin/products" label="🐾 Ürünler" />
-          <QuickLink href="/admin/stock-movements" label="📦 Stok hareketleri" />
-          <QuickLink href="/admin/stocktake" label="📋 Sayım" />
-          <QuickLink href="/admin/low-stock" label="⚠ Düşük stok" />
-          <QuickLink href="/admin/reports" label="📊 Raporlar" />
-          <QuickLink href="/admin/settings" label="⚙ Ayarlar" />
-        </div>
-      </header>
+  // v3 pano stilinde Hero başlığı için bugünkü özet
+  const todayQtyDisplay = stats.todaySaleQty;
+  const todayRevenueDisplay = stats.todaySaleRevenue ?? '0';
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KPI
-          title="Toplam ürün"
-          value={stats.totalProducts}
-          subtitle={`${planLimitLabel} limit · ${stats.totalActiveVariants} variant`}
-          emoji="🐾"
-          bar={{ value: stats.totalProducts, max: planLimit }}
+  return (
+    <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 lg:px-6 py-8 lg:py-10">
+      {/* ============ HERO — Cat orange gradient ============ */}
+      <section
+        data-testid="pano-hero"
+        className="relative overflow-hidden rounded-3xl px-8 py-9 text-white shadow-xl"
+        style={{
+          background:
+            'radial-gradient(circle at 88% 30%, rgba(255,255,255,.18), transparent 60%), linear-gradient(135deg, #d44a14 0%, #ed6a2c 55%, #d44a14 100%)',
+        }}
+      >
+        {/* Üst meta: greeting + admin links */}
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="text-[11px] font-bold uppercase tracking-wider opacity-85">
+            🐾 Bugün · {company?.name ?? 'Pet shop'}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <NotificationBell unreadCount={unreadNotifications} />
+            {userIsSuperadmin && (
+              <Link
+                href={'/admin/superadmin' as never}
+                data-superadmin-link
+                className="rounded-xl border border-white/40 bg-white/15 px-3 py-1.5 text-[11px] font-bold text-white backdrop-blur hover:bg-white hover:text-cart"
+              >
+                🛡 Süperadmin
+              </Link>
+            )}
+            <Link
+              href={'/admin/settings' as never}
+              className="rounded-xl border border-white/40 bg-white/15 px-3 py-1.5 text-[11px] font-bold text-white backdrop-blur hover:bg-white hover:text-cart"
+            >
+              ⚙ Ayarlar
+            </Link>
+          </div>
+        </div>
+
+        <h1
+          className="mt-3 text-3xl lg:text-4xl font-bold leading-tight tracking-tight"
+          data-testid="hero-title"
+        >
+          {todayQtyDisplay > 0
+            ? `${todayQtyDisplay} satış · ${Number(todayRevenueDisplay).toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺ ciro`
+            : 'Bugün hareket bekliyor'}
+        </h1>
+        <p className="mt-2 max-w-xl text-[13.5px] leading-relaxed opacity-92">
+          {stats.lowStockCount > 0 ? (
+            <>
+              <strong className="rounded-md bg-white/20 px-2 py-0.5">
+                {stats.lowStockCount} ürün
+              </strong>{' '}
+              eşik altında — PetPro Asistanı sipariş + transfer önerilerini
+              aşağıda hazırladı.
+            </>
+          ) : (
+            <>
+              ✓ Düşük stok yok — bu hafta operasyon stabil. Pet shop yönetim
+              paneli aktif.
+            </>
+          )}
+        </p>
+
+        <div className="mt-5 flex flex-wrap gap-2">
+          <Link
+            href={'/admin/stock-movements' as never}
+            data-testid="hero-stock-in"
+            className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-[12.5px] font-bold text-cart shadow-md hover:-translate-y-0.5 transition-transform"
+          >
+            ＋ Hızlı stok girişi
+          </Link>
+          <Link
+            href={'/admin/reports' as never}
+            className="inline-flex items-center gap-2 rounded-xl border border-white/35 bg-white/15 px-4 py-2.5 text-[12.5px] font-bold text-white backdrop-blur hover:bg-white/25"
+          >
+            Satışı detaylı gör →
+          </Link>
+        </div>
+
+        {/* Branch rail — toplam stok + şube sayısı kısa özet */}
+        <div className="mt-4 flex flex-wrap gap-1.5 text-[11px]">
+          <span className="rounded-full border border-white/30 bg-white px-3 py-1 font-bold text-cart">
+            📍 {stats.branchCount} aktif şube · {stats.totalStockQty} adet stok
+          </span>
+          <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1 font-bold opacity-90">
+            🐾 {stats.totalProducts} ürün ({planLimitLabel})
+          </span>
+        </div>
+      </section>
+
+      {/* ============ ZONE: Bu Hafta — 3 bold KPI ============ */}
+      <ZoneLabel emoji="⚡" label="Bu Hafta" />
+
+      <section
+        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+        data-testid="kpi-trio"
+      >
+        <KpiBold
+          tone="cat"
+          label="Bugünkü ciro"
+          value={
+            Number(todayRevenueDisplay) > 0
+              ? `${Number(todayRevenueDisplay).toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺`
+              : '—'
+          }
+          sub={`${stats.todaySaleQty} satış · bugün`}
+          emoji="💰"
         />
-        <KPI
-          title="Toplam stok"
-          value={stats.totalStockQty}
-          subtitle={`${stats.branchCount} aktif şube`}
+        <KpiBold
+          tone="cart"
+          label="Toplam stok"
+          value={stats.totalStockQty.toLocaleString('tr-TR')}
+          sub={`${stats.totalActiveVariants} aktif variant`}
           emoji="📦"
         />
-        <KPI
-          title="Bugünkü satış"
-          value={stats.todaySaleQty}
-          subtitle={`${stats.todaySaleRevenue}₺ ciro`}
-          emoji="💰"
-          accent={stats.todaySaleQty > 0 ? 'arrow' : 'neutral'}
-        />
-        <KPI
-          title="Düşük stok"
+        <KpiBold
+          tone={stats.lowStockCount > 0 ? 'danger' : 'arrow'}
+          label="Düşük stok"
           value={stats.lowStockCount}
-          subtitle={
-            stats.lowStockCount > 0 ? 'Eşik altı variant' : '✓ Hepsi yeterli'
+          sub={
+            stats.lowStockCount > 0
+              ? 'eşik altı variant — eylem gerek'
+              : '✓ hepsi yeterli'
           }
-          emoji="⚠"
-          accent={stats.lowStockCount > 0 ? 'danger' : 'arrow'}
+          emoji={stats.lowStockCount > 0 ? '⚠' : '✓'}
         />
       </section>
+
+      {/* ============ STOCK STRIP — envanter özeti + plan ============ */}
+      <article
+        className="grid items-center gap-4 rounded-2xl border border-line bg-white p-5 lg:grid-cols-[1.5fr_1fr_auto]"
+        data-testid="stock-strip"
+      >
+        <div>
+          <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-4">
+            Envanter
+          </span>
+          <div className="mt-1 font-mono text-2xl font-bold text-cart">
+            {stats.totalStockQty.toLocaleString('tr-TR')} adet
+          </div>
+          <p className="mt-1 text-[11.5px] text-ink-3">
+            {stats.branchCount} aktif şube · {stats.totalActiveVariants} variant
+          </p>
+        </div>
+        <div>
+          <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-4">
+            Plan kullanımı
+          </span>
+          <div className="mt-1 flex items-baseline gap-1">
+            <span className="font-mono text-2xl font-bold text-cart">
+              {stats.totalProducts}
+            </span>
+            <span className="text-[12px] text-ink-4">
+              / {planLimit > 0 ? planLimit : '∞'}
+            </span>
+          </div>
+          {planLimit > 0 && (
+            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-line-soft">
+              <div
+                className="h-full bg-cat"
+                style={{
+                  width: `${Math.min(100, (stats.totalProducts / planLimit) * 100)}%`,
+                }}
+              />
+            </div>
+          )}
+        </div>
+        <Link
+          href={'/admin/products' as never}
+          className="rounded-xl border border-cat/40 bg-cat-soft px-4 py-2 text-[11.5px] font-bold text-cart hover:bg-cat hover:text-white"
+        >
+          Ürünleri yönet →
+        </Link>
+      </article>
+
+      {/* ============ ALERT — kritik tek mesaj ============ */}
+      {stats.lowStockCount > 0 && (
+        <article
+          data-testid="pano-alert"
+          className="flex flex-wrap items-center gap-4 rounded-2xl border-l-4 border-danger bg-danger-soft/40 px-5 py-4"
+        >
+          <div className="grid h-10 w-10 place-items-center rounded-full bg-danger text-white text-lg">
+            ⚠
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-bold text-danger-7">
+              {stats.lowStockCount} ürün eşik altında veya tükenmek üzere
+            </div>
+            <div className="text-[11.5px] text-ink-3">
+              {orderSuggestions.length > 0
+                ? `PetPro Asistanı ${orderSuggestions.length} sipariş önerisi hazırladı — aşağıda incele.`
+                : 'Düşük stok detayında sipariş + transfer akışlarına git.'}
+            </div>
+          </div>
+          <Link
+            href={'/admin/low-stock' as never}
+            className="rounded-xl bg-danger px-4 py-2 text-[12px] font-bold text-white shadow-sm hover:bg-danger-7"
+          >
+            Düşük stoğa git →
+          </Link>
+        </article>
+      )}
+
+      {/* ============ QUICK CHIP ROW ============ */}
+      <section
+        className="flex flex-wrap gap-2"
+        data-testid="quick-chip-row"
+      >
+        <QuickChip
+          href="/admin/stock-movements"
+          tone="arrow"
+          icon="＋"
+          label="Stok girişi"
+        />
+        <QuickChip
+          href="/admin/stock-movements"
+          tone="cart"
+          icon="$"
+          label="Yeni satış"
+        />
+        <QuickChip
+          href="/admin/stock-movements"
+          tone="cat"
+          icon="⇄"
+          label="Transfer"
+        />
+        <QuickChip
+          href="/admin/stocktake"
+          tone="bars"
+          icon="✓"
+          label="Sayım başlat"
+        />
+        <div className="flex-1" />
+        <Link
+          href={'/admin/products' as never}
+          className="rounded-xl px-3 py-2 text-[11.5px] font-bold text-ink-3 hover:text-cart"
+        >
+          Tüm ürünleri yönet →
+        </Link>
+      </section>
+
+      <ZoneLabel emoji="🎯" label="Sırada Ne Var" />
 
       {recentNotifications.length > 0 && (
         <section data-testid="pano-notif-feed">
@@ -693,52 +875,90 @@ function todayYmd(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function KPI({
-  title,
-  value,
-  subtitle,
-  emoji,
-  accent = 'cat',
-  bar,
-}: {
-  title: string;
-  value: number | string;
-  subtitle: string;
-  emoji: string;
-  accent?: 'cat' | 'arrow' | 'danger' | 'neutral';
-  bar?: { value: number; max: number };
-}) {
-  const accentClasses: Record<string, string> = {
-    cat: 'border-cat/30 bg-cat-soft/40',
-    arrow: 'border-arrow/30 bg-arrow-soft/40',
-    danger: 'border-danger/30 bg-danger-soft/40',
-    neutral: 'border-line bg-white',
-  };
+/** v3 pano: zone başlığı + sağ tarafa yayılan çizgi */
+function ZoneLabel({ emoji, label }: { emoji: string; label: string }) {
+  return (
+    <div
+      data-zone-label={label}
+      className="mt-2 flex items-center gap-3 text-[11px] font-bold uppercase tracking-wider text-ink-4"
+    >
+      <span>
+        {emoji} {label}
+      </span>
+      <span className="h-px flex-1 bg-gradient-to-r from-line to-transparent" />
+    </div>
+  );
+}
 
+/** v3 pano: bold renkli KPI kartı (3 marka rengi: cat/cart/arrow + danger). */
+function KpiBold({
+  tone,
+  label,
+  value,
+  sub,
+  emoji,
+}: {
+  tone: 'cat' | 'cart' | 'arrow' | 'danger';
+  label: string;
+  value: number | string;
+  sub: string;
+  emoji: string;
+}) {
+  const toneCls: Record<string, string> = {
+    cat: 'bg-gradient-to-br from-cat to-cat-2 shadow-[0_12px_32px_rgba(212,74,20,.18)]',
+    cart: 'bg-gradient-to-br from-cart to-cart-2 shadow-[0_12px_32px_rgba(72,30,80,.18)]',
+    arrow: 'bg-gradient-to-br from-arrow to-arrow-7 shadow-[0_12px_32px_rgba(22,160,138,.18)]',
+    danger: 'bg-gradient-to-br from-danger to-danger-7 shadow-[0_12px_32px_rgba(196,49,49,.20)]',
+  };
   return (
     <article
-      className={`flex flex-col gap-2 rounded-2xl border p-5 ${accentClasses[accent]}`}
-      data-kpi={title}
+      data-kpi-bold={label}
+      data-kpi-tone={tone}
+      className={`relative overflow-hidden rounded-2xl p-6 text-white transition-transform hover:-translate-y-0.5 ${toneCls[tone]}`}
     >
-      <div className="flex items-center justify-between">
-        <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
-          {title}
-        </span>
-        <span className="text-xl">{emoji}</span>
+      <div className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-xl bg-white/20 text-lg">
+        {emoji}
       </div>
-      <div className="font-mono text-3xl font-bold text-cart">{value}</div>
-      <div className="text-[11px] text-ink-3">{subtitle}</div>
-      {bar && bar.max > 0 && (
-        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-line-soft">
-          <div
-            className="h-full bg-cat"
-            style={{
-              width: `${Math.min(100, (bar.value / bar.max) * 100)}%`,
-            }}
-          />
-        </div>
-      )}
+      <span className="text-[11px] font-bold uppercase tracking-wider opacity-85">
+        {label}
+      </span>
+      <div className="mt-2 font-mono text-4xl font-bold leading-none tracking-tight">
+        {value}
+      </div>
+      <div className="mt-2 text-[11.5px] opacity-90">{sub}</div>
     </article>
+  );
+}
+
+/** v3 pano: hızlı eylem chip butonu (Stok Girişi / Satış / Transfer / Sayım). */
+function QuickChip({
+  href,
+  tone,
+  icon,
+  label,
+}: {
+  href: string;
+  tone: 'cat' | 'cart' | 'arrow' | 'bars';
+  icon: string;
+  label: string;
+}) {
+  const toneCls: Record<string, { bg: string; text: string }> = {
+    cat: { bg: 'bg-cat-soft border-cat/30', text: 'text-cart' },
+    cart: { bg: 'bg-bars-soft border-bars/30', text: 'text-cart' },
+    arrow: { bg: 'bg-arrow-soft border-arrow/30', text: 'text-arrow-7' },
+    bars: { bg: 'bg-line-soft border-line', text: 'text-ink-2' },
+  };
+  return (
+    <Link
+      href={href as never}
+      data-quick-chip={label}
+      className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-[12px] font-bold transition hover:-translate-y-0.5 ${toneCls[tone].bg} ${toneCls[tone].text}`}
+    >
+      <span className="grid h-6 w-6 place-items-center rounded-lg bg-white/70 text-[13px] font-bold">
+        {icon}
+      </span>
+      {label}
+    </Link>
   );
 }
 
@@ -792,17 +1012,6 @@ function Card({
       </h2>
       {children}
     </article>
-  );
-}
-
-function QuickLink({ href, label }: { href: string; label: string }) {
-  return (
-    <Link
-      href={href as never}
-      className="rounded-xl border border-line bg-white px-3 py-2 text-xs font-bold text-cart hover:bg-cat-soft"
-    >
-      {label}
-    </Link>
   );
 }
 
