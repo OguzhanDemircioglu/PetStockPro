@@ -24,6 +24,8 @@ export interface CompanyProfile {
   districtId: string | null;
   storefrontStatus: 'disabled' | 'pending' | 'approved' | 'rejected' | 'auto_suspended';
   plan: 'FREE' | 'PRO' | 'PRO_PLUS';
+  locationLat: string | null;
+  locationLng: string | null;
 }
 
 export async function getCompanyProfile(
@@ -42,6 +44,8 @@ export async function getCompanyProfile(
       districtId: companies.districtId,
       storefrontStatus: companies.storefrontStatus,
       plan: companies.plan,
+      locationLat: companies.locationLat,
+      locationLng: companies.locationLng,
     })
     .from(companies)
     .where(eq(companies.id, companyId))
@@ -74,6 +78,38 @@ export const companyProfileSchema = z.object({
   districtId: z
     .string()
     .uuid()
+    .nullable()
+    .optional()
+    .or(z.literal('').transform(() => null)),
+  // TR sınırları içi lat 35-43, lng 25-45. Browser geolocation veya
+  // Google Maps'ten kopyala. Ondalık nokta, 7 hane precision.
+  locationLat: z
+    .union([
+      z
+        .number()
+        .min(35, 'Enlem TR sınırı dışında')
+        .max(43, 'Enlem TR sınırı dışında'),
+      z
+        .string()
+        .regex(/^-?\d+(\.\d{1,7})?$/, 'Geçerli enlem (örn 41.0082)')
+        .transform((v) => parseFloat(v))
+        .refine((v) => v >= 35 && v <= 43, 'Enlem TR sınırı dışında'),
+    ])
+    .nullable()
+    .optional()
+    .or(z.literal('').transform(() => null)),
+  locationLng: z
+    .union([
+      z
+        .number()
+        .min(25, 'Boylam TR sınırı dışında')
+        .max(45, 'Boylam TR sınırı dışında'),
+      z
+        .string()
+        .regex(/^-?\d+(\.\d{1,7})?$/, 'Geçerli boylam (örn 28.9784)')
+        .transform((v) => parseFloat(v))
+        .refine((v) => v >= 25 && v <= 45, 'Boylam TR sınırı dışında'),
+    ])
     .nullable()
     .optional()
     .or(z.literal('').transform(() => null)),
@@ -122,6 +158,10 @@ export async function updateCompanyProfile(
         whatsappPhone: data.whatsappPhone ?? null,
         cityId: data.cityId ?? null,
         districtId: data.districtId ?? null,
+        locationLat:
+          data.locationLat == null ? null : String(data.locationLat),
+        locationLng:
+          data.locationLng == null ? null : String(data.locationLng),
         updatedAt: now,
       })
       .where(eq(companies.id, companyId));

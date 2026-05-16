@@ -45,6 +45,8 @@ export async function updateCompanyAction(
     whatsappPhone: asStr(formData.get('whatsappPhone')),
     cityId: cityId && Number.isFinite(cityId) ? cityId : null,
     districtId: asStr(formData.get('districtId')),
+    locationLat: asStr(formData.get('locationLat')),
+    locationLng: asStr(formData.get('locationLng')),
   };
 
   const result = await updateCompanyProfile(session.user.companyId, input, db);

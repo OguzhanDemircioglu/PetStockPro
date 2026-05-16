@@ -51,6 +51,8 @@ export default async function CompanySettingsPage() {
             whatsappPhone: profile.whatsappPhone,
             cityId: profile.cityId,
             districtId: profile.districtId,
+            locationLat: profile.locationLat,
+            locationLng: profile.locationLng,
           }}
           cities={cityList}
           initialDistricts={districtList}

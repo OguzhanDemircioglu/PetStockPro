@@ -42,6 +42,8 @@ export interface StorefrontListItem {
   aboutShort: string | null;
   productCount: number;
   branchCount: number;
+  /** Yakınlık filtresi aktif ise km cinsinden mesafe, aksi null. */
+  distanceKm: number | null;
 }
 
 export type StorefrontSort = 'name_asc' | 'recent' | 'products_desc';
@@ -72,6 +74,19 @@ export interface ListStorefrontsFilters {
   limit?: number;
   offset?: number;
   sort?: StorefrontSort;
+  /**
+   * Yakınlık filtresi — companies.location_lat/lng üzerinden haversine.
+   * lat+lng+radiusKm tümü set ise filter aktive olur. Bbox optimization
+   * için ±radius/111 derece pre-filter + haversine WHERE.
+   *
+   * `sort` parametresi 'name_asc' default olsa bile, location filter
+   * varsa sıralama mesafe ASC'ye otomatik geçer (`location` sort tipi).
+   */
+  location?: {
+    lat: number;
+    lng: number;
+    radiusKm: number;
+  };
 }
 
 export interface StorefrontDetail {
@@ -160,6 +175,30 @@ export async function listPublicStorefronts(
       )!,
     );
   }
+  if (filters.location) {
+    // Yakınlık filtresi — bbox pre-filter (index-friendly) + haversine
+    // WHERE. PostGIS YOK; Postgres native math.
+    const { lat, lng, radiusKm } = filters.location;
+    const latDelta = radiusKm / 111;
+    const lngDelta = radiusKm / (111 * Math.cos((lat * Math.PI) / 180));
+    conditions.push(sql`${companies.locationLat} IS NOT NULL`);
+    conditions.push(sql`${companies.locationLng} IS NOT NULL`);
+    conditions.push(
+      sql`${companies.locationLat} BETWEEN ${lat - latDelta} AND ${lat + latDelta}`,
+    );
+    conditions.push(
+      sql`${companies.locationLng} BETWEEN ${lng - lngDelta} AND ${lng + lngDelta}`,
+    );
+    conditions.push(
+      sql`(
+        6371 * 2 * ASIN(LEAST(1, SQRT(
+          POWER(SIN(RADIANS(${companies.locationLat}::float - ${lat}) / 2), 2)
+          + COS(RADIANS(${lat})) * COS(RADIANS(${companies.locationLat}::float))
+            * POWER(SIN(RADIANS(${companies.locationLng}::float - ${lng}) / 2), 2)
+        )))
+      ) <= ${radiusKm}`,
+    );
+  }
 
   const limit = Math.min(filters.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
   const offset = Math.max(0, filters.offset ?? 0);
@@ -194,6 +233,16 @@ export async function listPublicStorefronts(
             AND ${branches.isActive} = true
         ), 0)
       `,
+      // Yakınlık filtresi varsa distance_km hesabı, yoksa null
+      distanceKm: filters.location
+        ? sql<number>`(
+            6371 * 2 * ASIN(LEAST(1, SQRT(
+              POWER(SIN(RADIANS(${companies.locationLat}::float - ${filters.location.lat}) / 2), 2)
+              + COS(RADIANS(${filters.location.lat})) * COS(RADIANS(${companies.locationLat}::float))
+                * POWER(SIN(RADIANS(${companies.locationLng}::float - ${filters.location.lng}) / 2), 2)
+            )))
+          )`
+        : sql<number | null>`NULL`,
     })
     .from(storefrontSettings)
     .innerJoin(companies, eq(companies.id, storefrontSettings.companyId))
@@ -202,7 +251,20 @@ export async function listPublicStorefronts(
     .where(and(...conditions));
 
   let ordered;
-  if (sort === 'recent') {
+  if (filters.location) {
+    // Yakınlık filtresi varsa mesafe ASC öncelikli
+    const { lat, lng } = filters.location;
+    ordered = baseQuery.orderBy(
+      sql`(
+        6371 * 2 * ASIN(LEAST(1, SQRT(
+          POWER(SIN(RADIANS(${companies.locationLat}::float - ${lat}) / 2), 2)
+          + COS(RADIANS(${lat})) * COS(RADIANS(${companies.locationLat}::float))
+            * POWER(SIN(RADIANS(${companies.locationLng}::float - ${lng}) / 2), 2)
+        )))
+      ) ASC`,
+      asc(companies.name),
+    );
+  } else if (sort === 'recent') {
     ordered = baseQuery.orderBy(
       desc(storefrontSettings.updatedAt),
       asc(companies.name),
@@ -241,6 +303,7 @@ export async function listPublicStorefronts(
       : null,
     productCount: r.productCount,
     branchCount: r.branchCount,
+    distanceKm: r.distanceKm == null ? null : Number(r.distanceKm),
   }));
 }
 
@@ -369,7 +432,10 @@ export async function getDistrictBySlug(
  */
 export async function countPublicStorefronts(
   db: DbClient,
-  filters: Pick<ListStorefrontsFilters, 'cityId' | 'districtId' | 'q'> = {},
+  filters: Pick<
+    ListStorefrontsFilters,
+    'cityId' | 'districtId' | 'q' | 'location'
+  > = {},
 ): Promise<number> {
   const conditions = [
     eq(storefrontSettings.isEnabled, true),
@@ -388,6 +454,28 @@ export async function countPublicStorefronts(
         ilike(companies.name, pattern),
         ilike(storefrontSettings.aboutContent, pattern),
       )!,
+    );
+  }
+  if (filters.location) {
+    const { lat, lng, radiusKm } = filters.location;
+    const latDelta = radiusKm / 111;
+    const lngDelta = radiusKm / (111 * Math.cos((lat * Math.PI) / 180));
+    conditions.push(sql`${companies.locationLat} IS NOT NULL`);
+    conditions.push(sql`${companies.locationLng} IS NOT NULL`);
+    conditions.push(
+      sql`${companies.locationLat} BETWEEN ${lat - latDelta} AND ${lat + latDelta}`,
+    );
+    conditions.push(
+      sql`${companies.locationLng} BETWEEN ${lng - lngDelta} AND ${lng + lngDelta}`,
+    );
+    conditions.push(
+      sql`(
+        6371 * 2 * ASIN(LEAST(1, SQRT(
+          POWER(SIN(RADIANS(${companies.locationLat}::float - ${lat}) / 2), 2)
+          + COS(RADIANS(${lat})) * COS(RADIANS(${companies.locationLat}::float))
+            * POWER(SIN(RADIANS(${companies.locationLng}::float - ${lng}) / 2), 2)
+        )))
+      ) <= ${radiusKm}`,
     );
   }
 

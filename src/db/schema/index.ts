@@ -217,6 +217,14 @@ export const companies = petstockproSchema.table('companies', {
   telegramEnabled: boolean('telegram_enabled').notNull().default(false),
   telegramConfiguredAt: timestamp('telegram_configured_at', { withTimezone: true }),
 
+  // Faz 2'den çekildi 2026-05-17 — Yakınlık sorgusu için lat/lng.
+  // PostGIS extension YOK (tek geliştirici sade-tut); haversine formula
+  // Postgres native math ile yapılır. Pet shop sahibi Google Maps'ten
+  // koordinat kopyalayıp ayarlar sayfasından girer (Faz 3'te map picker).
+  // 10 hane + 7 ondalık → ~1cm precision yeter.
+  locationLat: decimal('location_lat', { precision: 10, scale: 7 }),
+  locationLng: decimal('location_lng', { precision: 10, scale: 7 }),
+
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

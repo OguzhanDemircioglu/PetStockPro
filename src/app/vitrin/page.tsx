@@ -14,6 +14,8 @@ import {
 import { cities as citiesTable } from '@/db/schema';
 import { trackVitrinEventAsync } from '@/lib/vitrin/track';
 import { listCategoriesWithStorefrontProducts } from '@/lib/vitrin/category-listings';
+import { parseLocationQuery } from '@/lib/vitrin/geolocation';
+import { NearbyToggle } from './nearby-toggle';
 import { asc } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
@@ -29,6 +31,9 @@ interface SearchParams {
   q?: string;
   page?: string;
   sort?: string;
+  lat?: string;
+  lng?: string;
+  r?: string;
 }
 
 const PAGE_SIZE = 24;
@@ -60,6 +65,13 @@ export default async function VitrinHomePage({
   filters.limit = PAGE_SIZE;
   filters.offset = (page - 1) * PAGE_SIZE;
 
+  // Yakınlık filtresi (params.lat + lng + r) varsa aktive ol — TR sınır
+  // valide. Geçersizse sessizce atla, normal listele.
+  const location = parseLocationQuery(params.lat, params.lng, params.r);
+  if (location) {
+    filters.location = location;
+  }
+
   const [storefronts, cityList, totalCount, activeCities, activeCategories] =
     await Promise.all([
       listPublicStorefronts(db, filters),
@@ -71,6 +83,7 @@ export default async function VitrinHomePage({
         cityId: filters.cityId,
         districtId: filters.districtId,
         q: filters.q,
+        location: filters.location,
       }),
       listCitiesWithStorefronts(db),
       listCategoriesWithStorefrontProducts(db),
@@ -80,12 +93,17 @@ export default async function VitrinHomePage({
   const isLastPage = page >= totalPages;
   const isFirstPage = page <= 1;
 
-  // URL query helper — filtre + sort'u koruyarak page değiştir
+  // URL query helper — filtre + sort + location'ı koruyarak page değiştir
   function buildPageUrl(p: number): string {
     const qs = new URLSearchParams();
     if (filters.cityId) qs.set('city', String(filters.cityId));
     if (filters.q) qs.set('q', filters.q);
-    if (sort !== 'name_asc') qs.set('sort', sort);
+    if (sort !== 'name_asc' && !location) qs.set('sort', sort);
+    if (location) {
+      qs.set('lat', String(location.lat));
+      qs.set('lng', String(location.lng));
+      qs.set('r', String(location.radiusKm));
+    }
     if (p > 1) qs.set('page', String(p));
     const str = qs.toString();
     return str ? `/vitrin?${str}` : '/vitrin';
@@ -210,6 +228,16 @@ export default async function VitrinHomePage({
         </form>
       </section>
 
+      <NearbyToggle
+        active={!!location}
+        currentRadiusKm={location?.radiusKm ?? 25}
+        currentLabel={
+          location
+            ? `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`
+            : undefined
+        }
+      />
+
       <section data-testid="vitrin-results">
         <div className="mb-4 flex items-baseline justify-between gap-2">
           <h2
@@ -288,9 +316,21 @@ export default async function VitrinHomePage({
                     href={`/vitrin/magaza/${s.slug}` as never}
                     className="flex-1 min-w-0"
                   >
-                    <h3 className="truncate text-base font-bold text-cart">
-                      {s.name}
-                    </h3>
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="truncate text-base font-bold text-cart">
+                        {s.name}
+                      </h3>
+                      {s.distanceKm !== null && (
+                        <span
+                          data-distance-km={s.distanceKm}
+                          className="shrink-0 rounded-full bg-cat-soft px-2 py-0.5 text-[10px] font-bold text-cart"
+                        >
+                          {s.distanceKm < 1
+                            ? `${Math.round(s.distanceKm * 1000)} m`
+                            : `${s.distanceKm.toFixed(1)} km`}
+                        </span>
+                      )}
+                    </div>
                     <p className="mt-0.5 text-[11.5px] text-ink-3">
                       📍{' '}
                       {[s.districtName, s.cityName].filter(Boolean).join(', ') ||
