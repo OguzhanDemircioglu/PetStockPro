@@ -251,7 +251,13 @@ Workers cron 03:00 UTC → /api/cron/sitemap-rebuild →
 | `src/lib/cron/scheduled-handler.ts` | `CRON_ENDPOINT_MAP['0 3 * * *'] = '/api/cron/sitemap-rebuild'` |
 | `wrangler.toml` `[triggers]` `crons` | `"0 3 * * *"` — 06:00 TR (düşük trafik saati) |
 
-**MVP'de pasif:** Dev'de in-memory cache, /sitemap.xml hâlâ dynamic SSR. Production'da R2 binding aktive olunca otomatik kullanılır. Geçiş için Faz 2'de `/sitemap.xml/route.ts` cache-first handler yazılır.
+**`/sitemap.xml` cache-first handler (2026-05-17 aktif):**
+
+`src/app/sitemap.xml/route.ts` `getSitemapCacheStore().get()` ile cache-first serve eder:
+- Cache hit → 200 + cached XML + `X-Sitemap-Source: cache` + `X-Sitemap-Cached-At` + `Cache-Control: max-age=3600, stale-while-revalidate=86400`
+- Cache miss veya store throw → 200 + dynamic SSR (collectSitemapEntries + buildSitemapXml) + `X-Sitemap-Source: dynamic` + `Cache-Control: max-age=600, stale-while-revalidate=3600` (kısa, sık recheck)
+
+Production'da R2 binding ile ardışık tüm istekler cache hit verir (~5ms). Dev'de Next.js Turbopack route isolate'larında module-level state paylaşılmayabilir (cache miss fallback dynamic devam eder, downtime yok).
 
 ---
 

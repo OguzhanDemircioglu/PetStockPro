@@ -14,22 +14,27 @@ import type { RateLimitStore } from './store';
 
 interface GlobalWithKv {
   RATE_LIMIT_KV?: KVNamespaceLike;
+  __petstockproRateLimitMemoryStore?: InMemoryRateLimitStore;
 }
 
-let memoryStore: InMemoryRateLimitStore | null = null;
-
+/**
+ * Singleton'ı `globalThis`'te tut — Next.js dev hot-reload sırasında module-level
+ * `let memoryStore` sıfırlanabilir (cache MISS verir, rate-limit sayacı
+ * sıfırlanır). `globalThis` Node.js process boyunca tek instance garanti eder.
+ */
 export function getRateLimitStore(): RateLimitStore {
   const g = globalThis as unknown as GlobalWithKv;
   if (g.RATE_LIMIT_KV) {
     return new KvRateLimitStore(g.RATE_LIMIT_KV);
   }
-  if (!memoryStore) {
-    memoryStore = new InMemoryRateLimitStore();
+  if (!g.__petstockproRateLimitMemoryStore) {
+    g.__petstockproRateLimitMemoryStore = new InMemoryRateLimitStore();
   }
-  return memoryStore;
+  return g.__petstockproRateLimitMemoryStore;
 }
 
 /** Test yardımcısı — singleton'ı resetler (vitest beforeEach). */
 export function _resetRateLimitStoreForTest(): void {
-  memoryStore = null;
+  const g = globalThis as unknown as GlobalWithKv;
+  delete g.__petstockproRateLimitMemoryStore;
 }

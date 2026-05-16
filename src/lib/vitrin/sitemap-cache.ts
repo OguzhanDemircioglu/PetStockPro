@@ -96,24 +96,29 @@ export class InMemorySitemapCacheStore implements SitemapCacheStore {
 
 interface GlobalWithR2 {
   SITEMAP_R2?: R2BucketLike;
+  __petstockproSitemapMemoryCache?: InMemorySitemapCacheStore;
 }
 
-let memoryCache: InMemorySitemapCacheStore | null = null;
-
+/**
+ * Singleton'ı `globalThis`'te tut — Next.js dev hot-reload sırasında module-level
+ * `let memoryCache` sıfırlanabilir (cache MISS verir ardışık request'lerde).
+ * `globalThis` Node.js process boyunca tek instance garanti eder.
+ */
 export function getSitemapCacheStore(): SitemapCacheStore {
   const g = globalThis as unknown as GlobalWithR2;
   if (g.SITEMAP_R2) {
     return new R2SitemapCacheStore(g.SITEMAP_R2);
   }
-  if (!memoryCache) {
-    memoryCache = new InMemorySitemapCacheStore();
+  if (!g.__petstockproSitemapMemoryCache) {
+    g.__petstockproSitemapMemoryCache = new InMemorySitemapCacheStore();
   }
-  return memoryCache;
+  return g.__petstockproSitemapMemoryCache;
 }
 
-/** Test yardımcısı. */
+/** Test yardımcısı — singleton'ı resetler (vitest beforeEach). */
 export function _resetSitemapCacheStoreForTest(): void {
-  memoryCache = null;
+  const g = globalThis as unknown as GlobalWithR2;
+  delete g.__petstockproSitemapMemoryCache;
 }
 
 /** Standart sitemap anahtarı. */
