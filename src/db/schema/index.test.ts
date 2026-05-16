@@ -7,6 +7,10 @@ import {
   superadminActionTypeEnum,
   storefrontStatusEnum,
   userInviteMethodEnum,
+  stocktakeStatusEnum,
+  stocktakeModeEnum,
+  stocktakeReasonEnum,
+  vitrinEventTypeEnum,
   cities,
   districts,
   companies,
@@ -16,6 +20,10 @@ import {
   processedWebhooks,
   invoices,
   auditLogs,
+  sessions,
+  stocktakes,
+  stocktakeItems,
+  vitrinEvents,
 } from './index';
 
 /**
@@ -80,6 +88,52 @@ describe('Schema — enum değerleri (Sprint 1A)', () => {
       'dbfix',
       'system',
       'user',
+    ]);
+  });
+});
+
+describe('Schema — enum değerleri (Sprint 1B.2)', () => {
+  it('stocktakeStatusEnum: 4 state', () => {
+    expect(stocktakeStatusEnum.enumValues).toEqual([
+      'in_progress',
+      'waiting',
+      'completed',
+      'cancelled',
+    ]);
+  });
+
+  it('stocktakeModeEnum: full/category/manual', () => {
+    expect(stocktakeModeEnum.enumValues).toEqual(['full', 'category', 'manual']);
+  });
+
+  it('stocktakeReasonEnum: 7 sebep (loss/overage/wrong_entry/expired/damage/theft/other)', () => {
+    expect(stocktakeReasonEnum.enumValues).toEqual([
+      'loss',
+      'overage',
+      'wrong_entry',
+      'expired',
+      'damage',
+      'theft',
+      'other',
+    ]);
+  });
+
+  it('vitrinEventTypeEnum: 14 type (10 analytics + 4 feedback balonu)', () => {
+    expect(vitrinEventTypeEnum.enumValues).toEqual([
+      'home_view',
+      'profile_view',
+      'product_view',
+      'listing_impression',
+      'category_view',
+      'whatsapp_click',
+      'phone_click',
+      'telegram_click',
+      'directions_click',
+      'search',
+      'feedback_balloon_shown',
+      'feedback_submitted',
+      'feedback_closed_manually',
+      'feedback_dismissed',
     ]);
   });
 });
@@ -172,5 +226,58 @@ describe('Schema — Sprint 1A payment + audit tabloları', () => {
     expect(auditLogs.performedAsSuperadmin).toBeDefined();
     expect(auditLogs.superadminActionType).toBeDefined();
     expect(auditLogs.superadminReason).toBeDefined();
+  });
+});
+
+describe('Schema — Sprint 1B.2 sessions + sayım + vitrin events', () => {
+  it('sessions: sessionToken PK + user FK + expires + cihaz takibi (ip/ua/deviceLabel/lastActivity)', () => {
+    expect(sessions.sessionToken).toBeDefined();
+    expect(sessions.userId).toBeDefined();
+    expect(sessions.expires).toBeDefined();
+    expect(sessions.ipAddress).toBeDefined();
+    expect(sessions.userAgent).toBeDefined();
+    expect(sessions.deviceLabel).toBeDefined();
+    expect(sessions.lastActivityAt).toBeDefined();
+  });
+
+  it('stocktakes: company+branch FK + mode + status default in_progress + softLock + startedBy', () => {
+    expect(stocktakes.companyId).toBeDefined();
+    expect(stocktakes.branchId).toBeDefined();
+    expect(stocktakes.mode).toBeDefined();
+    expect(stocktakes.categoryId).toBeDefined();
+    expect(stocktakes.softLock).toBeDefined();
+    expect(stocktakes.status).toBeDefined();
+    expect(stocktakes.totalItems).toBeDefined();
+    expect(stocktakes.countedItems).toBeDefined();
+    expect(stocktakes.diffItems).toBeDefined();
+    expect(stocktakes.valueImpact).toBeDefined();
+    expect(stocktakes.startedById).toBeDefined();
+    expect(stocktakes.closedAt).toBeDefined();
+  });
+
+  it('stocktakeItems: stocktake FK + variant FK + systemQty/countedQty/diff + reason enum + isSkipped', () => {
+    expect(stocktakeItems.stocktakeId).toBeDefined();
+    expect(stocktakeItems.variantId).toBeDefined();
+    expect(stocktakeItems.systemQty).toBeDefined();
+    expect(stocktakeItems.countedQty).toBeDefined();
+    expect(stocktakeItems.diff).toBeDefined();
+    expect(stocktakeItems.reason).toBeDefined();
+    expect(stocktakeItems.customReason).toBeDefined();
+    expect(stocktakeItems.isSkipped).toBeDefined();
+  });
+
+  it('vitrinEvents: company FK + eventType + visitor anonim (ipHash/cityId/country) + UTM', () => {
+    expect(vitrinEvents.companyId).toBeDefined();
+    expect(vitrinEvents.branchId).toBeDefined();
+    expect(vitrinEvents.productId).toBeDefined();
+    expect(vitrinEvents.variantId).toBeDefined();
+    expect(vitrinEvents.eventType).toBeDefined();
+    expect(vitrinEvents.visitorIpHash).toBeDefined();
+    expect(vitrinEvents.visitorCityId).toBeDefined();
+    expect(vitrinEvents.visitorCountry).toBeDefined();
+    expect(vitrinEvents.searchQuery).toBeDefined();
+    expect(vitrinEvents.utmSource).toBeDefined();
+    expect(vitrinEvents.utmMedium).toBeDefined();
+    expect(vitrinEvents.utmCampaign).toBeDefined();
   });
 });

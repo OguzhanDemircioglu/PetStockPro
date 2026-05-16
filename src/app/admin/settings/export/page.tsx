@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
 import { auth } from '@/lib/auth/auth';
+import { SettingsShell } from '@/components/settings-shell';
 
 /**
  * Verilerimi İndir hub — KVKK Madde 11 veri taşıma hakkı.
@@ -82,50 +82,34 @@ export default async function ExportHubPage() {
   ];
 
   return (
-    <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-12">
-      <header>
-        <div className="text-[11.5px] font-bold uppercase tracking-wider text-cat">
-          Admin · Ayarlar · Verilerimi İndir
+    <SettingsShell
+      current="export"
+      title="Verilerimi İndir"
+      description="KVKK Madde 11 — kişisel ve işletme verilerini her zaman indirebilirsin. CSV dosyaları Excel TR locale ile direkt açılır (UTF-8 BOM, noktalı virgül delimiter)."
+    >
+      <div className="flex max-w-3xl flex-col gap-6">
+        <div className="flex flex-col gap-3">
+          {datasets.map((d) => (
+            <ExportCard key={d.href} {...d} />
+          ))}
         </div>
-        <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
-          Verilerimi İndir
-        </h1>
-        <p className="mt-2 text-sm leading-relaxed text-ink-3">
-          KVKK Madde 11 — kişisel ve işletme verilerinizi her zaman
-          indirebilirsiniz. Aşağıdaki CSV dosyaları{' '}
-          <strong>Excel TR locale</strong> ile direkt açılır (UTF-8 BOM,
-          noktalı virgül delimiter).
-        </p>
-      </header>
 
-      <div className="flex flex-col gap-3">
-        {datasets.map((d) => (
-          <ExportCard key={d.href} {...d} />
-        ))}
+        <section className="rounded-2xl border border-line bg-white p-5 text-xs text-ink-3">
+          <h2 className="mb-2 text-sm font-bold text-cart">ℹ Bilgi</h2>
+          <ul className="list-inside list-disc space-y-1">
+            <li>İndirme limiti: her CSV dosyası en fazla 5.000 satır içerir.</li>
+            <li>UTF-8 BOM + ; delimiter — Excel TR&apos;de doğru karakter görünür.</li>
+            <li>
+              Ledger ve audit log <strong>append-only</strong> — silinmiş
+              kayıtlar da görünür (KVKK denetim için zorunlu).
+            </li>
+            <li>
+              Veri taşıma hakkı: bu CSV&apos;leri başka bir sisteme aktarabilirsin.
+            </li>
+          </ul>
+        </section>
       </div>
-
-      <section className="rounded-2xl border border-line bg-white p-5 text-xs text-ink-3">
-        <h2 className="mb-2 text-sm font-bold text-cart">ℹ Bilgi</h2>
-        <ul className="list-inside list-disc space-y-1">
-          <li>İndirme limiti: her CSV dosyası en fazla 5.000 satır içerir.</li>
-          <li>UTF-8 BOM + ; delimiter — Excel TR&apos;de doğru karakter görünür.</li>
-          <li>
-            Ledger ve audit log <strong>append-only</strong> — silinmiş
-            kayıtlar da görünür (KVKK denetim için zorunlu).
-          </li>
-          <li>
-            Veri taşıma hakkı: bu CSV&apos;leri başka bir sisteme aktarabilirsin.
-          </li>
-        </ul>
-      </section>
-
-      <Link
-        href={'/admin/settings' as never}
-        className="text-center text-xs text-ink-4 hover:text-cart"
-      >
-        ← Ayarlara dön
-      </Link>
-    </main>
+    </SettingsShell>
   );
 }
 

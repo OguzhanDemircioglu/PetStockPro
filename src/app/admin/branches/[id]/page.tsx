@@ -1,0 +1,238 @@
+import Link from 'next/link';
+import { notFound, redirect } from 'next/navigation';
+import { auth } from '@/lib/auth/auth';
+import { db } from '@/lib/db/client';
+import { getBranchDetail } from '@/lib/branches/manage';
+import {
+  listBranchVariantStock,
+  listBranchRecentMovements,
+} from '@/lib/branches/detail';
+
+const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
+  stock_in: { label: '📥 Giriş', cls: 'bg-arrow-soft text-arrow-7' },
+  stock_out: { label: '📤 Çıkış', cls: 'bg-cat-soft text-cart' },
+  transfer: { label: '🔁 Transfer', cls: 'bg-line-soft text-ink-2' },
+  stocktake: { label: '📋 Sayım', cls: 'bg-line-soft text-ink-2' },
+  stocktake_initial: { label: '🗂 İlk', cls: 'bg-line-soft text-ink-2' },
+};
+
+export default async function BranchDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const session = await auth();
+  if (!session?.user?.companyId) redirect('/login' as never);
+
+  const { id } = await params;
+  const [branch, variantStock, movements] = await Promise.all([
+    getBranchDetail(session.user.companyId, id, db),
+    listBranchVariantStock(session.user.companyId, id, db),
+    listBranchRecentMovements(session.user.companyId, id, db, 12),
+  ]);
+
+  if (!branch) notFound();
+
+  const totalStock = variantStock.reduce((sum, v) => sum + v.stockQty, 0);
+  const lowVariants = variantStock.filter((v) => v.isLow).length;
+  const zeroVariants = variantStock.filter((v) => v.isZero).length;
+
+  return (
+    <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-12">
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="text-[11.5px] font-bold uppercase tracking-wider text-cat">
+            Admin · Şubeler · Detay
+          </div>
+          <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
+            🏪 {branch.name}
+          </h1>
+          <p className="mt-1 text-sm text-ink-3">
+            {branch.cityName ?? '—'}
+            {branch.districtName ? ` · ${branch.districtName}` : ''}
+            {!branch.isActive && (
+              <span className="ml-2 rounded-full bg-line-soft px-2 py-0.5 text-[10px] font-bold text-ink-3">
+                Pasif
+              </span>
+            )}
+          </p>
+        </div>
+        <Link
+          href={`/admin/branches/${branch.id}/edit` as never}
+          className="rounded-xl border border-line bg-white px-4 py-2 text-xs font-bold text-cart hover:bg-cat-soft"
+        >
+          ✎ Şubeyi düzenle
+        </Link>
+      </header>
+
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KPI title="Toplam stok" value={totalStock} emoji="📦" />
+        <KPI title="Variant sayısı" value={variantStock.length} emoji="🐾" />
+        <KPI
+          title="Düşük stok"
+          value={lowVariants}
+          emoji="⚠"
+          accent={lowVariants > 0 ? 'danger' : 'arrow'}
+        />
+        <KPI
+          title="Stok yok"
+          value={zeroVariants}
+          emoji="🔴"
+          accent={zeroVariants > 0 ? 'danger' : 'arrow'}
+        />
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        <article className="rounded-2xl border border-line bg-white p-5" data-testid="branch-variant-list">
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
+            🐾 Variant stoğu
+          </h2>
+          {variantStock.length === 0 ? (
+            <p className="rounded-lg bg-line-soft px-3 py-4 text-center text-xs text-ink-3">
+              Bu şubede henüz variant kaydı yok.
+            </p>
+          ) : (
+            <ul className="divide-y divide-line-soft" data-testid="branch-variant-rows">
+              {variantStock.map((v) => (
+                <li
+                  key={v.variantId}
+                  data-variant-id={v.variantId}
+                  data-low={v.isLow ? '1' : '0'}
+                  data-zero={v.isZero ? '1' : '0'}
+                  className="flex items-center gap-3 py-2"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[12.5px] font-bold text-ink">
+                      {v.productName}
+                    </div>
+                    <div className="text-[10.5px] text-ink-3">
+                      {v.variantLabel} · SKU {v.sku}
+                    </div>
+                  </div>
+                  <div className="text-right font-mono">
+                    <div
+                      className={`text-base font-bold ${
+                        v.isZero ? 'text-danger-7' : v.isLow ? 'text-cart' : 'text-ink'
+                      }`}
+                    >
+                      {v.stockQty}
+                    </div>
+                    <div className="text-[10px] text-ink-4">/ {v.threshold} eşik</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </article>
+
+        <article
+          className="rounded-2xl border border-line bg-white p-5"
+          data-testid="branch-movements"
+        >
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-ink-3">
+              🕒 Son hareketler
+            </h2>
+            <Link
+              href={`/admin/stock-movements?branch=${branch.id}` as never}
+              className="text-[11px] font-bold text-cat hover:underline"
+            >
+              Tümü →
+            </Link>
+          </div>
+          {movements.length === 0 ? (
+            <p className="rounded-lg bg-line-soft px-3 py-4 text-center text-xs text-ink-3">
+              Bu şubede henüz hareket yok.
+            </p>
+          ) : (
+            <ul className="divide-y divide-line-soft text-xs" data-testid="branch-movement-rows">
+              {movements.map((m) => {
+                const badge = TYPE_BADGE[m.type] ?? {
+                  label: m.type,
+                  cls: 'bg-line-soft text-ink-2',
+                };
+                return (
+                  <li
+                    key={m.id}
+                    data-movement-id={m.id}
+                    className="flex items-center gap-2 py-2"
+                  >
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${badge.cls}`}
+                    >
+                      {badge.label}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-bold text-ink">{m.productName}</div>
+                      <div className="text-[10px] text-ink-3">
+                        {m.variantLabel} ·{' '}
+                        {new Date(m.createdAt).toLocaleString('tr-TR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </div>
+                    </div>
+                    <div className="text-right font-mono">
+                      <div
+                        className={`text-sm font-bold ${
+                          m.quantity > 0 ? 'text-arrow-7' : 'text-cart'
+                        }`}
+                      >
+                        {m.quantity > 0 ? '+' : ''}
+                        {m.quantity}
+                      </div>
+                      <div className="text-[9px] text-ink-4">
+                        {m.beforeQty} → {m.afterQty}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </article>
+      </section>
+
+      <Link
+        href={'/admin/branches' as never}
+        className="text-center text-xs text-ink-4 hover:text-cart"
+      >
+        ← Şube listesi
+      </Link>
+    </main>
+  );
+}
+
+function KPI({
+  title,
+  value,
+  emoji,
+  accent = 'arrow',
+}: {
+  title: string;
+  value: number | string;
+  emoji: string;
+  accent?: 'cat' | 'arrow' | 'danger';
+}) {
+  const cls: Record<string, string> = {
+    cat: 'border-cat/30 bg-cat-soft/40',
+    arrow: 'border-arrow/30 bg-arrow-soft/40',
+    danger: 'border-danger/30 bg-danger-soft/40',
+  };
+  return (
+    <article
+      className={`flex flex-col gap-2 rounded-2xl border p-5 ${cls[accent]}`}
+      data-kpi={title}
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+          {title}
+        </span>
+        <span className="text-xl">{emoji}</span>
+      </div>
+      <div className="font-mono text-2xl font-bold text-cart">{value}</div>
+    </article>
+  );
+}

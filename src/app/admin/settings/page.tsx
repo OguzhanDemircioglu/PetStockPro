@@ -11,6 +11,7 @@ import {
   suppliers,
   users,
 } from '@/db/schema';
+import { SettingsShell } from '@/components/settings-shell';
 
 export default async function SettingsHubPage() {
   const session = await auth();
@@ -22,6 +23,7 @@ export default async function SettingsHubPage() {
     db
       .select({
         name: companies.name,
+        plan: companies.plan,
         vatNo: companies.vatNo,
         whatsappPhone: companies.whatsappPhone,
       })
@@ -59,140 +61,122 @@ export default async function SettingsHubPage() {
   const twoFaActive = !!user?.twoFactorEnabledAt;
   const emailChangePending = !!user?.pendingEmail;
 
-  const cards: SettingsCardProps[] = [
+  const statusItems: StatusItem[] = [
     {
       href: '/admin/settings/company',
-      emoji: '🏢',
-      title: 'Firma bilgileri',
-      desc: 'Vergi no, WhatsApp, konum, IBAN',
-      status: vatMissing
-        ? { kind: 'danger', label: '⚠ VKN eksik' }
-        : { kind: 'ok', label: '✓ Tam' },
+      label: 'Firma',
+      value: company?.name ?? '—',
+      hint: vatMissing ? '⚠ VKN eksik' : '✓ Tam',
+      kind: vatMissing ? 'danger' : 'ok',
     },
     {
       href: '/admin/account',
-      emoji: '👤',
-      title: 'Hesap',
-      desc: `${user?.email ?? ''} — email değiştirme`,
-      status: emailChangePending
-        ? { kind: 'pending', label: '⏳ Bekleyen' }
-        : { kind: 'ok', label: '✓ Aktif' },
+      label: 'Hesap',
+      value: user?.email ?? '—',
+      hint: emailChangePending ? '⏳ Email değişiklik bekleniyor' : '✓ Aktif',
+      kind: emailChangePending ? 'pending' : 'ok',
     },
     {
       href: '/admin/security',
-      emoji: '🛡',
-      title: 'Güvenlik',
-      desc: '2FA, recovery kodları',
-      status: twoFaActive
-        ? { kind: 'ok', label: '✓ 2FA aktif' }
-        : { kind: 'warning', label: '⚠ 2FA kapalı' },
+      label: 'Güvenlik',
+      value: '2FA',
+      hint: twoFaActive ? '✓ Aktif' : '⚠ Kapalı',
+      kind: twoFaActive ? 'ok' : 'warning',
+    },
+    {
+      href: '/admin/settings/company',
+      label: 'Plan',
+      value: company?.plan ?? 'FREE',
+      hint: 'Aktif abonelik',
+      kind: 'neutral',
     },
   ];
 
   return (
-    <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-12">
-      <header>
-        <div className="text-[11.5px] font-bold uppercase tracking-wider text-cat">
-          Admin · Ayarlar
-        </div>
-        <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
-          Ayarlar
-        </h1>
-        <p className="mt-1 text-sm text-ink-3">
-          {company?.name ?? 'Pet shop'} — hesap ve firma yönetimi
-        </p>
-      </header>
+    <SettingsShell
+      current="overview"
+      title="Genel bakış"
+      description={`${company?.name ?? 'Pet shop'} — hesap, firma ve veri yönetimi durumu`}
+    >
+      <div className="flex flex-col gap-6">
+        <section>
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
+            Hesap & Firma durumu
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {statusItems.map((s) => (
+              <StatusCard key={`${s.label}-${s.href}`} {...s} />
+            ))}
+          </div>
+        </section>
 
-      <section>
-        <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
-          👤 Hesap & Firma
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {cards.map((c) => (
-            <SettingsCard key={c.href} {...c} />
-          ))}
-        </div>
-      </section>
+        <section>
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
+            📂 Veri yönetimi
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <DataLink
+              href="/admin/categories"
+              emoji="📂"
+              title="Kategoriler"
+              count={counts.categoryCount}
+            />
+            <DataLink
+              href="/admin/brands"
+              emoji="🏷"
+              title="Markalar"
+              count={counts.brandCount}
+            />
+            <DataLink
+              href="/admin/branches"
+              emoji="🏪"
+              title="Şubeler"
+              count={counts.branchCount}
+              suffix="aktif"
+            />
+            <DataLink
+              href="/admin/suppliers"
+              emoji="🏢"
+              title="Tedarikçiler"
+              count={counts.supplierCount}
+              suffix="aktif"
+            />
+          </div>
+        </section>
+      </div>
+    </SettingsShell>
+  );
+}
 
-      <section>
-        <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
-          📂 Veri yönetimi
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <DataLink
-            href="/admin/categories"
-            emoji="📂"
-            title="Kategoriler"
-            count={counts.categoryCount}
-          />
-          <DataLink
-            href="/admin/brands"
-            emoji="🏷"
-            title="Markalar"
-            count={counts.brandCount}
-          />
-          <DataLink
-            href="/admin/branches"
-            emoji="🏪"
-            title="Şubeler"
-            count={counts.branchCount}
-            suffix="aktif"
-          />
-          <DataLink
-            href="/admin/suppliers"
-            emoji="🏢"
-            title="Tedarikçiler"
-            count={counts.supplierCount}
-            suffix="aktif"
-          />
-        </div>
-      </section>
+interface StatusItem {
+  href: string;
+  label: string;
+  value: string;
+  hint: string;
+  kind: 'ok' | 'warning' | 'danger' | 'pending' | 'neutral';
+}
 
-      <section>
-        <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
-          📜 Denetim
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Link
-            href={'/admin/audit-log' as never}
-            data-data-link="/admin/audit-log"
-            className="group flex items-center gap-3 rounded-2xl border border-line bg-white p-4 hover:border-cat hover:shadow-sm transition-shadow"
-          >
-            <span className="grid h-12 w-12 place-items-center rounded-xl bg-cat-soft text-2xl">
-              📜
-            </span>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-bold text-cart group-hover:text-cat">
-                Audit log
-              </h3>
-              <p className="text-[11px] text-ink-3">Son aksiyonlar (KVKK 5 yıl)</p>
-            </div>
-          </Link>
-          <Link
-            href={'/admin/settings/export' as never}
-            data-data-link="/admin/settings/export"
-            className="group flex items-center gap-3 rounded-2xl border border-line bg-white p-4 hover:border-cat hover:shadow-sm transition-shadow"
-          >
-            <span className="grid h-12 w-12 place-items-center rounded-xl bg-cat-soft text-2xl">
-              ⬇
-            </span>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-bold text-cart group-hover:text-cat">
-                Verilerimi İndir
-              </h3>
-              <p className="text-[11px] text-ink-3">CSV export (KVKK Madde 11)</p>
-            </div>
-          </Link>
-        </div>
-      </section>
+function StatusCard({ href, label, value, hint, kind }: StatusItem) {
+  const hintClasses: Record<StatusItem['kind'], string> = {
+    ok: 'text-arrow-7',
+    warning: 'text-cart',
+    danger: 'text-danger-7',
+    pending: 'text-ink-2',
+    neutral: 'text-ink-3',
+  };
 
-      <Link
-        href={'/admin' as never}
-        className="text-center text-xs text-ink-4 hover:text-cart"
-      >
-        ← Pano&apos;ya dön
-      </Link>
-    </main>
+  return (
+    <Link
+      href={href as never}
+      data-status-card={label}
+      className="group flex flex-col gap-1 rounded-2xl border border-line bg-white p-4 hover:border-cat hover:shadow-sm transition-shadow"
+    >
+      <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+        {label}
+      </span>
+      <span className="truncate text-base font-bold text-cart">{value}</span>
+      <span className={`text-xs font-semibold ${hintClasses[kind]}`}>{hint}</span>
+    </Link>
   );
 }
 
@@ -231,40 +215,3 @@ function DataLink({
   );
 }
 
-interface SettingsCardProps {
-  href: string;
-  emoji: string;
-  title: string;
-  desc: string;
-  status: { kind: 'ok' | 'warning' | 'danger' | 'pending'; label: string };
-}
-
-function SettingsCard({ href, emoji, title, desc, status }: SettingsCardProps) {
-  const statusClasses: Record<string, string> = {
-    ok: 'bg-arrow-soft text-arrow-7',
-    warning: 'bg-cat-soft text-cart',
-    danger: 'bg-danger-soft text-danger-7',
-    pending: 'bg-line-soft text-ink-2',
-  };
-
-  return (
-    <Link
-      href={href as never}
-      data-settings-card={href}
-      className="group flex flex-col gap-3 rounded-2xl border border-line bg-white p-5 hover:border-cat hover:shadow-[var(--shadow-sm)] transition-shadow"
-    >
-      <div className="flex items-start justify-between gap-2">
-        <span className="text-3xl">{emoji}</span>
-        <span
-          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${statusClasses[status.kind]}`}
-        >
-          {status.label}
-        </span>
-      </div>
-      <div>
-        <h2 className="text-base font-bold text-cart group-hover:text-cat">{title}</h2>
-        <p className="mt-1 text-xs text-ink-3">{desc}</p>
-      </div>
-    </Link>
-  );
-}

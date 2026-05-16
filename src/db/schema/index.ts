@@ -104,6 +104,62 @@ export const supplierPaymentTermsEnum = petstockproSchema.enum('supplier_payment
   'cash', 'net_30', 'net_60', 'other',
 ]);
 
+// Sprint 1B.2 — Guided stocktake (sayım oturumu)
+export const stocktakeStatusEnum = petstockproSchema.enum('stocktake_status', [
+  'in_progress', 'waiting', 'completed', 'cancelled',
+]);
+
+export const stocktakeModeEnum = petstockproSchema.enum('stocktake_mode', [
+  'full',     // tüm aktif variant'lar
+  'category', // tek kategori
+  'manual',   // elle seçim
+]);
+
+export const stocktakeReasonEnum = petstockproSchema.enum('stocktake_reason', [
+  'loss', 'overage', 'wrong_entry', 'expired', 'damage', 'theft', 'other',
+]);
+
+// Sprint 15 — Notification türleri (admin bildirim feed)
+// Çoğu trigger Sprint 12+ tarafından üretilir; MVP'de stocktake/low-stock/auto-unpublish kullanılır.
+export const notificationTypeEnum = petstockproSchema.enum('notification_type', [
+  'low_stock_critical',
+  'out_of_stock',
+  'high_sale',
+  'new_user',
+  'plan_limit_warning',
+  'daily_summary',
+  'weekly_summary',
+  'transfer_received',
+  'stocktake_completed',
+  'superadmin_session',
+  'subscription_payment_failed',
+  'subscription_renewed',
+  'invoice_issued',
+  'vitrin_approved',
+  'vitrin_report_received',
+  'vitrin_auto_unpublished',
+]);
+
+// Sprint 1B.2 — Vitrin etkinlik tipleri (Sprint 12 storefront analytics)
+// 2026-05-14 revize: profile_view + listing_impression eklendi (DEVAM-REHBERI §3)
+// 2026-05-15 revize: feedback_* 4 değer eklendi (WhatsApp Geri Bildirim Balonu)
+export const vitrinEventTypeEnum = petstockproSchema.enum('vitrin_event_type', [
+  'home_view',
+  'profile_view',
+  'product_view',
+  'listing_impression',
+  'category_view',
+  'whatsapp_click',
+  'phone_click',
+  'telegram_click',
+  'directions_click',
+  'search',
+  'feedback_balloon_shown',
+  'feedback_submitted',
+  'feedback_closed_manually',
+  'feedback_dismissed',
+]);
+
 // ═══════════════════════════════════════════════════════════════
 // TABLES — Sprint 0 iskelet
 // ═══════════════════════════════════════════════════════════════
@@ -632,9 +688,220 @@ export const stockMovements = petstockproSchema.table('stock_movements', {
 ]);
 
 // ═══════════════════════════════════════════════════════════════
-// TODO Sprint 1B.2+ (sırayla eklenecek)
+// TABLES — Sprint 1B.2 (Sessions + Sayım Oturumları + Vitrin Events)
 // ═══════════════════════════════════════════════════════════════
-// stocktakes, stocktake_items, sessions (Auth.js Drizzle adapter),
-// vitrin_events, vitrin_reports, vitrin_whatsapp_feedback,
-// storefront_settings, notifications, telegram_bindings,
-// system_settings, system_broadcasts, system_errors, ...
+// Otoritatif: DATABASE-SCHEMA.md §3.1 (sessions), §3.4 (stocktakes/stocktake_items), §3.8 (vitrin_events)
+
+/**
+ * SESSIONS — Auth.js + cihaz takibi
+ *
+ * MVP: Auth.js JWT strategy aktif (lib/auth/auth.ts:30) — bu tablo şu an boş.
+ * Hazırlık: "Aktif Oturumlar" UX'i (EKRAN-KULLANICILAR — kullanıcı kendi cihazlarını görüp logout
+ * edebilir) ve Auth.js Drizzle adapter geçişi için schema önden hazır. Faz 2 aktivasyonu:
+ * auth.ts'te `session: { strategy: 'database' }` + DrizzleAdapter wiring.
+ *
+ * RLS: kullanıcı kendi session'ını SELECT/DELETE eder, INSERT backend (service_role).
+ */
+export const sessions = petstockproSchema.table('sessions', {
+  sessionToken: varchar('session_token', { length: 255 }).primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  expires: timestamp('expires', { withTimezone: true }).notNull(),
+
+  // Cihaz takibi (Auth.js standart shape üstüne custom)
+  ipAddress: varchar('ip_address', { length: 50 }),
+  userAgent: text('user_agent'),
+  deviceLabel: varchar('device_label', { length: 100 }), // "Chrome on Windows" — UA parse
+  lastActivityAt: timestamp('last_activity_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('idx_sessions_user').on(t.userId),
+  index('idx_sessions_expires').on(t.expires),
+]);
+
+/**
+ * STOCKTAKES — Sayım oturumu (header)
+ *
+ * Bir sayım: branch + mode (full/category/manual). categoryId category modunda dolar.
+ * status: in_progress (sayım sürerken) → waiting (kayıt için bekliyor) → completed.
+ * cancelled = iptal (item'lar saklanır audit için).
+ * softLock=true iken trigger Sprint 4+ aynı şubede stok hareketi engelleyebilir (Faz 2).
+ *
+ * Tamamlandığında her diff != 0 item için stock_movements (type='stocktake') üretilir.
+ *
+ * RLS: tenant SELECT/INSERT/UPDATE kendi sayımlarını, super_admin all access.
+ */
+export const stocktakes = petstockproSchema.table('stocktakes', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  branchId: uuid('branch_id').notNull().references(() => branches.id, { onDelete: 'restrict' }),
+  mode: stocktakeModeEnum('mode').notNull(),
+  categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'set null' }),
+  softLock: boolean('soft_lock').notNull().default(true),
+  status: stocktakeStatusEnum('status').notNull().default('in_progress'),
+
+  // Sayım istatistikleri (background — Sprint 4+)
+  totalItems: integer('total_items').notNull().default(0),
+  countedItems: integer('counted_items').notNull().default(0),
+  diffItems: integer('diff_items').notNull().default(0),
+  valueImpact: decimal('value_impact', { precision: 12, scale: 2 }), // cost-bazlı parasal etki
+
+  note: text('note'),
+  startedById: uuid('started_by_id').notNull().references(() => users.id, { onDelete: 'restrict' }),
+  startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
+  closedAt: timestamp('closed_at', { withTimezone: true }),
+}, (t) => [
+  index('idx_stocktakes_company_status').on(t.companyId, t.status),
+  index('idx_stocktakes_branch').on(t.branchId),
+]);
+
+/**
+ * STOCKTAKE_ITEMS — Sayım kalemleri (variant × oturum)
+ *
+ * Sayım başlangıcında her aktif variant için satır açılır (systemQty snapshot).
+ * Kullanıcı countedQty girer → diff = counted - system (trigger ile veya app-side).
+ * isSkipped: bu variant sayılmayacak (depo dışı, vs).
+ *
+ * Tamamlandığında diff != 0 olan satırlar için stock_movements oluşturulur, stocktakeId FK ile.
+ */
+export const stocktakeItems = petstockproSchema.table('stocktake_items', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  stocktakeId: uuid('stocktake_id').notNull().references(() => stocktakes.id, { onDelete: 'cascade' }),
+  variantId: uuid('variant_id').notNull().references(() => productVariants.id, { onDelete: 'restrict' }),
+
+  systemQty: integer('system_qty').notNull(),
+  countedQty: integer('counted_qty'),
+  diff: integer('diff'),
+  reason: stocktakeReasonEnum('reason'),
+  customReason: text('custom_reason'), // 'other' reason için
+  isSkipped: boolean('is_skipped').notNull().default(false),
+
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('idx_stocktake_items_unique').on(t.stocktakeId, t.variantId),
+  index('idx_stocktake_items_variant').on(t.variantId),
+]);
+
+/**
+ * VITRIN_EVENTS — Storefront analytics (Sprint 12 tüketici)
+ *
+ * Her vitrin etkileşimi (profil ziyaret + ürün görüntüleme + WhatsApp tıklama + feedback balonu).
+ * KVKK uyumlu: visitorIpHash = SHA256(IP + daily_salt) — kişisel veri YOK.
+ * 90 gün retention (pg_cron — DEPLOYMENT §8.3).
+ * Aylık partition (pg_partman) Faz 2'de büyük tenant'lar için.
+ *
+ * RLS: tenant kendi event'lerini SELECT (analytics), INSERT anonim (public vitrin via service_role).
+ */
+export const vitrinEvents = petstockproSchema.table('vitrin_events', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  branchId: uuid('branch_id').references(() => branches.id, { onDelete: 'set null' }),
+  productId: uuid('product_id').references(() => products.id, { onDelete: 'cascade' }),
+  variantId: uuid('variant_id').references(() => productVariants.id, { onDelete: 'cascade' }),
+
+  eventType: vitrinEventTypeEnum('event_type').notNull(),
+
+  // Ziyaretçi (anonim, KVKK uyumlu)
+  visitorIpHash: varchar('visitor_ip_hash', { length: 64 }), // SHA256(IP + daily_salt)
+  visitorCityId: integer('visitor_city_id').references(() => cities.id),
+  visitorCountry: varchar('visitor_country', { length: 2 }), // ISO 3166-1
+  userAgent: text('user_agent'),
+  referrerUrl: text('referrer_url'),
+  searchQuery: text('search_query'), // event_type='search' için
+
+  // UTM (Faz 2 reklam ölçümü)
+  utmSource: varchar('utm_source', { length: 50 }),
+  utmMedium: varchar('utm_medium', { length: 50 }),
+  utmCampaign: varchar('utm_campaign', { length: 50 }),
+
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('idx_vitrin_events_company_date').on(t.companyId, t.createdAt),
+  index('idx_vitrin_events_type_date').on(t.companyId, t.eventType, t.createdAt),
+  index('idx_vitrin_events_product').on(t.productId, t.createdAt).where(sql`${t.productId} IS NOT NULL`),
+]);
+
+// ═══════════════════════════════════════════════════════════════
+// TABLES — Sprint 15 (Notifications scaffold)
+// ═══════════════════════════════════════════════════════════════
+// Otoritatif: DATABASE-SCHEMA.md §3.5 (notifications/telegram_bindings)
+
+/**
+ * NOTIFICATIONS — Admin bildirim feed
+ *
+ * Tenant + opsiyonel user-specific bildirim. content jsonb { title, body, link }.
+ * channel: 'screen' (admin UI feed), 'telegram' (Telegram bot — Faz 2 binding),
+ * 'email' (Brevo transactional — Faz 2 daily summary).
+ *
+ * MVP: sadece 'screen' channel — /admin/notifications sayfası okur.
+ * Stocktake completion + low_stock auto-detect + vitrin_auto_unpublished tetikler.
+ *
+ * RLS: tenant SELECT kendi notifications (userId NULL veya kendi userId),
+ * INSERT backend (service_role).
+ */
+export const notifications = petstockproSchema.table('notifications', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }), // NULL = tüm tenant'a
+  type: notificationTypeEnum('type').notNull(),
+  channel: varchar('channel', { length: 20 }).notNull().default('screen'), // 'screen' | 'telegram' | 'email'
+  content: jsonb('content').$type<NotificationContent>().notNull(),
+  readAt: timestamp('read_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('idx_notifications_company_user').on(t.companyId, t.userId, t.createdAt),
+  index('idx_notifications_unread').on(t.companyId, t.userId).where(sql`${t.readAt} IS NULL`),
+]);
+
+/** content jsonb shape — UI bunları renderlar. */
+export interface NotificationContent {
+  title: string;
+  body?: string;
+  link?: string;     // /admin/stocktake/{id} gibi
+  emoji?: string;    // ✅ ⚠ 🔒 vs
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLES — Sprint 12 partial (Storefront settings)
+// ═══════════════════════════════════════════════════════════════
+// Otoritatif: DATABASE-SCHEMA.md §3.6 (storefront_settings).
+// MVP: text-only alanlar (hakkında + iletişim + sosyal medya + SEO).
+// Image upload (hero/about/og) Faz 2 — SUPABASE_SERVICE_ROLE_KEY gelince.
+
+/**
+ * STOREFRONT_SETTINGS — Pet shop vitrin profili (admin yönetir, public okur).
+ *
+ * companyId PK (1:1 ile companies). Tenant kendi profilini düzenler.
+ * isEnabled: vitrin yayınlanmış mı (admin toggle). companies.storefrontStatus ile birlikte.
+ *
+ * RLS: tenant kendi profilini SELECT/UPDATE/INSERT, anon SELECT WHERE isEnabled=true (Sprint 12 public).
+ */
+export const storefrontSettings = petstockproSchema.table('storefront_settings', {
+  companyId: uuid('company_id').primaryKey().references(() => companies.id, { onDelete: 'cascade' }),
+
+  isEnabled: boolean('is_enabled').notNull().default(false),
+  aboutContent: text('about_content'), // markdown — short bio + working hours
+
+  // İletişim — companies.whatsappPhone'u override edebilir
+  contactPhone: varchar('contact_phone', { length: 20 }),
+  contactWhatsapp: varchar('contact_whatsapp', { length: 20 }),
+  contactTelegram: varchar('contact_telegram', { length: 100 }),
+  contactEmail: varchar('contact_email', { length: 255 }),
+
+  // Sosyal medya (sadece kullanıcı adı, URL prefix UI tarafında eklenir)
+  socialInstagram: varchar('social_instagram', { length: 100 }),
+  socialFacebook: varchar('social_facebook', { length: 100 }),
+  socialTwitter: varchar('social_twitter', { length: 100 }),
+  socialTiktok: varchar('social_tiktok', { length: 100 }),
+
+  // SEO
+  metaDescription: text('meta_description'), // <meta name="description"> içeriği
+
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ═══════════════════════════════════════════════════════════════
+// TODO Sprint 1B.3+ (sırayla eklenecek)
+// ═══════════════════════════════════════════════════════════════
+// vitrin_reports, vitrin_whatsapp_feedback,
+// telegram_bindings (Faz 2 binding flow), system_settings, system_broadcasts,
+// system_errors, bayi_admin_relations (Faz 3), storefront_messages, ...
+// storefront_settings image alanları (hero/about/og) — Faz 2 (service-role key)

@@ -28,6 +28,10 @@ export default async function StockMovementsPage({
     branch?: string;
     variant?: string;
     type?: string;
+    openTransfer?: string;
+    from?: string;
+    to?: string;
+    qty?: string;
   }>;
 }) {
   const session = await auth();
@@ -38,6 +42,17 @@ export default async function StockMovementsPage({
     params.type && (VALID_TYPES as readonly string[]).includes(params.type)
       ? (params.type as MovementType)
       : undefined;
+
+  // Transfer drawer auto-open (düşük stok sayfasından öneriyle gelinince)
+  const autoOpenTransfer = params.openTransfer === '1';
+  const transferInitial = autoOpenTransfer
+    ? {
+        sourceBranchId: params.from || undefined,
+        targetBranchId: params.to || undefined,
+        variantId: params.variant || undefined,
+        quantity: params.qty ? parseInt(params.qty, 10) || undefined : undefined,
+      }
+    : undefined;
 
   const [movements, branches, variants, suppliers] = await Promise.all([
     listStockMovements(session.user.companyId, db, {
@@ -74,6 +89,8 @@ export default async function StockMovementsPage({
           branches={branches}
           variants={variants}
           suppliers={suppliers}
+          autoOpen={autoOpenTransfer ? 'transfer' : null}
+          transferInitial={transferInitial}
         />
       </header>
 

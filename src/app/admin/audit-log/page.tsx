@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { listAuditLogs } from '@/lib/audit/list';
+import { SettingsShell } from '@/components/settings-shell';
 
 const ACTION_LABELS: Record<string, { label: string; cls: string }> = {
   'product.created': { label: '🐾 Ürün eklendi', cls: 'bg-arrow-soft text-arrow-7' },
@@ -13,6 +14,9 @@ const ACTION_LABELS: Record<string, { label: string; cls: string }> = {
   'stock.transfer': { label: '🔁 Transfer', cls: 'bg-line-soft text-ink-2' },
   'stock.stocktake': { label: '📋 Sayım', cls: 'bg-line-soft text-ink-2' },
   'stock.reversed': { label: '↶ Geri alma', cls: 'bg-cat-soft text-cart' },
+  'stocktake.started': { label: '🟢 Sayım başlatıldı', cls: 'bg-cat-soft text-cart' },
+  'stocktake.completed': { label: '✅ Sayım tamamlandı', cls: 'bg-arrow-soft text-arrow-7' },
+  'stocktake.cancelled': { label: '× Sayım iptal', cls: 'bg-danger-soft text-danger-7' },
   'storefront.published': { label: '🌐 Vitrin açıldı', cls: 'bg-arrow-soft text-arrow-7' },
   'storefront.unpublished': { label: '🔒 Vitrin kapatıldı', cls: 'bg-line-soft text-ink-2' },
   'branch.created': { label: '🏪 Şube eklendi', cls: 'bg-arrow-soft text-arrow-7' },
@@ -72,20 +76,12 @@ export default async function AuditLogPage({
   const hasFilter = !!validAction || !!params.entity;
 
   return (
-    <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-12">
-      <header>
-        <div className="text-[11.5px] font-bold uppercase tracking-wider text-cat">
-          Admin · Denetim Kayıtları
-        </div>
-        <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
-          Audit log
-        </h1>
-        <p className="mt-1 text-sm text-ink-3">
-          Son {items.length} aksiyon
-          {hasFilter ? ' (filtreli)' : ' · Append-only (KVKK 5 yıl saklama)'}
-        </p>
-      </header>
-
+    <SettingsShell
+      current="audit"
+      title="Audit log"
+      description={`Son ${items.length} aksiyon${hasFilter ? ' (filtreli)' : ' · Append-only (KVKK 5 yıl saklama)'}`}
+    >
+      <div className="flex flex-col gap-6">
       <form
         className="flex flex-wrap items-end gap-3 rounded-2xl border border-line bg-white p-4"
         action="/admin/audit-log"
@@ -243,13 +239,8 @@ export default async function AuditLogPage({
         </div>
       )}
 
-      <Link
-        href={'/admin' as never}
-        className="text-center text-xs text-ink-4 hover:text-cart"
-      >
-        ← Pano&apos;ya dön
-      </Link>
-    </main>
+      </div>
+    </SettingsShell>
   );
 }
 

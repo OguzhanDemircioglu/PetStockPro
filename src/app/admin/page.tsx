@@ -9,6 +9,8 @@ import {
   listLowStock,
   listRecentActivity,
 } from '@/lib/dashboard/stats';
+import { unreadCountForUser, listForUser, type NotificationRow } from '@/lib/notifications/manage';
+import { isSuperadmin } from '@/lib/superadmin/access';
 
 const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
   stock_in: { label: '📥', cls: 'bg-arrow-soft text-arrow-7' },
@@ -30,18 +32,22 @@ const SUBTYPE_LABEL: Record<string, string> = {
 
 export default async function AdminDashboardPage() {
   const session = await auth();
-  if (!session?.user?.companyId) redirect('/login' as never);
+  if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+  const userIsSuperadmin = isSuperadmin(session);
 
-  const [companyRow, stats, lowStock, activity] = await Promise.all([
-    db
-      .select({ name: companies.name, plan: companies.plan })
-      .from(companies)
-      .where(eq(companies.id, session.user.companyId))
-      .limit(1),
-    getDashboardStats(session.user.companyId, db),
-    listLowStock(session.user.companyId, db, 6),
-    listRecentActivity(session.user.companyId, db, 8),
-  ]);
+  const [companyRow, stats, lowStock, activity, unreadNotifications, recentNotifications] =
+    await Promise.all([
+      db
+        .select({ name: companies.name, plan: companies.plan })
+        .from(companies)
+        .where(eq(companies.id, session.user.companyId))
+        .limit(1),
+      getDashboardStats(session.user.companyId, db),
+      listLowStock(session.user.companyId, db, 6),
+      listRecentActivity(session.user.companyId, db, 8),
+      unreadCountForUser(session.user.companyId, session.user.id, db),
+      listForUser(session.user.companyId, session.user.id, db, { limit: 4 }),
+    ]);
 
   const company = companyRow[0];
   const planLimitMap: Record<string, number> = {
@@ -63,9 +69,20 @@ export default async function AdminDashboardPage() {
             Merhaba, {company?.name ?? 'Pet shop'}
           </h1>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <NotificationBell unreadCount={unreadNotifications} />
+          {userIsSuperadmin && (
+            <Link
+              href={'/admin/superadmin' as never}
+              data-superadmin-link
+              className="rounded-xl border-2 border-cat bg-cat-soft px-3 py-2 text-xs font-bold text-cart hover:bg-cat hover:text-white"
+            >
+              🛡 Süperadmin
+            </Link>
+          )}
           <QuickLink href="/admin/products" label="🐾 Ürünler" />
           <QuickLink href="/admin/stock-movements" label="📦 Stok hareketleri" />
+          <QuickLink href="/admin/stocktake" label="📋 Sayım" />
           <QuickLink href="/admin/low-stock" label="⚠ Düşük stok" />
           <QuickLink href="/admin/reports" label="📊 Raporlar" />
           <QuickLink href="/admin/settings" label="⚙ Ayarlar" />
@@ -103,6 +120,27 @@ export default async function AdminDashboardPage() {
           accent={stats.lowStockCount > 0 ? 'danger' : 'arrow'}
         />
       </section>
+
+      {recentNotifications.length > 0 && (
+        <section data-testid="pano-notif-feed">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-ink-3">
+              🔔 Son bildirimler
+            </h2>
+            <Link
+              href={'/admin/notifications' as never}
+              className="text-[11px] font-bold text-cat hover:underline"
+            >
+              Tümü →
+            </Link>
+          </div>
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {recentNotifications.slice(0, 4).map((n) => (
+              <PanoNotificationItem key={n.id} item={n} />
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="grid gap-4 lg:grid-cols-2">
         <Card title="⚠ Düşük stok" testid="low-stock-card">
@@ -296,6 +334,65 @@ function QuickLink({ href, label }: { href: string; label: string }) {
       className="rounded-xl border border-line bg-white px-3 py-2 text-xs font-bold text-cart hover:bg-cat-soft"
     >
       {label}
+    </Link>
+  );
+}
+
+function PanoNotificationItem({ item }: { item: NotificationRow }) {
+  const isUnread = item.readAt === null;
+  const emoji = item.content.emoji ?? '🔔';
+  const link = item.content.link ?? '/admin/notifications';
+  return (
+    <li>
+      <Link
+        href={link as never}
+        data-pano-notif-id={item.id}
+        data-unread={isUnread ? '1' : '0'}
+        className={`flex items-start gap-3 rounded-2xl border p-3 hover:shadow-sm transition-shadow ${
+          isUnread ? 'border-cat/40 bg-cat-soft/30' : 'border-line bg-white'
+        }`}
+      >
+        <span className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-xl bg-white text-lg">
+          {emoji}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <h3 className="truncate text-[12.5px] font-bold text-cart">
+              {item.content.title}
+            </h3>
+            {isUnread && (
+              <span className="rounded-full bg-cat px-1.5 py-0.5 text-[9px] font-bold text-white">
+                YENİ
+              </span>
+            )}
+          </div>
+          {item.content.body && (
+            <p className="truncate text-[10.5px] text-ink-3">{item.content.body}</p>
+          )}
+        </div>
+      </Link>
+    </li>
+  );
+}
+
+function NotificationBell({ unreadCount }: { unreadCount: number }) {
+  return (
+    <Link
+      href={'/admin/notifications' as never}
+      data-notif-bell
+      data-unread-count={unreadCount}
+      aria-label={`Bildirimler${unreadCount > 0 ? ` (${unreadCount} okunmamış)` : ''}`}
+      className="relative grid h-9 w-9 place-items-center rounded-xl border border-line bg-white text-lg hover:bg-cat-soft"
+    >
+      🔔
+      {unreadCount > 0 && (
+        <span
+          data-notif-badge
+          className="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-cat px-1 py-0.5 text-center text-[10px] font-bold leading-none text-white"
+        >
+          {unreadCount > 99 ? '99+' : unreadCount}
+        </span>
+      )}
     </Link>
   );
 }

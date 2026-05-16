@@ -17,10 +17,23 @@ interface Props {
   branches: BranchOption[];
   variants: VariantOption[];
   suppliers: SupplierOption[];
+  autoOpen?: DrawerKind;
+  transferInitial?: {
+    sourceBranchId?: string;
+    targetBranchId?: string;
+    variantId?: string;
+    quantity?: number;
+  };
 }
 
-export function DrawerLauncher({ branches, variants, suppliers }: Props) {
-  const [open, setOpen] = useState<DrawerKind>(null);
+export function DrawerLauncher({
+  branches,
+  variants,
+  suppliers,
+  autoOpen,
+  transferInitial,
+}: Props) {
+  const [open, setOpen] = useState<DrawerKind>(autoOpen ?? null);
 
   const disabled = branches.length === 0 || variants.length === 0;
 
@@ -86,6 +99,7 @@ export function DrawerLauncher({ branches, variants, suppliers }: Props) {
           branches={branches}
           variants={variants}
           onClose={() => setOpen(null)}
+          initial={transferInitial}
         />
       )}
       {open === 'stocktake' && (

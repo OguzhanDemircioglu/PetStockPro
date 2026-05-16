@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { listLowStock } from '@/lib/dashboard/stats';
+import { getTransferSuggestionsBulk } from '@/lib/stock/transfer-suggestions';
 
 export default async function LowStockPage() {
   const session = await auth();
@@ -10,6 +11,14 @@ export default async function LowStockPage() {
 
   // listLowStock default limit 10 — düşük stok sayfasında daha geniş
   const items = await listLowStock(session.user.companyId, db, 200);
+
+  // Variant ID'lerini topla + transfer önerilerini getir
+  const variantIds = Array.from(new Set(items.map((i) => i.variantId)));
+  const suggestionsByVariant = await getTransferSuggestionsBulk(
+    session.user.companyId,
+    variantIds,
+    db,
+  );
 
   // Variant bazında grupla (aynı variant farklı şubelerde olabilir)
   const groups = new Map<
@@ -122,6 +131,57 @@ export default async function LowStockPage() {
                   );
                 })}
               </div>
+
+              {(() => {
+                const suggestions = suggestionsByVariant.get(variantId);
+                if (!suggestions || suggestions.length === 0) return null;
+                return (
+                  <div
+                    className="mt-3 rounded-xl border border-arrow/30 bg-arrow-soft/30 p-3"
+                    data-testid={`transfer-suggestion-${variantId}`}
+                  >
+                    <div className="mb-1.5 text-[10.5px] font-bold uppercase tracking-wider text-arrow-7">
+                      🔁 Önerilen transfer
+                    </div>
+                    <ul className="flex flex-col gap-1 text-[11.5px] text-ink-2">
+                      {suggestions.map((s, idx) => (
+                        <li
+                          key={`${s.sourceBranchId}-${s.targetBranchId}-${idx}`}
+                          data-suggestion={`${s.sourceBranchId}-${s.targetBranchId}`}
+                          className="flex flex-wrap items-center gap-1.5"
+                        >
+                          <strong className="text-arrow-7">{s.sourceBranchName}</strong>
+                          <span className="font-mono text-[10px] text-ink-3">
+                            (stok {s.sourceStock})
+                          </span>
+                          <span>→</span>
+                          <strong className="text-cart">{s.targetBranchName}</strong>
+                          <span className="font-mono text-[10px] text-ink-3">
+                            (stok {s.targetStock})
+                          </span>
+                          <span className="ml-auto rounded-full bg-arrow px-2 py-0.5 text-[10px] font-bold text-white">
+                            +{s.suggestedQty} adet
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {suggestions.map((s, idx) => (
+                        <Link
+                          key={`open-${s.sourceBranchId}-${s.targetBranchId}-${idx}`}
+                          href={
+                            `/admin/stock-movements?openTransfer=1&from=${s.sourceBranchId}&to=${s.targetBranchId}&variant=${variantId}&qty=${s.suggestedQty}` as never
+                          }
+                          data-testid={`open-transfer-${s.sourceBranchId}-${s.targetBranchId}`}
+                          className="rounded-lg border border-arrow/40 bg-white px-2 py-1 text-[10px] font-bold text-arrow-7 hover:bg-arrow-soft"
+                        >
+                          ▶ {s.sourceBranchName} → {s.targetBranchName} ({s.suggestedQty} ad)
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </article>
           ))}
         </div>

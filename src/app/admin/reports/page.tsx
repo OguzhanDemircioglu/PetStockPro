@@ -7,6 +7,16 @@ import {
   topSellingVariants,
   periodSummary,
 } from '@/lib/reports/sales';
+import {
+  listStocktakeHistory,
+  stocktakeHistorySummary,
+  type StocktakeHistoryRow,
+} from '@/lib/reports/stocktakes';
+import {
+  activityCountByAction,
+  activityTotals,
+  type ActivityCountRow,
+} from '@/lib/reports/activity';
 
 const RANGE_OPTIONS = [7, 30, 90];
 
@@ -22,11 +32,16 @@ export default async function ReportsPage({
   const daysRaw = params.days ? parseInt(params.days, 10) : 30;
   const days = RANGE_OPTIONS.includes(daysRaw) ? daysRaw : 30;
 
-  const [summary, daily, topVariants] = await Promise.all([
-    periodSummary(session.user.companyId, db, days),
-    dailySalesSummary(session.user.companyId, db, days),
-    topSellingVariants(session.user.companyId, db, days, 10),
-  ]);
+  const [summary, daily, topVariants, stocktakeHistory, stocktakeSummary, activityActions, activityStats] =
+    await Promise.all([
+      periodSummary(session.user.companyId, db, days),
+      dailySalesSummary(session.user.companyId, db, days),
+      topSellingVariants(session.user.companyId, db, days, 10),
+      listStocktakeHistory(session.user.companyId, db, days, 10),
+      stocktakeHistorySummary(session.user.companyId, db, days),
+      activityCountByAction(session.user.companyId, db, days, 10),
+      activityTotals(session.user.companyId, db, days),
+    ]);
 
   // Maks qty bul, bar grafik için ölçek
   const maxDailyQty = daily.reduce((m, r) => Math.max(m, r.qty), 0);
@@ -165,6 +180,88 @@ export default async function ReportsPage({
         </Card>
       </section>
 
+      <section>
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
+          📋 Sayım geçmişi (son {days} gün)
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <KPI
+            title="Tamamlanan"
+            value={stocktakeSummary.completedCount}
+            emoji="✓"
+            accent="arrow"
+          />
+          <KPI
+            title="İptal"
+            value={stocktakeSummary.cancelledCount}
+            emoji="×"
+            accent="arrow"
+          />
+          <KPI
+            title="Toplam fark"
+            value={stocktakeSummary.totalDiffItems}
+            emoji="⚠"
+            accent="cat"
+          />
+          <KPI
+            title="Ort. süre"
+            value={
+              stocktakeSummary.avgDurationMinutes == null
+                ? '—'
+                : `${stocktakeSummary.avgDurationMinutes} dk`
+            }
+            emoji="⏱"
+            accent="arrow"
+          />
+        </div>
+
+        <Card title="Son sayımlar" className="mt-4">
+          {stocktakeHistory.length === 0 ? (
+            <p className="rounded-lg bg-line-soft px-3 py-4 text-center text-xs text-ink-3">
+              Bu dönemde tamamlanmış/iptal sayım yok.
+            </p>
+          ) : (
+            <ul
+              className="divide-y divide-line-soft text-xs"
+              data-testid="stocktake-history-list"
+            >
+              {stocktakeHistory.map((s) => (
+                <StocktakeRow key={s.id} item={s} />
+              ))}
+            </ul>
+          )}
+        </Card>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
+          📜 Audit aktivitesi (son {days} gün)
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <KPI title="Toplam aksiyon" value={activityStats.totalActions} emoji="🔢" />
+          <KPI
+            title="Aksiyon türü"
+            value={activityStats.uniqueActionTypes}
+            emoji="🗂"
+            accent="arrow"
+          />
+          <KPI title="Aktif kullanıcı" value={activityStats.uniqueUsers} emoji="👥" />
+        </div>
+        <Card title="En çok kullanılan aksiyonlar" className="mt-4">
+          {activityActions.length === 0 ? (
+            <p className="rounded-lg bg-line-soft px-3 py-4 text-center text-xs text-ink-3">
+              Bu dönemde audit kaydı yok.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-1.5" data-testid="activity-actions">
+              {activityActions.map((a) => (
+                <ActivityActionRow key={a.action} item={a} max={activityActions[0]?.count ?? 1} />
+              ))}
+            </ul>
+          )}
+        </Card>
+      </section>
+
       <Link
         href={'/admin' as never}
         className="text-center text-xs text-ink-4 hover:text-cart"
@@ -172,6 +269,95 @@ export default async function ReportsPage({
         ← Pano&apos;ya dön
       </Link>
     </main>
+  );
+}
+
+const ACTION_LABEL: Record<string, string> = {
+  'stock.in': '📥 Stok girişi',
+  'stock.out': '📤 Stok çıkışı',
+  'stock.transfer': '🔁 Transfer',
+  'stock.stocktake': '📋 Sayım hareketi',
+  'stock.reversed': '↶ Geri alma',
+  'stocktake.started': '🟢 Sayım başlatıldı',
+  'stocktake.completed': '✅ Sayım tamamlandı',
+  'stocktake.cancelled': '× Sayım iptal',
+  'storefront.published': '🌐 Vitrin açıldı',
+  'storefront.unpublished': '🔒 Vitrin kapatıldı',
+  'storefront.settings_updated': '🌐 Vitrin profili güncellendi',
+  'product.created': '🐾 Ürün eklendi',
+  'product.updated': '✎ Ürün güncellendi',
+  'product.deleted': '🗑 Ürün silindi',
+  'brand.created': '🏷 Marka eklendi',
+  'brand.deleted': '🗑 Marka silindi',
+  'category.created': '📂 Kategori eklendi',
+  'supplier.created': '🏢 Tedarikçi eklendi',
+  'branch.created': '🏪 Şube eklendi',
+  'company.updated': '⚙ Firma güncellendi',
+};
+
+function ActivityActionRow({ item, max }: { item: ActivityCountRow; max: number }) {
+  const label = ACTION_LABEL[item.action] ?? item.action;
+  const pct = max > 0 ? (item.count / max) * 100 : 0;
+  return (
+    <li
+      data-action-key={item.action}
+      className="grid grid-cols-[180px_1fr_50px] items-center gap-3 text-xs"
+    >
+      <span className="truncate font-mono text-[10.5px] text-ink-2">{label}</span>
+      <div className="h-2 overflow-hidden rounded-full bg-line-soft">
+        <div
+          className="h-full bg-gradient-to-r from-cat to-arrow"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <span className="text-right font-mono font-bold text-cart">{item.count}</span>
+    </li>
+  );
+}
+
+function StocktakeRow({ item }: { item: StocktakeHistoryRow }) {
+  const isCompleted = item.status === 'completed';
+  return (
+    <li
+      data-stocktake-history-id={item.id}
+      className="grid grid-cols-[110px_1fr_auto] items-center gap-3 py-2"
+    >
+      <span
+        className={`inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+          isCompleted ? 'bg-arrow-soft text-arrow-7' : 'bg-danger-soft text-danger-7'
+        }`}
+      >
+        {isCompleted ? '✓ Tamamlandı' : '× İptal'}
+      </span>
+      <div className="min-w-0">
+        <Link
+          href={`/admin/stocktake/${item.id}` as never}
+          className="truncate font-bold text-cart hover:text-cat hover:underline"
+        >
+          #{item.id.slice(0, 8)} · {item.branchName ?? '—'}
+        </Link>
+        <div className="text-[10.5px] text-ink-3">
+          {item.startedByEmail ?? '—'} ·{' '}
+          {item.closedAt
+            ? new Date(item.closedAt).toLocaleString('tr-TR', {
+                day: '2-digit',
+                month: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+            : '—'}
+        </div>
+      </div>
+      <div className="text-right font-mono">
+        <div className="text-[11px] font-bold text-ink">
+          {item.countedItems}/{item.totalItems}
+        </div>
+        <div className="text-[10px] text-cart">
+          {item.diffItems > 0 ? `${item.diffItems} fark` : 'fark yok'}
+          {item.durationMinutes != null && ` · ${item.durationMinutes} dk`}
+        </div>
+      </div>
+    </li>
   );
 }
 

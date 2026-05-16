@@ -3,13 +3,11 @@ import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { users } from '@/db/schema';
+import { SettingsShell } from '@/components/settings-shell';
 import { SecurityForms } from './forms';
 
 /**
- * /admin/security — Sprint 2.8 minimal
- *
- * Sprint 9'da settings sidebar (account/security/notifications/billing) yapısı
- * gelecek. Şu an sadece 2FA disable + recovery codes regenerate.
+ * /admin/security — Sprint 2.8 (Sprint 2.10 sidebar entegre).
  */
 export default async function SecurityPage({
   searchParams,
@@ -46,12 +44,18 @@ export default async function SecurityPage({
     : 0;
 
   return (
-    <SecurityForms
-      email={user.email}
-      twoFactorEnabled={user.twoFactorEnabled}
-      twoFactorEnabledAt={user.twoFactorEnabledAt}
-      remainingRecoveryCount={remainingRecoveryCount}
-      just2faDisabled={just2faDisabled}
-    />
+    <SettingsShell
+      current="security"
+      title="Hesap güvenliği"
+      description="İki faktörlü kimlik doğrulama (2FA) ve recovery code ayarları"
+    >
+      <SecurityForms
+        email={user.email}
+        twoFactorEnabled={user.twoFactorEnabled}
+        twoFactorEnabledAt={user.twoFactorEnabledAt}
+        remainingRecoveryCount={remainingRecoveryCount}
+        just2faDisabled={just2faDisabled}
+      />
+    </SettingsShell>
   );
 }

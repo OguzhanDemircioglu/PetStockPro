@@ -1,7 +1,6 @@
 'use client';
 
 import { useActionState, useState } from 'react';
-import Link from 'next/link';
 import { initChangeEmailAction, type ChangeEmailState } from './actions';
 
 interface AccountFormProps {
@@ -24,7 +23,7 @@ export function AccountForm({
   // Init success → confirm screen göster
   if (state?.ok && state.pendingEmail) {
     return (
-      <main className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-12">
+      <div className="flex max-w-2xl flex-col gap-6">
         <div className="rounded-2xl border border-arrow/40 bg-arrow-soft p-6">
           <h2 className="text-xl font-bold text-arrow-7">📧 Doğrulama e-postası gönderildi</h2>
           <p className="mt-2 text-sm leading-relaxed text-ink-2">
@@ -36,28 +35,12 @@ export function AccountForm({
             başlatmadıysan &quot;İptal Et&quot; linkine tıklayabilirsin.
           </p>
         </div>
-
-        <Link
-          href={'/admin/account' as never}
-          className="text-center text-xs text-ink-4 hover:text-cart"
-        >
-          ← Hesap sayfasına dön
-        </Link>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-12">
-      <header>
-        <div className="text-[11.5px] font-bold uppercase tracking-wider text-cat">
-          Admin · Hesap
-        </div>
-        <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
-          Hesap bilgileri
-        </h1>
-      </header>
-
+    <div className="flex max-w-2xl flex-col gap-6">
       <section className="rounded-2xl border border-line bg-white p-6">
         <h2 className="text-lg font-bold text-cart">📧 E-posta adresi</h2>
         <p className="mt-1 text-xs text-ink-3">Giriş yaparken kullandığın adres.</p>
@@ -167,13 +150,6 @@ export function AccountForm({
           </form>
         )}
       </section>
-
-      <Link
-        href={'/' as never}
-        className="text-center text-xs text-ink-4 hover:text-cart"
-      >
-        ← Panele dön
-      </Link>
-    </main>
+    </div>
   );
 }

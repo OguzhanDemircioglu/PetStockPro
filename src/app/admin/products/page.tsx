@@ -156,7 +156,7 @@ export default async function ProductsPage({
                 <tr key={item.id} className={`hover:bg-line-soft ${!item.isActive ? 'opacity-50' : ''}`}>
                   <td className="px-4 py-3">
                     <Link
-                      href={`/admin/products/${item.id}/edit` as never}
+                      href={`/admin/products/${item.id}` as never}
                       className="font-bold text-ink hover:text-cart"
                     >
                       {item.name}

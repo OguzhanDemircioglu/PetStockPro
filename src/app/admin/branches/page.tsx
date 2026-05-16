@@ -71,7 +71,7 @@ export default async function BranchesPage({
           >
             <div className="flex items-start justify-between gap-2">
               <Link
-                href={`/admin/branches/${b.id}/edit` as never}
+                href={`/admin/branches/${b.id}` as never}
                 className="text-lg font-bold text-cart hover:underline"
               >
                 {b.name}

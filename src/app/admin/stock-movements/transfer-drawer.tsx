@@ -9,9 +9,15 @@ interface Props {
   branches: BranchOption[];
   variants: VariantOption[];
   onClose: () => void;
+  initial?: {
+    sourceBranchId?: string;
+    targetBranchId?: string;
+    variantId?: string;
+    quantity?: number;
+  };
 }
 
-export function TransferDrawer({ branches, variants, onClose }: Props) {
+export function TransferDrawer({ branches, variants, onClose, initial }: Props) {
   const [state, formAction, pending] = useActionState<
     MovementActionState | null,
     FormData
@@ -38,7 +44,7 @@ export function TransferDrawer({ branches, variants, onClose }: Props) {
               id="sourceBranchId"
               name="sourceBranchId"
               required
-              defaultValue=""
+              defaultValue={initial?.sourceBranchId ?? ''}
               className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
             >
               <option value="" disabled>
@@ -56,7 +62,7 @@ export function TransferDrawer({ branches, variants, onClose }: Props) {
               id="targetBranchId"
               name="targetBranchId"
               required
-              defaultValue=""
+              defaultValue={initial?.targetBranchId ?? ''}
               className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
             >
               <option value="" disabled>
@@ -76,7 +82,7 @@ export function TransferDrawer({ branches, variants, onClose }: Props) {
             id="variantId"
             name="variantId"
             required
-            defaultValue=""
+            defaultValue={initial?.variantId ?? ''}
             className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             <option value="" disabled>
@@ -98,6 +104,7 @@ export function TransferDrawer({ branches, variants, onClose }: Props) {
             min={1}
             max={1000000}
             required
+            defaultValue={initial?.quantity ?? ''}
             data-testid="quantity"
             className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />

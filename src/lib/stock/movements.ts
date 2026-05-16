@@ -233,7 +233,7 @@ export const stockInSchema = baseContextSchema.extend({
 export type StockInInput = z.input<typeof stockInSchema>;
 
 export type StockMovementResult =
-  | { ok: true; movementId: string; afterQty: number }
+  | { ok: true; movementId: string; afterQty: number; beforeQty?: number }
   | {
       ok: false;
       reason:
@@ -311,7 +311,7 @@ export async function recordStockIn(
       return m.id;
     });
 
-    return { ok: true, movementId, afterQty };
+    return { ok: true, movementId, afterQty, beforeQty };
   } catch (err) {
     if (err instanceof InsufficientStockError) {
       return {
@@ -440,7 +440,7 @@ export async function recordStockOut(
       return m.id;
     });
 
-    return { ok: true, movementId, afterQty };
+    return { ok: true, movementId, afterQty, beforeQty };
   } catch (err) {
     if (err instanceof InsufficientStockError) {
       return {
@@ -842,7 +842,7 @@ export const stocktakeAdjustmentSchema = baseContextSchema.extend({
 export type StocktakeAdjustmentInput = z.input<typeof stocktakeAdjustmentSchema>;
 
 export type StocktakeResult =
-  | { ok: true; movementId: string; delta: number; afterQty: number }
+  | { ok: true; movementId: string; delta: number; afterQty: number; beforeQty: number }
   | {
       ok: false;
       reason: 'invalid_input' | 'not_found' | 'no_change' | 'unknown';
@@ -927,7 +927,7 @@ export async function recordStocktakeAdjustment(
       return m.id;
     });
 
-    return { ok: true, movementId, delta, afterQty };
+    return { ok: true, movementId, delta, afterQty, beforeQty };
   } catch {
     return { ok: false, reason: 'unknown' };
   }

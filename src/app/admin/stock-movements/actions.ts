@@ -15,6 +15,7 @@ import {
   type StocktakeResult,
 } from '@/lib/stock/movements';
 import { writeAuditLogAsync } from '@/lib/audit/log';
+import { checkAndNotifyStockChange } from '@/lib/notifications/stock-triggers';
 
 export interface MovementActionState {
   ok: boolean;
@@ -244,8 +245,24 @@ export async function stockOutAction(
       },
       db,
     );
+
+    // Eşik geçişi varsa auto-notif (low_stock + out_of_stock + vitrin_auto_unpublished)
+    if (result.beforeQty !== undefined) {
+      void checkAndNotifyStockChange({
+        companyId: session.user.companyId,
+        branchId,
+        variantId,
+        beforeQty: result.beforeQty,
+        afterQty: result.afterQty,
+        movementCreatedAt: new Date(),
+        db,
+      });
+    }
+
     revalidatePath('/admin/stock-movements');
     revalidatePath('/admin/products');
+    revalidatePath('/admin');
+    revalidatePath('/admin/notifications');
   }
   return buildState('stock_out', result);
 }
@@ -357,8 +374,21 @@ export async function stocktakeAction(
       },
       db,
     );
+
+    void checkAndNotifyStockChange({
+      companyId: session.user.companyId,
+      branchId,
+      variantId,
+      beforeQty: result.beforeQty,
+      afterQty: result.afterQty,
+      movementCreatedAt: new Date(),
+      db,
+    });
+
     revalidatePath('/admin/stock-movements');
     revalidatePath('/admin/products');
+    revalidatePath('/admin');
+    revalidatePath('/admin/notifications');
   }
   return buildState('stocktake', result);
 }

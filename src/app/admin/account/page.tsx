@@ -3,13 +3,11 @@ import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { users } from '@/db/schema';
+import { SettingsShell } from '@/components/settings-shell';
 import { AccountForm } from './form';
 
 /**
- * /admin/account — Sprint 2.9 minimal
- *
- * Sprint 9 full settings sidebar gelince taşınır (sidebar: account / security / billing).
- * Şu an sadece email değiştirme + mevcut email gösterimi.
+ * /admin/account — Sprint 2.9 (Sprint 2.10 sidebar entegre).
  */
 export default async function AccountPage() {
   const session = await auth();
@@ -33,10 +31,16 @@ export default async function AccountPage() {
   }
 
   return (
-    <AccountForm
-      currentEmail={user.email}
-      pendingEmail={user.pendingEmail}
-      pendingEmailExpiresAt={user.pendingEmailExpiresAt}
-    />
+    <SettingsShell
+      current="account"
+      title="Hesap bilgileri"
+      description="Giriş e-postası ve hesap erişim ayarları"
+    >
+      <AccountForm
+        currentEmail={user.email}
+        pendingEmail={user.pendingEmail}
+        pendingEmailExpiresAt={user.pendingEmailExpiresAt}
+      />
+    </SettingsShell>
   );
 }

@@ -57,6 +57,34 @@
       "when": 1778860128213,
       "tag": "0007_sprint_1b1_catalog_stock",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1778879109097,
+      "tag": "0008_sprint_1b2_sessions_sayim_vitrin",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1778879500000,
+      "tag": "0009_sprint_1b2_catalog_rls_baseline",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1778885221223,
+      "tag": "0010_sprint_15_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1778886639108,
+      "tag": "0011_sprint_12_storefront_settings",
+      "breakpoints": true
     }
   ]
 }

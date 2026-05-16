@@ -46,19 +46,11 @@ export function SecurityForms({
   const [showRegen, setShowRegen] = useState(false);
 
   return (
-    <main className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-12">
-      <header>
-        <div className="text-[11.5px] font-bold uppercase tracking-wider text-cat">
-          Admin · Güvenlik
-        </div>
-        <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
-          Hesap güvenliği
-        </h1>
-        <p className="mt-2 text-sm text-ink-3">
-          <strong className="text-cart">{email}</strong> hesabının 2FA ve recovery code
-          ayarları.
-        </p>
-      </header>
+    <div className="flex max-w-2xl flex-col gap-6">
+      <p className="text-sm text-ink-3">
+        <strong className="text-cart">{email}</strong> hesabının 2FA ve recovery code
+        ayarları.
+      </p>
 
       {just2faDisabled && (
         <div
@@ -268,14 +260,6 @@ export function SecurityForms({
         </section>
       )}
 
-      <div className="text-center">
-        <Link
-          href={'/' as never}
-          className="text-xs text-ink-4 hover:text-cart"
-        >
-          ← Panele dön
-        </Link>
-      </div>
-    </main>
+    </div>
   );
 }
