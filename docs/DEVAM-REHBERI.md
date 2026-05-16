@@ -1,9 +1,9 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-17 (Sprint 8/10/12 MVP TAM + Sprint 15 polish 4'lü + Sprint 12 ext ürün detay + WhatsApp Feedback Balonu + Feedback dashboard + Pano feedback widget + /vitrin pagination/sort + SEO il/ilçe sayfaları + reset-password fix)
-**Mevcut Branch:** `cray61` — origin'in **45 commit** ileri (push edilmedi)
-**Son commit:** `61d1bcb` feat(vitrin): SEO il/ilçe sayfaları — /vitrin/[il] + /vitrin/[il]/[ilce] route'lar
-**Test:** 968 passed (69 dosya) — vitest
+**Tarih:** 2026-05-17 (Sprint 8/10/12 MVP TAM + Sprint 15 polish 4'lü + Sprint 12 ext ürün detay + WhatsApp Feedback Balonu + Feedback dashboard + Pano feedback widget + /vitrin pagination/sort + SEO il/ilçe sayfaları + vitrin moderation paneli + reset-password fix)
+**Mevcut Branch:** `cray61` — origin'in **47 commit** ileri (push edilmedi)
+**Son commit:** `d8f6926` feat(superadmin): vitrin moderasyon paneli (flag/unflag WhatsApp feedback)
+**Test:** 980 passed (70 dosya) — vitest
 **Lint+typecheck:** 0 error
 **Migration:** 13 (0013 vitrin_whatsapp_feedback + 0012 telegram + 0008/0009/0010/0011 + 7 öncesi)
 
@@ -39,13 +39,13 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 
 | # | İş | Tahmin | Neden |
 |---|---|---|---|
-| 1 | **Vitrin moderation süperadmin paneli** (`vitrin_reports` + feedback flagged) | 2-3 saat | Otomatik onay default ama spam/şikayet manuel inceleme |
-| 2 | **Audit log pagination test** (browser, son sayfa edge case) | 30 dk | Şu an 35 kayıt var, 50/sayfa limit, page 2 görmek için seed |
-| 3 | **Sitemap pre-build** (`pg_cron` + Cloudflare R2 static) | 1 gün | /vitrin/[il]/[ilce] route'lar hazır, sitemap.xml ile Google index |
+| 1 | **Audit log pagination test** (browser, son sayfa edge case) | 30 dk | Şu an 35 kayıt var, 50/sayfa limit, page 2 görmek için seed |
+| 2 | **Sitemap pre-build** (`pg_cron` + Cloudflare R2 static) | 1 gün | /vitrin/[il]/[ilce] route'lar hazır, sitemap.xml ile Google index |
+| 3 | **vitrin_reports tablosu + UI** (kullanıcının ürün/şube şikayet etmesi: yanlış foto/spam/bilgi yanlış) | 1 gün | Şu an sadece feedback moderation var, ayrı şikayet sistemi yok |
 | 4 | **Storage upload — Sprint 3.3** | ⛔ BLOKER | `SUPABASE_SERVICE_ROLE_KEY` gerek (kullanıcı sağlayacak) |
 | 5 | **Sprint 13/14 production deploy** | ⛔ BLOKER | Şirket kuruluş + vergi no + IBAN (2-4 hafta) |
 
-**Plana sadık sıra (CLAUDE.md SPRINT-PLAN):** Sprint 8 ✅ → Sprint 10 ✅ → Sprint 12 MVP ✅ → Sprint 15 polish 4'lü ✅ → Sprint 12 ext ürün detay + Feedback Balonu ✅ → Feedback dashboard (settings + Pano) ✅ → /vitrin pagination + sort enrichment ✅ → Sprint 12 ext SEO il/ilçe route'lar ✅ → **Vitrin moderation süperadmin paneli** → Sprint 16 lansman (bloker bekliyor)
+**Plana sadık sıra (CLAUDE.md SPRINT-PLAN):** Sprint 8 ✅ → Sprint 10 ✅ → Sprint 12 MVP ✅ → Sprint 15 polish 4'lü ✅ → Sprint 12 ext ürün detay + Feedback Balonu ✅ → Feedback dashboard (settings + Pano) ✅ → /vitrin pagination + sort enrichment ✅ → Sprint 12 ext SEO il/ilçe route'lar ✅ → Vitrin moderation süperadmin paneli ✅ → **Audit log pagination test** / Sitemap pre-build → Sprint 16 lansman (bloker bekliyor)
 
 ## 📦 Bu Turun Kümülatif Sonucu (22 commit)
 
@@ -127,6 +127,7 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 | **Pano feedback widget** | /admin Pano'ya kompakt 4-KPI özet (settings'teki uzun widget'in mini versiyonu): Aktivite + Anket cevabı + Ortalama puan + Ulaşma oranı. "Detay →" link settings/storefront'a. feedbackActivity > 0 conditional render. Mobile/tablet/desktop viewport doğrulandı. | `17587b2` |
 | **/vitrin pagination + sort** | lib/vitrin/public.ts: StorefrontSort + STOREFRONT_SORTS + parseSortParam pure helper + listPublicStorefronts'a sort param (name_asc/recent/products_desc) + countPublicStorefronts yeni helper. Page: 3. form alanı sort dropdown + filter summary "Sıra: X" + Temizle koşulu güncellendi + header "X pet shop · sayfa N / M" + gerçek pagination nav (← Önceki / N/M / Sonraki →) + page>totalPages edge case "Sayfa boş" + "İlk sayfaya dön" CTA + buildPageUrl inline helper. +5 unit test (parseSortParam 4 + STOREFRONT_SORTS exhaustive). 3 viewport browser smoke. | `d23a57a` |
 | **SEO il/ilçe sayfaları** | 4 yeni helper (getCityBySlug + getDistrictBySlug + listCitiesWithStorefronts + listDistrictsWithStorefronts). 2 yeni route: /vitrin/[il] (city header + ilçe chips + listing + pagination) + /vitrin/[il]/[ilce] (3-segment breadcrumb + district header + listing). Ana sayfa altına "Pet shop'u olan şehirler" chip section (SEO bridge). generateMetadata SEO title + description. JSX whitespace bug template-literal ile fix ("İzmirPet" → "İzmir Pet"). "İzmir'da" → "İzmir için" generic ifade (locative case ek-uyumu name-aware olmadan zor). notFound() 404 + edge case page>totalPages + 2 CTA. Browser smoke desktop + mobile + 404. | `61d1bcb` |
+| **Vitrin moderasyon paneli** | lib/vitrin/moderation.ts: listAllFeedback (status/companyId filter + JOIN companies + LEFT JOIN users) + getModerationStats (byStatus + flaggedTodayCount 24h) + flagFeedback (Zod uuid+reason 3-500 + idempotency + companyId return) + unflagFeedback (restoreToStatus override). /admin/superadmin/vitrin-moderation: 4 KPI + 2 tab (Tümü/Flagged) + tablo + inline FlagButton (collapsible reason textarea) + UnflagButton (confirm) + audit log. Süperadmin pano header'a 3 tool link eklendi (Vitrin moderasyon + DB Inspector + Sistem ayarları). +12 unit test (4 schema + 4 flag + 4 unflag). Browser E2E gerçek DB round-trip: flag → KPI güncel + badge + unflag → restore → "✓ sistem temiz". | `d8f6926` |
 
 ### Sprint 9 — Kullanıcılar (davet akışı hibrit)
 
