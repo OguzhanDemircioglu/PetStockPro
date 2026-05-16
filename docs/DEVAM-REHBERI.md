@@ -1,8 +1,98 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-14 (4. tur Claude self-tarama tamamlandı)
-**Önceki Session Tarihleri:** 2026-05-13/14 (büyük revizyon — vitrin merkezi tek modeli + PAYMENT-INTEGRATION + 35 mantık hata çözümü)
-**Durum:** ✅ **Sprint 0'a hazır — 40 mantık hatası tamamen çözüldü, doc'lar arası tutarlı.** Bekleyen: kullanıcı blokerları (şirket kuruluş + Supabase Pro) + Sprint 0 bootstrap.
+**Tarih:** 2026-05-16 (Sprint 7b Bypass çalışılıyor, 3/6 aksiyon committed)
+**Mevcut Branch:** `cray61` — origin'in 6 commit ileri (push edilmedi)
+**Durum:** ✅ **Sprint 0-15 büyük kısmı tamamlandı + Sprint 7a tam + Sprint 7b 3/6 aksiyon + Disk grafiği.** 762 test, 11 migration, 0 lint+typecheck error.
+
+## 🚦 YENİ SESSION BAŞLANGIÇ — KALDIĞIN YER
+
+**Şu anda devam edilen iş: Sprint 7b — Toolbox + Bypass Override (6 aksiyon)**
+
+| Bypass | Durum | Commit |
+|---|---|---|
+| Foundation (verifyBypassGuard + writeBypassAudit + 10 test) | ✅ | `7b31adf` |
+| Toolbox FAB component + admin layout entegrasyon | ✅ | `075fee0` |
+| **1. Reverse expired** (24h+ hareket geri al + 1 yaprak) | ✅ + browser E2E | `a837b6c` |
+| **2. Hard delete ürün** (6 test + browser E2E reject + happy) | ✅ + browser E2E | `92665dc` |
+| **Disk doluluğu + top 8 tablo grafiği** (süperadmin sayfa) | ✅ + browser E2E | `b9822cf` |
+| **3. Eksi stoğa zorla giriş** (8 test, sayfa+form+action hazır) | ⚠ Browser E2E pending | `8507e4a` |
+| 4. Plan limit override | ⏳ | — |
+| 5. Sayim rollback (completed stocktake undo) | ⏳ | — |
+| 6. Movement metadata düzelt | ⏳ | — |
+
+### Bypass 3 browser smoke YENİ SESSION'DA YAPILACAK
+
+`/admin/superadmin/bypass/negative-stock` sayfası + form + action tamamen yazıldı.
+Lib + 8 unit test geçiyor. Sadece browser üzerinden gerçek bypass denenmedi.
+
+**Test senaryosu:**
+- Catit Pixi Smart Mama Otomatı XL Boy (sku=CATIT-PIXI-XL) Merkez Şube'de stok=53
+- Variant UUID: `a956cf52-3e29-48bf-8222-e2096ce364c3`
+- Branch UUID: `0c1f5aad-0868-48b3-9d6b-dbc83456df5d`
+- Bypass quantity: 60 (stok 53 → -7'ye düşer, normalde InsufficientStockError olurdu)
+- Sebep: "Muhasebe kaydı düzeltmesi — fiziksel-sistem uyumsuzluk düzeltiliyor"
+- Şifre: TestPass123!
+- Beklenen: ✓ banner "Önce: 53 → Sonra: -7" + stock_movements satırı + audit log entry
+
+Smoke sonrası DB query'le doğrula:
+```sql
+SELECT b.name, bi.stock_qty FROM petstockpro.branch_inventory bi
+JOIN petstockpro.branches b ON b.id=bi.branch_id
+WHERE bi.variant_id='a956cf52-3e29-48bf-8222-e2096ce364c3';
+-- Merkez Şube: -7 olmalı
+
+SELECT action, superadmin_reason FROM petstockpro.audit_logs
+WHERE action='superadmin.bypass.negative_stock' ORDER BY created_at DESC LIMIT 1;
+```
+
+### Bypass 1-6 tamamlandıktan sonra: Sprint 7c
+
+Sprint 7c (1 hafta) — DB Inspector + Sistem Ayarları + Uzak Kullanıcı:
+- DB Inspector sayfası (SELECT-only default + UPDATE kilitli mod)
+- Sistem Ayarları sayfası (Plan tier'lar + Feature flags + Default kategoriler + Email şablonları)
+- Uzak kullanıcı: Şifre reset / 2FA reset / Oturum invalidate / Hesap kilit
+- `system_settings` + `system_broadcasts` tabloları + migration
+
+### Sprint 7 tamamlanınca sıradaki
+
+Plan-konsistent sırayla:
+- **Sprint 8** Pano + Düşük Stok + PetPro Asistanı (Pano kısmı zaten yapıldı, PetPro Asistanı eksik)
+- **Sprint 9** Tedarikçiler + Kullanıcılar (Tedarikçiler yapıldı, Kullanıcılar invite flow eksik)
+- **Sprint 10** Ayarlar + Telegram + Bildirim (Telegram binding tablosu + setup wizard)
+- **Sprint 11** Raporlar (3 section eklendi, kalan: müşteri analitik + stok değer raporu)
+- **Sprint 12** Merkezi Vitrin Dizini ⚠ **BLOCKED** — SUPABASE_SERVICE_ROLE_KEY image upload için gerekli (Sprint 12 partial admin profil tamam)
+- **Sprint 13/14** iyzico/Nilvera production deploy ⚠ **BLOCKED** — şirket kuruluş bekliyor
+- **Sprint 15** Polish + Doc (notifications scaffold kısmı yapıldı)
+- **Sprint 16** Lansman
+
+### Bu session'da yapılanlar (kümülatif, 13+ feature)
+
+| Sprint | İçerik | Commit |
+|---|---|---|
+| 1B.2 | Schema (sessions/stocktakes/stocktake_items/vitrin_events) + RLS baseline | `69ea943` |
+| 2.10 | Settings sidebar (SettingsShell 7 link + Tailwind v4 fix) | `69ea943` |
+| 14 | Billing orchestrator + /api/webhooks/iyzico + 34 test | `69ea943` |
+| 4.7 | Guided Stocktake (lib + 3 UI + 25 test) | `69ea943` |
+| 11 ext | Reports stocktake history + audit aktivite | `69ea943` |
+| 15 | Notifications scaffold + Pano bell + stocktake trigger | `69ea943` |
+| 15 ext | Auto-trigger (low_stock + out_of_stock + vitrin_auto_unpublished) | `69ea943` |
+| Pano widget | Son bildirimler mini feed | `69ea943` |
+| Mini | Şube detay + Ürün detay (variant×şube matrix) | `69ea943` |
+| 12 partial | Storefront settings admin profil | `69ea943` |
+| 7a | Süperadmin foundation + tenant detay + bug fix | `69ea943` |
+| Düşük stok | Transfer önerisi + drawer auto-open + prefill | `69ea943` |
+| Notif type filter | 5 group (Stok/Sayım/Vitrin/Billing/System) | `69ea943` |
+| 7b foundation | verifyBypassGuard + writeBypassAudit + 10 test | `7b31adf` |
+| 7b Toolbox FAB | SUPERADMIN-only sağ-alt menü + 6 bypass aksiyon link | `075fee0` |
+| 7b Bypass 1 | Reverse expired movement (24h bypass + browser E2E) | `a837b6c` |
+| 7b Bypass 2 | Hard delete ürün (helper + 6 test + browser E2E reject+happy) | `92665dc` |
+| Disk grafiği | Süperadmin paneline disk doluluk + top 8 tablo bar chart | `b9822cf` |
+| 7b Bypass 3 | Eksi stoğa zorla (helper + 8 test + sayfa, browser smoke pending) | `8507e4a` |
+
+**Test:** 610 → 762 (+152)
+**Migration:** 7 → 11 (0008/0009/0010/0011)
+**Yeni route/sayfa:** ~40
+**Browser E2E doğrulanan ekranlar:** Pano + 7 settings + 4 stocktake + ürün/şube detay + low-stock + notifications + süperadmin + tenant detay + bypass 1
 
 ---
 
