@@ -1,9 +1,9 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-17 (Sprint 8/10/12 MVP TAM + Sprint 15 polish 4'lü + Sprint 12 ext ürün detay + WhatsApp Feedback Balonu + Feedback dashboard + Pano feedback widget + /vitrin pagination/sort + SEO il/ilçe sayfaları + vitrin moderation paneli + audit log pagination fix + sitemap.xml + robots.txt + vitrin_reports şikayet sistemi + report rate-limit + report Telegram alert + alert dedup + reset-password fix)
-**Mevcut Branch:** `cray61` — origin'in **59 commit** ileri (push edilmedi)
-**Son commit:** `0843565` feat(vitrin): şikayet alert dedup (1h pencerede 2+ pending varsa skip)
-**Test:** 1022 passed (72 dosya) — vitest
+**Tarih:** 2026-05-17 (Sprint 8/10/12 MVP TAM + Sprint 15 polish 4'lü + Sprint 12 ext ürün detay + WhatsApp Feedback Balonu + Feedback dashboard + Pano feedback widget + /vitrin pagination/sort + SEO il/ilçe sayfaları + vitrin moderation paneli + audit log pagination fix + sitemap.xml + robots.txt + vitrin_reports şikayet sistemi + report rate-limit + report Telegram alert + alert dedup + günlük summary alert + reset-password fix)
+**Mevcut Branch:** `cray61` — origin'in **61 commit** ileri (push edilmedi)
+**Son commit:** `1e79f4e` feat(vitrin): günlük şikayet özeti süperadmin Telegram alert (cron endpoint)
+**Test:** 1028 passed (72 dosya) — vitest
 **Lint+typecheck:** 0 error
 **Migration:** 14 (0014 vitrin_reports + 0013 vitrin_whatsapp_feedback + 0012 telegram + 0008/0009/0010/0011 + 7 öncesi)
 
@@ -39,13 +39,13 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 
 | # | İş | Tahmin | Neden |
 |---|---|---|---|
-| 1 | **Günlük summary alert** (son 24s tüm tenant'ların pending şikayet özeti) | 30 dk | Anlık dedup var, ama operatör 24h'de neyi kaçırdı görmek için pg_cron summary |
+| 1 | **Workers cron scheduler config** (wrangler.toml + daily-summary 06:00 UTC) | 30 dk | Endpoint hazır, schedule binding eksik |
 | 2 | **Sitemap pre-build (pg_cron + R2)** | 1 gün | MVP dynamic sitemap hazır, 50K+ URL'de pre-build gerekecek (şu an erken) |
 | 3 | **Cloudflare Workers KV rate-limit migration** | 30 dk | DB-level COUNT MVP'de yeter ama production'da KV ~5ms vs ~50ms |
 | 4 | **Storage upload — Sprint 3.3** | ⛔ BLOKER | `SUPABASE_SERVICE_ROLE_KEY` gerek (kullanıcı sağlayacak) |
 | 5 | **Sprint 13/14 production deploy** | ⛔ BLOKER | Şirket kuruluş + vergi no + IBAN (2-4 hafta) |
 
-**Plana sadık sıra (CLAUDE.md SPRINT-PLAN):** Sprint 8 ✅ → Sprint 10 ✅ → Sprint 12 MVP ✅ → Sprint 15 polish 4'lü ✅ → Sprint 12 ext ürün detay + Feedback Balonu ✅ → Feedback dashboard (settings + Pano) ✅ → /vitrin pagination + sort enrichment ✅ → Sprint 12 ext SEO il/ilçe route'lar ✅ → Vitrin moderation süperadmin paneli ✅ → Audit log pagination fix ✅ → Sitemap.xml + robots.txt dynamic ✅ → vitrin_reports şikayet sistemi ✅ → Anti-spam rate-limit DB-level ✅ → Süperadmin Telegram alert yeni şikayet ✅ → Alert dedup 1h window ✅ → **Günlük summary alert / Sitemap pre-build pg_cron / Workers KV migrate** → Sprint 16 lansman (bloker bekliyor)
+**Plana sadık sıra (CLAUDE.md SPRINT-PLAN):** Sprint 8 ✅ → Sprint 10 ✅ → Sprint 12 MVP ✅ → Sprint 15 polish 4'lü ✅ → Sprint 12 ext ürün detay + Feedback Balonu ✅ → Feedback dashboard (settings + Pano) ✅ → /vitrin pagination + sort enrichment ✅ → Sprint 12 ext SEO il/ilçe route'lar ✅ → Vitrin moderation süperadmin paneli ✅ → Audit log pagination fix ✅ → Sitemap.xml + robots.txt dynamic ✅ → vitrin_reports şikayet sistemi ✅ → Anti-spam rate-limit DB-level ✅ → Süperadmin Telegram alert yeni şikayet ✅ → Alert dedup 1h window ✅ → Günlük summary alert (endpoint hazır) ✅ → **Workers cron scheduler / Sitemap pre-build / Workers KV migrate** → Sprint 16 lansman (bloker bekliyor)
 
 ## 📦 Bu Turun Kümülatif Sonucu (22 commit)
 
@@ -134,6 +134,7 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 | **Şikayet rate-limit** | submitReport içinde Zod sonrası INSERT öncesi DB-level COUNT(*) gate: aynı IP × tenant × 24h max 5. Aşılırsa rate_limit_exceeded reject (429). ipHash='unknown' (proxy header yok) → atlanır. report-button.tsx error mapping güncellendi ("Çok fazla şikayet gönderdin"). +2 unit test (rate_limit_exceeded + altında insert geçer). Browser E2E gerçek DB: 5 fetch ardarda → ilk 4 OK, 5. 429 + UI banner. Cloudflare Workers KV migrate Faz 2'de. | `f414616` |
 | **Süperadmin Telegram alert: yeni şikayet** | buildNewVitrinReportAlert template (TR-localize 7 sebep enum + storefront/product hedef ayrımı + note 200 char truncate + panel URL link + severity warning). submitReport içinde insert sonrası fire-and-forget notifySuperadminOnNewReport (companyName + productName lookup → sendTelegramAlert). +6 unit test (storefront/product/note-truncate/note-yok/panel-link/bilinmeyen-reason). Browser E2E: yeni submit → server log `[telegram:mock] [WARNING] 🚩 Yeni vitrin şikayeti...`. | `9bdc957` |
 | **Şikayet alert dedup (1h window)** | notifySuperadminOnNewReport içinde, alert build öncesi `ALERT_DEDUP_WINDOW_MS=1h` ile DB COUNT(*) WHERE companyId+status='pending'+createdAt>=cutoff. pendingInWindow > 1 → erken return (skip). 2 mevcut test update (countQueries=1/2 — alert dedup COUNT eklendi). Browser E2E: 5 pending var DB'de → yeni submit → INSERT OK + `[telegram:mock]` log YOK (skip ✓). | `0843565` |
+| **Günlük summary alert (cron endpoint)** | lib/vitrin/summary.ts: buildDailyReportSummary helper (status group + top 5 tenant by pending DESC). buildDailyReportSummaryAlert template (0→info+sessiz, <5 pending→info+sessiz, ≥5→warning+sesli). POST /api/cron/daily-summary endpoint Bearer auth (CRON_SECRET env, 503/401/200). +6 unit test (boş/düşük/yüksek/windowHours/panelUrl/topTenants-boş). Workers cron scheduler binding production'da. | `1e79f4e` |
 
 ### Sprint 9 — Kullanıcılar (davet akışı hibrit)
 
