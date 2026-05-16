@@ -213,6 +213,64 @@ const REASON_LABEL_TR: Record<string, string> = {
   other: 'Diğer',
 };
 
+export interface DailyReportSummaryAlertInput {
+  windowHours: number;
+  totalReports: number;
+  pendingCount: number;
+  resolvedCount: number;
+  dismissedCount: number;
+  topTenants: Array<{ companyName: string; pendingCount: number }>;
+  panelUrl?: string;
+}
+
+export function buildDailyReportSummaryAlert(
+  input: DailyReportSummaryAlertInput,
+): TelegramSendRequest {
+  if (input.totalReports === 0) {
+    // Boş özet — bilgi amaçlı sessiz mesaj
+    return {
+      text: [
+        `📊 <b>Vitrin Şikayet Özeti (${input.windowHours}s)</b>`,
+        '',
+        `Son ${input.windowHours} saatte hiç şikayet gelmedi — sistem temiz.`,
+      ].join('\n'),
+      parseMode: 'HTML',
+      severity: 'info',
+      disableNotification: true,
+    };
+  }
+
+  const topList = input.topTenants
+    .map((t, idx) => `${idx + 1}. ${t.companyName} — ${t.pendingCount}`)
+    .join('\n');
+
+  // Severity: 5+ pending warning, aksi info
+  const severity = input.pendingCount >= 5 ? 'warning' : 'info';
+
+  return {
+    text: [
+      `📊 <b>Vitrin Şikayet Özeti (${input.windowHours}s)</b>`,
+      '',
+      `<b>Toplam:</b> ${input.totalReports}`,
+      `<b>⏳ Bekleyen:</b> ${input.pendingCount}`,
+      `<b>✓ Çözüldü:</b> ${input.resolvedCount}`,
+      `<b>× Geçersiz:</b> ${input.dismissedCount}`,
+      input.topTenants.length > 0 ? '' : '',
+      input.topTenants.length > 0 ? '<b>En çok bekleyen tenant:</b>' : '',
+      input.topTenants.length > 0 ? topList : '',
+      '',
+      input.panelUrl
+        ? `<a href="${input.panelUrl}">Süperadmin panelinde gör →</a>`
+        : '',
+    ]
+      .filter(Boolean)
+      .join('\n'),
+    parseMode: 'HTML',
+    severity,
+    disableNotification: severity === 'info',
+  };
+}
+
 export function buildNewVitrinReportAlert(
   input: NewVitrinReportAlertInput,
 ): TelegramSendRequest {

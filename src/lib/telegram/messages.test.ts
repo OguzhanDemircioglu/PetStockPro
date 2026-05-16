@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   buildAccountLockedAlert,
+  buildDailyReportSummaryAlert,
   buildNewVitrinReportAlert,
   buildTwoFactorDisabledAlert,
 } from './messages';
@@ -143,5 +144,93 @@ describe('buildNewVitrinReportAlert', () => {
       reason: 'custom_xyz',
     });
     expect(req.text).toContain('custom_xyz');
+  });
+});
+
+describe('buildDailyReportSummaryAlert', () => {
+  it('boş 24h → bilgi mesajı + sessiz', () => {
+    const req = buildDailyReportSummaryAlert({
+      windowHours: 24,
+      totalReports: 0,
+      pendingCount: 0,
+      resolvedCount: 0,
+      dismissedCount: 0,
+      topTenants: [],
+    });
+    expect(req.text).toContain('hiç şikayet gelmedi');
+    expect(req.severity).toBe('info');
+    expect(req.disableNotification).toBe(true);
+  });
+
+  it('düşük pending (< 5) → info', () => {
+    const req = buildDailyReportSummaryAlert({
+      windowHours: 24,
+      totalReports: 6,
+      pendingCount: 3,
+      resolvedCount: 2,
+      dismissedCount: 1,
+      topTenants: [
+        { companyName: 'Mavi Pet', pendingCount: 2 },
+        { companyName: 'Sarı Pet', pendingCount: 1 },
+      ],
+    });
+    expect(req.text).toContain('Toplam:');
+    expect(req.text).toContain('6');
+    expect(req.text).toContain('Mavi Pet');
+    expect(req.text).toContain('Sarı Pet');
+    expect(req.severity).toBe('info');
+    expect(req.disableNotification).toBe(true);
+  });
+
+  it('yüksek pending (>=5) → warning + sesli bildirim', () => {
+    const req = buildDailyReportSummaryAlert({
+      windowHours: 24,
+      totalReports: 10,
+      pendingCount: 7,
+      resolvedCount: 2,
+      dismissedCount: 1,
+      topTenants: [{ companyName: 'Mavi Pet', pendingCount: 7 }],
+    });
+    expect(req.severity).toBe('warning');
+    expect(req.disableNotification).toBe(false);
+  });
+
+  it('windowHours custom değer', () => {
+    const req = buildDailyReportSummaryAlert({
+      windowHours: 48,
+      totalReports: 0,
+      pendingCount: 0,
+      resolvedCount: 0,
+      dismissedCount: 0,
+      topTenants: [],
+    });
+    expect(req.text).toContain('48s');
+  });
+
+  it('panelUrl varsa link içerir', () => {
+    const req = buildDailyReportSummaryAlert({
+      windowHours: 24,
+      totalReports: 3,
+      pendingCount: 3,
+      resolvedCount: 0,
+      dismissedCount: 0,
+      topTenants: [{ companyName: 'X', pendingCount: 3 }],
+      panelUrl: '/admin/superadmin/vitrin-moderation?tab=reports',
+    });
+    expect(req.text).toContain(
+      'href="/admin/superadmin/vitrin-moderation?tab=reports"',
+    );
+  });
+
+  it('topTenants boş → "En çok bekleyen tenant" satırı yok', () => {
+    const req = buildDailyReportSummaryAlert({
+      windowHours: 24,
+      totalReports: 2,
+      pendingCount: 0,
+      resolvedCount: 2,
+      dismissedCount: 0,
+      topTenants: [],
+    });
+    expect(req.text).not.toContain('En çok bekleyen tenant:');
   });
 });
