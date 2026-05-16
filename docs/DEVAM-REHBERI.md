@@ -1,9 +1,9 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-17 (Sprint 8 TAM + Sprint 10 TAM + reset-password fix)
-**Mevcut Branch:** `cray61` — origin'in **27 commit** ileri (push edilmedi)
-**Son commit:** `3c59aeb` feat(notifications): Sprint 10 — Telegram setup wizard (tenant-level bot)
-**Test:** 920 passed (66 dosya) — vitest (+41 bu session)
+**Tarih:** 2026-05-17 (Sprint 8 + 10 TAM + 12 MVP + reset-password fix)
+**Mevcut Branch:** `cray61` — origin'in **29 commit** ileri (push edilmedi)
+**Son commit:** `6b1a0c5` feat(vitrin): Sprint 12 MVP — Merkezi vitrin dizini + profil sayfaları
+**Test:** 940 passed (68 dosya) — vitest (+61 bu session)
 **Lint+typecheck:** 0 error
 **Migration:** 12 (0012 telegram_settings + 0008/0009/0010/0011 + 7 öncesi)
 
@@ -39,15 +39,15 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 
 | # | İş | Tahmin | Neden |
 |---|---|---|---|
-| 1 | **Sprint 12 — Merkezi Vitrin Dizini** (public `/vitrin` + WhatsApp deep link) | 4-6 saat | MVP'nin B2C tarafı, lansman öncesi şart |
-| 2 | **Sprint 10 ext — Tenant Telegram'a actual bildirim gönderim** (notification scaffold yamalama) | 1 saat | Setup wizard var, ama event'lerden Telegram'a gönderim Sprint 15 notifications + ekstra |
+| 1 | **Sprint 10 ext — Tenant Telegram'a actual bildirim gönderim** (notification scaffold yamalama) | 1 saat | Setup wizard var, ama event'lerden Telegram'a gönderim Sprint 15 notifications + ekstra |
+| 2 | **Sprint 12 ext — Ürün detay / kategori sayfaları** | 2-3 saat | MVP'de profil sayfası ürünleri listeler ama detay yok |
 | 3 | **Audit log filtre ext** (kullanıcı + tarih aralığı + pagination) | 1 saat | Action+entity zaten var, kullanıcı + date eksik |
 | 4 | **Düşük stok filter** (kategori + şube bazında) | 1 saat | Tek-tenant tablo büyürse navigate zor |
 | 5 | **Notif filter ext** (5 grup yerine fine-grain action) | 30 dk | Sprint 15'te 5 group var, daha ince filtre faydalı |
 | 6 | **Storage upload — Sprint 3.3** | ⛔ BLOKER | `SUPABASE_SERVICE_ROLE_KEY` gerek (kullanıcı sağlayacak) |
 | 7 | **Sprint 13/14 production deploy** | ⛔ BLOKER | Şirket kuruluş + vergi no + IBAN (2-4 hafta) |
 
-**Plana sadık sıra (CLAUDE.md SPRINT-PLAN):** Sprint 8 ✅ → Sprint 10 ✅ → **Sprint 12** → Sprint 15
+**Plana sadık sıra (CLAUDE.md SPRINT-PLAN):** Sprint 8 ✅ → Sprint 10 ✅ → Sprint 12 MVP ✅ → **Sprint 15** (polish) → Sprint 16 lansman
 
 ## 📦 Bu Turun Kümülatif Sonucu (22 commit)
 
@@ -92,6 +92,23 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 | Parça | İçerik | Commit |
 |---|---|---|
 | Tek commit | Schema migration 0012 (companies +4 field: botToken/chatId/enabled/configuredAt) + lib/telegram/client.ts genişletildi (sendTenantTelegramAlert, errorCode + description) + lib/telegram/settings.ts (Zod schema regex, getTelegramSettings, saveTelegramConfig, setTelegramEnabled, sendTelegramTestMessage) + /admin/settings/notifications sayfası (BotFather rehberi + form + test + toggle) + Settings sidebar +1 link + Settings hub +1 status kart + 19 unit test | `3c59aeb` |
+
+### Sprint 12 MVP — Merkezi vitrin dizini + profil sayfaları
+
+| Parça | İçerik | Commit |
+|---|---|---|
+| Tek commit | lib/vitrin/public.ts (listPublicStorefronts + getStorefrontBySlug + listStorefrontProducts + buildWhatsappLink TR normalize) + lib/vitrin/track.ts (KVKK SHA256(IP+daily_salt) hash + fire-and-forget) + /vitrin/page.tsx (filter formu + 24'lü grid + pagination + empty state) + /vitrin/magaza/[slug]/page.tsx (hero + about + iletişim grid + ürün grid) + /vitrin/layout.tsx (public layout) + bug fix: storefront upsert artık companies.storefront_status auto-approve (rejected/auto_suspended bypass) + 20 unit test + browser E2E (Sprint 3 tenant approved → dizinde 1 PET SHOP kartı → profil sayfası XL Boy 3.499₺ → DB 12 profile_view event) | `6b1a0c5` |
+
+### 🚫 Sprint 12 ext (Faz 2 — bu MVP'de yok)
+
+- /vitrin/urun/[slug] cross-tenant ürün detayı + kıyaslama
+- /vitrin/[il]/[ilce] şehir/ilçe sayfaları (SEO)
+- /vitrin/kategori/[slug] kategori sayfaları
+- WhatsApp Feedback Balonu (sticky 5 emoji — `EKRAN-PUBLIC-VITRIN.md §15`)
+- PostGIS yakınlık sorgusu + Geolocation API
+- SEO sitemap pre-build (pg_cron + R2)
+- Schema.org structured data
+- Vitrin Modlama süperadmin paneli (`vitrin_reports` tablosu mevcut)
 
 ### Sprint 9 — Kullanıcılar (davet akışı hibrit)
 
