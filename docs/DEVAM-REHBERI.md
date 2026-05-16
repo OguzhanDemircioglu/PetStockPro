@@ -1,8 +1,8 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-17 (Sprint 8/10/12 MVP TAM + Sprint 15 polish 4'lü + reset-password fix)
-**Mevcut Branch:** `cray61` — origin'in **34 commit** ileri (push edilmedi)
-**Son commit:** `c10f6d4` feat(notifications): Fine-grain type filter chip'leri
+**Tarih:** 2026-05-17 (Sprint 8/10/12 MVP TAM + Sprint 15 polish 4'lü + Sprint 12 ext ürün detay + reset-password fix)
+**Mevcut Branch:** `cray61` — origin'in **36 commit** ileri (push edilmedi)
+**Son commit:** `c17169d` feat(vitrin): Sprint 12 ext — Ürün detay sayfası
 **Test:** 950 passed (68 dosya) — vitest (+71 bu session)
 **Lint+typecheck:** 0 error
 **Migration:** 12 (0012 telegram_settings + 0008/0009/0010/0011 + 7 öncesi)
@@ -118,6 +118,12 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 | **Audit log filter ext** | Kullanıcı dropdown (listAuditUsers + selectDistinctOn) + Başlangıç/Bitiş tarih (YYYY-MM-DD → ::timestamptz cast, exclusive upper bound) + 50/sayfa pagination ?page=N + CSV export new params | `7f41a01` |
 | **Düşük stok filter** | Kategori + Şube dropdown + UUID regex validation + filtreli badge subtitle. listLowStock signature: number|opts (geriye uyumlu) | `6b4b044` |
 | **Notif fine-grain** | 5 grup chip'in altında alt-tip chip paneli (aktif grup için 16 type bireysel filter). ?type=<exact> URL param, group ile birlikte | `c10f6d4` |
+
+### Sprint 12 ext (devam)
+
+| Konu | İçerik | Commit |
+|---|---|---|
+| **Ürün detay** | `/vitrin/magaza/[slug]/urun/[productSlug]` — getStorefrontProductDetail helper (4 gating + variants LEFT JOIN/GROUP BY). Breadcrumb + hero (kategori/marka/stok count/fiyat aralığı) + description + variant grid (★ Varsayılan + Stok yok + variant-specific WhatsApp). Profil kart linkleri update. product_view event tracking | `c17169d` |
 
 ### Sprint 9 — Kullanıcılar (davet akışı hibrit)
 
