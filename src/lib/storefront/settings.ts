@@ -10,7 +10,7 @@
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import type { DbClient } from '@/lib/db/client';
-import { storefrontSettings } from '@/db/schema';
+import { companies, storefrontSettings } from '@/db/schema';
 
 const phoneRegex = /^(\+90|0)?\s?(5\d{2})\s?\d{3}\s?\d{2}\s?\d{2}$/;
 const usernameRegex = /^[A-Za-z0-9._-]{0,100}$/;
@@ -169,6 +169,30 @@ export async function upsertStorefrontSettings(
           updatedAt: now,
         },
       });
+
+    // companies.storefrontStatus'u senkronize et (Sprint 12 — otomatik onay).
+    // EKRAN-SUPERADMIN §2.5: rejected/auto_suspended manuel müdahale
+    // gerektirir, otomatik bypass etmez — sadece disabled/pending/approved
+    // arasında geçişi otomatize ediyoruz.
+    const currentStatus = await db
+      .select({ status: companies.storefrontStatus })
+      .from(companies)
+      .where(eq(companies.id, companyId))
+      .limit(1);
+
+    const status = currentStatus[0]?.status;
+    if (status === 'rejected' || status === 'auto_suspended') {
+      // Manuel onay bekleyen / askıya alınmış — kullanıcı toggle etse de
+      // status değişmesin. UI banner'ı gösterilebilir (Faz 2).
+      return { ok: true };
+    }
+    await db
+      .update(companies)
+      .set({
+        storefrontStatus: data.isEnabled ? 'approved' : 'disabled',
+        updatedAt: now,
+      })
+      .where(eq(companies.id, companyId));
     return { ok: true };
   } catch {
     return { ok: false, reason: 'unknown' };

@@ -5,8 +5,17 @@ import type { DbClient } from '@/lib/db/client';
 const COMPANY = '11111111-1111-1111-1111-111111111111';
 const NOW = new Date('2026-05-16T12:00:00Z');
 
-function makeMockDb(shouldThrow = false) {
-  const calls = { inserts: 0, valuesArg: null as Record<string, unknown> | null, conflict: null as Record<string, unknown> | null };
+function makeMockDb(
+  shouldThrow = false,
+  currentStorefrontStatus: string = 'disabled',
+) {
+  const calls = {
+    inserts: 0,
+    valuesArg: null as Record<string, unknown> | null,
+    conflict: null as Record<string, unknown> | null,
+    companyUpdateSet: null as Record<string, unknown> | null,
+    companyUpdateCount: 0,
+  };
   const insert = vi.fn().mockImplementation(() => ({
     values: vi.fn().mockImplementation((v) => {
       calls.inserts++;
@@ -19,7 +28,28 @@ function makeMockDb(shouldThrow = false) {
       };
     }),
   }));
-  return { db: { insert } as unknown as DbClient, calls };
+  // select(companies.storefront_status) → bir satır
+  const select = vi.fn().mockImplementation(() => ({
+    from: vi.fn().mockImplementation(() => ({
+      where: vi.fn().mockImplementation(() => ({
+        limit: vi
+          .fn()
+          .mockResolvedValue([{ status: currentStorefrontStatus }]),
+      })),
+    })),
+  }));
+  // update(companies) chain
+  const update = vi.fn().mockImplementation(() => ({
+    set: vi.fn().mockImplementation((v) => {
+      calls.companyUpdateSet = v;
+      calls.companyUpdateCount++;
+      return { where: vi.fn().mockResolvedValue(undefined) };
+    }),
+  }));
+  return {
+    db: { insert, select, update } as unknown as DbClient,
+    calls,
+  };
 }
 
 describe('storefrontSettingsSchema', () => {
@@ -147,5 +177,35 @@ describe('upsertStorefrontSettings', () => {
     const result = await upsertStorefrontSettings(COMPANY, { isEnabled: false }, db);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe('unknown');
+  });
+
+  it('isEnabled=true → companies.storefrontStatus auto-approve (otomatik onay)', async () => {
+    const { db, calls } = makeMockDb(false, 'disabled');
+    await upsertStorefrontSettings(COMPANY, { isEnabled: true }, db, NOW);
+    expect(calls.companyUpdateCount).toBe(1);
+    expect(calls.companyUpdateSet).toMatchObject({
+      storefrontStatus: 'approved',
+      updatedAt: NOW,
+    });
+  });
+
+  it('isEnabled=false → companies.storefrontStatus disabled set', async () => {
+    const { db, calls } = makeMockDb(false, 'approved');
+    await upsertStorefrontSettings(COMPANY, { isEnabled: false }, db, NOW);
+    expect(calls.companyUpdateSet).toMatchObject({
+      storefrontStatus: 'disabled',
+    });
+  });
+
+  it('status=rejected → otomatik onay bypass (manuel müdahale gerek)', async () => {
+    const { db, calls } = makeMockDb(false, 'rejected');
+    await upsertStorefrontSettings(COMPANY, { isEnabled: true }, db, NOW);
+    expect(calls.companyUpdateCount).toBe(0);
+  });
+
+  it('status=auto_suspended → otomatik onay bypass', async () => {
+    const { db, calls } = makeMockDb(false, 'auto_suspended');
+    await upsertStorefrontSettings(COMPANY, { isEnabled: true }, db, NOW);
+    expect(calls.companyUpdateCount).toBe(0);
   });
 });
