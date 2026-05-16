@@ -117,6 +117,38 @@ export default async function AuditLogPage({
     return qs ? `/admin/audit-log?${qs}` : '/admin/audit-log';
   };
 
+  // Hızlı tarih chip URL'leri — günün başı (00:00) ile şimdiki an arasındaki
+  // periyodu filter eder. Sunucu YYYY-MM-DD bekliyor (page.tsx fromDate/toDate).
+  function buildDateRangeUrl(fromDate: string, toDate: string) {
+    const q = new URLSearchParams();
+    if (validAction) q.set('action', validAction);
+    if (params.entity) q.set('entity', params.entity);
+    if (params.userId) q.set('userId', params.userId);
+    q.set('from', fromDate);
+    q.set('to', toDate);
+    return `/admin/audit-log?${q.toString()}`;
+  }
+  function toYmd(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+  const now = new Date();
+  const today = toYmd(now);
+  const sevenDaysAgo = toYmd(new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000));
+  const thirtyDaysAgo = toYmd(
+    new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000),
+  );
+  const dateChips: { label: string; from: string; to: string; key: string }[] = [
+    { key: 'today', label: 'Bugün', from: today, to: today },
+    { key: 'week', label: 'Son 7 gün', from: sevenDaysAgo, to: today },
+    { key: 'month', label: 'Son 30 gün', from: thirtyDaysAgo, to: today },
+  ];
+  const activeChipKey = dateChips.find(
+    (c) => c.from === params.from && c.to === params.to,
+  )?.key;
+
   return (
     <SettingsShell
       current="audit"
@@ -128,6 +160,41 @@ export default async function AuditLogPage({
       }
     >
       <div className="flex flex-col gap-6">
+      <div
+        className="flex flex-wrap items-center gap-2"
+        data-testid="audit-date-chips"
+      >
+        <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+          Hızlı tarih:
+        </span>
+        {dateChips.map((chip) => {
+          const isActive = activeChipKey === chip.key;
+          return (
+            <Link
+              key={chip.key}
+              href={buildDateRangeUrl(chip.from, chip.to) as never}
+              data-testid={`audit-chip-${chip.key}`}
+              aria-pressed={isActive}
+              className={`rounded-full px-3 py-1.5 text-[11px] font-bold transition-colors ${
+                isActive
+                  ? 'bg-cat text-white shadow-sm'
+                  : 'border border-line bg-white text-ink-3 hover:border-cat hover:text-cart'
+              }`}
+            >
+              {chip.label}
+            </Link>
+          );
+        })}
+        {(params.from || params.to) && (
+          <Link
+            href={buildPageUrl(1).replace(/[?&](from|to)=[^&]*/g, '').replace(/\?$/, '') as never}
+            data-testid="audit-chip-clear"
+            className="rounded-full px-3 py-1.5 text-[11px] font-bold text-ink-4 hover:text-danger-7"
+          >
+            × Tarihi temizle
+          </Link>
+        )}
+      </div>
       <form
         className="flex flex-wrap items-end gap-3 rounded-2xl border border-line bg-white p-4"
         action="/admin/audit-log"
