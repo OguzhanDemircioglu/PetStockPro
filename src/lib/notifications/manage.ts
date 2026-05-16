@@ -13,7 +13,8 @@
 
 import { and, desc, eq, isNull, or, sql } from 'drizzle-orm';
 import type { DbClient } from '@/lib/db/client';
-import { notifications, type NotificationContent } from '@/db/schema';
+import { companies, notifications, type NotificationContent } from '@/db/schema';
+import { sendTenantTelegramAlert } from '@/lib/telegram/client';
 
 export type NotificationType =
   | 'low_stock_critical'
@@ -44,11 +45,20 @@ export interface CreateNotificationInput {
 /**
  * Bildirim insert — fire-and-forget pattern uygun (caller awaitlemeyebilir).
  * Hata olursa sessiz fail (audit log'daki pattern gibi).
+ *
+ * Sprint 10 ext: insert sonrası tenant telegram_enabled=true ise Telegram'a
+ * da fire-and-forget gönderim (notification flow'unu bloklamaz, hata yutulur).
+ * Skip:
+ *   - Tenant-wide olmayan kişisel bildirimler (userId set) Telegram'a düşmez
+ *     — kişi Pano + email kullanır; Telegram pet shop sahibi grup kanalı.
+ *   - channel='email'/'telegram' override edilmişse screen+telegram fan-out
+ *     yine olur (telegram zaten primary).
  */
 export async function createNotification(
   input: CreateNotificationInput,
   db: DbClient,
   now: Date = new Date(),
+  opts: { awaitTelegram?: boolean } = {},
 ): Promise<{ ok: boolean; id?: string }> {
   try {
     const [row] = await db
@@ -62,6 +72,20 @@ export async function createNotification(
         createdAt: now,
       })
       .returning({ id: notifications.id });
+
+    // Tenant-wide (userId NULL) bildirimleri için Telegram fan-out.
+    // Kişisel bildirimleri Telegram'a düşürmüyoruz — gizlilik + spam riski.
+    if (!input.userId) {
+      // Production: fire-and-forget. Test/integration: opts.awaitTelegram=true
+      // ile beklenebilir (deterministic test akışı).
+      const promise = fanOutTelegram(input, db).catch(() => {
+        // Sessiz — Sentry'ye giderse production'da görülür
+      });
+      if (opts.awaitTelegram) {
+        await promise;
+      }
+    }
+
     return { ok: true, id: row?.id };
   } catch {
     return { ok: false };
@@ -71,6 +95,46 @@ export async function createNotification(
 /** Fire-and-forget — caller awaitlemez. */
 export function createNotificationAsync(input: CreateNotificationInput, db: DbClient): void {
   void createNotification(input, db).catch(() => {});
+}
+
+/**
+ * Tenant'ın Telegram yapılandırması varsa bildirimi oraya da gönder.
+ * Hata olursa sessiz fail.
+ */
+async function fanOutTelegram(
+  input: CreateNotificationInput,
+  db: DbClient,
+): Promise<void> {
+  const cfg = await db
+    .select({
+      botToken: companies.telegramBotToken,
+      chatId: companies.telegramChatId,
+      enabled: companies.telegramEnabled,
+    })
+    .from(companies)
+    .where(eq(companies.id, input.companyId))
+    .limit(1);
+
+  const row = cfg[0];
+  if (!row || !row.enabled || !row.botToken || !row.chatId) return;
+
+  const emoji = input.content.emoji ?? '🔔';
+  const title = input.content.title ?? 'Bildirim';
+  const body = input.content.body ?? '';
+  const text = body
+    ? `<b>${emoji} ${escapeHtml(title)}</b>\n\n${escapeHtml(body)}`
+    : `<b>${emoji} ${escapeHtml(title)}</b>`;
+
+  await sendTenantTelegramAlert(
+    { botToken: row.botToken, chatId: row.chatId },
+    { text, parseMode: 'HTML' },
+  );
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[<>&]/g, (c) =>
+    c === '<' ? '&lt;' : c === '>' ? '&gt;' : '&amp;',
+  );
 }
 
 export interface NotificationRow {

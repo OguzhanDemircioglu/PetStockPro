@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   createNotification,
   createNotificationAsync,
@@ -166,6 +166,165 @@ describe('createNotificationAsync', () => {
         db,
       ),
     ).not.toThrow();
+  });
+});
+
+describe('createNotification — Telegram fan-out (Sprint 10 ext)', () => {
+  const fetchMock = vi.fn();
+  const origFetch = global.fetch;
+
+  beforeEach(() => {
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, result: { message_id: 1 } }),
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+  });
+
+  afterEach(() => {
+    global.fetch = origFetch;
+  });
+
+  function makeMockDbWithTelegram(opts: {
+    enabled: boolean;
+    botToken?: string | null;
+    chatId?: string | null;
+  }) {
+    const tokenVal =
+      'botToken' in opts ? opts.botToken : '1234567890:token';
+    const chatVal = 'chatId' in opts ? opts.chatId : '987654321';
+    const select = vi.fn().mockImplementation(() => ({
+      from: vi.fn().mockImplementation(() => ({
+        where: vi.fn().mockImplementation(() => ({
+          limit: vi.fn().mockResolvedValue([
+            {
+              botToken: tokenVal,
+              chatId: chatVal,
+              enabled: opts.enabled,
+            },
+          ]),
+        })),
+      })),
+    }));
+    const insert = vi.fn().mockImplementation(() => ({
+      values: vi.fn().mockImplementation(() =>
+        Object.assign(Promise.resolve(), {
+          returning: vi.fn().mockResolvedValue([{ id: NOTIF }]),
+        }),
+      ),
+    }));
+    return { insert, select } as unknown as DbClient;
+  }
+
+  it('telegram enabled → fetch çağrılır (Telegram API)', async () => {
+    const db = makeMockDbWithTelegram({ enabled: true });
+    await createNotification(
+      {
+        companyId: COMPANY,
+        type: 'low_stock_critical',
+        content: { title: 'Düşük stok', body: 'Catit XL', emoji: '⚠' },
+      },
+      db,
+      undefined,
+      { awaitTelegram: true },
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('api.telegram.org'),
+      expect.any(Object),
+    );
+    const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
+    expect(body.text).toContain('Düşük stok');
+    expect(body.text).toContain('Catit XL');
+    expect(body.parse_mode).toBe('HTML');
+  });
+
+  it('telegram disabled → fetch çağrılmaz', async () => {
+    const db = makeMockDbWithTelegram({ enabled: false });
+    await createNotification(
+      {
+        companyId: COMPANY,
+        type: 'daily_summary',
+        content: { title: 'Günlük özet' },
+      },
+      db,
+      undefined,
+      { awaitTelegram: true },
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('telegram aktif ama bot token boş → fetch çağrılmaz', async () => {
+    const db = makeMockDbWithTelegram({ enabled: true, botToken: null });
+    await createNotification(
+      {
+        companyId: COMPANY,
+        type: 'daily_summary',
+        content: { title: 'Özet' },
+      },
+      db,
+      undefined,
+      { awaitTelegram: true },
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('userId set (kişisel) → telegram fan-out skip (gizlilik)', async () => {
+    const db = makeMockDbWithTelegram({ enabled: true });
+    await createNotification(
+      {
+        companyId: COMPANY,
+        userId: USER,
+        type: 'transfer_received',
+        content: { title: 'Transfer geldi' },
+      },
+      db,
+      undefined,
+      { awaitTelegram: true },
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('title HTML escape edilir', async () => {
+    const db = makeMockDbWithTelegram({ enabled: true });
+    await createNotification(
+      {
+        companyId: COMPANY,
+        type: 'low_stock_critical',
+        content: {
+          title: 'Stok <script>alert(1)</script>',
+          body: 'A & B',
+          emoji: '⚠',
+        },
+      },
+      db,
+      undefined,
+      { awaitTelegram: true },
+    );
+    const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
+    expect(body.text).toContain('&lt;script&gt;');
+    expect(body.text).not.toContain('<script>');
+    expect(body.text).toContain('A &amp; B');
+  });
+
+  it('Telegram API hatası bildirim insert akışını kırmaz', async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({ description: 'Unauthorized' }),
+    });
+    const db = makeMockDbWithTelegram({ enabled: true });
+    const result = await createNotification(
+      {
+        companyId: COMPANY,
+        type: 'low_stock_critical',
+        content: { title: 'Düşük stok' },
+      },
+      db,
+      undefined,
+      { awaitTelegram: true },
+    );
+    expect(result.ok).toBe(true);
   });
 });
 
