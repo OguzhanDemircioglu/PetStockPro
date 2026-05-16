@@ -5,8 +5,10 @@ import { db } from '@/lib/db/client';
 import { companies, productVariants, products, branchInventory } from '@/db/schema';
 import { isSuperadmin } from '@/lib/superadmin/access';
 import { AdminSidebar } from '@/components/admin-sidebar';
+import { AdminTopbar } from '@/components/admin-topbar';
 import { SuperadminToolbox } from '@/components/superadmin-toolbox';
 import { planProductLimit } from '@/lib/constants/plan-limits';
+import { unreadCountForUser } from '@/lib/notifications/manage';
 
 /**
  * /admin/* layout — sidebar (brand + nav + plan) + main content area.
@@ -24,11 +26,11 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
-  if (!session?.user?.companyId) redirect('/login' as never);
+  if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
 
   const showToolbox = isSuperadmin(session);
 
-  const [companyRow, productCountRow, lowStockRow] = await Promise.all([
+  const [companyRow, productCountRow, lowStockRow, unreadCount] = await Promise.all([
     db
       .select({ name: companies.name, plan: companies.plan })
       .from(companies)
@@ -60,6 +62,7 @@ export default async function AdminLayout({
           )`,
         ),
       ),
+    unreadCountForUser(session.user.companyId, session.user.id, db),
   ]);
 
   const company = companyRow[0];
@@ -80,7 +83,14 @@ export default async function AdminLayout({
         lowStockCount={lowStockCount}
         isSuperadmin={showToolbox}
       />
-      <div className="flex-1 min-w-0">{children}</div>
+      <div className="flex min-h-screen flex-1 min-w-0 flex-col">
+        <AdminTopbar
+          userEmail={session.user.email ?? ''}
+          unreadCount={unreadCount}
+          isSuperadmin={showToolbox}
+        />
+        <div className="flex-1">{children}</div>
+      </div>
       {showToolbox && <SuperadminToolbox />}
     </div>
   );

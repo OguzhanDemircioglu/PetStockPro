@@ -10,8 +10,7 @@ import {
   listLowStock,
   listRecentActivity,
 } from '@/lib/dashboard/stats';
-import { unreadCountForUser, listForUser, type NotificationRow } from '@/lib/notifications/manage';
-import { isSuperadmin } from '@/lib/superadmin/access';
+import { listForUser, type NotificationRow } from '@/lib/notifications/manage';
 import { listOrderSuggestions } from '@/lib/assistant/order-suggestions';
 import { listTopTransferSuggestions } from '@/lib/assistant/transfer-suggestions-flat';
 import {
@@ -47,14 +46,12 @@ const SUBTYPE_LABEL: Record<string, string> = {
 export default async function AdminDashboardPage() {
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
-  const userIsSuperadmin = isSuperadmin(session);
 
   const [
     companyRow,
     stats,
     lowStock,
     activity,
-    unreadNotifications,
     recentNotifications,
     orderSuggestions,
     transferSuggestions,
@@ -70,7 +67,6 @@ export default async function AdminDashboardPage() {
     getDashboardStats(session.user.companyId, db),
     listLowStock(session.user.companyId, db, 6),
     listRecentActivity(session.user.companyId, db, 8),
-    unreadCountForUser(session.user.companyId, session.user.id, db),
     listForUser(session.user.companyId, session.user.id, db, { limit: 4 }),
     listOrderSuggestions(session.user.companyId, db, 5),
     listTopTransferSuggestions(session.user.companyId, db, 5),
@@ -120,29 +116,8 @@ export default async function AdminDashboardPage() {
         }}
       >
         <div className="min-w-0">
-          {/* Üst meta: greeting + admin links */}
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="text-[11px] font-bold uppercase tracking-wider opacity-85">
-              🐾 Bugün · {company?.name ?? 'Pet shop'}
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <NotificationBell unreadCount={unreadNotifications} />
-              {userIsSuperadmin && (
-                <Link
-                  href={'/admin/superadmin' as never}
-                  data-superadmin-link
-                  className="rounded-xl border border-white/40 bg-white/15 px-3 py-1.5 text-[11px] font-bold text-white backdrop-blur hover:bg-white hover:text-cart"
-                >
-                  🛡 Süperadmin
-                </Link>
-              )}
-              <Link
-                href={'/admin/settings' as never}
-                className="rounded-xl border border-white/40 bg-white/15 px-3 py-1.5 text-[11px] font-bold text-white backdrop-blur hover:bg-white hover:text-cart"
-              >
-                ⚙ Ayarlar
-              </Link>
-            </div>
+          <div className="text-[11px] font-bold uppercase tracking-wider opacity-85">
+            🐾 Bugün · {company?.name ?? 'Pet shop'}
           </div>
 
           <h1
@@ -1115,24 +1090,4 @@ function PanoNotificationItem({ item }: { item: NotificationRow }) {
   );
 }
 
-function NotificationBell({ unreadCount }: { unreadCount: number }) {
-  return (
-    <Link
-      href={'/admin/notifications' as never}
-      data-notif-bell
-      data-unread-count={unreadCount}
-      aria-label={`Bildirimler${unreadCount > 0 ? ` (${unreadCount} okunmamış)` : ''}`}
-      className="relative grid h-9 w-9 place-items-center rounded-xl border border-line bg-white text-lg hover:bg-cat-soft"
-    >
-      🔔
-      {unreadCount > 0 && (
-        <span
-          data-notif-badge
-          className="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-cat px-1 py-0.5 text-center text-[10px] font-bold leading-none text-white"
-        >
-          {unreadCount > 99 ? '99+' : unreadCount}
-        </span>
-      )}
-    </Link>
-  );
-}
+// NotificationBell shared component'e taşındı: src/components/notification-bell.tsx
