@@ -49,6 +49,7 @@ export async function POST(req: Request) {
 
   const httpStatus: Record<string, number> = {
     invalid_input: 400,
+    rate_limit_exceeded: 429,
     unknown: 500,
   };
   return Response.json(result, {

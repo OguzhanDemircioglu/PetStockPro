@@ -60,10 +60,14 @@ export function ReportButton({
       if (data.ok) {
         setDone(true);
       } else {
+        const errorMessages: Record<string, string> = {
+          invalid_input: 'Geçersiz giriş — sebep veya hedef eksik.',
+          rate_limit_exceeded:
+            'Çok fazla şikayet gönderdin. 24 saat sonra tekrar dene.',
+        };
         setError(
-          data.reason === 'invalid_input'
-            ? 'Geçersiz giriş — sebep veya hedef eksik.'
-            : 'Şikayet kaydedilemedi. Sonra tekrar dene.',
+          errorMessages[data.reason] ??
+            'Şikayet kaydedilemedi. Sonra tekrar dene.',
         );
       }
     } catch {

@@ -11,10 +11,13 @@
  */
 
 import { createHash } from 'node:crypto';
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { DbClient } from '@/lib/db/client';
 import { companies, products, users, vitrinReports } from '@/db/schema';
+
+const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
+const RATE_LIMIT_MAX_PER_WINDOW = 5;
 
 export const reportReasonValues = [
   'wrong_photo',
@@ -72,8 +75,9 @@ function hashIp(ip: string, date: Date): string {
 /**
  * Anon "Bildir" butonu submit'i — yeni şikayet kaydı.
  *
- * Aynı IP × tenant × 24h içinde duplicate izin verilir (counter felsefesi:
- * çoklu şikayet = sinyal yoğunluğu). Anti-spam KV katmanı endpoint-level olur.
+ * Anti-spam rate-limit: aynı IP × tenant × 24h içinde max N şikayet
+ * (default 5). Aşılırsa rate_limit_exceeded reject. Cloudflare Workers KV
+ * binding production'da daha hızlı olur ama DB-level COUNT MVP için yeter.
  */
 export async function submitReport(
   input: z.infer<typeof reportInputSchema>,
@@ -82,7 +86,10 @@ export async function submitReport(
   now: Date = new Date(),
 ): Promise<
   | { ok: true; id: string }
-  | { ok: false; reason: 'invalid_input' | 'unknown' }
+  | {
+      ok: false;
+      reason: 'invalid_input' | 'rate_limit_exceeded' | 'unknown';
+    }
 > {
   const parsed = reportInputSchema.safeParse(input);
   if (!parsed.success) {
@@ -90,6 +97,26 @@ export async function submitReport(
   }
 
   const ipHash = ctx.ipAddress ? hashIp(ctx.ipAddress, now) : 'unknown';
+
+  // Rate-limit kontrol: aynı IP × tenant × 24h içinde max 5 şikayet.
+  // ipHash='unknown' (proxy header yok) durumunda dedup yok (hatalı pozitif önle).
+  if (ipHash !== 'unknown') {
+    const cutoff = new Date(now.getTime() - RATE_LIMIT_WINDOW_MS);
+    const countRows = await db
+      .select({ count: sql<number>`COUNT(*)::int` })
+      .from(vitrinReports)
+      .where(
+        and(
+          eq(vitrinReports.companyId, parsed.data.companyId),
+          eq(vitrinReports.reporterIpHash, ipHash),
+          gte(vitrinReports.createdAt, cutoff),
+        ),
+      );
+    const currentCount = countRows[0]?.count ?? 0;
+    if (currentCount >= RATE_LIMIT_MAX_PER_WINDOW) {
+      return { ok: false, reason: 'rate_limit_exceeded' };
+    }
+  }
 
   try {
     const rows = await db

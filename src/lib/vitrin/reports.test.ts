@@ -23,6 +23,7 @@ function makeMockDb(opts: {
   existing?: { status: string; companyId?: string } | null;
   insertedId?: string;
   shouldThrowOnInsert?: boolean;
+  rateLimitCount?: number;
 }) {
   const calls = {
     inserted: 0,
@@ -30,15 +31,31 @@ function makeMockDb(opts: {
     updated: 0,
     updateSet: null as Record<string, unknown> | null,
     selected: 0,
+    countQueries: 0,
   };
+  // submitReport: önce COUNT (rate-limit), sonra (existing yoksa) INSERT.
+  // resolveReport: SELECT (.limit(1)), sonra UPDATE.
+  // Bu mock her iki path'e cevap verir.
   const select = vi.fn().mockImplementation(() => ({
     from: vi.fn().mockImplementation(() => ({
-      where: vi.fn().mockImplementation(() => ({
-        limit: vi.fn().mockImplementation(() => {
-          calls.selected++;
-          return Promise.resolve(opts.existing ? [opts.existing] : []);
-        }),
-      })),
+      where: vi.fn().mockImplementation(() => {
+        // submitReport rate-limit path: COUNT(*) → array { count }
+        // resolveReport path: .limit(1) → existing row
+        return {
+          // .limit(1) ile resolveReport için
+          limit: vi.fn().mockImplementation(() => {
+            calls.selected++;
+            return Promise.resolve(opts.existing ? [opts.existing] : []);
+          }),
+          // submitReport thenable (COUNT)
+          then: (cb: (rows: unknown[]) => unknown) => {
+            calls.countQueries++;
+            return Promise.resolve([
+              { count: opts.rateLimitCount ?? 0 },
+            ]).then(cb);
+          },
+        };
+      }),
     })),
   }));
   const insert = vi.fn().mockImplementation(() => ({
@@ -189,15 +206,43 @@ describe('submitReport', () => {
     expect(result).toEqual({ ok: false, reason: 'unknown' });
   });
 
-  it('IP yoksa hash="unknown"', async () => {
-    const { db, calls } = makeMockDb({});
-    await submitReport(
+  it('IP yoksa hash="unknown" + rate-limit atlanır', async () => {
+    const { db, calls } = makeMockDb({ rateLimitCount: 99 });
+    const result = await submitReport(
       { companyId: COMPANY, targetType: 'storefront', reason: 'other' },
       {},
       db,
       NOW,
     );
+    expect(result.ok).toBe(true);
     expect(calls.insertedValues?.reporterIpHash).toBe('unknown');
+    expect(calls.countQueries).toBe(0); // IP yoksa COUNT yapılmaz
+  });
+
+  it('rate_limit_exceeded — 5+ şikayet 24h içinde', async () => {
+    const { db, calls } = makeMockDb({ rateLimitCount: 5 });
+    const result = await submitReport(
+      { companyId: COMPANY, targetType: 'storefront', reason: 'spam' },
+      CTX,
+      db,
+      NOW,
+    );
+    expect(result).toEqual({ ok: false, reason: 'rate_limit_exceeded' });
+    expect(calls.countQueries).toBe(1);
+    expect(calls.inserted).toBe(0); // limit aşıldıysa INSERT yok
+  });
+
+  it('rate-limit altında (4 kayıt) → insert geçer', async () => {
+    const { db, calls } = makeMockDb({ rateLimitCount: 4 });
+    const result = await submitReport(
+      { companyId: COMPANY, targetType: 'storefront', reason: 'spam' },
+      CTX,
+      db,
+      NOW,
+    );
+    expect(result.ok).toBe(true);
+    expect(calls.countQueries).toBe(1);
+    expect(calls.inserted).toBe(1);
   });
 });
 
