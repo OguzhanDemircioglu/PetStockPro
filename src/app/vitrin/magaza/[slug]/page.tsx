@@ -226,9 +226,11 @@ export default async function StorefrontProfilePage({
         className="flex flex-col gap-3 rounded-2xl border border-line bg-paper p-4"
       >
         <p className="text-[11.5px] leading-relaxed text-ink-3">
-          ⚖️ <strong>PetStockPro</strong> sadece pet shop&apos;ların iletişim
-          bilgilerini listeler. Sipariş, ödeme veya kargo bizimle değil,
-          doğrudan pet shop ile yapılır.
+          {'⚖️ '}
+          <strong>PetStockPro</strong>
+          {
+            " sadece pet shop'ların iletişim bilgilerini listeler. Sipariş, ödeme veya kargo bizimle değil, doğrudan pet shop ile yapılır."
+          }
         </p>
         <ReportButton
           companyId={sf.companyId}

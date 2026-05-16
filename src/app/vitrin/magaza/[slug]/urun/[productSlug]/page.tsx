@@ -255,9 +255,11 @@ export default async function VitrinProductDetailPage({
         className="flex flex-col gap-3 rounded-2xl border border-line bg-paper p-4"
       >
         <p className="text-[11.5px] leading-relaxed text-ink-3">
-          ⚖️ <strong>PetStockPro</strong> sadece dizin sağlar. Fiyat, stok ve
-          sipariş için doğrudan <strong>{product.companyName}</strong> ile
-          WhatsApp üzerinden görüş. Bilgiler pet shop tarafından güncellenir.
+          {'⚖️ '}
+          <strong>PetStockPro</strong>
+          {' sadece dizin sağlar. Fiyat, stok ve sipariş için doğrudan '}
+          <strong>{product.companyName}</strong>
+          {' ile WhatsApp üzerinden görüş. Bilgiler pet shop tarafından güncellenir.'}
         </p>
         <ReportButton
           companyId={product.companyId}
