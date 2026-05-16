@@ -1,11 +1,11 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-17 (Sprint 8/10/12 MVP TAM + Sprint 15 polish 4'lü + Sprint 12 ext ürün detay + reset-password fix)
-**Mevcut Branch:** `cray61` — origin'in **36 commit** ileri (push edilmedi)
-**Son commit:** `c17169d` feat(vitrin): Sprint 12 ext — Ürün detay sayfası
-**Test:** 950 passed (68 dosya) — vitest (+71 bu session)
+**Tarih:** 2026-05-17 (Sprint 8/10/12 MVP TAM + Sprint 15 polish 4'lü + Sprint 12 ext ürün detay + WhatsApp Feedback Balonu + reset-password fix)
+**Mevcut Branch:** `cray61` — origin'in **38 commit** ileri (push edilmedi)
+**Son commit:** `8dbbfef` feat(vitrin): Sprint 12 ext — WhatsApp Geri Bildirim Balonu
+**Test:** 963 passed (69 dosya) — vitest (+84 bu session)
 **Lint+typecheck:** 0 error
-**Migration:** 12 (0012 telegram_settings + 0008/0009/0010/0011 + 7 öncesi)
+**Migration:** 13 (0013 vitrin_whatsapp_feedback + 0012 telegram + 0008/0009/0010/0011 + 7 öncesi)
 
 ## 🚦 YENİ SESSION'A GİRDİĞİNDE — İLK 5 DK
 
@@ -39,15 +39,15 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 
 | # | İş | Tahmin | Neden |
 |---|---|---|---|
-| 1 | **Sprint 12 ext — Ürün detay sayfası** (`/vitrin/urun/[slug]` cross-tenant kıyaslama) | 2-3 saat | MVP'de profil sayfası ürünleri listeler ama detay yok |
-| 2 | **Sprint 12 ext — WhatsApp Geri Bildirim Balonu** (sticky 5 emoji) | 1 gün | `EKRAN-PUBLIC-VITRIN §15` brief mevcut, schema hazır |
-| 3 | **Sprint 12 ext — Şehir/ilçe + kategori sayfaları** (SEO) | 1 gün | Sitemap pre-build için temel |
-| 4 | **Audit log pagination test** (browser, son sayfa edge case) | 30 dk | Şu an 35 kayıt var, 50/sayfa limit, page 2 görmek için seed |
-| 5 | **Vitrin moderation süperadmin paneli** (`vitrin_reports` tablo mevcut) | 2-3 saat | Otomatik onay default ama bildirim/şikayet manuel inceleme alt-sekme |
+| 1 | **Pet shop dashboard — Feedback widget** (`getFeedbackSummary` helper hazır) | 1 saat | Pano'da/ayarlarda funnel + dağılım + ortalama puan göster |
+| 2 | **Sprint 12 ext — Vitrin /vitrin pagination + arama enrichment** | 1 saat | 24'lü grid var ama daha güzel UX (loading skeleton, sort) |
+| 3 | **Sprint 12 ext — Şehir/ilçe + kategori sayfaları** (SEO) | 1 gün | Sitemap pre-build için temel, /vitrin/[il]/[ilce] route |
+| 4 | **Vitrin moderation süperadmin paneli** (`vitrin_reports` + feedback flagged) | 2-3 saat | Otomatik onay default ama spam/şikayet manuel inceleme |
+| 5 | **Audit log pagination test** (browser, son sayfa edge case) | 30 dk | Şu an 35 kayıt var, 50/sayfa limit, page 2 görmek için seed |
 | 6 | **Storage upload — Sprint 3.3** | ⛔ BLOKER | `SUPABASE_SERVICE_ROLE_KEY` gerek (kullanıcı sağlayacak) |
 | 7 | **Sprint 13/14 production deploy** | ⛔ BLOKER | Şirket kuruluş + vergi no + IBAN (2-4 hafta) |
 
-**Plana sadık sıra (CLAUDE.md SPRINT-PLAN):** Sprint 8 ✅ → Sprint 10 ✅ → Sprint 12 MVP ✅ → Sprint 15 polish 4'lü ✅ → **Sprint 12 ext** (ürün detay + feedback) → Sprint 16 lansman (bloker bekliyor)
+**Plana sadık sıra (CLAUDE.md SPRINT-PLAN):** Sprint 8 ✅ → Sprint 10 ✅ → Sprint 12 MVP ✅ → Sprint 15 polish 4'lü ✅ → Sprint 12 ext ürün detay + Feedback Balonu ✅ → **Pet shop feedback dashboard** → Sprint 16 lansman (bloker bekliyor)
 
 ## 📦 Bu Turun Kümülatif Sonucu (22 commit)
 
@@ -124,6 +124,7 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 | Konu | İçerik | Commit |
 |---|---|---|
 | **Ürün detay** | `/vitrin/magaza/[slug]/urun/[productSlug]` — getStorefrontProductDetail helper (4 gating + variants LEFT JOIN/GROUP BY). Breadcrumb + hero (kategori/marka/stok count/fiyat aralığı) + description + variant grid (★ Varsayılan + Stok yok + variant-specific WhatsApp). Profil kart linkleri update. product_view event tracking | `c17169d` |
+| **WhatsApp Feedback Balonu** | Migration 0013 (vitrin_whatsapp_feedback + 2 enum + 4 index + RLS), lib/vitrin/feedback.ts (SHA256 IP hash + 24h status upgrade pattern + 13 test), POST /api/vitrin/feedback (sendBeacon kabul), FeedbackBalloon sticky komponent (5sn delay + 5 emoji + tek tap submit + thanks 1.5sn + beforeunload sendBeacon + localStorage dedup), WhatsappLinkScript event yayını, profile + ürün detay sayfalarına entegre. E2E: rating=very_good submit → DB kayıt doğrulandı | `8dbbfef` |
 
 ### Sprint 9 — Kullanıcılar (davet akışı hibrit)
 
