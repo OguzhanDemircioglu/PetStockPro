@@ -21,6 +21,12 @@ import { buildNewVitrinReportAlert } from '@/lib/telegram/messages';
 const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const RATE_LIMIT_MAX_PER_WINDOW = 5;
 
+/**
+ * Telegram alert dedup penceresi — aynı tenant'a 1 saat içinde 2+ pending
+ * şikayet düşerse 2.sinden itibaren alert atılmaz (spam önleme).
+ */
+const ALERT_DEDUP_WINDOW_MS = 60 * 60 * 1000;
+
 export const reportReasonValues = [
   'wrong_photo',
   'wrong_info',
@@ -145,6 +151,7 @@ export async function submitReport(
       parsed.data.reason,
       parsed.data.note ?? null,
       db,
+      now,
     ).catch(() => {
       // sessiz — alert fail asla caller'ı etkilemesin (Sentry beforeBreadcrumb)
     });
@@ -160,6 +167,9 @@ export async function submitReport(
  *
  * Tenant + ürün isimlerini lookup et, template'i build et, sendTelegramAlert.
  * Dev'de mock log atar, production'da telegram API'ya post eder.
+ *
+ * Dedup: aynı tenant'a son 1 saatte 2+ pending şikayet düşmüşse 2.sinden
+ * itibaren alert atılmaz (spam alert önleme — süperadmin paneli yeterli).
  */
 async function notifySuperadminOnNewReport(
   companyId: string,
@@ -168,7 +178,24 @@ async function notifySuperadminOnNewReport(
   reason: string,
   note: string | null,
   db: DbClient,
+  now: Date,
 ): Promise<void> {
+  // Dedup: bu yeni şikayet dahil son 1 saatte kaç pending var?
+  const dedupCutoff = new Date(now.getTime() - ALERT_DEDUP_WINDOW_MS);
+  const countRows = await db
+    .select({ count: sql<number>`COUNT(*)::int` })
+    .from(vitrinReports)
+    .where(
+      and(
+        eq(vitrinReports.companyId, companyId),
+        eq(vitrinReports.status, 'pending'),
+        gte(vitrinReports.createdAt, dedupCutoff),
+      ),
+    );
+  const pendingInWindow = countRows[0]?.count ?? 0;
+  // İlk şikayet (1) → alert at. 2+ ise zaten alert atılmış, skip.
+  if (pendingInWindow > 1) return;
+
   const [company] = await db
     .select({ name: companies.name, slug: companies.slug })
     .from(companies)

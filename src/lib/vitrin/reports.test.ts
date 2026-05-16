@@ -216,7 +216,8 @@ describe('submitReport', () => {
     );
     expect(result.ok).toBe(true);
     expect(calls.insertedValues?.reporterIpHash).toBe('unknown');
-    expect(calls.countQueries).toBe(0); // IP yoksa COUNT yapılmaz
+    // IP yoksa rate-limit COUNT atlanır; alert dedup COUNT fire-and-forget +1
+    expect(calls.countQueries).toBe(1);
   });
 
   it('rate_limit_exceeded — 5+ şikayet 24h içinde', async () => {
@@ -241,7 +242,8 @@ describe('submitReport', () => {
       NOW,
     );
     expect(result.ok).toBe(true);
-    expect(calls.countQueries).toBe(1);
+    // rate-limit COUNT 1× + alert dedup COUNT 1× = 2 toplam
+    expect(calls.countQueries).toBe(2);
     expect(calls.inserted).toBe(1);
   });
 });
