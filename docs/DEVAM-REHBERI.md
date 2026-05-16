@@ -1,9 +1,9 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-17 (Sprint 8 + 10 TAM + 12 MVP + reset-password fix)
-**Mevcut Branch:** `cray61` — origin'in **29 commit** ileri (push edilmedi)
-**Son commit:** `6b1a0c5` feat(vitrin): Sprint 12 MVP — Merkezi vitrin dizini + profil sayfaları
-**Test:** 940 passed (68 dosya) — vitest (+61 bu session)
+**Tarih:** 2026-05-17 (Sprint 8/10/12 MVP TAM + Sprint 15 polish 4'lü + reset-password fix)
+**Mevcut Branch:** `cray61` — origin'in **34 commit** ileri (push edilmedi)
+**Son commit:** `c10f6d4` feat(notifications): Fine-grain type filter chip'leri
+**Test:** 950 passed (68 dosya) — vitest (+71 bu session)
 **Lint+typecheck:** 0 error
 **Migration:** 12 (0012 telegram_settings + 0008/0009/0010/0011 + 7 öncesi)
 
@@ -39,15 +39,15 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 
 | # | İş | Tahmin | Neden |
 |---|---|---|---|
-| 1 | **Sprint 10 ext — Tenant Telegram'a actual bildirim gönderim** (notification scaffold yamalama) | 1 saat | Setup wizard var, ama event'lerden Telegram'a gönderim Sprint 15 notifications + ekstra |
-| 2 | **Sprint 12 ext — Ürün detay / kategori sayfaları** | 2-3 saat | MVP'de profil sayfası ürünleri listeler ama detay yok |
-| 3 | **Audit log filtre ext** (kullanıcı + tarih aralığı + pagination) | 1 saat | Action+entity zaten var, kullanıcı + date eksik |
-| 4 | **Düşük stok filter** (kategori + şube bazında) | 1 saat | Tek-tenant tablo büyürse navigate zor |
-| 5 | **Notif filter ext** (5 grup yerine fine-grain action) | 30 dk | Sprint 15'te 5 group var, daha ince filtre faydalı |
+| 1 | **Sprint 12 ext — Ürün detay sayfası** (`/vitrin/urun/[slug]` cross-tenant kıyaslama) | 2-3 saat | MVP'de profil sayfası ürünleri listeler ama detay yok |
+| 2 | **Sprint 12 ext — WhatsApp Geri Bildirim Balonu** (sticky 5 emoji) | 1 gün | `EKRAN-PUBLIC-VITRIN §15` brief mevcut, schema hazır |
+| 3 | **Sprint 12 ext — Şehir/ilçe + kategori sayfaları** (SEO) | 1 gün | Sitemap pre-build için temel |
+| 4 | **Audit log pagination test** (browser, son sayfa edge case) | 30 dk | Şu an 35 kayıt var, 50/sayfa limit, page 2 görmek için seed |
+| 5 | **Vitrin moderation süperadmin paneli** (`vitrin_reports` tablo mevcut) | 2-3 saat | Otomatik onay default ama bildirim/şikayet manuel inceleme alt-sekme |
 | 6 | **Storage upload — Sprint 3.3** | ⛔ BLOKER | `SUPABASE_SERVICE_ROLE_KEY` gerek (kullanıcı sağlayacak) |
 | 7 | **Sprint 13/14 production deploy** | ⛔ BLOKER | Şirket kuruluş + vergi no + IBAN (2-4 hafta) |
 
-**Plana sadık sıra (CLAUDE.md SPRINT-PLAN):** Sprint 8 ✅ → Sprint 10 ✅ → Sprint 12 MVP ✅ → **Sprint 15** (polish) → Sprint 16 lansman
+**Plana sadık sıra (CLAUDE.md SPRINT-PLAN):** Sprint 8 ✅ → Sprint 10 ✅ → Sprint 12 MVP ✅ → Sprint 15 polish 4'lü ✅ → **Sprint 12 ext** (ürün detay + feedback) → Sprint 16 lansman (bloker bekliyor)
 
 ## 📦 Bu Turun Kümülatif Sonucu (22 commit)
 
@@ -109,6 +109,15 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 - SEO sitemap pre-build (pg_cron + R2)
 - Schema.org structured data
 - Vitrin Modlama süperadmin paneli (`vitrin_reports` tablosu mevcut)
+
+### Sprint 10 ext + Polish (Sprint 15 4'lü)
+
+| Konu | İçerik | Commit |
+|---|---|---|
+| **Telegram fan-out** | createNotification insert sonrası tenant telegram_enabled=true ise async fetch. Tenant-wide bildirimler Telegram'a düşer; kişisel userId bildirimleri skip (gizlilik). Title HTML escape. 6 yeni test | `5148ab1` |
+| **Audit log filter ext** | Kullanıcı dropdown (listAuditUsers + selectDistinctOn) + Başlangıç/Bitiş tarih (YYYY-MM-DD → ::timestamptz cast, exclusive upper bound) + 50/sayfa pagination ?page=N + CSV export new params | `7f41a01` |
+| **Düşük stok filter** | Kategori + Şube dropdown + UUID regex validation + filtreli badge subtitle. listLowStock signature: number|opts (geriye uyumlu) | `6b4b044` |
+| **Notif fine-grain** | 5 grup chip'in altında alt-tip chip paneli (aktif grup için 16 type bireysel filter). ?type=<exact> URL param, group ile birlikte | `c10f6d4` |
 
 ### Sprint 9 — Kullanıcılar (davet akışı hibrit)
 
