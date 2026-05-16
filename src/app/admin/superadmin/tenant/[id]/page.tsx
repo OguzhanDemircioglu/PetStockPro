@@ -115,6 +115,12 @@ export default async function TenantDetailSuperadminPage({
                       )}
                     </div>
                   </div>
+                  <Link
+                    href={`/admin/superadmin/user/${u.id}` as never}
+                    className="rounded-lg border border-cat/40 bg-cat-soft px-2 py-1 text-[10px] font-bold text-cart hover:bg-cat hover:text-white transition-colors"
+                  >
+                    ⚙ Yönet
+                  </Link>
                   <div className="text-[10px] text-ink-4 whitespace-nowrap">
                     {new Date(u.createdAt).toLocaleDateString('tr-TR', {
                       day: '2-digit',

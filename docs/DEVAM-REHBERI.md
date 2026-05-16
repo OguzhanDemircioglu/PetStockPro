@@ -1,8 +1,8 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-16 (Sprint 7b Bypass **TAM** — 6/6 aksiyon committed, Toolbox FAB tüm bypass aksiyonlarına bağlandı)
-**Mevcut Branch:** `cray61` — origin'in 12+ commit ileri (push edilmedi)
-**Durum:** ✅ **Sprint 0-15 büyük kısmı tamamlandı + Sprint 7a tam + Sprint 7b TAM (6/6 bypass) + Disk grafiği.** 796 test, 11 migration, 0 lint+typecheck error.
+**Tarih:** 2026-05-16 (Sprint 7b TAM + Sprint 7c **Uzak Kullanıcı Yönetimi** parça 1 (3 aksiyon))
+**Mevcut Branch:** `cray61` — origin'in 13+ commit ileri (push edilmedi)
+**Durum:** ✅ **Sprint 0-15 büyük kısmı tamamlandı + Sprint 7a tam + Sprint 7b TAM + Sprint 7c uzak kullanıcı parça 1.** 816 test, 11 migration, 0 lint+typecheck error.
 
 ## 🚦 YENİ SESSION BAŞLANGIÇ — KALDIĞIN YER
 
@@ -31,7 +31,20 @@
 
 Screenshot timeout sorunu: stale .next cache, server stop + `rm -rf .next` + preview_start ile çözüldü (memory'deki kural).
 
-### ✅ Bypass 1-6 TAMAMLANDI — Sıradaki: Sprint 7c
+### ✅ Bypass 1-6 TAMAMLANDI
+
+### Sprint 7c — Uzak Kullanıcı Yönetimi (parça 1 / 3) ✅ committed
+
+`/admin/superadmin/user/[id]` sayfası — tenant detay sayfasından "⚙ Yönet" linkiyle ulaşılır.
+
+3 aksiyon (her biri şifre re-auth + zorunlu sebep + audit `superadmin.remote.*` + Telegram alert):
+- ✅ **Şifre sıfırlama linki gönder** (Brevo email 30dk TTL, password reset token üret)
+- ✅ **2FA sıfırla** (twoFactorEnabled=false + secret/recoveryCodes temizle + Telegram critical)
+- ✅ **Hesap kilitle / kilidi aç** (lockedUntil 1..720h + lockedReason='SUPERADMIN' + Telegram critical/info)
+
+Browser E2E: sprint27lock@petshop.com hedef → şifre reset linki ✓ banner / 2h hesap kilit → revalidate UI lock→unlock form switch → kilit aç → revalidate → lock form geri. Audit log'da 3 entry `bypass` damgalı görsel doğrulandı.
+
+### Sprint 7c kalan iş (sonraki turlar)
 
 Sprint 7c (1 hafta) — DB Inspector + Sistem Ayarları + Uzak Kullanıcı:
 - DB Inspector sayfası (SELECT-only default + UPDATE kilitli mod)
@@ -81,7 +94,7 @@ Plan-konsistent sırayla:
 **Test:** 610 → 762 (+152)
 **Migration:** 7 → 11 (0008/0009/0010/0011)
 **Yeni route/sayfa:** ~40
-**Browser E2E doğrulanan ekranlar:** Pano + 7 settings + 4 stocktake + ürün/şube detay + low-stock + notifications + süperadmin + tenant detay + bypass 1 + bypass 2 + bypass 3 + bypass 4 + bypass 5 + bypass 6
+**Browser E2E doğrulanan ekranlar:** Pano + 7 settings + 4 stocktake + ürün/şube detay + low-stock + notifications + süperadmin + tenant detay + bypass 1 + bypass 2 + bypass 3 + bypass 4 + bypass 5 + bypass 6 + 7c uzak kullanıcı (3 aksiyon)
 
 ---
 

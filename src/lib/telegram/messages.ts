@@ -99,3 +99,87 @@ export function buildTwoFactorDisabledAlert(input: TwoFactorDisabledAlertInput):
     disableNotification: true,
   };
 }
+
+// ══════════════════════════════════════════════════════════════
+// Sprint 7c — Uzak kullanıcı yönetimi (süperadmin remote actions)
+// ══════════════════════════════════════════════════════════════
+
+export interface RemoteUserActionAlertInput {
+  /** İşlem yapan süperadmin'in email'i (audit için). */
+  superadminEmail: string;
+  /** Aksiyon yapılan hedef kullanıcının email'i. */
+  targetEmail: string;
+  /** Hedef kullanıcının şirket adı (varsa). */
+  targetCompanyName?: string | null;
+  /** Süperadmin'in zorunlu sebebi (audit). */
+  reason: string;
+}
+
+export function buildRemotePasswordResetAlert(
+  input: RemoteUserActionAlertInput,
+): TelegramSendRequest {
+  return {
+    text: [
+      '🔑 <b>Süperadmin: Şifre sıfırlama linki gönderildi</b>',
+      '',
+      `<b>Hedef:</b> <code>${input.targetEmail}</code>`,
+      input.targetCompanyName ? `<b>Tenant:</b> ${input.targetCompanyName}` : '',
+      `<b>Süperadmin:</b> ${input.superadminEmail}`,
+      `<b>Sebep:</b> <i>${input.reason}</i>`,
+    ]
+      .filter(Boolean)
+      .join('\n'),
+    parseMode: 'HTML',
+    severity: 'warning',
+  };
+}
+
+export function buildRemoteTwoFactorResetAlert(
+  input: RemoteUserActionAlertInput,
+): TelegramSendRequest {
+  return {
+    text: [
+      '🛡 <b>Süperadmin: 2FA sıfırlandı (uzaktan)</b>',
+      '',
+      `<b>Hedef:</b> <code>${input.targetEmail}</code>`,
+      input.targetCompanyName ? `<b>Tenant:</b> ${input.targetCompanyName}` : '',
+      `<b>Süperadmin:</b> ${input.superadminEmail}`,
+      `<b>Sebep:</b> <i>${input.reason}</i>`,
+      '',
+      '<i>Kullanıcı bir sonraki login\'de 2FA istenmeyecek.</i>',
+    ]
+      .filter(Boolean)
+      .join('\n'),
+    parseMode: 'HTML',
+    severity: 'critical',
+  };
+}
+
+export interface RemoteAccountLockAlertInput extends RemoteUserActionAlertInput {
+  /** 'lock' veya 'unlock'. */
+  action: 'lock' | 'unlock';
+  /** Lock durumunda kaç saat. unlock'ta yok. */
+  lockHours?: number;
+}
+
+export function buildRemoteAccountLockAlert(
+  input: RemoteAccountLockAlertInput,
+): TelegramSendRequest {
+  const isLock = input.action === 'lock';
+  return {
+    text: [
+      isLock
+        ? `🔒 <b>Süperadmin: Hesap kilitlendi (${input.lockHours ?? '?'} saat)</b>`
+        : '🔓 <b>Süperadmin: Hesap kilidi açıldı</b>',
+      '',
+      `<b>Hedef:</b> <code>${input.targetEmail}</code>`,
+      input.targetCompanyName ? `<b>Tenant:</b> ${input.targetCompanyName}` : '',
+      `<b>Süperadmin:</b> ${input.superadminEmail}`,
+      `<b>Sebep:</b> <i>${input.reason}</i>`,
+    ]
+      .filter(Boolean)
+      .join('\n'),
+    parseMode: 'HTML',
+    severity: isLock ? 'critical' : 'info',
+  };
+}
