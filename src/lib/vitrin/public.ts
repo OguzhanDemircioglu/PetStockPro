@@ -245,6 +245,124 @@ export async function listPublicStorefronts(
 }
 
 /**
+ * Pet shop'u olan (approved + isEnabled) şehirleri listele — chip + sitemap için.
+ *
+ * Distinct cities INNER JOIN storefronts. Boş şehirler hariç.
+ */
+export async function listCitiesWithStorefronts(
+  db: DbClient,
+): Promise<Array<{ id: number; name: string; slug: string }>> {
+  const rows = await db
+    .selectDistinct({
+      id: cities.id,
+      name: cities.name,
+      slug: cities.slug,
+    })
+    .from(cities)
+    .innerJoin(companies, eq(companies.cityId, cities.id))
+    .innerJoin(storefrontSettings, eq(storefrontSettings.companyId, companies.id))
+    .where(
+      and(
+        eq(companies.storefrontStatus, 'approved'),
+        eq(storefrontSettings.isEnabled, true),
+      ),
+    )
+    .orderBy(asc(cities.name));
+  return rows;
+}
+
+/**
+ * Pet shop'u olan ilçeleri (cityId verilirse o ile bağlı) listele — chip için.
+ *
+ * Distinct districts INNER JOIN storefronts.
+ */
+export async function listDistrictsWithStorefronts(
+  cityId: number,
+  db: DbClient,
+): Promise<Array<{ id: string; name: string; slug: string }>> {
+  const rows = await db
+    .selectDistinct({
+      id: districts.id,
+      name: districts.name,
+      slug: districts.slug,
+    })
+    .from(districts)
+    .innerJoin(companies, eq(companies.districtId, districts.id))
+    .innerJoin(storefrontSettings, eq(storefrontSettings.companyId, companies.id))
+    .where(
+      and(
+        eq(districts.cityId, cityId),
+        eq(companies.storefrontStatus, 'approved'),
+        eq(storefrontSettings.isEnabled, true),
+      ),
+    )
+    .orderBy(asc(districts.name));
+  return rows;
+}
+
+/**
+ * Slug ile city lookup — SEO route (/vitrin/[il]) için.
+ *
+ * @returns Cities row veya null (slug yok).
+ */
+export async function getCityBySlug(
+  slug: string,
+  db: DbClient,
+): Promise<{ id: number; name: string; slug: string } | null> {
+  const rows = await db
+    .select({
+      id: cities.id,
+      name: cities.name,
+      slug: cities.slug,
+    })
+    .from(cities)
+    .where(eq(cities.slug, slug))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/**
+ * Slug ile district lookup — SEO route (/vitrin/[il]/[ilce]) için.
+ *
+ * citySlug + districtSlug çiftiyle benzersiz. Aynı district slug birden
+ * fazla şehirde olabilir (örn "merkez").
+ *
+ * @returns Districts row + city info veya null.
+ */
+export async function getDistrictBySlug(
+  citySlug: string,
+  districtSlug: string,
+  db: DbClient,
+): Promise<{
+  city: { id: number; name: string; slug: string };
+  district: { id: string; name: string; slug: string };
+} | null> {
+  const rows = await db
+    .select({
+      cityId: cities.id,
+      cityName: cities.name,
+      citySlug: cities.slug,
+      districtId: districts.id,
+      districtName: districts.name,
+      districtSlug: districts.slug,
+    })
+    .from(districts)
+    .innerJoin(cities, eq(cities.id, districts.cityId))
+    .where(and(eq(cities.slug, citySlug), eq(districts.slug, districtSlug)))
+    .limit(1);
+  const row = rows[0];
+  if (!row) return null;
+  return {
+    city: { id: row.cityId, name: row.cityName, slug: row.citySlug },
+    district: {
+      id: row.districtId,
+      name: row.districtName,
+      slug: row.districtSlug,
+    },
+  };
+}
+
+/**
  * Aynı filtrelerle toplam tenant sayısı — pagination için.
  *
  * `listPublicStorefronts` ile aynı koşulları kullanır, sort/limit/offset YOK.
