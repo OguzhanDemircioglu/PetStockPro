@@ -12,6 +12,7 @@ import {
 import { unreadCountForUser, listForUser, type NotificationRow } from '@/lib/notifications/manage';
 import { isSuperadmin } from '@/lib/superadmin/access';
 import { listOrderSuggestions } from '@/lib/assistant/order-suggestions';
+import { listTopTransferSuggestions } from '@/lib/assistant/transfer-suggestions-flat';
 import { planProductLimit, planLimitDisplay } from '@/lib/constants/plan-limits';
 
 const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
@@ -45,6 +46,7 @@ export default async function AdminDashboardPage() {
     unreadNotifications,
     recentNotifications,
     orderSuggestions,
+    transferSuggestions,
   ] = await Promise.all([
     db
       .select({ name: companies.name, plan: companies.plan })
@@ -57,6 +59,7 @@ export default async function AdminDashboardPage() {
     unreadCountForUser(session.user.companyId, session.user.id, db),
     listForUser(session.user.companyId, session.user.id, db, { limit: 4 }),
     listOrderSuggestions(session.user.companyId, db, 5),
+    listTopTransferSuggestions(session.user.companyId, db, 5),
   ]);
 
   const company = companyRow[0];
@@ -146,6 +149,70 @@ export default async function AdminDashboardPage() {
               <PanoNotificationItem key={n.id} item={n} />
             ))}
           </ul>
+        </section>
+      )}
+
+      {transferSuggestions.length > 0 && (
+        <section data-testid="petpro-transfer-suggestions">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-cat">
+              🤖 PetPro Asistanı · Transfer Önerileri
+            </h2>
+            <Link
+              href={'/admin/low-stock' as never}
+              className="text-[11px] font-bold text-cat hover:underline"
+            >
+              Düşük stok detayı →
+            </Link>
+          </div>
+          <article className="rounded-2xl border-2 border-arrow/30 bg-gradient-to-br from-arrow-soft/30 to-cat-soft/20 p-4">
+            <p className="mb-3 text-[11px] text-ink-3">
+              Aynı ürün/variant başka şubede yüksek stoklu — düşük stoklu şubeye transfer öner:
+            </p>
+            <ul className="divide-y divide-line-soft text-xs">
+              {transferSuggestions.map((t) => (
+                <li
+                  key={`${t.variantId}-${t.sourceBranchId}-${t.targetBranchId}`}
+                  data-transfer-suggestion={t.variantId}
+                  className="flex items-center gap-3 py-2.5"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[12px] font-bold text-ink">
+                      {t.productName}{' '}
+                      {t.variantLabel && (
+                        <span className="text-[10px] font-normal text-ink-3">
+                          · {t.variantLabel}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5 text-[10.5px] text-ink-3">
+                      <span className="text-arrow-7 font-bold">
+                        📤 {t.sourceBranchName} ({t.sourceStock})
+                      </span>
+                      <span>→</span>
+                      <span className={t.targetStock === 0 ? 'text-danger-7 font-bold' : 'text-cart font-bold'}>
+                        📥 {t.targetBranchName} ({t.targetStock})
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] text-ink-4">Öneri</div>
+                    <div className="font-mono text-base font-bold text-arrow-7">
+                      +{t.suggestedQty}
+                    </div>
+                  </div>
+                  <Link
+                    href={
+                      `/admin/stock-movements?transfer=open&variant=${t.variantId}&source=${t.sourceBranchId}&target=${t.targetBranchId}&qty=${t.suggestedQty}` as never
+                    }
+                    className="rounded-lg border border-arrow/40 bg-white px-2.5 py-1.5 text-[10.5px] font-bold text-arrow-7 hover:bg-arrow hover:text-white transition-colors"
+                  >
+                    🔁 Transfer
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </article>
         </section>
       )}
 

@@ -1,8 +1,8 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-16 (Sprint 7 TAM + Sprint 8 parça 1: PetPro Asistanı Sipariş Önerileri)
-**Mevcut Branch:** `cray61` — origin'in 16+ commit ileri (push edilmedi)
-**Durum:** ✅ **Sprint 0-15 büyük kısmı tamamlandı + Sprint 7 TAM + Sprint 8 parça 1 (PetPro Asistanı sipariş öneri kartı).** 857 test, 11 migration, 0 lint+typecheck error.
+**Tarih:** 2026-05-16 (Sprint 7 TAM + Sprint 8 parça 1+2: PetPro Asistanı Sipariş + Transfer Önerileri)
+**Mevcut Branch:** `cray61` — origin'in 17+ commit ileri (push edilmedi)
+**Durum:** ✅ **Sprint 0-15 büyük kısmı tamamlandı + Sprint 7 TAM + Sprint 8 parça 1+2 (PetPro Asistanı 2 kart).** 857 test, 11 migration, 0 lint+typecheck error.
 
 ## 🚦 YENİ SESSION BAŞLANGIÇ — KALDIĞIN YER
 
