@@ -212,6 +212,42 @@ id = "<hyperdrive-id>"   # Cloudflare Dashboard > Workers > Hyperdrive'dan al
 enabled = true
 ```
 
+### 3.1.0 KV Namespace — Rate-Limit Store (Sprint 12 ext, 2026-05-17)
+
+Vitrin şikayet anti-spam rate-limit için Cloudflare Workers KV kullanılır (production'da ~5ms vs DB COUNT ~50ms). Dev'de KV yok → `InMemoryRateLimitStore` fallback (process restart'ta sıfırlanır).
+
+**Defense in depth — iki katmanlı:**
+
+1. **Katman 1 — RateLimitStore** (KV production / in-memory dev): primary, hızlı yol
+2. **Katman 2 — DB COUNT** (`vitrinReports` tablosu): yedek, KV cache miss / down olunca devreye girer
+
+Eğer KV down olursa `submitReport` exception'ı yutar (sentry breadcrumb ileride) ve DB-level COUNT'a düşer. Production'da KV up olduğunda DB sorgusu hâlâ yedek olarak çalışır (over-permissive değil) — gerçek primary, DB'den daha düşük olan max(storeCount, dbCount) kullanır.
+
+**Setup:**
+
+1. Cloudflare Dashboard > Workers > KV → "RATE_LIMIT_KV" namespace yarat
+2. Namespace ID'sini al, `wrangler.toml` `[[kv_namespaces]]` bloğuna yaz:
+   ```toml
+   [[kv_namespaces]]
+   binding = "RATE_LIMIT_KV"
+   id = "<kv-namespace-id>"
+   ```
+3. `wrangler deploy` — Workers runtime'da `env.RATE_LIMIT_KV` erişilebilir
+4. `src/lib/rate-limit/factory.ts` `globalThis.RATE_LIMIT_KV` üzerinden algılar (OpenNext env→globalThis bind)
+
+**Dosya yapısı (`src/lib/rate-limit/`):**
+
+| Dosya | Sorumluluk |
+|---|---|
+| `store.ts` | `RateLimitStore` interface + `RateLimitCheckResult` tipi |
+| `in-memory.ts` | `InMemoryRateLimitStore` — TTL'li Map, opportunistic sweep |
+| `kv.ts` | `KvRateLimitStore` — Cloudflare KV (TTL clamp ≥60sn) |
+| `factory.ts` | `getRateLimitStore()` — KV binding varsa KV, yoksa in-memory singleton |
+
+**Test pattern:** `submitReport(input, ctx, db, now, { rateLimitStore: freshStore() })` — saf fonksiyon, test'te fresh in-memory store inject edilir, singleton kontaminasyonu yok.
+
+---
+
 ### 3.1.1 Cron Trigger Dispatcher (Scheduled Event Pattern)
 
 Cloudflare Workers `[triggers]` `crons` her tetiklendiğinde Worker runtime `scheduled(event, env, ctx)` çağırır. `event.cron` cron expression'ını içerir, biz cron → endpoint eşlemesi ile ilgili `/api/cron/*` route'una self-invocation yaparız (Bearer auth).

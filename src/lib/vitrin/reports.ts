@@ -17,6 +17,8 @@ import type { DbClient } from '@/lib/db/client';
 import { companies, products, users, vitrinReports } from '@/db/schema';
 import { sendTelegramAlert } from '@/lib/telegram/client';
 import { buildNewVitrinReportAlert } from '@/lib/telegram/messages';
+import { getRateLimitStore } from '@/lib/rate-limit/factory';
+import type { RateLimitStore } from '@/lib/rate-limit/store';
 
 const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const RATE_LIMIT_MAX_PER_WINDOW = 5;
@@ -80,6 +82,11 @@ function hashIp(ip: string, date: Date): string {
   return createHash('sha256').update(`${ip}|${dailySalt}`).digest('hex');
 }
 
+/** Rate-limit key formatı — backend agnostic. */
+function buildRateLimitKey(companyId: string, ipHash: string): string {
+  return `report:${companyId}:${ipHash}`;
+}
+
 /**
  * Anon "Bildir" butonu submit'i — yeni şikayet kaydı.
  *
@@ -87,15 +94,18 @@ function hashIp(ip: string, date: Date): string {
  * (default 5). Aşılırsa rate_limit_exceeded reject + meta (currentCount, max,
  * windowHours) UI'da "5/5, 24 saat bekle" mesajı için.
  *
- * Cloudflare Workers KV binding production'da daha hızlı olur (~5ms vs
- * ~50ms DB COUNT) ama mevcut DB-level COUNT MVP için yeter — KV migration
- * Sprint 14 sonrası.
+ * İki katmanlı (defense in depth, 2026-05-17 KV migration):
+ *   1. RateLimitStore (KV production / in-memory dev) — primary, hızlı (~5ms KV)
+ *   2. DB-level COUNT (vitrinReports tablosu) — yedek, KV cache miss / down fallback
+ *
+ * `deps.rateLimitStore` opsiyonel inject — test/override. Default `getRateLimitStore()`.
  */
 export async function submitReport(
   input: z.infer<typeof reportInputSchema>,
   ctx: ReportContext,
   db: DbClient,
   now: Date = new Date(),
+  deps: { rateLimitStore?: RateLimitStore } = {},
 ): Promise<
   | { ok: true; id: string; remainingInWindow: number }
   | { ok: false; reason: 'invalid_input' | 'unknown' }
@@ -118,6 +128,29 @@ export async function submitReport(
   // Rate-limit kontrol: aynı IP × tenant × 24h içinde max 5 şikayet.
   // ipHash='unknown' (proxy header yok) durumunda dedup yok (hatalı pozitif önle).
   if (ipHash !== 'unknown') {
+    const store = deps.rateLimitStore ?? getRateLimitStore();
+    const key = buildRateLimitKey(parsed.data.companyId, ipHash);
+
+    // Katman 1: KV/in-memory store (primary). KV down olursa exception → DB fallback.
+    let storeCount = 0;
+    let storeOk = false;
+    try {
+      storeCount = await store.get(key);
+      storeOk = true;
+    } catch {
+      // KV down → DB fallback'e geç. Production'da sentry breadcrumb düşer (ileride).
+    }
+    if (storeOk && storeCount >= RATE_LIMIT_MAX_PER_WINDOW) {
+      return {
+        ok: false,
+        reason: 'rate_limit_exceeded',
+        currentCount: storeCount,
+        max: RATE_LIMIT_MAX_PER_WINDOW,
+        windowHours: RATE_LIMIT_WINDOW_MS / (60 * 60 * 1000),
+      };
+    }
+
+    // Katman 2: DB COUNT (yedek). KV altında olsak bile DB doğruluyor.
     const cutoff = new Date(now.getTime() - RATE_LIMIT_WINDOW_MS);
     const countRows = await db
       .select({ count: sql<number>`COUNT(*)::int` })
@@ -129,7 +162,7 @@ export async function submitReport(
           gte(vitrinReports.createdAt, cutoff),
         ),
       );
-    currentCount = countRows[0]?.count ?? 0;
+    currentCount = Math.max(storeCount, countRows[0]?.count ?? 0);
     if (currentCount >= RATE_LIMIT_MAX_PER_WINDOW) {
       return {
         ok: false,
@@ -138,6 +171,13 @@ export async function submitReport(
         max: RATE_LIMIT_MAX_PER_WINDOW,
         windowHours: RATE_LIMIT_WINDOW_MS / (60 * 60 * 1000),
       };
+    }
+
+    // Store'u artır (insert öncesi). KV down olursa swallow — DB INSERT yine sayım tutar.
+    try {
+      await store.increment(key, RATE_LIMIT_WINDOW_MS / 1000);
+    } catch {
+      // sessiz — fallback DB COUNT zaten devrede
     }
   }
 

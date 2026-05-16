@@ -41,6 +41,15 @@ NEXT_PUBLIC_SITE_URL = "https://petstockpro.com"
 # binding = "HYPERDRIVE"
 # id = "<hyperdrive-id-buraya>"
 
+# Cloudflare Workers KV — vitrin şikayet rate-limit (Sprint 12 ext, 2026-05-17)
+# Cloudflare Dashboard > Workers > KV → "RATE_LIMIT_KV" namespace yarat, id'yi buraya yaz
+# Workers runtime'da env.RATE_LIMIT_KV ile erişilir (factory.ts globalThis bind eder)
+# Dev'de KV yok → InMemoryRateLimitStore otomatik fallback (process restart'ta sıfırlanır)
+# DB-level COUNT yedek defense-in-depth (KV down olursa rate-limit yine çalışır)
+# [[kv_namespaces]]
+# binding = "RATE_LIMIT_KV"
+# id = "<kv-namespace-id-buraya>"
+
 # Cron Triggers — Workers Scheduled Events
 # Her satır UTC cron expression'ı (Cloudflare standart cron syntax: minute hour day month dow)
 # Aktive olduğunda: src/cf/worker-entry.ts içindeki scheduled() handler tetiklenir

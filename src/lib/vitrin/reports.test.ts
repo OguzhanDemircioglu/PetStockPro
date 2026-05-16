@@ -6,6 +6,8 @@ import {
   submitReport,
 } from './reports';
 import type { DbClient } from '@/lib/db/client';
+import { InMemoryRateLimitStore } from '@/lib/rate-limit/in-memory';
+import type { RateLimitStore } from '@/lib/rate-limit/store';
 
 const COMPANY = '00000000-0000-0000-0000-000000000001';
 const PRODUCT = '00000000-0000-0000-0000-000000000002';
@@ -146,6 +148,10 @@ describe('reportInputSchema', () => {
 });
 
 describe('submitReport', () => {
+  function freshStore(): RateLimitStore {
+    return new InMemoryRateLimitStore();
+  }
+
   it('happy — storefront report insert + remainingInWindow=4 (ilk şikayet)', async () => {
     const { db, calls } = makeMockDb({ insertedId: 'r-1' });
     const result = await submitReport(
@@ -153,6 +159,7 @@ describe('submitReport', () => {
       CTX,
       db,
       NOW,
+      { rateLimitStore: freshStore() },
     );
     expect(result).toEqual({ ok: true, id: 'r-1', remainingInWindow: 4 });
     expect(calls.inserted).toBe(1);
@@ -176,6 +183,7 @@ describe('submitReport', () => {
       CTX,
       db,
       NOW,
+      { rateLimitStore: freshStore() },
     );
     expect(calls.insertedValues?.productId).toBe(PRODUCT);
     expect(calls.insertedValues?.note).toBe(
@@ -190,6 +198,7 @@ describe('submitReport', () => {
       CTX,
       db,
       NOW,
+      { rateLimitStore: freshStore() },
     );
     expect(result).toEqual({ ok: false, reason: 'invalid_input' });
     expect(calls.inserted).toBe(0);
@@ -202,6 +211,7 @@ describe('submitReport', () => {
       CTX,
       db,
       NOW,
+      { rateLimitStore: freshStore() },
     );
     expect(result).toEqual({ ok: false, reason: 'unknown' });
   });
@@ -213,20 +223,88 @@ describe('submitReport', () => {
       {},
       db,
       NOW,
+      { rateLimitStore: freshStore() },
     );
     expect(result).toEqual({ ok: true, id: 'new-report-id', remainingInWindow: 4 });
     expect(calls.insertedValues?.reporterIpHash).toBe('unknown');
-    // IP yoksa rate-limit COUNT atlanır; alert dedup COUNT fire-and-forget +1
+    // IP yoksa rate-limit hem KV/in-memory hem DB COUNT atlanır; alert dedup COUNT fire-and-forget +1
     expect(calls.countQueries).toBe(1);
   });
 
-  it('rate_limit_exceeded — 5+ şikayet 24h içinde + meta forward (currentCount/max/windowHours)', async () => {
+  it('rate_limit_exceeded — DB COUNT 5+ + meta forward (currentCount/max/windowHours)', async () => {
     const { db, calls } = makeMockDb({ rateLimitCount: 5 });
     const result = await submitReport(
       { companyId: COMPANY, targetType: 'storefront', reason: 'spam' },
       CTX,
       db,
       NOW,
+      { rateLimitStore: freshStore() }, // KV/memory boş → DB-level reddetmeli
+    );
+    expect(result).toEqual({
+      ok: false,
+      reason: 'rate_limit_exceeded',
+      currentCount: 5,
+      max: 5,
+      windowHours: 24,
+    });
+    expect(calls.countQueries).toBe(1); // KV boş → DB COUNT (rate-limit) çağrıldı
+    expect(calls.inserted).toBe(0);
+  });
+
+  it('rate_limit_exceeded — KV/memory store doluysa DB hiç sorgulanmaz (fast path)', async () => {
+    const store = new InMemoryRateLimitStore();
+    // 5× artır → max'a ulaştır
+    for (let i = 0; i < 5; i++) {
+      await store.increment(
+        // key formatı reports.ts buildRateLimitKey ile aynı
+        `report:${COMPANY}:${''}`,
+        24 * 60 * 60,
+      );
+    }
+    // Önce hashIp ne üreteceğini bilemediğimiz için, gerçek key'i oluşturup direkt set
+    // edelim. CTX.ipAddress = '203.0.113.42', NOW = 2026-05-17, daily-salted SHA256
+    const { createHash } = await import('node:crypto');
+    const ipHash = createHash('sha256')
+      .update('203.0.113.42|2026-05-17')
+      .digest('hex');
+    const realKey = `report:${COMPANY}:${ipHash}`;
+    for (let i = 0; i < 5; i++) {
+      await store.increment(realKey, 24 * 60 * 60);
+    }
+
+    const { db, calls } = makeMockDb({ rateLimitCount: 0 });
+    const result = await submitReport(
+      { companyId: COMPANY, targetType: 'storefront', reason: 'spam' },
+      CTX,
+      db,
+      NOW,
+      { rateLimitStore: store },
+    );
+    expect(result).toEqual({
+      ok: false,
+      reason: 'rate_limit_exceeded',
+      currentCount: 5,
+      max: 5,
+      windowHours: 24,
+    });
+    expect(calls.countQueries).toBe(0); // KV katmanı doldurduğu için DB hiç sorgulanmaz
+    expect(calls.inserted).toBe(0);
+  });
+
+  it('KV store throw → DB fallback devreye girer (defense in depth)', async () => {
+    const throwingStore: RateLimitStore = {
+      source: 'kv',
+      get: vi.fn().mockRejectedValue(new Error('KV down')),
+      increment: vi.fn().mockRejectedValue(new Error('KV down')),
+    };
+    // DB 5 kayıt → DB-level reddedilmeli
+    const { db, calls } = makeMockDb({ rateLimitCount: 5 });
+    const result = await submitReport(
+      { companyId: COMPANY, targetType: 'storefront', reason: 'spam' },
+      CTX,
+      db,
+      NOW,
+      { rateLimitStore: throwingStore },
     );
     expect(result).toEqual({
       ok: false,
@@ -236,32 +314,48 @@ describe('submitReport', () => {
       windowHours: 24,
     });
     expect(calls.countQueries).toBe(1);
-    expect(calls.inserted).toBe(0); // limit aşıldıysa INSERT yok
+    expect(calls.inserted).toBe(0);
   });
 
-  it('rate-limit altında (4 kayıt) → insert geçer + remainingInWindow=0 (sonuncu kontenjan tükendi)', async () => {
+  it('rate-limit altında (DB 4 kayıt) → insert geçer + remainingInWindow=0 (sonuncu kontenjan tükendi)', async () => {
     const { db, calls } = makeMockDb({ rateLimitCount: 4 });
     const result = await submitReport(
       { companyId: COMPANY, targetType: 'storefront', reason: 'spam' },
       CTX,
       db,
       NOW,
+      { rateLimitStore: freshStore() },
     );
     expect(result).toEqual({ ok: true, id: 'new-report-id', remainingInWindow: 0 });
-    // rate-limit COUNT 1× + alert dedup COUNT 1× = 2 toplam
+    // rate-limit DB COUNT 1× + alert dedup COUNT 1× = 2 toplam
     expect(calls.countQueries).toBe(2);
     expect(calls.inserted).toBe(1);
   });
 
-  it('rate-limit altında (2 kayıt) → insert geçer + remainingInWindow=2', async () => {
+  it('rate-limit altında (DB 2 kayıt) → insert geçer + remainingInWindow=2', async () => {
     const { db } = makeMockDb({ rateLimitCount: 2 });
     const result = await submitReport(
       { companyId: COMPANY, targetType: 'storefront', reason: 'spam' },
       CTX,
       db,
       NOW,
+      { rateLimitStore: freshStore() },
     );
     expect(result).toEqual({ ok: true, id: 'new-report-id', remainingInWindow: 2 });
+  });
+
+  it('KV store içine increment yazılır (insert sonrası, izleme için)', async () => {
+    const store = new InMemoryRateLimitStore();
+    const { db } = makeMockDb({ rateLimitCount: 0 });
+    await submitReport(
+      { companyId: COMPANY, targetType: 'storefront', reason: 'spam' },
+      CTX,
+      db,
+      NOW,
+      { rateLimitStore: store },
+    );
+    // store içinde key oluşmuş olmalı
+    expect(store._size()).toBe(1);
   });
 });
 
