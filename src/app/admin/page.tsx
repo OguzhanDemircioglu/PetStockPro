@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
@@ -104,89 +105,112 @@ export default async function AdminDashboardPage() {
 
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 lg:px-6 py-8 lg:py-10">
-      {/* ============ HERO — Cat orange gradient ============ */}
+      {/* ============ HERO — Cat orange gradient + logo aside ============ */}
       <section
         data-testid="pano-hero"
-        className="relative overflow-hidden rounded-3xl px-8 py-9 text-white shadow-xl"
+        className="relative grid items-center gap-6 overflow-hidden rounded-3xl px-8 py-9 text-white shadow-xl md:grid-cols-[1fr_auto]"
         style={{
           background:
             'radial-gradient(circle at 88% 30%, rgba(255,255,255,.18), transparent 60%), linear-gradient(135deg, #d44a14 0%, #ed6a2c 55%, #d44a14 100%)',
         }}
       >
-        {/* Üst meta: greeting + admin links */}
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="text-[11px] font-bold uppercase tracking-wider opacity-85">
-            🐾 Bugün · {company?.name ?? 'Pet shop'}
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <NotificationBell unreadCount={unreadNotifications} />
-            {userIsSuperadmin && (
+        <div className="min-w-0">
+          {/* Üst meta: greeting + admin links */}
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="text-[11px] font-bold uppercase tracking-wider opacity-85">
+              🐾 Bugün · {company?.name ?? 'Pet shop'}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <NotificationBell unreadCount={unreadNotifications} />
+              {userIsSuperadmin && (
+                <Link
+                  href={'/admin/superadmin' as never}
+                  data-superadmin-link
+                  className="rounded-xl border border-white/40 bg-white/15 px-3 py-1.5 text-[11px] font-bold text-white backdrop-blur hover:bg-white hover:text-cart"
+                >
+                  🛡 Süperadmin
+                </Link>
+              )}
               <Link
-                href={'/admin/superadmin' as never}
-                data-superadmin-link
+                href={'/admin/settings' as never}
                 className="rounded-xl border border-white/40 bg-white/15 px-3 py-1.5 text-[11px] font-bold text-white backdrop-blur hover:bg-white hover:text-cart"
               >
-                🛡 Süperadmin
+                ⚙ Ayarlar
               </Link>
+            </div>
+          </div>
+
+          <h1
+            className="mt-3 text-3xl lg:text-4xl font-bold leading-tight tracking-tight"
+            data-testid="hero-title"
+          >
+            {todayQtyDisplay > 0
+              ? `${todayQtyDisplay} satış · ${Number(todayRevenueDisplay).toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺ ciro`
+              : 'Bugün hareket bekliyor'}
+          </h1>
+          <p className="mt-2 max-w-xl text-[13.5px] leading-relaxed opacity-92">
+            {stats.lowStockCount > 0 ? (
+              <>
+                <strong className="rounded-md bg-white/20 px-2 py-0.5">
+                  {stats.lowStockCount} ürün
+                </strong>{' '}
+                eşik altında — PetPro Asistanı sipariş + transfer önerilerini
+                aşağıda hazırladı.
+              </>
+            ) : (
+              <>
+                ✓ Düşük stok yok — bu hafta operasyon stabil. Pet shop
+                yönetim paneli aktif.
+              </>
             )}
+          </p>
+
+          <div className="mt-5 flex flex-wrap gap-2">
             <Link
-              href={'/admin/settings' as never}
-              className="rounded-xl border border-white/40 bg-white/15 px-3 py-1.5 text-[11px] font-bold text-white backdrop-blur hover:bg-white hover:text-cart"
+              href={'/admin/stock-movements' as never}
+              data-testid="hero-stock-in"
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-[12.5px] font-bold text-cart shadow-md hover:-translate-y-0.5 transition-transform"
             >
-              ⚙ Ayarlar
+              ＋ Hızlı stok girişi
             </Link>
+            <Link
+              href={'/admin/reports' as never}
+              className="inline-flex items-center gap-2 rounded-xl border border-white/35 bg-white/15 px-4 py-2.5 text-[12.5px] font-bold text-white backdrop-blur hover:bg-white/25"
+            >
+              Satışı detaylı gör →
+            </Link>
+          </div>
+
+          {/* Branch rail — toplam stok + şube sayısı kısa özet */}
+          <div className="mt-4 flex flex-wrap gap-1.5 text-[11px]">
+            <span className="rounded-full border border-white/30 bg-white px-3 py-1 font-bold text-cart">
+              📍 {stats.branchCount} aktif şube · {stats.totalStockQty} adet
+              stok
+            </span>
+            <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1 font-bold opacity-90">
+              🐾 {stats.totalProducts} ürün ({planLimitLabel})
+            </span>
           </div>
         </div>
 
-        <h1
-          className="mt-3 text-3xl lg:text-4xl font-bold leading-tight tracking-tight"
-          data-testid="hero-title"
+        {/* Logo aside — mockup'taki rotated white card + logo */}
+        <div
+          data-testid="hero-logo-wrap"
+          className="relative hidden h-44 w-44 place-items-center md:grid"
         >
-          {todayQtyDisplay > 0
-            ? `${todayQtyDisplay} satış · ${Number(todayRevenueDisplay).toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺ ciro`
-            : 'Bugün hareket bekliyor'}
-        </h1>
-        <p className="mt-2 max-w-xl text-[13.5px] leading-relaxed opacity-92">
-          {stats.lowStockCount > 0 ? (
-            <>
-              <strong className="rounded-md bg-white/20 px-2 py-0.5">
-                {stats.lowStockCount} ürün
-              </strong>{' '}
-              eşik altında — PetPro Asistanı sipariş + transfer önerilerini
-              aşağıda hazırladı.
-            </>
-          ) : (
-            <>
-              ✓ Düşük stok yok — bu hafta operasyon stabil. Pet shop yönetim
-              paneli aktif.
-            </>
-          )}
-        </p>
-
-        <div className="mt-5 flex flex-wrap gap-2">
-          <Link
-            href={'/admin/stock-movements' as never}
-            data-testid="hero-stock-in"
-            className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-[12.5px] font-bold text-cart shadow-md hover:-translate-y-0.5 transition-transform"
-          >
-            ＋ Hızlı stok girişi
-          </Link>
-          <Link
-            href={'/admin/reports' as never}
-            className="inline-flex items-center gap-2 rounded-xl border border-white/35 bg-white/15 px-4 py-2.5 text-[12.5px] font-bold text-white backdrop-blur hover:bg-white/25"
-          >
-            Satışı detaylı gör →
-          </Link>
-        </div>
-
-        {/* Branch rail — toplam stok + şube sayısı kısa özet */}
-        <div className="mt-4 flex flex-wrap gap-1.5 text-[11px]">
-          <span className="rounded-full border border-white/30 bg-white px-3 py-1 font-bold text-cart">
-            📍 {stats.branchCount} aktif şube · {stats.totalStockQty} adet stok
-          </span>
-          <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1 font-bold opacity-90">
-            🐾 {stats.totalProducts} ürün ({planLimitLabel})
-          </span>
+          <span
+            aria-hidden
+            className="absolute inset-0 rounded-[30px] bg-white/95 shadow-[0_14px_34px_rgba(0,0,0,.18)]"
+            style={{ transform: 'rotate(-6deg)' }}
+          />
+          <Image
+            src="/logo.png"
+            alt="PetStockPro logosu"
+            width={158}
+            height={158}
+            priority
+            className="relative z-10 h-[158px] w-[158px] object-contain"
+          />
         </div>
       </section>
 
