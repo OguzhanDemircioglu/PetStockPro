@@ -17,6 +17,7 @@ import {
   listDiscountSuggestions,
   formatMonthsOfInventory,
 } from '@/lib/assistant/discount-suggestions';
+import { getFeedbackSummary } from '@/lib/vitrin/feedback';
 import { planProductLimit, planLimitDisplay } from '@/lib/constants/plan-limits';
 
 const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
@@ -52,6 +53,7 @@ export default async function AdminDashboardPage() {
     orderSuggestions,
     transferSuggestions,
     discountSuggestions,
+    feedback,
   ] = await Promise.all([
     db
       .select({ name: companies.name, plan: companies.plan })
@@ -66,7 +68,22 @@ export default async function AdminDashboardPage() {
     listOrderSuggestions(session.user.companyId, db, 5),
     listTopTransferSuggestions(session.user.companyId, db, 5),
     listDiscountSuggestions(session.user.companyId, db, 5),
+    getFeedbackSummary(session.user.companyId, db, 30),
   ]);
+
+  const feedbackActivity =
+    feedback.totalSubmitted + feedback.totalClosedManually + feedback.totalDismissed;
+  const feedbackResponseRate =
+    feedbackActivity > 0
+      ? (feedback.totalSubmitted / feedbackActivity) * 100
+      : null;
+  const feedbackReachRate =
+    feedback.totalSubmitted > 0
+      ? ((feedback.totalSubmitted -
+          (feedback.ratingDistribution.unreached ?? 0)) /
+          feedback.totalSubmitted) *
+        100
+      : null;
 
   const company = companyRow[0];
   const rawPlanLimit = planProductLimit(company?.plan ?? 'FREE');
@@ -155,6 +172,78 @@ export default async function AdminDashboardPage() {
               <PanoNotificationItem key={n.id} item={n} />
             ))}
           </ul>
+        </section>
+      )}
+
+      {feedbackActivity > 0 && (
+        <section data-testid="pano-feedback-widget">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-ink-3">
+              💬 Vitrin geri bildirimleri · son 30g
+            </h2>
+            <Link
+              href={'/admin/settings/storefront' as never}
+              className="text-[11px] font-bold text-cat hover:underline"
+            >
+              Detay →
+            </Link>
+          </div>
+          <article className="grid gap-3 rounded-2xl border border-line bg-white p-4 sm:grid-cols-4">
+            <FeedbackKpi
+              label="Aktivite"
+              value={String(feedbackActivity)}
+              hint="submit + closed + dismissed"
+              tone="neutral"
+            />
+            <FeedbackKpi
+              label="Anket cevabı"
+              value={String(feedback.totalSubmitted)}
+              hint={
+                feedbackResponseRate !== null
+                  ? `${feedbackResponseRate.toFixed(0)}% katılım`
+                  : 'Henüz yok'
+              }
+              tone="cat"
+            />
+            <FeedbackKpi
+              label="Ortalama puan"
+              value={
+                feedback.averageRatingScore !== null
+                  ? `${feedback.averageRatingScore.toFixed(2)}/5`
+                  : '—'
+              }
+              hint={
+                feedback.averageRatingScore !== null &&
+                feedback.averageRatingScore < 3
+                  ? '⚠ İyileştirme gerek'
+                  : '5 = en iyi'
+              }
+              tone={
+                feedback.averageRatingScore !== null &&
+                feedback.averageRatingScore < 3
+                  ? 'danger'
+                  : 'arrow'
+              }
+            />
+            <FeedbackKpi
+              label="Ulaşma oranı"
+              value={
+                feedbackReachRate !== null
+                  ? `${feedbackReachRate.toFixed(0)}%`
+                  : '—'
+              }
+              hint={
+                feedbackReachRate !== null && feedbackReachRate < 80
+                  ? '⚠ Cevap hızı'
+                  : 'Anket cevaplarına göre'
+              }
+              tone={
+                feedbackReachRate !== null && feedbackReachRate < 80
+                  ? 'danger'
+                  : 'arrow'
+              }
+            />
+          </article>
         </section>
       )}
 
@@ -541,6 +630,37 @@ function KPI({
           />
         </div>
       )}
+    </article>
+  );
+}
+
+function FeedbackKpi({
+  label,
+  value,
+  hint,
+  tone,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+  tone: 'cat' | 'arrow' | 'danger' | 'neutral';
+}) {
+  const toneCls: Record<string, string> = {
+    cat: 'border-cat/30 bg-cat-soft/40',
+    arrow: 'border-arrow/30 bg-arrow-soft/40',
+    danger: 'border-danger/30 bg-danger-soft/40',
+    neutral: 'border-line bg-white',
+  };
+  return (
+    <article
+      data-feedback-kpi={label}
+      className={`flex flex-col gap-1 rounded-xl border p-3 ${toneCls[tone]}`}
+    >
+      <span className="text-[10px] font-bold uppercase tracking-wider text-ink-3">
+        {label}
+      </span>
+      <span className="font-mono text-xl font-bold text-cart">{value}</span>
+      <span className="text-[10px] text-ink-3">{hint}</span>
     </article>
   );
 }
