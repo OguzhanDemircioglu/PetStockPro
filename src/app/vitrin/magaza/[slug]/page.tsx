@@ -187,33 +187,31 @@ export default async function StorefrontProfilePage({
               <li
                 key={p.productId}
                 data-product-id={p.productId}
-                className="rounded-2xl border border-line bg-white p-4 hover:border-cat hover:shadow-sm transition-all"
+                data-product-slug={p.slug}
               >
-                <h3 className="text-sm font-bold text-cart">{p.productName}</h3>
-                {p.defaultVariantLabel && (
-                  <p className="text-[10.5px] text-ink-3">
-                    {p.defaultVariantLabel}
-                  </p>
-                )}
-                {p.defaultSalePrice && Number(p.defaultSalePrice) > 0 && (
-                  <p className="mt-2 font-mono text-base font-bold text-cart">
-                    {Number(p.defaultSalePrice).toLocaleString('tr-TR', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                    ₺
-                  </p>
-                )}
-                {whatsappUrl && (
-                  <a
-                    href={`${whatsappUrl}&text_extra=${encodeURIComponent(p.productName)}` /* hint only */}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="mt-2 block rounded-lg border border-arrow/40 px-2 py-1.5 text-center text-[10.5px] font-bold text-arrow-7 hover:bg-arrow-soft"
-                  >
-                    💬 Bu ürünü sor
-                  </a>
-                )}
+                <Link
+                  href={`/vitrin/magaza/${sf.slug}/urun/${p.slug}` as never}
+                  className="flex h-full flex-col rounded-2xl border border-line bg-white p-4 hover:border-cat hover:shadow-md transition-all"
+                >
+                  <h3 className="text-sm font-bold text-cart">{p.productName}</h3>
+                  {p.defaultVariantLabel && (
+                    <p className="text-[10.5px] text-ink-3">
+                      {p.defaultVariantLabel}
+                    </p>
+                  )}
+                  {p.defaultSalePrice && Number(p.defaultSalePrice) > 0 && (
+                    <p className="mt-2 font-mono text-base font-bold text-cart">
+                      {Number(p.defaultSalePrice).toLocaleString('tr-TR', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                      ₺
+                    </p>
+                  )}
+                  <span className="mt-auto pt-2 text-[10.5px] font-bold text-cat">
+                    Detayı gör →
+                  </span>
+                </Link>
               </li>
             ))}
           </ul>

@@ -19,12 +19,15 @@ import { and, asc, eq, ilike, or, sql } from 'drizzle-orm';
 import type { DbClient } from '@/lib/db/client';
 import {
   branches,
+  brands,
+  categories,
   cities,
   companies,
   districts,
   productVariants,
   products,
   storefrontSettings,
+  branchInventory,
 } from '@/db/schema';
 
 export interface StorefrontListItem {
@@ -79,6 +82,26 @@ export interface StorefrontProduct {
   slug: string;
   defaultSalePrice: string | null;
   defaultVariantLabel: string | null;
+}
+
+export interface StorefrontProductDetail {
+  productId: string;
+  productName: string;
+  slug: string;
+  description: string | null;
+  companyId: string;
+  companySlug: string;
+  companyName: string;
+  categoryName: string | null;
+  brandName: string | null;
+  variants: Array<{
+    variantId: string;
+    valueLabel: string;
+    sku: string;
+    salePrice: string;
+    isDefault: boolean;
+    inStock: boolean;
+  }>;
 }
 
 const MAX_LIMIT = 60;
@@ -281,6 +304,111 @@ export async function listStorefrontProducts(
     .limit(Math.min(limit, 120));
 
   return rows;
+}
+
+/**
+ * Pet shop'un belirli bir ürününün vitrin detayı.
+ *
+ * Visibility: companies.storefront_status='approved' AND
+ *             storefront_settings.is_enabled=true AND
+ *             products.vitrin_published=true AND products.deleted_at IS NULL.
+ *
+ * @returns Detay objesi veya null (yoksa / gizliyse).
+ */
+export async function getStorefrontProductDetail(
+  companySlug: string,
+  productSlug: string,
+  db: DbClient,
+): Promise<StorefrontProductDetail | null> {
+  // Header query — ürün + şirket + kategori + marka
+  const headerRows = await db
+    .select({
+      productId: products.id,
+      productName: products.name,
+      productSlug: products.slug,
+      description: products.description,
+      companyId: companies.id,
+      companySlug: companies.slug,
+      companyName: companies.name,
+      companyStorefrontStatus: companies.storefrontStatus,
+      isEnabled: storefrontSettings.isEnabled,
+      vitrinPublished: products.vitrinPublished,
+      deletedAt: products.deletedAt,
+      categoryName: categories.name,
+      brandName: brands.name,
+    })
+    .from(products)
+    .innerJoin(companies, eq(companies.id, products.companyId))
+    .innerJoin(storefrontSettings, eq(storefrontSettings.companyId, companies.id))
+    .leftJoin(categories, eq(categories.id, products.categoryId))
+    .leftJoin(brands, eq(brands.id, products.brandId))
+    .where(
+      and(
+        eq(companies.slug, companySlug),
+        eq(products.slug, productSlug),
+      ),
+    )
+    .limit(1);
+
+  const head = headerRows[0];
+  if (!head) return null;
+  if (head.companyStorefrontStatus !== 'approved') return null;
+  if (!head.isEnabled) return null;
+  if (!head.vitrinPublished) return null;
+  if (head.deletedAt) return null;
+
+  // Variant'lar — GROUP BY ile aggregate (Drizzle subquery alias çakışmasını
+  // önlemek için LEFT JOIN + SUM pattern).
+  const variantRows = await db
+    .select({
+      variantId: productVariants.id,
+      valueLabel: productVariants.valueLabel,
+      sku: productVariants.sku,
+      salePrice: productVariants.salePrice,
+      isDefault: productVariants.isDefault,
+      displayOrder: productVariants.displayOrder,
+      totalStock: sql<number>`COALESCE(SUM(${branchInventory.stockQty}), 0)::int`,
+    })
+    .from(productVariants)
+    .leftJoin(
+      branchInventory,
+      eq(branchInventory.variantId, productVariants.id),
+    )
+    .where(
+      and(
+        eq(productVariants.productId, head.productId),
+        eq(productVariants.isActive, true),
+      ),
+    )
+    .groupBy(
+      productVariants.id,
+      productVariants.valueLabel,
+      productVariants.sku,
+      productVariants.salePrice,
+      productVariants.isDefault,
+      productVariants.displayOrder,
+    )
+    .orderBy(asc(productVariants.displayOrder), asc(productVariants.valueLabel));
+
+  return {
+    productId: head.productId,
+    productName: head.productName,
+    slug: head.productSlug,
+    description: head.description,
+    companyId: head.companyId,
+    companySlug: head.companySlug,
+    companyName: head.companyName,
+    categoryName: head.categoryName,
+    brandName: head.brandName,
+    variants: variantRows.map((v) => ({
+      variantId: v.variantId,
+      valueLabel: v.valueLabel,
+      sku: v.sku,
+      salePrice: v.salePrice,
+      isDefault: v.isDefault,
+      inStock: v.totalStock > 0,
+    })),
+  };
 }
 
 /**
