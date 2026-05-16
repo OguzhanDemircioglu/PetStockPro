@@ -17,6 +17,11 @@ import {
   activityTotals,
   type ActivityCountRow,
 } from '@/lib/reports/activity';
+import {
+  getInventoryValueSummary,
+  getInventoryValueByCategory,
+  getTopInventoryValueVariants,
+} from '@/lib/reports/inventory-value';
 
 const RANGE_OPTIONS = [7, 30, 90];
 
@@ -32,16 +37,29 @@ export default async function ReportsPage({
   const daysRaw = params.days ? parseInt(params.days, 10) : 30;
   const days = RANGE_OPTIONS.includes(daysRaw) ? daysRaw : 30;
 
-  const [summary, daily, topVariants, stocktakeHistory, stocktakeSummary, activityActions, activityStats] =
-    await Promise.all([
-      periodSummary(session.user.companyId, db, days),
-      dailySalesSummary(session.user.companyId, db, days),
-      topSellingVariants(session.user.companyId, db, days, 10),
-      listStocktakeHistory(session.user.companyId, db, days, 10),
-      stocktakeHistorySummary(session.user.companyId, db, days),
-      activityCountByAction(session.user.companyId, db, days, 10),
-      activityTotals(session.user.companyId, db, days),
-    ]);
+  const [
+    summary,
+    daily,
+    topVariants,
+    stocktakeHistory,
+    stocktakeSummary,
+    activityActions,
+    activityStats,
+    invSummary,
+    invByCategory,
+    invTopVariants,
+  ] = await Promise.all([
+    periodSummary(session.user.companyId, db, days),
+    dailySalesSummary(session.user.companyId, db, days),
+    topSellingVariants(session.user.companyId, db, days, 10),
+    listStocktakeHistory(session.user.companyId, db, days, 10),
+    stocktakeHistorySummary(session.user.companyId, db, days),
+    activityCountByAction(session.user.companyId, db, days, 10),
+    activityTotals(session.user.companyId, db, days),
+    getInventoryValueSummary(session.user.companyId, db),
+    getInventoryValueByCategory(session.user.companyId, db, 8),
+    getTopInventoryValueVariants(session.user.companyId, db, 10),
+  ]);
 
   // Maks qty bul, bar grafik için ölçek
   const maxDailyQty = daily.reduce((m, r) => Math.max(m, r.qty), 0);
@@ -260,6 +278,115 @@ export default async function ReportsPage({
             </ul>
           )}
         </Card>
+      </section>
+
+      <section data-testid="inventory-value">
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
+          💎 Stok değer raporu (anlık)
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <KPI
+            title="Toplam değer (cost)"
+            value={`${Number(invSummary.totalValueCost || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 })}₺`}
+            emoji="💎"
+            accent="arrow"
+          />
+          <KPI
+            title="Toplam stok"
+            value={invSummary.totalQty}
+            emoji="📦"
+          />
+          <KPI
+            title="Aktif variant"
+            value={invSummary.variantCount}
+            emoji="🏷"
+          />
+          <KPI
+            title="Maliyet eksik"
+            value={invSummary.missingCostCount}
+            emoji={invSummary.missingCostCount > 0 ? '⚠' : '✓'}
+            accent={invSummary.missingCostCount > 0 ? 'cat' : 'arrow'}
+          />
+        </div>
+
+        {invSummary.missingCostCount > 0 && (
+          <div
+            role="alert"
+            className="mt-3 rounded-xl border border-danger/30 bg-danger-soft px-4 py-2.5 text-[12px] text-danger-7"
+          >
+            ⚠ {invSummary.missingCostCount} variant&apos;ın <code>cost_price</code>{' '}
+            tanımlı değil. Bu variantlar değer hesabına dahil edilmedi —
+            <Link href={'/admin/products' as never} className="ml-1 font-bold underline">
+              Ürünler sayfasından düzelt
+            </Link>
+            .
+          </div>
+        )}
+
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <Card title="Kategori bazında en yüksek değer">
+            {invByCategory.length === 0 ? (
+              <p className="rounded-lg bg-line-soft px-3 py-4 text-center text-xs text-ink-3">
+                Aktif stok yok.
+              </p>
+            ) : (
+              <ul className="divide-y divide-line-soft text-xs">
+                {invByCategory.map((c) => (
+                  <li
+                    key={c.categoryId ?? c.categoryName}
+                    className="flex items-center justify-between gap-3 py-2"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-bold text-ink">
+                        {c.categoryEmoji ?? '📂'} {c.categoryName}
+                      </div>
+                      <div className="text-[10.5px] text-ink-3">
+                        {c.productCount} ürün · {c.totalQty} adet
+                      </div>
+                    </div>
+                    <div className="text-right font-mono text-sm font-bold text-arrow-7">
+                      {Number(c.totalValueCost || 0).toLocaleString('tr-TR', {
+                        maximumFractionDigits: 2,
+                      })}₺
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+          <Card title="En değerli variantlar (top 10)">
+            {invTopVariants.length === 0 ? (
+              <p className="rounded-lg bg-line-soft px-3 py-4 text-center text-xs text-ink-3">
+                Aktif variant yok.
+              </p>
+            ) : (
+              <ul className="divide-y divide-line-soft text-xs">
+                {invTopVariants.map((v) => (
+                  <li key={v.variantId} className="flex items-center gap-3 py-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-bold text-ink">
+                        {v.productName}{' '}
+                        {v.variantLabel && (
+                          <span className="text-[10px] font-normal text-ink-3">
+                            · {v.variantLabel}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[10.5px] text-ink-3">
+                        {v.totalQty} adet × {v.unitCost ?? '?'}₺
+                      </div>
+                    </div>
+                    <div className="text-right font-mono text-sm font-bold text-arrow-7">
+                      {Number(v.totalValueCost || 0).toLocaleString('tr-TR', {
+                        maximumFractionDigits: 2,
+                      })}₺
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+        </div>
       </section>
 
       <Link
