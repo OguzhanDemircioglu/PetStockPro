@@ -31,6 +31,11 @@ import {
   getPeriodComparison,
   formatChangePct,
 } from '@/lib/reports/period-comparison';
+import {
+  listOpenCredits,
+  getOpenCreditsSummary,
+} from '@/lib/reports/open-credits';
+import { SettleCreditButton } from './settle-credit-button';
 
 const RANGE_OPTIONS = [7, 30, 90];
 
@@ -62,6 +67,8 @@ export default async function ReportsPage({
     hourly,
     cmpWeek,
     cmpMonth,
+    openCredits,
+    openCreditsSummary,
   ] = await Promise.all([
     periodSummary(session.user.companyId, db, days),
     dailySalesSummary(session.user.companyId, db, days),
@@ -78,6 +85,8 @@ export default async function ReportsPage({
     busiestHours(session.user.companyId, db, days),
     getPeriodComparison(session.user.companyId, db, 'week'),
     getPeriodComparison(session.user.companyId, db, 'month'),
+    listOpenCredits(session.user.companyId, db, { limit: 50 }),
+    getOpenCreditsSummary(session.user.companyId, db),
   ]);
 
   // Maks qty bul, bar grafik için ölçek
@@ -508,6 +517,64 @@ export default async function ReportsPage({
         </div>
       </section>
 
+      <section data-testid="open-credits">
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
+          💳 Açık krediler (veresiye — tüm zaman)
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <KPI
+            title="Toplam açık"
+            value={openCreditsSummary.totalCount}
+            emoji="💳"
+            accent={openCreditsSummary.totalCount > 0 ? 'cat' : 'arrow'}
+          />
+          <KPI
+            title="Toplam tutar"
+            value={`${formatTRY(openCreditsSummary.totalAmount)}`}
+            emoji="💰"
+            accent={openCreditsSummary.totalCount > 0 ? 'cat' : 'arrow'}
+          />
+          <KPI
+            title="En eski"
+            value={
+              openCreditsSummary.oldestDays === 0 && openCreditsSummary.totalCount === 0
+                ? '—'
+                : `${openCreditsSummary.oldestDays} gün`
+            }
+            emoji="⏳"
+            accent={openCreditsSummary.oldestDays >= 61 ? 'cat' : 'arrow'}
+          />
+        </div>
+
+        <Card title="Yaş analizi" className="mt-4">
+          <ul
+            className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4"
+            data-testid="open-credits-bands"
+          >
+            {openCreditsSummary.byBand.map((b) => (
+              <AgingBandCard key={b.label} band={b} />
+            ))}
+          </ul>
+        </Card>
+
+        <Card title={`Açık kredi listesi (${openCredits.length} kayıt)`} className="mt-4">
+          {openCredits.length === 0 ? (
+            <p className="rounded-lg bg-arrow-soft/40 px-3 py-4 text-center text-xs text-arrow-7">
+              ✓ Açık veresiye yok — tüm krediler tahsil edildi.
+            </p>
+          ) : (
+            <ul
+              className="divide-y divide-line-soft text-xs"
+              data-testid="open-credits-list"
+            >
+              {openCredits.map((row) => (
+                <OpenCreditRow key={row.movementId} item={row} />
+              ))}
+            </ul>
+          )}
+        </Card>
+      </section>
+
       <Link
         href={'/admin' as never}
         className="text-center text-xs text-ink-4 hover:text-cart"
@@ -515,6 +582,85 @@ export default async function ReportsPage({
         ← Pano&apos;ya dön
       </Link>
     </main>
+  );
+}
+
+function AgingBandCard({
+  band,
+}: {
+  band: import('@/lib/reports/open-credits').AgingBand;
+}) {
+  const danger = band.label === '60+' && band.count > 0;
+  return (
+    <li
+      data-band={band.label}
+      className={`flex flex-col gap-1 rounded-xl border px-3 py-3 ${
+        danger
+          ? 'border-danger/30 bg-danger-soft/40'
+          : band.count > 0
+            ? 'border-cat/30 bg-cat-soft/40'
+            : 'border-line bg-white'
+      }`}
+    >
+      <span className="text-[10px] font-bold uppercase tracking-wider text-ink-3">
+        {band.label} gün
+      </span>
+      <span className="font-mono text-base font-bold text-cart">
+        {band.count} kayıt
+      </span>
+      <span className="font-mono text-[11px] text-ink-3">
+        {formatTRY(band.amount)}
+      </span>
+    </li>
+  );
+}
+
+function OpenCreditRow({
+  item,
+}: {
+  item: import('@/lib/reports/open-credits').OpenCreditRow;
+}) {
+  const danger = item.daysOpen >= 61;
+  const mid = item.daysOpen >= 31 && item.daysOpen < 61;
+  return (
+    <li
+      data-movement-id={item.movementId}
+      className="grid grid-cols-[1fr_auto_auto] items-center gap-3 py-2"
+    >
+      <div className="min-w-0">
+        <div className="truncate font-bold text-ink">
+          {item.customerRef ?? '— anonim —'}
+        </div>
+        <div className="text-[10.5px] text-ink-3">
+          {item.productName}
+          {item.variantLabel ? ` · ${item.variantLabel}` : ''} · {item.quantity} ad ·{' '}
+          {item.branchName}
+        </div>
+        <div className="text-[10px] text-ink-4">
+          {new Date(item.createdAt).toLocaleDateString('tr-TR', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+          })}{' '}
+          ·{' '}
+          <span
+            className={
+              danger
+                ? 'font-bold text-danger-7'
+                : mid
+                  ? 'font-bold text-cat'
+                  : 'text-ink-3'
+            }
+          >
+            {item.daysOpen} gün
+          </span>
+        </div>
+      </div>
+      <div className="font-mono text-sm font-bold text-cart" data-amount={item.amount}>
+        {formatTRY(item.amount)}
+      </div>
+      <SettleCreditButton movementId={item.movementId} />
+    </li>
   );
 }
 

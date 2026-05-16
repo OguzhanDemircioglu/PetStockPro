@@ -37,6 +37,7 @@ const ACTION_LABELS: Record<string, { label: string; cls: string }> = {
   'category.deleted': { label: '🗑 Kategori silindi', cls: 'bg-danger-soft text-danger-7' },
   'company.updated': { label: '⚙ Firma güncellendi', cls: 'bg-line-soft text-ink-2' },
   'company.vat_no_set': { label: '⚙ Vergi no atandı', cls: 'bg-arrow-soft text-arrow-7' },
+  'sale.credit_settled': { label: '💳 Kredi kapatıldı', cls: 'bg-arrow-soft text-arrow-7' },
 };
 
 const ACTION_GROUPS: { value: string; label: string }[] = [
@@ -56,6 +57,7 @@ const ACTION_GROUPS: { value: string; label: string }[] = [
   { value: 'supplier.created', label: '🏢 Tedarikçi eklendi' },
   { value: 'branch.created', label: '🏪 Şube eklendi' },
   { value: 'company.updated', label: '⚙ Firma güncellendi' },
+  { value: 'sale.credit_settled', label: '💳 Kredi kapatıldı' },
 ];
 
 export default async function AuditLogPage({
