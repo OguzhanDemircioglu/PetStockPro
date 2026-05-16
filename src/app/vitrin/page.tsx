@@ -3,8 +3,12 @@ import { headers } from 'next/headers';
 import { db } from '@/lib/db/client';
 import {
   buildWhatsappLink,
+  countPublicStorefronts,
   listPublicStorefronts,
+  parseSortParam,
+  STOREFRONT_SORTS,
   type ListStorefrontsFilters,
+  type StorefrontSort,
 } from '@/lib/vitrin/public';
 import { cities as citiesTable } from '@/db/schema';
 import { trackVitrinEventAsync } from '@/lib/vitrin/track';
@@ -22,9 +26,15 @@ interface SearchParams {
   city?: string;
   q?: string;
   page?: string;
+  sort?: string;
 }
 
 const PAGE_SIZE = 24;
+const SORT_LABEL: Record<StorefrontSort, string> = {
+  name_asc: 'A — Z',
+  recent: 'En son aktif',
+  products_desc: 'Ürün sayısı (çoktan aza)',
+};
 
 export default async function VitrinHomePage({
   searchParams,
@@ -42,17 +52,39 @@ export default async function VitrinHomePage({
   if (params.q && params.q.trim().length > 0) {
     filters.q = params.q.trim().slice(0, 100);
   }
+  const sort = parseSortParam(params.sort);
+  filters.sort = sort;
   const page = Math.max(1, Number.parseInt(params.page ?? '1', 10) || 1);
   filters.limit = PAGE_SIZE;
   filters.offset = (page - 1) * PAGE_SIZE;
 
-  const [storefronts, cityList] = await Promise.all([
+  const [storefronts, cityList, totalCount] = await Promise.all([
     listPublicStorefronts(db, filters),
     db
       .select({ id: citiesTable.id, name: citiesTable.name })
       .from(citiesTable)
       .orderBy(asc(citiesTable.name)),
+    countPublicStorefronts(db, {
+      cityId: filters.cityId,
+      districtId: filters.districtId,
+      q: filters.q,
+    }),
   ]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const isLastPage = page >= totalPages;
+  const isFirstPage = page <= 1;
+
+  // URL query helper — filtre + sort'u koruyarak page değiştir
+  function buildPageUrl(p: number): string {
+    const qs = new URLSearchParams();
+    if (filters.cityId) qs.set('city', String(filters.cityId));
+    if (filters.q) qs.set('q', filters.q);
+    if (sort !== 'name_asc') qs.set('sort', sort);
+    if (p > 1) qs.set('page', String(p));
+    const str = qs.toString();
+    return str ? `/vitrin?${str}` : '/vitrin';
+  }
 
   // KVKK uyumlu anonim home_view tracking (IP hash daily-salted)
   const hdrs = await headers();
@@ -134,13 +166,34 @@ export default async function VitrinHomePage({
               className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
             />
           </div>
+          <div className="min-w-[180px]">
+            <label
+              htmlFor="sort"
+              className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+            >
+              Sıralama
+            </label>
+            <select
+              id="sort"
+              name="sort"
+              defaultValue={sort}
+              data-testid="vitrin-sort"
+              className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            >
+              {STOREFRONT_SORTS.map((s) => (
+                <option key={s} value={s}>
+                  {SORT_LABEL[s]}
+                </option>
+              ))}
+            </select>
+          </div>
           <button
             type="submit"
             className="rounded-xl bg-cat px-5 py-2.5 text-sm font-bold text-white shadow-sm"
           >
             🔍 Filtrele
           </button>
-          {(filters.cityId || filters.q) && (
+          {(filters.cityId || filters.q || sort !== 'name_asc') && (
             <Link
               href={'/vitrin' as never}
               className="rounded-xl border border-line bg-white px-3 py-2.5 text-xs font-bold text-ink-3 hover:bg-line-soft"
@@ -153,13 +206,18 @@ export default async function VitrinHomePage({
       </section>
 
       <section data-testid="vitrin-results">
-        <div className="mb-4 flex items-baseline justify-between">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-ink-3">
-            {storefronts.length > 0
-              ? `${storefronts.length} pet shop`
+        <div className="mb-4 flex items-baseline justify-between gap-2">
+          <h2
+            className="text-sm font-bold uppercase tracking-wider text-ink-3"
+            data-testid="vitrin-result-count"
+          >
+            {totalCount > 0
+              ? page > totalPages
+                ? `${totalCount} pet shop · sayfa boş`
+                : `${totalCount} pet shop · sayfa ${page} / ${totalPages}`
               : 'Sonuç yok'}
           </h2>
-          {(filters.cityId || filters.q) && (
+          {(filters.cityId || filters.q || sort !== 'name_asc') && (
             <span className="text-[11.5px] text-ink-3" data-testid="vitrin-filter-summary">
               {filters.q && <span>Arama: <strong>{filters.q}</strong></span>}
               {filters.cityId && filters.q && <span> · </span>}
@@ -171,6 +229,12 @@ export default async function VitrinHomePage({
                   </strong>
                 </span>
               )}
+              {sort !== 'name_asc' && (
+                <span>
+                  {(filters.cityId || filters.q) && ' · '}Sıra:{' '}
+                  <strong>{SORT_LABEL[sort]}</strong>
+                </span>
+              )}
             </span>
           )}
         </div>
@@ -179,17 +243,26 @@ export default async function VitrinHomePage({
           <div className="rounded-2xl border-2 border-dashed border-line bg-white py-16 text-center">
             <div className="text-6xl">🔎</div>
             <h2 className="mt-4 text-xl font-bold text-cart">
-              Bu filtre için pet shop bulamadık
+              {page > totalPages && totalCount > 0
+                ? 'Bu sayfa boş'
+                : 'Bu filtre için pet shop bulamadık'}
             </h2>
             <p className="mt-2 text-sm text-ink-3">
-              Filtreyi temizleyerek tüm pet shop&apos;ları gör veya farklı bir
-              arama dene.
+              {page > totalPages && totalCount > 0
+                ? `Toplam ${totalPages} sayfa var, ilk sayfaya dön.`
+                : "Filtreyi temizleyerek tüm pet shop'ları gör veya farklı bir arama dene."}
             </p>
             <Link
-              href={'/vitrin' as never}
+              href={
+                (page > totalPages && totalCount > 0
+                  ? buildPageUrl(1)
+                  : '/vitrin') as never
+              }
               className="mt-4 inline-block rounded-xl bg-cat px-4 py-2 text-sm font-bold text-white"
             >
-              Tümünü gör
+              {page > totalPages && totalCount > 0
+                ? 'İlk sayfaya dön'
+                : 'Tümünü gör'}
             </Link>
           </div>
         ) : (
@@ -252,21 +325,55 @@ export default async function VitrinHomePage({
           </ul>
         )}
 
-        {storefronts.length === PAGE_SIZE && (
-          <div className="mt-6 flex justify-center">
-            <Link
-              href={
-                `/vitrin?${new URLSearchParams({
-                  ...(filters.cityId ? { city: String(filters.cityId) } : {}),
-                  ...(filters.q ? { q: filters.q } : {}),
-                  page: String(page + 1),
-                }).toString()}` as never
-              }
-              className="rounded-xl border border-line bg-white px-5 py-2 text-sm font-bold text-cart hover:bg-cat-soft"
+        {totalPages > 1 && storefronts.length > 0 && (
+          <nav
+            className="mt-6 flex items-center justify-center gap-2"
+            data-testid="vitrin-pagination"
+            aria-label="Sayfalama"
+          >
+            {!isFirstPage ? (
+              <Link
+                href={buildPageUrl(page - 1) as never}
+                className="rounded-xl border border-line bg-white px-4 py-2 text-sm font-bold text-cart hover:bg-cat-soft"
+                data-testid="vitrin-prev"
+                aria-label="Önceki sayfa"
+              >
+                ← Önceki
+              </Link>
+            ) : (
+              <span
+                aria-disabled="true"
+                className="rounded-xl border border-line bg-line-soft px-4 py-2 text-sm font-bold text-ink-4 cursor-not-allowed"
+              >
+                ← Önceki
+              </span>
+            )}
+
+            <span
+              className="rounded-xl bg-cat-soft px-4 py-2 text-sm font-bold text-cart"
+              data-testid="vitrin-page-indicator"
             >
-              Sonraki sayfa →
-            </Link>
-          </div>
+              {page} / {totalPages}
+            </span>
+
+            {!isLastPage ? (
+              <Link
+                href={buildPageUrl(page + 1) as never}
+                className="rounded-xl border border-line bg-white px-4 py-2 text-sm font-bold text-cart hover:bg-cat-soft"
+                data-testid="vitrin-next"
+                aria-label="Sonraki sayfa"
+              >
+                Sonraki →
+              </Link>
+            ) : (
+              <span
+                aria-disabled="true"
+                className="rounded-xl border border-line bg-line-soft px-4 py-2 text-sm font-bold text-ink-4 cursor-not-allowed"
+              >
+                Sonraki →
+              </span>
+            )}
+          </nav>
         )}
       </section>
     </main>

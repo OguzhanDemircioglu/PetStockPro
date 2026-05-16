@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { buildWhatsappLink } from './public';
+import {
+  buildWhatsappLink,
+  parseSortParam,
+  STOREFRONT_SORTS,
+} from './public';
 
 describe('buildWhatsappLink', () => {
   it('null/undefined → null', () => {
@@ -43,5 +47,36 @@ describe('buildWhatsappLink', () => {
 
   it('sadece harf → null', () => {
     expect(buildWhatsappLink('abc')).toBeNull();
+  });
+});
+
+describe('parseSortParam', () => {
+  it('null/undefined → name_asc default', () => {
+    expect(parseSortParam(null)).toBe('name_asc');
+    expect(parseSortParam(undefined)).toBe('name_asc');
+    expect(parseSortParam('')).toBe('name_asc');
+  });
+
+  it('geçerli sort değerleri kabul edilir', () => {
+    expect(parseSortParam('name_asc')).toBe('name_asc');
+    expect(parseSortParam('recent')).toBe('recent');
+    expect(parseSortParam('products_desc')).toBe('products_desc');
+  });
+
+  it('bilinmeyen değer → name_asc fallback', () => {
+    expect(parseSortParam('price_asc')).toBe('name_asc');
+    expect(parseSortParam('random')).toBe('name_asc');
+    expect(parseSortParam('NAME_ASC')).toBe('name_asc'); // case-sensitive
+  });
+
+  it('STOREFRONT_SORTS exhaustive — 3 değer', () => {
+    expect(STOREFRONT_SORTS).toEqual(['name_asc', 'recent', 'products_desc']);
+    expect(STOREFRONT_SORTS).toHaveLength(3);
+  });
+
+  it('STOREFRONT_SORTS değerleri parseSortParam ile uyumlu', () => {
+    for (const s of STOREFRONT_SORTS) {
+      expect(parseSortParam(s)).toBe(s);
+    }
   });
 });

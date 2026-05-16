@@ -15,7 +15,7 @@
  * Detay tasarım: EKRAN-PUBLIC-VITRIN.md (Sahibinden modeli, eşit görünüm).
  */
 
-import { and, asc, eq, ilike, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import type { DbClient } from '@/lib/db/client';
 import {
   branches,
@@ -44,12 +44,34 @@ export interface StorefrontListItem {
   branchCount: number;
 }
 
+export type StorefrontSort = 'name_asc' | 'recent' | 'products_desc';
+
+export const STOREFRONT_SORTS: readonly StorefrontSort[] = [
+  'name_asc',
+  'recent',
+  'products_desc',
+];
+
+/**
+ * URL query'sinden gelen string'i güvenli StorefrontSort'a normalize et.
+ * Bilinmeyen / eksik değer → 'name_asc' (varsayılan).
+ */
+export function parseSortParam(
+  input: string | null | undefined,
+): StorefrontSort {
+  if (!input) return 'name_asc';
+  return (STOREFRONT_SORTS as readonly string[]).includes(input)
+    ? (input as StorefrontSort)
+    : 'name_asc';
+}
+
 export interface ListStorefrontsFilters {
   cityId?: number;
   districtId?: string;
   q?: string;
   limit?: number;
   offset?: number;
+  sort?: StorefrontSort;
 }
 
 export interface StorefrontDetail {
@@ -141,8 +163,19 @@ export async function listPublicStorefronts(
 
   const limit = Math.min(filters.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
   const offset = Math.max(0, filters.offset ?? 0);
+  const sort: StorefrontSort = filters.sort ?? 'name_asc';
 
-  const rows = await db
+  // productCount subquery — sort 'products_desc' için reuse edilebilmesi için sql template
+  const productCountExpr = sql<number>`
+    COALESCE((
+      SELECT COUNT(*)::int FROM ${products}
+      WHERE ${products.companyId} = ${companies.id}
+        AND ${products.vitrinPublished} = true
+        AND ${products.deletedAt} IS NULL
+    ), 0)
+  `;
+
+  const baseQuery = db
     .select({
       companyId: companies.id,
       slug: companies.slug,
@@ -153,14 +186,7 @@ export async function listPublicStorefronts(
       districtName: districts.name,
       whatsappPhone: companies.whatsappPhone,
       aboutContent: storefrontSettings.aboutContent,
-      productCount: sql<number>`
-        COALESCE((
-          SELECT COUNT(*)::int FROM ${products}
-          WHERE ${products.companyId} = ${companies.id}
-            AND ${products.vitrinPublished} = true
-            AND ${products.deletedAt} IS NULL
-        ), 0)
-      `,
+      productCount: productCountExpr,
       branchCount: sql<number>`
         COALESCE((
           SELECT COUNT(*)::int FROM ${branches}
@@ -173,10 +199,31 @@ export async function listPublicStorefronts(
     .innerJoin(companies, eq(companies.id, storefrontSettings.companyId))
     .leftJoin(cities, eq(cities.id, companies.cityId))
     .leftJoin(districts, eq(districts.id, companies.districtId))
-    .where(and(...conditions))
-    .orderBy(asc(companies.name))
-    .limit(limit)
-    .offset(offset);
+    .where(and(...conditions));
+
+  let ordered;
+  if (sort === 'recent') {
+    ordered = baseQuery.orderBy(
+      desc(storefrontSettings.updatedAt),
+      asc(companies.name),
+    );
+  } else if (sort === 'products_desc') {
+    // productCount subquery'yi ORDER BY içinde tekrar yaz — Drizzle alias'ı
+    // ORDER BY içinde reuse etmeyi desteklemiyor, raw sql kullan
+    ordered = baseQuery.orderBy(
+      sql`(
+        SELECT COUNT(*)::int FROM ${products}
+        WHERE ${products.companyId} = ${companies.id}
+          AND ${products.vitrinPublished} = true
+          AND ${products.deletedAt} IS NULL
+      ) DESC`,
+      asc(companies.name),
+    );
+  } else {
+    ordered = baseQuery.orderBy(asc(companies.name));
+  }
+
+  const rows = await ordered.limit(limit).offset(offset);
 
   return rows.map((r) => ({
     companyId: r.companyId,
@@ -195,6 +242,44 @@ export async function listPublicStorefronts(
     productCount: r.productCount,
     branchCount: r.branchCount,
   }));
+}
+
+/**
+ * Aynı filtrelerle toplam tenant sayısı — pagination için.
+ *
+ * `listPublicStorefronts` ile aynı koşulları kullanır, sort/limit/offset YOK.
+ */
+export async function countPublicStorefronts(
+  db: DbClient,
+  filters: Pick<ListStorefrontsFilters, 'cityId' | 'districtId' | 'q'> = {},
+): Promise<number> {
+  const conditions = [
+    eq(storefrontSettings.isEnabled, true),
+    eq(companies.storefrontStatus, 'approved'),
+  ];
+  if (filters.cityId) {
+    conditions.push(eq(companies.cityId, filters.cityId));
+  }
+  if (filters.districtId) {
+    conditions.push(eq(companies.districtId, filters.districtId));
+  }
+  if (filters.q && filters.q.trim().length > 0) {
+    const pattern = `%${filters.q.trim()}%`;
+    conditions.push(
+      or(
+        ilike(companies.name, pattern),
+        ilike(storefrontSettings.aboutContent, pattern),
+      )!,
+    );
+  }
+
+  const rows = await db
+    .select({ total: sql<number>`COUNT(*)::int` })
+    .from(storefrontSettings)
+    .innerJoin(companies, eq(companies.id, storefrontSettings.companyId))
+    .where(and(...conditions));
+
+  return rows[0]?.total ?? 0;
 }
 
 /**
