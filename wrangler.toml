@@ -50,14 +50,24 @@ NEXT_PUBLIC_SITE_URL = "https://petstockpro.com"
 # binding = "RATE_LIMIT_KV"
 # id = "<kv-namespace-id-buraya>"
 
+# Cloudflare R2 — sitemap.xml pre-build cache (Sprint 12 ext, 2026-05-17)
+# Cloudflare Dashboard > R2 → bucket yarat (örn "petstockpro-sitemap"), name'i buraya yaz
+# Workers runtime'da env.SITEMAP_R2 ile erişilir (sitemap-cache.ts globalThis bind eder)
+# Dev'de R2 yok → InMemorySitemapCacheStore otomatik fallback (process restart'ta sıfırlanır)
+# /sitemap.xml route cache miss → dynamic SSR fallback (kayıp yok, sadece yavaşlar)
+# [[r2_buckets]]
+# binding = "SITEMAP_R2"
+# bucket_name = "<r2-bucket-name-buraya>"
+
 # Cron Triggers — Workers Scheduled Events
 # Her satır UTC cron expression'ı (Cloudflare standart cron syntax: minute hour day month dow)
 # Aktive olduğunda: src/cf/worker-entry.ts içindeki scheduled() handler tetiklenir
 #
-# 0 6 * * * → her gün UTC 06:00 = TR saatiyle 09:00 (yaz/kış değişmez, Workers UTC bazlı)
-# Hedef: /api/cron/daily-summary endpoint (vitrin şikayet 24 saatlik özet → süperadmin Telegram)
+# 0 3 * * * → her gün UTC 03:00 = TR saatiyle 06:00 (sitemap pre-build — düşük trafik saati)
+# 0 6 * * * → her gün UTC 06:00 = TR saatiyle 09:00 (vitrin şikayet 24 saatlik özet)
 [triggers]
 crons = [
+  "0 3 * * *",  # sitemap pre-build (R2'ya XML yaz) — 06:00 TR (03:00 UTC)
   "0 6 * * *",  # günlük vitrin şikayet özeti — 09:00 TR (06:00 UTC)
 ]
 

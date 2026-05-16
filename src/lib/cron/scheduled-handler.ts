@@ -41,6 +41,7 @@ export interface ScheduledDispatchResult {
  * Yeni cron eklemek için: wrangler.toml `[triggers]` `crons` listesine ekle + buraya satır ekle.
  */
 export const CRON_ENDPOINT_MAP: Record<string, string> = {
+  '0 3 * * *': '/api/cron/sitemap-rebuild',
   '0 6 * * *': '/api/cron/daily-summary',
 };
 

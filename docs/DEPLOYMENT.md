@@ -212,6 +212,49 @@ id = "<hyperdrive-id>"   # Cloudflare Dashboard > Workers > Hyperdrive'dan al
 enabled = true
 ```
 
+### 3.1.-1 R2 Bucket — Sitemap Pre-build Cache (Sprint 12 ext, 2026-05-17)
+
+50K+ URL'e ulaştığında `/sitemap.xml` dynamic SSR (Workers 5dk + 100MB request limit) yetersizleşir. Pre-build pattern:
+
+```
+Workers cron 03:00 UTC → /api/cron/sitemap-rebuild →
+  collectSitemapEntries (DB) → buildSitemapXml → SitemapCacheStore.put (R2)
+
+/sitemap.xml (mevcut Next.js MetadataRoute.Sitemap) → şu an dynamic SSR
+  ↑ 50K+ URL'de ayrı /sitemap.xml/route.ts handler ile cache-first switch
+```
+
+**Defense in depth (rate-limit gibi):**
+- R2 binding varsa cache update başarılı → /sitemap.xml ileride cache'den serve eder
+- R2 down olursa cron 500 döner, /sitemap.xml dynamic SSR fallback (downtime yok)
+- Cache TTL 25 saat (günlük cron başarısız olursa 1 saat tolerans)
+
+**Setup:**
+
+1. Cloudflare Dashboard > R2 → bucket yarat (örn `petstockpro-sitemap`)
+2. `wrangler.toml` `[[r2_buckets]]` bloğunu açık hâle getir:
+   ```toml
+   [[r2_buckets]]
+   binding = "SITEMAP_R2"
+   bucket_name = "petstockpro-sitemap"
+   ```
+3. `wrangler deploy` — Workers runtime'da `env.SITEMAP_R2` erişilebilir
+4. `src/lib/vitrin/sitemap-cache.ts` `globalThis.SITEMAP_R2` üzerinden algılar
+5. Sprint 14 OpenNext aktive olunca cron otomatik tetiklenir (`[triggers]` `crons = ["0 3 * * *"]`)
+
+**Dosya yapısı:**
+
+| Dosya | Sorumluluk |
+|---|---|
+| `src/lib/vitrin/sitemap-cache.ts` | SitemapCacheStore interface + R2 / in-memory impl + `buildSitemapXml` |
+| `src/app/api/cron/sitemap-rebuild/route.ts` | POST endpoint (Bearer auth) — XML build + cache.put |
+| `src/lib/cron/scheduled-handler.ts` | `CRON_ENDPOINT_MAP['0 3 * * *'] = '/api/cron/sitemap-rebuild'` |
+| `wrangler.toml` `[triggers]` `crons` | `"0 3 * * *"` — 06:00 TR (düşük trafik saati) |
+
+**MVP'de pasif:** Dev'de in-memory cache, /sitemap.xml hâlâ dynamic SSR. Production'da R2 binding aktive olunca otomatik kullanılır. Geçiş için Faz 2'de `/sitemap.xml/route.ts` cache-first handler yazılır.
+
+---
+
 ### 3.1.0 KV Namespace — Rate-Limit Store (Sprint 12 ext, 2026-05-17)
 
 Vitrin şikayet anti-spam rate-limit için Cloudflare Workers KV kullanılır (production'da ~5ms vs DB COUNT ~50ms). Dev'de KV yok → `InMemoryRateLimitStore` fallback (process restart'ta sıfırlanır).
