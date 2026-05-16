@@ -125,10 +125,11 @@ async function applyInventoryChange(
   productId: string,
   now: Date,
   isOutgoing: boolean,
+  allowNegative: boolean = false,
 ): Promise<void> {
   const newQty = info.currentQty + delta;
-  // delta negative ise (stock-out), 0 altına düşmemeli
-  if (newQty < 0) {
+  // delta negative ise (stock-out), 0 altına düşmemeli — süperadmin bypass dışında
+  if (newQty < 0 && !allowNegative) {
     throw new InsufficientStockError(info.currentQty, Math.abs(delta));
   }
 
@@ -560,7 +561,8 @@ export async function reverseStockMovement(
 
   // Ters yön = -orijinal.quantity
   const reverseDelta = -original.quantity;
-  if (info.currentQty + reverseDelta < 0) {
+  // Süperadmin negatife sokmaya izinli (rollback senaryoları için)
+  if (info.currentQty + reverseDelta < 0 && !opts.isSuperadmin) {
     return {
       ok: false,
       reason: 'insufficient_stock',
@@ -609,6 +611,7 @@ export async function reverseStockMovement(
         info.productId,
         now,
         isOutgoing,
+        !!opts.isSuperadmin,
       );
 
       return m.id;
