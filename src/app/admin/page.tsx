@@ -13,6 +13,10 @@ import { unreadCountForUser, listForUser, type NotificationRow } from '@/lib/not
 import { isSuperadmin } from '@/lib/superadmin/access';
 import { listOrderSuggestions } from '@/lib/assistant/order-suggestions';
 import { listTopTransferSuggestions } from '@/lib/assistant/transfer-suggestions-flat';
+import {
+  listDiscountSuggestions,
+  formatMonthsOfInventory,
+} from '@/lib/assistant/discount-suggestions';
 import { planProductLimit, planLimitDisplay } from '@/lib/constants/plan-limits';
 
 const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
@@ -47,6 +51,7 @@ export default async function AdminDashboardPage() {
     recentNotifications,
     orderSuggestions,
     transferSuggestions,
+    discountSuggestions,
   ] = await Promise.all([
     db
       .select({ name: companies.name, plan: companies.plan })
@@ -60,6 +65,7 @@ export default async function AdminDashboardPage() {
     listForUser(session.user.companyId, session.user.id, db, { limit: 4 }),
     listOrderSuggestions(session.user.companyId, db, 5),
     listTopTransferSuggestions(session.user.companyId, db, 5),
+    listDiscountSuggestions(session.user.companyId, db, 5),
   ]);
 
   const company = companyRow[0];
@@ -211,6 +217,90 @@ export default async function AdminDashboardPage() {
                   </Link>
                 </li>
               ))}
+            </ul>
+          </article>
+        </section>
+      )}
+
+      {discountSuggestions.length > 0 && (
+        <section data-testid="petpro-discount-suggestions">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-cat">
+              🤖 PetPro Asistanı · İndirim Önerileri
+            </h2>
+            <Link
+              href={'/admin/reports' as never}
+              className="text-[11px] font-bold text-cat hover:underline"
+            >
+              Stok değer raporu →
+            </Link>
+          </div>
+          <article className="rounded-2xl border-2 border-danger/20 bg-gradient-to-br from-danger-soft/20 to-cat-soft/30 p-4">
+            <p className="mb-3 text-[11px] text-ink-3">
+              Yavaş satış + yüksek stok — indirim ile cirosu hareketlendir:
+            </p>
+            <ul className="divide-y divide-line-soft text-xs">
+              {discountSuggestions.map((d) => {
+                const stockMonths = formatMonthsOfInventory(d.monthsOfInventory);
+                return (
+                  <li
+                    key={d.variantId}
+                    data-discount-suggestion={d.variantId}
+                    data-pct={d.suggestedDiscountPct}
+                    className="flex items-center gap-3 py-2.5"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[12px] font-bold text-ink">
+                        {d.productName}{' '}
+                        {d.variantLabel && (
+                          <span className="text-[10px] font-normal text-ink-3">
+                            · {d.variantLabel}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5 text-[10.5px] text-ink-3">
+                        <span className="font-bold text-cart">
+                          📦 {d.totalStock} adet
+                        </span>
+                        <span>·</span>
+                        <span>
+                          30g satış:{' '}
+                          <strong className={d.sale30d === 0 ? 'text-danger-7' : ''}>
+                            {d.sale30d}
+                          </strong>
+                        </span>
+                        <span>·</span>
+                        <span className="text-danger-7 font-bold">
+                          ~{stockMonths} stok
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[10px] text-ink-4">Fiyat</div>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-[10.5px] text-ink-3 line-through">
+                          {d.salePrice}₺
+                        </span>
+                        <span className="font-mono text-sm font-bold text-arrow-7">
+                          {d.suggestedPrice}₺
+                        </span>
+                      </div>
+                      <div
+                        data-discount-pct
+                        className="mt-0.5 inline-flex rounded-full bg-danger px-1.5 py-0.5 text-[9.5px] font-bold text-white"
+                      >
+                        -%{d.suggestedDiscountPct}
+                      </div>
+                    </div>
+                    <Link
+                      href={`/admin/products/${d.productId}/edit` as never}
+                      className="rounded-lg border border-danger/40 bg-white px-2.5 py-1.5 text-[10.5px] font-bold text-danger-7 hover:bg-danger hover:text-white transition-colors"
+                    >
+                      ✏ Fiyatı düzenle
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </article>
         </section>
