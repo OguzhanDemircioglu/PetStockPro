@@ -15,35 +15,21 @@
 | **1. Reverse expired** (24h+ hareket geri al + 1 yaprak) | ✅ + browser E2E | `a837b6c` |
 | **2. Hard delete ürün** (6 test + browser E2E reject + happy) | ✅ + browser E2E | `92665dc` |
 | **Disk doluluğu + top 8 tablo grafiği** (süperadmin sayfa) | ✅ + browser E2E | `b9822cf` |
-| **3. Eksi stoğa zorla giriş** (8 test, sayfa+form+action hazır) | ⚠ Browser E2E pending | `8507e4a` |
+| **3. Eksi stoğa zorla giriş** (8 test, sayfa+form+action hazır) | ✅ + browser E2E | `8507e4a` |
 | 4. Plan limit override | ⏳ | — |
 | 5. Sayim rollback (completed stocktake undo) | ⏳ | — |
 | 6. Movement metadata düzelt | ⏳ | — |
 
-### Bypass 3 browser smoke YENİ SESSION'DA YAPILACAK
+### Bypass 3 browser smoke ✅ TAMAMLANDI (2026-05-16)
 
-`/admin/superadmin/bypass/negative-stock` sayfası + form + action tamamen yazıldı.
-Lib + 8 unit test geçiyor. Sadece browser üzerinden gerçek bypass denenmedi.
+`/admin/superadmin/bypass/negative-stock` browser E2E doğrulandı:
 
-**Test senaryosu:**
-- Catit Pixi Smart Mama Otomatı XL Boy (sku=CATIT-PIXI-XL) Merkez Şube'de stok=53
-- Variant UUID: `a956cf52-3e29-48bf-8222-e2096ce364c3`
-- Branch UUID: `0c1f5aad-0868-48b3-9d6b-dbc83456df5d`
-- Bypass quantity: 60 (stok 53 → -7'ye düşer, normalde InsufficientStockError olurdu)
-- Sebep: "Muhasebe kaydı düzeltmesi — fiziksel-sistem uyumsuzluk düzeltiliyor"
-- Şifre: TestPass123!
-- Beklenen: ✓ banner "Önce: 53 → Sonra: -7" + stock_movements satırı + audit log entry
+- Form: Şube=0c1f5aad / Variant=a956cf52 (Catit Pixi XL Boy) / Düşür=60 / Sebep="Muhasebe kaydı düzeltmesi — fiziksel-sistem uyumsuzluk düzeltiliyor" / Şifre=TestPass123!
+- Submit → success banner "✓ Negatif stok hareketi yazıldı · Önce: 53 → Sonra: -7"
+- Ledger sayfası: 16/05 03:49 satır "Çıkış · Diğer · Catit Pixi XL Boy · Merkez Şube · ÖNCE 53 / Δ -60 / SONRA -7 · Notlar: Süperadmin bypass: eksi stok zorla — Muhasebe kaydı düzeltmesi"
+- Audit log sayfası: `superadmin.bypass.negative_stock` 🔒 Süperadmin · sprint3prod@petshop.com · stock_movement (f15fc882) · afterState={"stockQty":-7,"quantityRemoved":60}
 
-Smoke sonrası DB query'le doğrula:
-```sql
-SELECT b.name, bi.stock_qty FROM petstockpro.branch_inventory bi
-JOIN petstockpro.branches b ON b.id=bi.branch_id
-WHERE bi.variant_id='a956cf52-3e29-48bf-8222-e2096ce364c3';
--- Merkez Şube: -7 olmalı
-
-SELECT action, superadmin_reason FROM petstockpro.audit_logs
-WHERE action='superadmin.bypass.negative_stock' ORDER BY created_at DESC LIMIT 1;
-```
+Screenshot timeout sorunu: stale .next cache, server stop + `rm -rf .next` + preview_start ile çözüldü (memory'deki kural).
 
 ### Bypass 1-6 tamamlandıktan sonra: Sprint 7c
 
@@ -87,12 +73,12 @@ Plan-konsistent sırayla:
 | 7b Bypass 1 | Reverse expired movement (24h bypass + browser E2E) | `a837b6c` |
 | 7b Bypass 2 | Hard delete ürün (helper + 6 test + browser E2E reject+happy) | `92665dc` |
 | Disk grafiği | Süperadmin paneline disk doluluk + top 8 tablo bar chart | `b9822cf` |
-| 7b Bypass 3 | Eksi stoğa zorla (helper + 8 test + sayfa, browser smoke pending) | `8507e4a` |
+| 7b Bypass 3 | Eksi stoğa zorla (helper + 8 test + sayfa + ✅ browser E2E) | `8507e4a` |
 
 **Test:** 610 → 762 (+152)
 **Migration:** 7 → 11 (0008/0009/0010/0011)
 **Yeni route/sayfa:** ~40
-**Browser E2E doğrulanan ekranlar:** Pano + 7 settings + 4 stocktake + ürün/şube detay + low-stock + notifications + süperadmin + tenant detay + bypass 1
+**Browser E2E doğrulanan ekranlar:** Pano + 7 settings + 4 stocktake + ürün/şube detay + low-stock + notifications + süperadmin + tenant detay + bypass 1 + bypass 2 + bypass 3
 
 ---
 
