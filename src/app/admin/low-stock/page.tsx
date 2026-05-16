@@ -1,16 +1,44 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { asc, eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { listLowStock } from '@/lib/dashboard/stats';
 import { getTransferSuggestionsBulk } from '@/lib/stock/transfer-suggestions';
+import { branches as branchesTable, categories as categoriesTable } from '@/db/schema';
 
-export default async function LowStockPage() {
+export default async function LowStockPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ category?: string; branch?: string }>;
+}) {
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
 
-  // listLowStock default limit 10 — düşük stok sayfasında daha geniş
-  const items = await listLowStock(session.user.companyId, db, 200);
+  const params = await searchParams;
+  const filters = {
+    categoryId: params.category && /^[0-9a-f-]{36}$/i.test(params.category)
+      ? params.category
+      : undefined,
+    branchId: params.branch && /^[0-9a-f-]{36}$/i.test(params.branch)
+      ? params.branch
+      : undefined,
+  };
+  const hasFilter = !!filters.categoryId || !!filters.branchId;
+
+  const [items, categoryList, branchList] = await Promise.all([
+    listLowStock(session.user.companyId, db, { limit: 200, ...filters }),
+    db
+      .select({ id: categoriesTable.id, name: categoriesTable.name })
+      .from(categoriesTable)
+      .where(eq(categoriesTable.companyId, session.user.companyId))
+      .orderBy(asc(categoriesTable.name)),
+    db
+      .select({ id: branchesTable.id, name: branchesTable.name })
+      .from(branchesTable)
+      .where(eq(branchesTable.companyId, session.user.companyId))
+      .orderBy(asc(branchesTable.name)),
+  ]);
 
   // Variant ID'lerini topla + transfer önerilerini getir
   const variantIds = Array.from(new Set(items.map((i) => i.variantId)));
@@ -51,9 +79,76 @@ export default async function LowStockPage() {
           {items.length === 0
             ? '✓ Hiç düşük stok yok.'
             : `${items.length} satır · ${groups.size} variant`}{' '}
-          · Eşik altı ve sıfır stoklar
+          · Eşik altı ve sıfır stoklar{hasFilter ? ' (filtreli)' : ''}
         </p>
       </header>
+
+      <form
+        method="get"
+        action="/admin/low-stock"
+        data-testid="low-stock-filter"
+        className="flex flex-wrap items-end gap-3 rounded-2xl border border-line bg-white p-4"
+      >
+        <div className="min-w-[200px] flex-1">
+          <label
+            htmlFor="category"
+            className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+          >
+            Kategori
+          </label>
+          <select
+            id="category"
+            name="category"
+            defaultValue={filters.categoryId ?? ''}
+            data-testid="ls-category"
+            className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          >
+            <option value="">Tüm kategoriler</option>
+            {categoryList.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="min-w-[200px] flex-1">
+          <label
+            htmlFor="branch"
+            className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+          >
+            Şube
+          </label>
+          <select
+            id="branch"
+            name="branch"
+            defaultValue={filters.branchId ?? ''}
+            data-testid="ls-branch"
+            className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          >
+            <option value="">Tüm şubeler</option>
+            {branchList.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <button
+          type="submit"
+          className="rounded-xl bg-cat px-5 py-2.5 text-sm font-bold text-white shadow-sm"
+        >
+          🔍 Filtrele
+        </button>
+        {hasFilter && (
+          <Link
+            href={'/admin/low-stock' as never}
+            className="rounded-xl border border-line bg-white px-3 py-2.5 text-xs font-bold text-ink-3 hover:bg-line-soft"
+            data-testid="ls-clear"
+          >
+            × Temizle
+          </Link>
+        )}
+      </form>
 
       {items.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-line bg-arrow-soft/30 py-16 text-center">

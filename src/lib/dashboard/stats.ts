@@ -116,11 +116,36 @@ export interface LowStockItem {
   threshold: number;
 }
 
+export interface ListLowStockOptions {
+  limit?: number;
+  categoryId?: string;
+  branchId?: string;
+}
+
 export async function listLowStock(
   companyId: string,
   db: DbClient,
-  limit: number = 10,
+  limitOrOpts: number | ListLowStockOptions = 10,
 ): Promise<LowStockItem[]> {
+  const opts: ListLowStockOptions =
+    typeof limitOrOpts === 'number' ? { limit: limitOrOpts } : limitOrOpts;
+  const limit = opts.limit ?? 10;
+
+  const conditions = [
+    eq(branchInventory.companyId, companyId),
+    eq(productVariants.isActive, true),
+    sql`${branchInventory.stockQty} <= COALESCE(
+      (${productVariants.branchThresholds} ->> ${branches.id}::text)::int,
+      ${productVariants.threshold}
+    )`,
+  ];
+  if (opts.categoryId) {
+    conditions.push(eq(products.categoryId, opts.categoryId));
+  }
+  if (opts.branchId) {
+    conditions.push(eq(branchInventory.branchId, opts.branchId));
+  }
+
   return db
     .select({
       variantId: productVariants.id,
@@ -140,16 +165,7 @@ export async function listLowStock(
     .innerJoin(productVariants, eq(productVariants.id, branchInventory.variantId))
     .innerJoin(products, eq(products.id, productVariants.productId))
     .innerJoin(branches, eq(branches.id, branchInventory.branchId))
-    .where(
-      and(
-        eq(branchInventory.companyId, companyId),
-        eq(productVariants.isActive, true),
-        sql`${branchInventory.stockQty} <= COALESCE(
-          (${productVariants.branchThresholds} ->> ${branches.id}::text)::int,
-          ${productVariants.threshold}
-        )`,
-      ),
-    )
+    .where(and(...conditions))
     .orderBy(sql`${branchInventory.stockQty} ASC`)
     .limit(limit);
 }
