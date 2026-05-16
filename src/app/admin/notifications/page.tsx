@@ -69,7 +69,7 @@ const TYPE_GROUPS: Record<string, { label: string; types: string[] }> = {
 export default async function NotificationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filter?: string; group?: string }>;
+  searchParams: Promise<{ filter?: string; group?: string; type?: string }>;
 }) {
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
@@ -77,16 +77,22 @@ export default async function NotificationsPage({
   const params = await searchParams;
   const unreadOnly = params.filter === 'unread';
   const activeGroup = params.group && TYPE_GROUPS[params.group] ? params.group : null;
+  // Fine-grain: ?type=<exact> param. Grup seçili olmasa bile çalışır,
+  // ama UI'da chip'ler sadece aktif grup içinde gösterilir (sade tut).
+  const activeType =
+    params.type && Object.keys(TYPE_LABEL).includes(params.type) ? params.type : null;
 
   const allItems = await listForUser(session.user.companyId, session.user.id, db, {
     limit: 100,
     unreadOnly,
   });
 
-  // Group filter uygula
-  const items = activeGroup
-    ? allItems.filter((i) => TYPE_GROUPS[activeGroup].types.includes(i.type))
-    : allItems;
+  // Filtre öncelik sırası: type > group > all
+  const items = activeType
+    ? allItems.filter((i) => i.type === activeType)
+    : activeGroup
+      ? allItems.filter((i) => TYPE_GROUPS[activeGroup].types.includes(i.type))
+      : allItems;
 
   const unreadCount = allItems.filter((i) => i.readAt === null).length;
 
@@ -94,6 +100,14 @@ export default async function NotificationsPage({
   const groupCounts: Record<string, number> = {};
   for (const [key, def] of Object.entries(TYPE_GROUPS)) {
     groupCounts[key] = allItems.filter((i) => def.types.includes(i.type)).length;
+  }
+
+  // Type başına count (sadece aktif grup için)
+  const typeCounts: Record<string, number> = {};
+  if (activeGroup) {
+    for (const t of TYPE_GROUPS[activeGroup].types) {
+      typeCounts[t] = allItems.filter((i) => i.type === t).length;
+    }
   }
 
   return (
@@ -184,6 +198,57 @@ export default async function NotificationsPage({
             );
           })}
         </div>
+
+        {activeGroup && (
+          <div
+            className="flex flex-wrap gap-1.5 rounded-2xl border border-line bg-paper p-3"
+            data-testid="notif-type-filter"
+          >
+            <span className="text-[10px] font-bold uppercase tracking-wider text-ink-3 self-center">
+              {TYPE_GROUPS[activeGroup].label} alt-tipler:
+            </span>
+            <Link
+              href={
+                `/admin/notifications?${new URLSearchParams({
+                  ...(unreadOnly ? { filter: 'unread' } : {}),
+                  group: activeGroup,
+                }).toString()}` as never
+              }
+              data-type="all"
+              data-active={activeType === null ? '1' : '0'}
+              className={`rounded-full border px-2.5 py-1 text-[10.5px] font-bold ${
+                activeType === null
+                  ? 'border-cart bg-cart-soft text-cart'
+                  : 'border-line bg-white text-ink-3 hover:bg-line-soft'
+              }`}
+            >
+              Tümü ({groupCounts[activeGroup] ?? 0})
+            </Link>
+            {TYPE_GROUPS[activeGroup].types.map((t) => {
+              const count = typeCounts[t] ?? 0;
+              if (count === 0 && activeType !== t) return null;
+              const params = new URLSearchParams();
+              if (unreadOnly) params.set('filter', 'unread');
+              params.set('group', activeGroup);
+              params.set('type', t);
+              return (
+                <Link
+                  key={t}
+                  href={`/admin/notifications?${params.toString()}` as never}
+                  data-type={t}
+                  data-active={activeType === t ? '1' : '0'}
+                  className={`rounded-full border px-2.5 py-1 text-[10.5px] font-bold ${
+                    activeType === t
+                      ? 'border-cat bg-cat text-white'
+                      : 'border-line bg-white text-ink-3 hover:bg-line-soft'
+                  }`}
+                >
+                  {TYPE_EMOJI[t] ?? '🔔'} {TYPE_LABEL[t] ?? t} ({count})
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {items.length === 0 ? (
