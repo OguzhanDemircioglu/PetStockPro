@@ -1,11 +1,11 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-17 (Sprint 8 TAM + reset-password fix)
-**Mevcut Branch:** `cray61` — origin'in **25 commit** ileri (push edilmedi)
-**Son commit:** `bade9f1` fix(auth): reset-password sql template Date binary cast hatası
-**Test:** 901 passed (65 dosya) — vitest (+22)
+**Tarih:** 2026-05-17 (Sprint 8 TAM + Sprint 10 TAM + reset-password fix)
+**Mevcut Branch:** `cray61` — origin'in **27 commit** ileri (push edilmedi)
+**Son commit:** `3c59aeb` feat(notifications): Sprint 10 — Telegram setup wizard (tenant-level bot)
+**Test:** 920 passed (66 dosya) — vitest (+41 bu session)
 **Lint+typecheck:** 0 error
-**Migration:** 11 (0008/0009/0010/0011 + 7 öncesi)
+**Migration:** 12 (0012 telegram_settings + 0008/0009/0010/0011 + 7 öncesi)
 
 ## 🚦 YENİ SESSION'A GİRDİĞİNDE — İLK 5 DK
 
@@ -39,15 +39,15 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 
 | # | İş | Tahmin | Neden |
 |---|---|---|---|
-| 1 | **Sprint 10 — Telegram setup wizard** (kullanıcı kendi bot token + chat_id binding) | 2-3 saat | Alert kanalı şu an env-only, UI eksik |
-| 2 | **Sprint 12 — Merkezi Vitrin Dizini** (public `/vitrin` + WhatsApp deep link) | 4-6 saat | MVP'nin B2C tarafı, lansman öncesi şart |
-| 3 | **Audit log filtre ext** (kullanıcı + tarih aralığı + pagination) | 1 saat | Action+entity zaten var (12-13 mayıs commit), kullanıcı + date eksik |
+| 1 | **Sprint 12 — Merkezi Vitrin Dizini** (public `/vitrin` + WhatsApp deep link) | 4-6 saat | MVP'nin B2C tarafı, lansman öncesi şart |
+| 2 | **Sprint 10 ext — Tenant Telegram'a actual bildirim gönderim** (notification scaffold yamalama) | 1 saat | Setup wizard var, ama event'lerden Telegram'a gönderim Sprint 15 notifications + ekstra |
+| 3 | **Audit log filtre ext** (kullanıcı + tarih aralığı + pagination) | 1 saat | Action+entity zaten var, kullanıcı + date eksik |
 | 4 | **Düşük stok filter** (kategori + şube bazında) | 1 saat | Tek-tenant tablo büyürse navigate zor |
 | 5 | **Notif filter ext** (5 grup yerine fine-grain action) | 30 dk | Sprint 15'te 5 group var, daha ince filtre faydalı |
 | 6 | **Storage upload — Sprint 3.3** | ⛔ BLOKER | `SUPABASE_SERVICE_ROLE_KEY` gerek (kullanıcı sağlayacak) |
 | 7 | **Sprint 13/14 production deploy** | ⛔ BLOKER | Şirket kuruluş + vergi no + IBAN (2-4 hafta) |
 
-**Plana sadık sıra (CLAUDE.md SPRINT-PLAN):** Sprint 8 ✅ → **Sprint 10** → Sprint 12 → Sprint 15
+**Plana sadık sıra (CLAUDE.md SPRINT-PLAN):** Sprint 8 ✅ → Sprint 10 ✅ → **Sprint 12** → Sprint 15
 
 ## 📦 Bu Turun Kümülatif Sonucu (22 commit)
 
@@ -86,6 +86,12 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 | Konu | Detay | Commit |
 |---|---|---|
 | reset-password DB update hatası | sql.raw + Date karışımı production'da fail ediyordu. `sql\`COALESCE(${col}, ${now.toISOString()}::timestamptz)\`` ile düzeltildi. Browser E2E: /forgot-password → /reset-password/[token] → POST 303 redirect, log'da hata yok. | `bade9f1` |
+
+### Sprint 10 — Telegram setup wizard (tenant-level bot) TAM
+
+| Parça | İçerik | Commit |
+|---|---|---|
+| Tek commit | Schema migration 0012 (companies +4 field: botToken/chatId/enabled/configuredAt) + lib/telegram/client.ts genişletildi (sendTenantTelegramAlert, errorCode + description) + lib/telegram/settings.ts (Zod schema regex, getTelegramSettings, saveTelegramConfig, setTelegramEnabled, sendTelegramTestMessage) + /admin/settings/notifications sayfası (BotFather rehberi + form + test + toggle) + Settings sidebar +1 link + Settings hub +1 status kart + 19 unit test | `3c59aeb` |
 
 ### Sprint 9 — Kullanıcılar (davet akışı hibrit)
 
