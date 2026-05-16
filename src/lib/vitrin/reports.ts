@@ -84,8 +84,12 @@ function hashIp(ip: string, date: Date): string {
  * Anon "Bildir" butonu submit'i — yeni şikayet kaydı.
  *
  * Anti-spam rate-limit: aynı IP × tenant × 24h içinde max N şikayet
- * (default 5). Aşılırsa rate_limit_exceeded reject. Cloudflare Workers KV
- * binding production'da daha hızlı olur ama DB-level COUNT MVP için yeter.
+ * (default 5). Aşılırsa rate_limit_exceeded reject + meta (currentCount, max,
+ * windowHours) UI'da "5/5, 24 saat bekle" mesajı için.
+ *
+ * Cloudflare Workers KV binding production'da daha hızlı olur (~5ms vs
+ * ~50ms DB COUNT) ama mevcut DB-level COUNT MVP için yeter — KV migration
+ * Sprint 14 sonrası.
  */
 export async function submitReport(
   input: z.infer<typeof reportInputSchema>,
@@ -93,10 +97,14 @@ export async function submitReport(
   db: DbClient,
   now: Date = new Date(),
 ): Promise<
-  | { ok: true; id: string }
+  | { ok: true; id: string; remainingInWindow: number }
+  | { ok: false; reason: 'invalid_input' | 'unknown' }
   | {
       ok: false;
-      reason: 'invalid_input' | 'rate_limit_exceeded' | 'unknown';
+      reason: 'rate_limit_exceeded';
+      currentCount: number;
+      max: number;
+      windowHours: number;
     }
 > {
   const parsed = reportInputSchema.safeParse(input);
@@ -105,6 +113,7 @@ export async function submitReport(
   }
 
   const ipHash = ctx.ipAddress ? hashIp(ctx.ipAddress, now) : 'unknown';
+  let currentCount = 0;
 
   // Rate-limit kontrol: aynı IP × tenant × 24h içinde max 5 şikayet.
   // ipHash='unknown' (proxy header yok) durumunda dedup yok (hatalı pozitif önle).
@@ -120,9 +129,15 @@ export async function submitReport(
           gte(vitrinReports.createdAt, cutoff),
         ),
       );
-    const currentCount = countRows[0]?.count ?? 0;
+    currentCount = countRows[0]?.count ?? 0;
     if (currentCount >= RATE_LIMIT_MAX_PER_WINDOW) {
-      return { ok: false, reason: 'rate_limit_exceeded' };
+      return {
+        ok: false,
+        reason: 'rate_limit_exceeded',
+        currentCount,
+        max: RATE_LIMIT_MAX_PER_WINDOW,
+        windowHours: RATE_LIMIT_WINDOW_MS / (60 * 60 * 1000),
+      };
     }
   }
 
@@ -156,7 +171,15 @@ export async function submitReport(
       // sessiz — alert fail asla caller'ı etkilemesin (Sentry beforeBreadcrumb)
     });
 
-    return { ok: true, id: rows[0].id };
+    // Yeni kayıt sayılınca kalan kontenjan: max - (currentCount + 1).
+    // ipHash='unknown' iken currentCount=0 → 4 kalan (5/5 cap görünüm tutarsız
+    // olabilir ama gerçek sınır yok). UI bu durumda banner'ı saklı tutar.
+    const remainingInWindow = Math.max(
+      0,
+      RATE_LIMIT_MAX_PER_WINDOW - (currentCount + 1),
+    );
+
+    return { ok: true, id: rows[0].id, remainingInWindow };
   } catch {
     return { ok: false, reason: 'unknown' };
   }

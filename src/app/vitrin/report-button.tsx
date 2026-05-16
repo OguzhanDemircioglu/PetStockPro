@@ -60,15 +60,17 @@ export function ReportButton({
       if (data.ok) {
         setDone(true);
       } else {
-        const errorMessages: Record<string, string> = {
-          invalid_input: 'Geçersiz giriş — sebep veya hedef eksik.',
-          rate_limit_exceeded:
-            'Çok fazla şikayet gönderdin. 24 saat sonra tekrar dene.',
-        };
-        setError(
-          errorMessages[data.reason] ??
-            'Şikayet kaydedilemedi. Sonra tekrar dene.',
-        );
+        if (data.reason === 'rate_limit_exceeded') {
+          const max = data.max ?? 5;
+          const windowHours = data.windowHours ?? 24;
+          setError(
+            `Bu pet shop için günlük şikayet sınırına ulaştın (${max}/${max}). ${windowHours} saat içinde yeniden gönderebilirsin.`,
+          );
+        } else if (data.reason === 'invalid_input') {
+          setError('Geçersiz giriş — sebep veya hedef eksik.');
+        } else {
+          setError('Şikayet kaydedilemedi. Sonra tekrar dene.');
+        }
       }
     } catch {
       setError('Ağ hatası. Sonra tekrar dene.');

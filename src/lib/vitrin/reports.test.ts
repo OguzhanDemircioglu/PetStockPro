@@ -146,7 +146,7 @@ describe('reportInputSchema', () => {
 });
 
 describe('submitReport', () => {
-  it('happy — storefront report insert', async () => {
+  it('happy — storefront report insert + remainingInWindow=4 (ilk şikayet)', async () => {
     const { db, calls } = makeMockDb({ insertedId: 'r-1' });
     const result = await submitReport(
       { companyId: COMPANY, targetType: 'storefront', reason: 'spam' },
@@ -154,7 +154,7 @@ describe('submitReport', () => {
       db,
       NOW,
     );
-    expect(result).toEqual({ ok: true, id: 'r-1' });
+    expect(result).toEqual({ ok: true, id: 'r-1', remainingInWindow: 4 });
     expect(calls.inserted).toBe(1);
     expect(calls.insertedValues?.reason).toBe('spam');
     expect(calls.insertedValues?.targetType).toBe('storefront');
@@ -206,7 +206,7 @@ describe('submitReport', () => {
     expect(result).toEqual({ ok: false, reason: 'unknown' });
   });
 
-  it('IP yoksa hash="unknown" + rate-limit atlanır', async () => {
+  it('IP yoksa hash="unknown" + rate-limit atlanır + remainingInWindow=4 (currentCount=0 sayılır)', async () => {
     const { db, calls } = makeMockDb({ rateLimitCount: 99 });
     const result = await submitReport(
       { companyId: COMPANY, targetType: 'storefront', reason: 'other' },
@@ -214,13 +214,13 @@ describe('submitReport', () => {
       db,
       NOW,
     );
-    expect(result.ok).toBe(true);
+    expect(result).toEqual({ ok: true, id: 'new-report-id', remainingInWindow: 4 });
     expect(calls.insertedValues?.reporterIpHash).toBe('unknown');
     // IP yoksa rate-limit COUNT atlanır; alert dedup COUNT fire-and-forget +1
     expect(calls.countQueries).toBe(1);
   });
 
-  it('rate_limit_exceeded — 5+ şikayet 24h içinde', async () => {
+  it('rate_limit_exceeded — 5+ şikayet 24h içinde + meta forward (currentCount/max/windowHours)', async () => {
     const { db, calls } = makeMockDb({ rateLimitCount: 5 });
     const result = await submitReport(
       { companyId: COMPANY, targetType: 'storefront', reason: 'spam' },
@@ -228,12 +228,18 @@ describe('submitReport', () => {
       db,
       NOW,
     );
-    expect(result).toEqual({ ok: false, reason: 'rate_limit_exceeded' });
+    expect(result).toEqual({
+      ok: false,
+      reason: 'rate_limit_exceeded',
+      currentCount: 5,
+      max: 5,
+      windowHours: 24,
+    });
     expect(calls.countQueries).toBe(1);
     expect(calls.inserted).toBe(0); // limit aşıldıysa INSERT yok
   });
 
-  it('rate-limit altında (4 kayıt) → insert geçer', async () => {
+  it('rate-limit altında (4 kayıt) → insert geçer + remainingInWindow=0 (sonuncu kontenjan tükendi)', async () => {
     const { db, calls } = makeMockDb({ rateLimitCount: 4 });
     const result = await submitReport(
       { companyId: COMPANY, targetType: 'storefront', reason: 'spam' },
@@ -241,10 +247,21 @@ describe('submitReport', () => {
       db,
       NOW,
     );
-    expect(result.ok).toBe(true);
+    expect(result).toEqual({ ok: true, id: 'new-report-id', remainingInWindow: 0 });
     // rate-limit COUNT 1× + alert dedup COUNT 1× = 2 toplam
     expect(calls.countQueries).toBe(2);
     expect(calls.inserted).toBe(1);
+  });
+
+  it('rate-limit altında (2 kayıt) → insert geçer + remainingInWindow=2', async () => {
+    const { db } = makeMockDb({ rateLimitCount: 2 });
+    const result = await submitReport(
+      { companyId: COMPANY, targetType: 'storefront', reason: 'spam' },
+      CTX,
+      db,
+      NOW,
+    );
+    expect(result).toEqual({ ok: true, id: 'new-report-id', remainingInWindow: 2 });
   });
 });
 

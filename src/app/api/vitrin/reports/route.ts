@@ -52,7 +52,14 @@ export async function POST(req: Request) {
     rate_limit_exceeded: 429,
     unknown: 500,
   };
+  // Rate-limit yanıtında Retry-After header eklenir — RFC 7231 §7.1.3 uyumlu
+  // (saniye cinsinden). UI banner'ı parse edip kullanır.
+  const headers: HeadersInit = {};
+  if (result.reason === 'rate_limit_exceeded') {
+    headers['Retry-After'] = String(result.windowHours * 60 * 60);
+  }
   return Response.json(result, {
     status: httpStatus[result.reason] ?? 400,
+    headers,
   });
 }
