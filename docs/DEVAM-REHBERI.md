@@ -18,7 +18,7 @@
 | **3. Eksi stoğa zorla giriş** (8 test, sayfa+form+action hazır) | ✅ + browser E2E | `8507e4a` |
 | **4. Plan limit override** (10 test, sayfa+form+action hazır) | ✅ + browser E2E | `b349e54` |
 | **5. Sayım rollback** (10 test + allowNegative bypass + sayfa) | ✅ + browser E2E | `f26e8d0` |
-| **6. Movement metadata düzelt** (14 test + 4 alan diff UI) | ✅ + browser E2E | (this commit) |
+| **6. Movement metadata düzelt** (14 test + 4 alan diff UI) | ✅ + browser E2E | `fba0f5b` |
 
 ### Bypass 3 browser smoke ✅ TAMAMLANDI (2026-05-16)
 
@@ -76,7 +76,7 @@ Plan-konsistent sırayla:
 | 7b Bypass 3 | Eksi stoğa zorla (helper + 8 test + sayfa + ✅ browser E2E) | `8507e4a` |
 | 7b Bypass 4 | Plan limit override (helper + 10 test + sayfa + ✅ browser E2E FREE→PRO) | `b349e54` |
 | 7b Bypass 5 | Sayım rollback (helper + 10 test + sayfa + allowNegative bypass + ✅ E2E -7→-5) | `f26e8d0` |
-| 7b Bypass 6 | Movement metadata düzelt (helper + 14 test + 4 alan diff UI + ✅ E2E PSP-X4F7+FAT) | (this commit) |
+| 7b Bypass 6 | Movement metadata düzelt (helper + 14 test + 4 alan diff UI + ✅ E2E PSP-X4F7+FAT) | `fba0f5b` |
 
 **Test:** 610 → 762 (+152)
 **Migration:** 7 → 11 (0008/0009/0010/0011)
