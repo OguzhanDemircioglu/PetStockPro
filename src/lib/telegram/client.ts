@@ -28,6 +28,75 @@ export interface TelegramSendResult {
   ok: boolean;
   mock?: boolean;
   messageId?: number;
+  errorCode?: string;
+  description?: string;
+}
+
+export interface TenantTelegramConfig {
+  botToken: string;
+  chatId: string;
+}
+
+/**
+ * Tenant-specific bot kullanarak alert gönder (Sprint 10).
+ *
+ * Süperadmin env-based bot'tan ayrı: her tenant kendi bot'unu Telegram
+ * BotFather'dan alır, /admin/settings/notifications sayfasında binding yapar.
+ *
+ * Token/chatId boş olduğu durumda mock fallback.
+ */
+export async function sendTenantTelegramAlert(
+  config: TenantTelegramConfig,
+  req: TelegramSendRequest,
+): Promise<TelegramSendResult> {
+  if (!config.botToken || !config.chatId) {
+    return { ok: false, errorCode: 'NOT_CONFIGURED' };
+  }
+  try {
+    const res = await fetch(
+      `https://api.telegram.org/bot${config.botToken}/sendMessage`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: config.chatId,
+          text: req.text,
+          parse_mode: req.parseMode ?? 'HTML',
+          disable_notification: req.disableNotification ?? false,
+        }),
+      },
+    );
+    if (!res.ok) {
+      let description: string | undefined;
+      try {
+        const body = (await res.json()) as { description?: string };
+        description = body.description;
+      } catch {
+        // body parse fail — sessiz
+      }
+      return {
+        ok: false,
+        errorCode: `HTTP_${res.status}`,
+        description,
+      };
+    }
+    const data = (await res.json()) as {
+      ok: boolean;
+      result?: { message_id: number };
+      description?: string;
+    };
+    return {
+      ok: data.ok === true,
+      messageId: data.result?.message_id,
+      description: data.description,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      errorCode: 'NETWORK',
+      description: err instanceof Error ? err.message : String(err),
+    };
+  }
 }
 
 function isTelegramConfigured(): boolean {

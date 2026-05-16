@@ -26,6 +26,8 @@ export default async function SettingsHubPage() {
         plan: companies.plan,
         vatNo: companies.vatNo,
         whatsappPhone: companies.whatsappPhone,
+        telegramEnabled: companies.telegramEnabled,
+        telegramBotToken: companies.telegramBotToken,
       })
       .from(companies)
       .where(eq(companies.id, session.user.companyId))
@@ -60,6 +62,8 @@ export default async function SettingsHubPage() {
   const vatMissing = !company?.vatNo;
   const twoFaActive = !!user?.twoFactorEnabledAt;
   const emailChangePending = !!user?.pendingEmail;
+  const telegramEnabled = !!company?.telegramEnabled;
+  const telegramConfigured = !!company?.telegramBotToken;
 
   const statusItems: StatusItem[] = [
     {
@@ -89,6 +93,17 @@ export default async function SettingsHubPage() {
       value: company?.plan ?? 'FREE',
       hint: 'Aktif abonelik',
       kind: 'neutral',
+    },
+    {
+      href: '/admin/settings/notifications',
+      label: 'Telegram',
+      value: telegramEnabled ? 'Aktif' : telegramConfigured ? 'Yapılandırıldı' : 'Bağlanmadı',
+      hint: telegramEnabled
+        ? '✓ Bildirimler açık'
+        : telegramConfigured
+          ? '⏸ Test edildi, kapalı'
+          : '🔌 Bot tanımlanmadı',
+      kind: telegramEnabled ? 'ok' : telegramConfigured ? 'pending' : 'neutral',
     },
   ];
 

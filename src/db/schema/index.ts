@@ -193,6 +193,14 @@ export const companies = petstockproSchema.table('companies', {
   cityId: integer('city_id').references(() => cities.id),
   districtId: uuid('district_id').references(() => districts.id),
   storefrontStatus: storefrontStatusEnum('storefront_status').notNull().default('disabled'),
+
+  // Sprint 10 — Telegram bot ayarları (tenant-level bildirim kanalı)
+  // Bot token şu an plaintext — KMS/encryption Faz 2'de eklenebilir.
+  telegramBotToken: varchar('telegram_bot_token', { length: 100 }),
+  telegramChatId: varchar('telegram_chat_id', { length: 50 }),
+  telegramEnabled: boolean('telegram_enabled').notNull().default(false),
+  telegramConfiguredAt: timestamp('telegram_configured_at', { withTimezone: true }),
+
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

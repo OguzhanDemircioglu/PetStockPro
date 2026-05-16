@@ -14,6 +14,7 @@ export type SettingsSection =
   | 'company'
   | 'storefront'
   | 'users'
+  | 'notifications'
   | 'account'
   | 'security'
   | 'audit'
@@ -32,6 +33,7 @@ const NAV: SettingsNavItem[] = [
   { key: 'company', href: '/admin/settings/company', emoji: '🏢', label: 'Firma' },
   { key: 'storefront', href: '/admin/settings/storefront', emoji: '🌐', label: 'Vitrin profili' },
   { key: 'users', href: '/admin/settings/users', emoji: '👥', label: 'Kullanıcılar' },
+  { key: 'notifications', href: '/admin/settings/notifications', emoji: '🔔', label: 'Bildirimler' },
   { key: 'account', href: '/admin/account', emoji: '👤', label: 'Hesap' },
   { key: 'security', href: '/admin/security', emoji: '🛡', label: 'Güvenlik' },
   { key: 'audit', href: '/admin/audit-log', emoji: '📜', label: 'Audit log' },
