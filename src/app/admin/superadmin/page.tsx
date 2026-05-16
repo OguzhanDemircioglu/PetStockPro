@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { db } from '@/lib/db/client';
 import { requireSuperadmin } from '@/lib/superadmin/access';
 import { listAllTenants, getSystemStats } from '@/lib/superadmin/tenants';
+import { getDatabaseStats } from '@/lib/superadmin/db-stats';
 
 const PLAN_COLORS: Record<string, string> = {
   FREE: 'bg-line-soft text-ink-2',
@@ -20,10 +21,14 @@ const STOREFRONT_LABELS: Record<string, { label: string; cls: string }> = {
 export default async function SuperadminTenantsPage() {
   await requireSuperadmin();
 
-  const [tenants, stats] = await Promise.all([
+  const [tenants, stats, dbStats] = await Promise.all([
     listAllTenants(db, 50),
     getSystemStats(db),
+    getDatabaseStats(db),
   ]);
+
+  const usageDanger = dbStats.usagePct > 80;
+  const usageWarning = dbStats.usagePct > 50 && !usageDanger;
 
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-12">
@@ -71,6 +76,89 @@ export default async function SuperadminTenantsPage() {
           emoji="💎"
           accent="cat"
         />
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-[1fr_1fr]" data-testid="db-stats">
+        <article
+          className={`rounded-2xl border p-5 ${
+            usageDanger
+              ? 'border-danger/40 bg-danger-soft/40'
+              : usageWarning
+                ? 'border-cat/40 bg-cat-soft/30'
+                : 'border-arrow/30 bg-arrow-soft/30'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-ink-3">
+              💾 Disk doluluğu (Supabase)
+            </h2>
+            <span className="text-[10.5px] font-bold text-ink-3">
+              {dbStats.connectionCount} bağlantı
+            </span>
+          </div>
+          <div className="mt-3 flex items-baseline justify-between">
+            <span
+              className={`font-mono text-3xl font-bold ${
+                usageDanger ? 'text-danger-7' : usageWarning ? 'text-cart' : 'text-arrow-7'
+              }`}
+              data-testid="db-size"
+            >
+              {dbStats.totalSizePretty}
+            </span>
+            <span className="text-[11.5px] text-ink-3">
+              / {dbStats.planLimitMb < 1024 ? `${dbStats.planLimitMb} MB` : `${(dbStats.planLimitMb / 1024).toFixed(1)} GB`} plan limit
+            </span>
+          </div>
+          <div className="mt-3 h-3 overflow-hidden rounded-full bg-line-soft">
+            <div
+              className={`h-full transition-all ${
+                usageDanger
+                  ? 'bg-gradient-to-r from-danger to-danger-2'
+                  : usageWarning
+                    ? 'bg-gradient-to-r from-cat to-cat-2'
+                    : 'bg-gradient-to-r from-arrow to-arrow-2'
+              }`}
+              style={{ width: `${Math.min(dbStats.usagePct, 100)}%` }}
+              data-testid="db-usage-bar"
+            />
+          </div>
+          <div className="mt-2 flex items-center justify-between text-[11px]">
+            <span className="font-mono font-bold text-ink">
+              %{dbStats.usagePct.toFixed(2)}
+            </span>
+            <span className="text-ink-3">
+              {usageDanger ? '🔴 Kritik — Pro tier upgrade gerek' : usageWarning ? '⚠ Dikkat' : '✓ Sağlıklı'}
+            </span>
+          </div>
+        </article>
+
+        <article className="rounded-2xl border border-line bg-white p-5">
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
+            📊 Top 8 tablo (petstockpro schema)
+          </h2>
+          <ul className="flex flex-col gap-1.5" data-testid="top-tables">
+            {dbStats.topTables.map((t) => {
+              const max = dbStats.topTables[0]?.bytes ?? 1;
+              const pct = (t.bytes / max) * 100;
+              return (
+                <li
+                  key={t.name}
+                  data-table={t.name}
+                  className="grid grid-cols-[140px_1fr_60px] items-center gap-2 text-[11px]"
+                >
+                  <span className="font-mono text-ink-2 truncate">{t.name}</span>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-line-soft">
+                    <div
+                      className="h-full bg-gradient-to-r from-cat to-arrow"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <span className="text-right font-mono font-bold text-cart">{t.sizePretty}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </article>
       </section>
 
       <section
