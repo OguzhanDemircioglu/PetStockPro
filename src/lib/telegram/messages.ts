@@ -183,3 +183,63 @@ export function buildRemoteAccountLockAlert(
     severity: isLock ? 'critical' : 'info',
   };
 }
+
+// ══════════════════════════════════════════════════════════════
+// Sprint 12 ext — Vitrin şikayet (yeni Bildir kaydı)
+// ══════════════════════════════════════════════════════════════
+
+export interface NewVitrinReportAlertInput {
+  /** Hangi pet shop için şikayet (tenant ismi). */
+  companyName: string;
+  /** 'storefront' (tüm pet shop) veya 'product' (belirli ürün). */
+  targetType: 'storefront' | 'product';
+  /** Şikayet edilen ürün adı (targetType=product için). */
+  productName?: string | null;
+  /** Şikayet sebebi (enum değer — locale dile lokalize burada). */
+  reason: string;
+  /** Müşterinin opsiyonel notu. */
+  note?: string | null;
+  /** Süperadmin paneline link (relative URL ok). */
+  panelUrl?: string;
+}
+
+const REASON_LABEL_TR: Record<string, string> = {
+  wrong_photo: 'Yanlış fotoğraf',
+  wrong_info: 'Yanlış bilgi',
+  spam: 'Spam / reklam',
+  duplicate: 'Tekrar eden ilan',
+  inappropriate: 'Uygunsuz içerik',
+  closed_shop: 'Mağaza kapanmış',
+  other: 'Diğer',
+};
+
+export function buildNewVitrinReportAlert(
+  input: NewVitrinReportAlertInput,
+): TelegramSendRequest {
+  const reasonLabel = REASON_LABEL_TR[input.reason] ?? input.reason;
+  const noteSnippet = input.note
+    ? input.note.length > 200
+      ? `${input.note.slice(0, 197)}…`
+      : input.note
+    : null;
+  return {
+    text: [
+      '🚩 <b>Yeni vitrin şikayeti</b>',
+      '',
+      `<b>Tenant:</b> ${input.companyName}`,
+      input.targetType === 'product' && input.productName
+        ? `<b>Ürün:</b> <i>${input.productName}</i>`
+        : '<b>Hedef:</b> Tüm pet shop profili',
+      `<b>Sebep:</b> ${reasonLabel}`,
+      noteSnippet ? `<b>Not:</b> <i>${noteSnippet}</i>` : '',
+      '',
+      input.panelUrl
+        ? `<a href="${input.panelUrl}">Süperadmin panelinde gör →</a>`
+        : '',
+    ]
+      .filter(Boolean)
+      .join('\n'),
+    parseMode: 'HTML',
+    severity: 'warning',
+  };
+}

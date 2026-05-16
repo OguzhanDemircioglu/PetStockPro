@@ -15,6 +15,8 @@ import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { DbClient } from '@/lib/db/client';
 import { companies, products, users, vitrinReports } from '@/db/schema';
+import { sendTelegramAlert } from '@/lib/telegram/client';
+import { buildNewVitrinReportAlert } from '@/lib/telegram/messages';
 
 const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const RATE_LIMIT_MAX_PER_WINDOW = 5;
@@ -134,10 +136,66 @@ export async function submitReport(
         createdAt: now,
       })
       .returning({ id: vitrinReports.id });
+
+    // Süperadmin Telegram alert fire-and-forget (caller blocked olmasın)
+    void notifySuperadminOnNewReport(
+      parsed.data.companyId,
+      parsed.data.targetType,
+      parsed.data.productId ?? null,
+      parsed.data.reason,
+      parsed.data.note ?? null,
+      db,
+    ).catch(() => {
+      // sessiz — alert fail asla caller'ı etkilemesin (Sentry beforeBreadcrumb)
+    });
+
     return { ok: true, id: rows[0].id };
   } catch {
     return { ok: false, reason: 'unknown' };
   }
+}
+
+/**
+ * Süperadmin'e yeni şikayet Telegram alert — fire-and-forget.
+ *
+ * Tenant + ürün isimlerini lookup et, template'i build et, sendTelegramAlert.
+ * Dev'de mock log atar, production'da telegram API'ya post eder.
+ */
+async function notifySuperadminOnNewReport(
+  companyId: string,
+  targetType: 'storefront' | 'product',
+  productId: string | null,
+  reason: string,
+  note: string | null,
+  db: DbClient,
+): Promise<void> {
+  const [company] = await db
+    .select({ name: companies.name, slug: companies.slug })
+    .from(companies)
+    .where(eq(companies.id, companyId))
+    .limit(1);
+  if (!company) return; // tenant silinmişse atla
+
+  let productName: string | null = null;
+  if (targetType === 'product' && productId) {
+    const [p] = await db
+      .select({ name: products.name })
+      .from(products)
+      .where(eq(products.id, productId))
+      .limit(1);
+    productName = p?.name ?? null;
+  }
+
+  const alert = buildNewVitrinReportAlert({
+    companyName: company.name,
+    targetType,
+    productName,
+    reason,
+    note,
+    panelUrl: '/admin/superadmin/vitrin-moderation?tab=reports',
+  });
+
+  await sendTelegramAlert(alert);
 }
 
 export interface ReportRow {

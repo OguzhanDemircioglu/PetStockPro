@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { buildAccountLockedAlert, buildTwoFactorDisabledAlert } from './messages';
+import {
+  buildAccountLockedAlert,
+  buildNewVitrinReportAlert,
+  buildTwoFactorDisabledAlert,
+} from './messages';
 
 describe('buildAccountLockedAlert', () => {
   it('BRUTE_FORCE_1H — warning severity', () => {
@@ -67,5 +71,77 @@ describe('buildTwoFactorDisabledAlert', () => {
       companyName: null,
     });
     expect(req.text).not.toContain('Tenant:');
+  });
+});
+
+describe('buildNewVitrinReportAlert', () => {
+  it('storefront target — tenant + sebep + warning severity', () => {
+    const req = buildNewVitrinReportAlert({
+      companyName: 'Mavi Pet',
+      targetType: 'storefront',
+      reason: 'spam',
+    });
+    expect(req.text).toContain('Yeni vitrin şikayeti');
+    expect(req.text).toContain('Mavi Pet');
+    expect(req.text).toContain('Tüm pet shop profili');
+    expect(req.text).toContain('Spam / reklam'); // TR-localize
+    expect(req.severity).toBe('warning');
+    expect(req.parseMode).toBe('HTML');
+  });
+
+  it('product target — ürün adı satırı', () => {
+    const req = buildNewVitrinReportAlert({
+      companyName: 'Mavi Pet',
+      targetType: 'product',
+      productName: 'Royal Canin Kedi 2kg',
+      reason: 'wrong_photo',
+    });
+    expect(req.text).toContain('Ürün:');
+    expect(req.text).toContain('Royal Canin Kedi 2kg');
+    expect(req.text).toContain('Yanlış fotoğraf');
+    expect(req.text).not.toContain('Tüm pet shop profili');
+  });
+
+  it('note çok uzunsa 200 char truncate + …', () => {
+    const longNote = 'x'.repeat(300);
+    const req = buildNewVitrinReportAlert({
+      companyName: 'Mavi Pet',
+      targetType: 'storefront',
+      reason: 'other',
+      note: longNote,
+    });
+    // 197 + … = 198 char görünür, ama HTML wrapper ile <i>...</i>
+    expect(req.text).toContain('xxx');
+    expect(req.text).toContain('…');
+  });
+
+  it('note yok → Not: satırı yok', () => {
+    const req = buildNewVitrinReportAlert({
+      companyName: 'Mavi Pet',
+      targetType: 'storefront',
+      reason: 'spam',
+    });
+    expect(req.text).not.toContain('Not:');
+  });
+
+  it('panelUrl varsa link içerir', () => {
+    const req = buildNewVitrinReportAlert({
+      companyName: 'Mavi Pet',
+      targetType: 'storefront',
+      reason: 'spam',
+      panelUrl: '/admin/superadmin/vitrin-moderation?tab=reports',
+    });
+    expect(req.text).toContain(
+      'href="/admin/superadmin/vitrin-moderation?tab=reports"',
+    );
+  });
+
+  it('bilinmeyen reason → raw string fallback', () => {
+    const req = buildNewVitrinReportAlert({
+      companyName: 'Mavi Pet',
+      targetType: 'storefront',
+      reason: 'custom_xyz',
+    });
+    expect(req.text).toContain('custom_xyz');
   });
 });
