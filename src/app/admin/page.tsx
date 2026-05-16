@@ -103,6 +103,11 @@ export default async function AdminDashboardPage() {
   const todayQtyDisplay = stats.todaySaleQty;
   const todayRevenueDisplay = stats.todaySaleRevenue ?? '0';
 
+  // Yeni register kullanıcı (boş tenant) tespiti — pano welcome variant'a geçer.
+  // Onboarding sonrası /admin'e gelen kullanıcının ne göreceği bu branch.
+  const isWelcomeState =
+    stats.totalProducts === 0 && stats.totalStockQty === 0;
+
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 lg:px-6 py-8 lg:py-10">
       {/* ============ HERO — Cat orange gradient + logo aside ============ */}
@@ -144,12 +149,26 @@ export default async function AdminDashboardPage() {
             className="mt-3 text-3xl lg:text-4xl font-bold leading-tight tracking-tight"
             data-testid="hero-title"
           >
-            {todayQtyDisplay > 0
-              ? `${todayQtyDisplay} satış · ${Number(todayRevenueDisplay).toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺ ciro`
-              : 'Bugün hareket bekliyor'}
+            {isWelcomeState
+              ? `🐾 Hoş geldin, ${company?.name ?? 'pet shop'}!`
+              : todayQtyDisplay > 0
+                ? `${todayQtyDisplay} satış · ${Number(todayRevenueDisplay).toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺ ciro`
+                : 'Bugün hareket bekliyor'}
           </h1>
-          <p className="mt-2 max-w-xl text-[13.5px] leading-relaxed opacity-92">
-            {stats.lowStockCount > 0 ? (
+          <p
+            className="mt-2 max-w-xl text-[13.5px] leading-relaxed opacity-92"
+            data-testid="hero-lead"
+          >
+            {isWelcomeState ? (
+              <>
+                Pet shop yönetim paneline hoş geldin. Önce{' '}
+                <strong className="rounded-md bg-white/20 px-2 py-0.5">
+                  ilk ürünü ekle
+                </strong>
+                , sonra tedarikçiden stok girişi yap. Vitrin profili ile
+                müşteriler seni bulsun.
+              </>
+            ) : stats.lowStockCount > 0 ? (
               <>
                 <strong className="rounded-md bg-white/20 px-2 py-0.5">
                   {stats.lowStockCount} ürün
@@ -166,19 +185,39 @@ export default async function AdminDashboardPage() {
           </p>
 
           <div className="mt-5 flex flex-wrap gap-2">
-            <Link
-              href={'/admin/stock-movements' as never}
-              data-testid="hero-stock-in"
-              className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-[12.5px] font-bold text-cart shadow-md hover:-translate-y-0.5 transition-transform"
-            >
-              ＋ Hızlı stok girişi
-            </Link>
-            <Link
-              href={'/admin/reports' as never}
-              className="inline-flex items-center gap-2 rounded-xl border border-white/35 bg-white/15 px-4 py-2.5 text-[12.5px] font-bold text-white backdrop-blur hover:bg-white/25"
-            >
-              Satışı detaylı gör →
-            </Link>
+            {isWelcomeState ? (
+              <>
+                <Link
+                  href={'/admin/products/new' as never}
+                  data-testid="hero-add-product"
+                  className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-[12.5px] font-bold text-cart shadow-md hover:-translate-y-0.5 transition-transform"
+                >
+                  🐾 İlk ürünü ekle
+                </Link>
+                <Link
+                  href={'/admin/settings/storefront' as never}
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/35 bg-white/15 px-4 py-2.5 text-[12.5px] font-bold text-white backdrop-blur hover:bg-white/25"
+                >
+                  🌐 Vitrin profili
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href={'/admin/stock-movements' as never}
+                  data-testid="hero-stock-in"
+                  className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-[12.5px] font-bold text-cart shadow-md hover:-translate-y-0.5 transition-transform"
+                >
+                  ＋ Hızlı stok girişi
+                </Link>
+                <Link
+                  href={'/admin/reports' as never}
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/35 bg-white/15 px-4 py-2.5 text-[12.5px] font-bold text-white backdrop-blur hover:bg-white/25"
+                >
+                  Satışı detaylı gör →
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Branch rail — toplam stok + şube sayısı kısa özet */}
