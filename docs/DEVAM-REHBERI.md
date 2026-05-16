@@ -1,8 +1,8 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-16 (Sprint 7b Bypass çalışılıyor, 3/6 aksiyon committed)
-**Mevcut Branch:** `cray61` — origin'in 6 commit ileri (push edilmedi)
-**Durum:** ✅ **Sprint 0-15 büyük kısmı tamamlandı + Sprint 7a tam + Sprint 7b 3/6 aksiyon + Disk grafiği.** 762 test, 11 migration, 0 lint+typecheck error.
+**Tarih:** 2026-05-16 (Sprint 7b Bypass çalışılıyor, 4/6 aksiyon committed)
+**Mevcut Branch:** `cray61` — origin'in 8+ commit ileri (push edilmedi)
+**Durum:** ✅ **Sprint 0-15 büyük kısmı tamamlandı + Sprint 7a tam + Sprint 7b 4/6 aksiyon + Disk grafiği.** 772 test, 11 migration, 0 lint+typecheck error.
 
 ## 🚦 YENİ SESSION BAŞLANGIÇ — KALDIĞIN YER
 
@@ -16,7 +16,7 @@
 | **2. Hard delete ürün** (6 test + browser E2E reject + happy) | ✅ + browser E2E | `92665dc` |
 | **Disk doluluğu + top 8 tablo grafiği** (süperadmin sayfa) | ✅ + browser E2E | `b9822cf` |
 | **3. Eksi stoğa zorla giriş** (8 test, sayfa+form+action hazır) | ✅ + browser E2E | `8507e4a` |
-| 4. Plan limit override | ⏳ | — |
+| **4. Plan limit override** (10 test, sayfa+form+action hazır) | ✅ + browser E2E | (this commit) |
 | 5. Sayim rollback (completed stocktake undo) | ⏳ | — |
 | 6. Movement metadata düzelt | ⏳ | — |
 
@@ -74,11 +74,12 @@ Plan-konsistent sırayla:
 | 7b Bypass 2 | Hard delete ürün (helper + 6 test + browser E2E reject+happy) | `92665dc` |
 | Disk grafiği | Süperadmin paneline disk doluluk + top 8 tablo bar chart | `b9822cf` |
 | 7b Bypass 3 | Eksi stoğa zorla (helper + 8 test + sayfa + ✅ browser E2E) | `8507e4a` |
+| 7b Bypass 4 | Plan limit override (helper + 10 test + sayfa + ✅ browser E2E FREE→PRO) | (this commit) |
 
 **Test:** 610 → 762 (+152)
 **Migration:** 7 → 11 (0008/0009/0010/0011)
 **Yeni route/sayfa:** ~40
-**Browser E2E doğrulanan ekranlar:** Pano + 7 settings + 4 stocktake + ürün/şube detay + low-stock + notifications + süperadmin + tenant detay + bypass 1 + bypass 2 + bypass 3
+**Browser E2E doğrulanan ekranlar:** Pano + 7 settings + 4 stocktake + ürün/şube detay + low-stock + notifications + süperadmin + tenant detay + bypass 1 + bypass 2 + bypass 3 + bypass 4
 
 ---
 
