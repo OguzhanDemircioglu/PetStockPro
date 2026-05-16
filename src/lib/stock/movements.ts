@@ -214,6 +214,44 @@ export class InsufficientStockError extends Error {
   }
 }
 
+/**
+ * Transaction içinde branch_inventory satırını `FOR UPDATE` ile kilitler ve
+ * **güncel** stockQty değerini döner. Concurrent satış race condition'ı
+ * önlemek için (SPRINT-PLAN §7.4 — paralel iki satış aynı stok üzerinden
+ * geçemez).
+ *
+ * - Mevcut row varsa: SELECT ... FOR UPDATE → kilitli okuma, paralel
+ *   transaction'lar burada serializasyon noktası bekler.
+ * - Row yoksa (henüz hiç hareket yok): NULL döner, INSERT path
+ *   (branch_id, variant_id) unique constraint ile paralel iki INSERT'i
+ *   ikincisinin fail etmesiyle koruma altında.
+ */
+async function refreshAndLockInfo(
+  tx: DbClient,
+  info: VariantStockInfo,
+): Promise<VariantStockInfo> {
+  if (info.inventoryRowId) {
+    const locked = await tx
+      .select({
+        id: branchInventory.id,
+        stockQty: branchInventory.stockQty,
+      })
+      .from(branchInventory)
+      .where(eq(branchInventory.id, info.inventoryRowId))
+      .for('update');
+    if (locked.length > 0) {
+      return {
+        ...info,
+        currentQty: locked[0].stockQty,
+        inventoryRowId: locked[0].id,
+      };
+    }
+    // Row arada silinmiş (nadir) — INSERT path'a düş
+    return { ...info, inventoryRowId: null, currentQty: 0 };
+  }
+  return info;
+}
+
 // ─────────────────────────────────────────────────────────────────
 // STOCK IN — alış girişi
 // ─────────────────────────────────────────────────────────────────
@@ -272,11 +310,17 @@ export async function recordStockIn(
   );
   if (!info) return { ok: false, reason: 'not_found' };
 
-  const beforeQty = info.currentQty;
-  const afterQty = beforeQty + data.quantity;
+  let beforeQty = info.currentQty;
+  let afterQty = beforeQty + data.quantity;
 
   try {
     const movementId = await db.transaction(async (tx) => {
+      // Concurrent race koruması — FOR UPDATE ile satırı kilitle, güncel
+      // stockQty'yi yeniden oku (SPRINT-PLAN §7.4).
+      const lockedInfo = await refreshAndLockInfo(tx as unknown as DbClient, info);
+      beforeQty = lockedInfo.currentQty;
+      afterQty = beforeQty + data.quantity;
+
       const [m] = await tx
         .insert(stockMovements)
         .values({
@@ -302,9 +346,9 @@ export async function recordStockIn(
 
       await applyInventoryChange(
         tx as unknown as DbClient,
-        info,
+        lockedInfo,
         data.quantity,
-        info.productId,
+        lockedInfo.productId,
         now,
         false,
       );
@@ -393,6 +437,8 @@ export async function recordStockOut(
   );
   if (!info) return { ok: false, reason: 'not_found' };
 
+  // Tx dışı early reject — UI'a hızlı feedback, ama race koruması tx içi
+  // FOR UPDATE + applyInventoryChange'in throw'u garantili (allowNegative=false).
   if (info.currentQty < data.quantity) {
     return {
       ok: false,
@@ -401,11 +447,20 @@ export async function recordStockOut(
     };
   }
 
-  const beforeQty = info.currentQty;
-  const afterQty = beforeQty - data.quantity;
+  let beforeQty = info.currentQty;
+  let afterQty = beforeQty - data.quantity;
 
   try {
     const movementId = await db.transaction(async (tx) => {
+      // Concurrent satış race koruması — paralel iki satış aynı stockQty'yi
+      // okuyamasın (SPRINT-PLAN §7.4). FOR UPDATE ile satırı kilitle.
+      const lockedInfo = await refreshAndLockInfo(tx as unknown as DbClient, info);
+      if (lockedInfo.currentQty < data.quantity) {
+        throw new InsufficientStockError(lockedInfo.currentQty, data.quantity);
+      }
+      beforeQty = lockedInfo.currentQty;
+      afterQty = beforeQty - data.quantity;
+
       const [m] = await tx
         .insert(stockMovements)
         .values({
@@ -431,9 +486,9 @@ export async function recordStockOut(
 
       await applyInventoryChange(
         tx as unknown as DbClient,
-        info,
+        lockedInfo,
         -data.quantity,
-        info.productId,
+        lockedInfo.productId,
         now,
         true,
       );
@@ -890,17 +945,34 @@ export async function recordStocktakeAdjustment(
   );
   if (!info) return { ok: false, reason: 'not_found' };
 
-  const beforeQty = info.currentQty;
-  const delta = data.countedQty - beforeQty;
-  if (delta === 0) {
+  // Tx dışı early no_change kontrolü — UI feedback için. Asıl no_change
+  // garantisi tx içi FOR UPDATE'lı re-hesapla.
+  if (data.countedQty - info.currentQty === 0) {
     return { ok: false, reason: 'no_change' };
   }
 
-  const isOutgoing = delta < 0;
-  const afterQty = data.countedQty;
+  let beforeQty = info.currentQty;
+  let delta = data.countedQty - beforeQty;
+  let afterQty = data.countedQty;
+  const earlyIsOutgoing = delta < 0;
 
   try {
-    const movementId = await db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
+      // Sayım da concurrent satışla yarışabilir: aynı variant'ta paralel
+      // satış olursa countedQty - currentQty yanıltıcı olur. FOR UPDATE
+      // ile satırı kilitle, ardından delta'yı yeniden hesapla.
+      const lockedInfo = await refreshAndLockInfo(tx as unknown as DbClient, info);
+      beforeQty = lockedInfo.currentQty;
+      delta = data.countedQty - beforeQty;
+      afterQty = data.countedQty;
+      const isOutgoing = delta < 0;
+
+      if (delta === 0) {
+        // Sayım sırasında başka biri tam istenilen miktarı satıvermiş —
+        // düzeltme yapılmaz, tx rollback, no_change işareti döner.
+        throw new NoStocktakeChangeError();
+      }
+
       const [m] = await tx
         .insert(stockMovements)
         .values({
@@ -921,18 +993,36 @@ export async function recordStocktakeAdjustment(
 
       await applyInventoryChange(
         tx as unknown as DbClient,
-        info,
+        lockedInfo,
         delta,
-        info.productId,
+        lockedInfo.productId,
         now,
         isOutgoing,
       );
-      return m.id;
+      return { id: m.id, delta, afterQty, beforeQty };
     });
 
-    return { ok: true, movementId, delta, afterQty, beforeQty };
-  } catch {
+    return {
+      ok: true,
+      movementId: result.id,
+      delta: result.delta,
+      afterQty: result.afterQty,
+      beforeQty: result.beforeQty,
+    };
+  } catch (err) {
+    if (err instanceof NoStocktakeChangeError) {
+      return { ok: false, reason: 'no_change' };
+    }
+    void earlyIsOutgoing; // suppress unused (tx içi isOutgoing kullanılıyor)
     return { ok: false, reason: 'unknown' };
+  }
+}
+
+class NoStocktakeChangeError extends Error {
+  readonly code = 'no_change';
+  constructor() {
+    super('Sayım sistemdeki miktarla aynı — düzeltme yok');
+    this.name = 'NoStocktakeChangeError';
   }
 }
 
@@ -1008,13 +1098,28 @@ export async function recordTransfer(
   if (!targetInfo) return { ok: false, reason: 'not_found' };
 
   const transferGroupId = crypto.randomUUID();
-  const sourceBeforeQty = sourceInfo.currentQty;
-  const sourceAfterQty = sourceBeforeQty - data.quantity;
-  const targetBeforeQty = targetInfo.currentQty;
-  const targetAfterQty = targetBeforeQty + data.quantity;
+  let sourceBeforeQty = sourceInfo.currentQty;
+  let sourceAfterQty = sourceBeforeQty - data.quantity;
+  let targetBeforeQty = targetInfo.currentQty;
+  let targetAfterQty = targetBeforeQty + data.quantity;
 
   try {
     await db.transaction(async (tx) => {
+      // Concurrent satış/transfer race koruması — iki şubenin de inventory
+      // satırlarını FOR UPDATE ile kilitle, güncel stockQty üzerinden hesapla
+      // (SPRINT-PLAN §7.4). Lock sırası: önce kaynak (daha sıkı kontrol),
+      // sonra hedef.
+      const lockedSource = await refreshAndLockInfo(tx as unknown as DbClient, sourceInfo);
+      if (lockedSource.currentQty < data.quantity) {
+        throw new InsufficientStockError(lockedSource.currentQty, data.quantity);
+      }
+      const lockedTarget = await refreshAndLockInfo(tx as unknown as DbClient, targetInfo);
+
+      sourceBeforeQty = lockedSource.currentQty;
+      sourceAfterQty = sourceBeforeQty - data.quantity;
+      targetBeforeQty = lockedTarget.currentQty;
+      targetAfterQty = targetBeforeQty + data.quantity;
+
       // Kaynak çıkış kaydı
       await tx.insert(stockMovements).values({
         companyId,
@@ -1052,17 +1157,17 @@ export async function recordTransfer(
       // Branch_inventory'leri güncelle — kaynak isOutgoing=true, hedef false
       await applyInventoryChange(
         tx as unknown as DbClient,
-        sourceInfo,
+        lockedSource,
         -data.quantity,
-        sourceInfo.productId,
+        lockedSource.productId,
         now,
         true,
       );
       await applyInventoryChange(
         tx as unknown as DbClient,
-        targetInfo,
+        lockedTarget,
         data.quantity,
-        targetInfo.productId,
+        lockedTarget.productId,
         now,
         false,
       );

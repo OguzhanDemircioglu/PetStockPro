@@ -37,6 +37,7 @@ function makeSelectChain(responses: unknown[][]) {
       where: ReturnType<typeof vi.fn>;
       orderBy: ReturnType<typeof vi.fn>;
       limit: ReturnType<typeof vi.fn>;
+      for: ReturnType<typeof vi.fn>;
       then: (cb: (rows: unknown[]) => unknown) => Promise<unknown>;
     } => {
       const node: ReturnType<typeof makeNode> = {
@@ -46,6 +47,7 @@ function makeSelectChain(responses: unknown[][]) {
         where: vi.fn(() => makeNode()),
         orderBy: vi.fn(() => makeNode()),
         limit: vi.fn(() => makeNode()),
+        for: vi.fn(() => makeNode()),
         then: (cb) => Promise.resolve(data).then(cb),
       };
       return node;
@@ -58,7 +60,7 @@ function makeSelectChain(responses: unknown[][]) {
 // Transaction mock — applyInventoryChange içindeki tx.update/insert
 // ─────────────────────────────────────────────────────────────────
 
-function makeTxMock() {
+function makeTxMock(lockResponses: unknown[][] = []) {
   const movementInsert = vi.fn().mockReturnValue({
     values: vi.fn().mockReturnValue({
       returning: vi.fn().mockResolvedValue([{ id: 'new-movement-id' }]),
@@ -85,14 +87,19 @@ function makeTxMock() {
       where: vi.fn().mockResolvedValue(undefined),
     }),
   });
+  // tx.select — refreshAndLockInfo FOR UPDATE re-fetch için. Test başına
+  // beklenen lockedRowResponses dizisi geçirilir; sırayla döner. Default:
+  // boş — `info.inventoryRowId=null` testleri için (lock atlanır).
+  const selectImpl = makeSelectChain(lockResponses);
 
   return {
-    tx: { insert: insertImpl, update: updateImpl },
+    tx: { insert: insertImpl, update: updateImpl, select: selectImpl },
     movementInsert,
     inventoryInsert,
     inventoryUpdate,
     insertImpl,
     updateImpl,
+    selectImpl,
   };
 }
 
@@ -239,7 +246,10 @@ describe('recordStockIn', () => {
         },
       ],
     ]);
-    const { tx, insertImpl, updateImpl } = makeTxMock();
+    // FOR UPDATE re-fetch için lock response — fetch ile aynı qty
+    const { tx, insertImpl, updateImpl } = makeTxMock([
+      [{ id: 'inv-row-1', stockQty: 30 }],
+    ]);
     const transaction = vi
       .fn()
       .mockImplementation(async (cb: (t: unknown) => Promise<unknown>) => cb(tx));
@@ -317,7 +327,9 @@ describe('recordStockOut', () => {
         },
       ],
     ]);
-    const { tx, insertImpl, updateImpl } = makeTxMock();
+    const { tx, insertImpl, updateImpl } = makeTxMock([
+      [{ id: 'inv-row-1', stockQty: 25 }],
+    ]);
     const transaction = vi
       .fn()
       .mockImplementation(async (cb: (t: unknown) => Promise<unknown>) => cb(tx));
@@ -417,7 +429,7 @@ describe('recordStockOut', () => {
         },
       ],
     ]);
-    const { tx } = makeTxMock();
+    const { tx } = makeTxMock([[{ id: 'inv-row-1', stockQty: 10 }]]);
     const transaction = vi
       .fn()
       .mockImplementation(async (cb: (t: unknown) => Promise<unknown>) => cb(tx));
@@ -453,7 +465,7 @@ describe('recordStockOut', () => {
         },
       ],
     ]);
-    const { tx } = makeTxMock();
+    const { tx } = makeTxMock([[{ id: 'inv-row-1', stockQty: 5 }]]);
     const transaction = vi
       .fn()
       .mockImplementation(async (cb: (t: unknown) => Promise<unknown>) => cb(tx));
@@ -506,7 +518,12 @@ describe('recordTransfer', () => {
         },
       ],
     ]);
-    const { tx, insertImpl, updateImpl } = makeTxMock();
+    // Lock sırası: kaynak şube önce, hedef sonra (refreshAndLockInfo
+    // recordTransfer içinde bu sıra ile çağrılır)
+    const { tx, insertImpl, updateImpl } = makeTxMock([
+      [{ id: 'inv-source', stockQty: 20 }],
+      [{ id: 'inv-target', stockQty: 5 }],
+    ]);
     const transaction = vi
       .fn()
       .mockImplementation(async (cb: (t: unknown) => Promise<unknown>) => cb(tx));
@@ -652,7 +669,9 @@ describe('recordStocktakeAdjustment', () => {
         },
       ],
     ]);
-    const { tx, insertImpl, updateImpl } = makeTxMock();
+    const { tx, insertImpl, updateImpl } = makeTxMock([
+      [{ id: 'inv-1', stockQty: 8 }],
+    ]);
     const transaction = vi
       .fn()
       .mockImplementation(async (cb: (t: unknown) => Promise<unknown>) => cb(tx));
@@ -688,7 +707,7 @@ describe('recordStocktakeAdjustment', () => {
         },
       ],
     ]);
-    const { tx, updateImpl } = makeTxMock();
+    const { tx, updateImpl } = makeTxMock([[{ id: 'inv-1', stockQty: 5 }]]);
     const transaction = vi
       .fn()
       .mockImplementation(async (cb: (t: unknown) => Promise<unknown>) => cb(tx));
@@ -1242,5 +1261,229 @@ describe('InsufficientStockError', () => {
     expect(err.requested).toBe(10);
     expect(err.message).toMatch(/yetersiz/i);
     expect(err.code).toBe('insufficient_stock');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// Concurrent satış race condition koruması (SPRINT-PLAN §7.4)
+// ─────────────────────────────────────────────────────────────────
+
+describe('FOR UPDATE concurrent satış lock', () => {
+  it('recordStockOut: tx içi lock güncel stockQty döndürür, tx dışı check geçse de lock\'lu re-check throw eder', async () => {
+    // Senaryo: T1 fetchVariantStockInfo'da currentQty=5 görüyor, ama paralel
+    // T0 transaction arada 3 sattı. T1 tx içine girince FOR UPDATE ile
+    // stockQty=2 okur → istenen 5 > available 2 → InsufficientStockError
+    // → tx rollback → insufficient_stock dönecek.
+    const select = makeSelectChain([
+      [
+        {
+          variantId: VARIANT,
+          productId: PRODUCT,
+          variantCompanyId: COMPANY,
+          branchCompanyId: COMPANY,
+          currentQty: 5, // tx dışı: yeterli görünüyor
+          inventoryRowId: 'inv-row-1',
+        },
+      ],
+    ]);
+    // tx içi FOR UPDATE re-fetch → 2 (T0 arada 3 sattı, lock alındığında
+    // sadece 2 görünüyor)
+    const { tx, insertImpl, updateImpl } = makeTxMock([
+      [{ id: 'inv-row-1', stockQty: 2 }],
+    ]);
+    const transaction = vi
+      .fn()
+      .mockImplementation(async (cb: (t: unknown) => Promise<unknown>) => cb(tx));
+    const db = { select, transaction } as unknown as DbClient;
+
+    const result = await recordStockOut(
+      COMPANY,
+      USER,
+      {
+        branchId: BRANCH,
+        variantId: VARIANT,
+        quantity: 5,
+        subtype: 'sale',
+      },
+      db,
+      NOW,
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe('insufficient_stock');
+      expect(result.meta?.available).toBe(2); // FOR UPDATE'lı güncel değer
+      expect(result.meta?.requested).toBe(5);
+    }
+    // Tx rollback → ne movement ne inventory update
+    expect(insertImpl).not.toHaveBeenCalled();
+    expect(updateImpl).not.toHaveBeenCalled();
+  });
+
+  it('recordStockOut: lock\'lu re-fetch beforeQty/afterQty doğru hesap', async () => {
+    // Senaryo: T1 fetchVariantStockInfo'da currentQty=10 (eski state), tx
+    // içinde lock alınca güncel 7 (arada başkası 3 satmış). T1 1 satıyor
+    // → beforeQty=7, afterQty=6 (10 değil — lock'lu güncel değer).
+    const select = makeSelectChain([
+      [
+        {
+          variantId: VARIANT,
+          productId: PRODUCT,
+          variantCompanyId: COMPANY,
+          branchCompanyId: COMPANY,
+          currentQty: 10,
+          inventoryRowId: 'inv-row-1',
+        },
+      ],
+    ]);
+    const { tx } = makeTxMock([[{ id: 'inv-row-1', stockQty: 7 }]]);
+    const transaction = vi
+      .fn()
+      .mockImplementation(async (cb: (t: unknown) => Promise<unknown>) => cb(tx));
+    const db = { select, transaction } as unknown as DbClient;
+
+    const result = await recordStockOut(
+      COMPANY,
+      USER,
+      { branchId: BRANCH, variantId: VARIANT, quantity: 1, subtype: 'sale' },
+      db,
+      NOW,
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      // afterQty lock'lu beforeQty=7 üzerinden, 7-1=6
+      expect(result.afterQty).toBe(6);
+      expect(result.beforeQty).toBe(7);
+    }
+  });
+
+  it('recordTransfer: kaynak şube lock\'lu re-check sırasında yetersiz → tx rollback', async () => {
+    // Senaryo: tx dışı kaynak currentQty=10 (yeterli), tx içi FOR UPDATE
+    // sonrası 5 (paralel satışla düştü), 8 transfer reddedilir.
+    const select = makeSelectChain([
+      [
+        {
+          variantId: VARIANT,
+          productId: PRODUCT,
+          variantCompanyId: COMPANY,
+          branchCompanyId: COMPANY,
+          currentQty: 10, // tx dışı: yeterli
+          inventoryRowId: 'inv-source',
+        },
+      ],
+      [
+        {
+          variantId: VARIANT,
+          productId: PRODUCT,
+          variantCompanyId: COMPANY,
+          branchCompanyId: COMPANY,
+          currentQty: 0,
+          inventoryRowId: null,
+        },
+      ],
+    ]);
+    // tx içi: kaynak 5 (arada satılmış) → kaynak yetersiz, hedef hiç
+    // sorgulanmaz (throw)
+    const { tx, insertImpl } = makeTxMock([
+      [{ id: 'inv-source', stockQty: 5 }],
+    ]);
+    const transaction = vi
+      .fn()
+      .mockImplementation(async (cb: (t: unknown) => Promise<unknown>) => cb(tx));
+    const db = { select, transaction } as unknown as DbClient;
+
+    const result = await recordTransfer(
+      COMPANY,
+      USER,
+      {
+        sourceBranchId: BRANCH,
+        targetBranchId: BRANCH_2,
+        variantId: VARIANT,
+        quantity: 8,
+      },
+      db,
+      NOW,
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe('insufficient_stock');
+      expect(result.meta?.available).toBe(5);
+    }
+    expect(insertImpl).not.toHaveBeenCalled();
+  });
+
+  it('recordStocktakeAdjustment: lock arası delta=0 yarış → no_change rollback', async () => {
+    // Senaryo: T1 currentQty=10, countedQty=12 (eksik, delta+2 düzeltecek).
+    // Tx dışı early no_change check pas (12 != 10). Tx içinde lock sonrası
+    // currentQty=12 (başkası 2 stok girdi) → delta=0 → no_change throw →
+    // rollback.
+    const select = makeSelectChain([
+      [
+        {
+          variantId: VARIANT,
+          productId: PRODUCT,
+          variantCompanyId: COMPANY,
+          branchCompanyId: COMPANY,
+          currentQty: 10,
+          inventoryRowId: 'inv-1',
+        },
+      ],
+    ]);
+    const { tx, insertImpl, updateImpl } = makeTxMock([
+      [{ id: 'inv-1', stockQty: 12 }],
+    ]);
+    const transaction = vi
+      .fn()
+      .mockImplementation(async (cb: (t: unknown) => Promise<unknown>) => cb(tx));
+    const db = { select, transaction } as unknown as DbClient;
+
+    const result = await recordStocktakeAdjustment(
+      COMPANY,
+      USER,
+      { branchId: BRANCH, variantId: VARIANT, countedQty: 12 },
+      db,
+      NOW,
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe('no_change');
+    expect(insertImpl).not.toHaveBeenCalled();
+    expect(updateImpl).not.toHaveBeenCalled();
+  });
+
+  it('recordStockOut: tx.select FOR UPDATE chain\'i çağrılır (lock doğrulama)', async () => {
+    const select = makeSelectChain([
+      [
+        {
+          variantId: VARIANT,
+          productId: PRODUCT,
+          variantCompanyId: COMPANY,
+          branchCompanyId: COMPANY,
+          currentQty: 5,
+          inventoryRowId: 'inv-row-1',
+        },
+      ],
+    ]);
+    const { tx, selectImpl } = makeTxMock([
+      [{ id: 'inv-row-1', stockQty: 5 }],
+    ]);
+    const transaction = vi
+      .fn()
+      .mockImplementation(async (cb: (t: unknown) => Promise<unknown>) => cb(tx));
+    const db = { select, transaction } as unknown as DbClient;
+
+    await recordStockOut(
+      COMPANY,
+      USER,
+      { branchId: BRANCH, variantId: VARIANT, quantity: 1, subtype: 'sale' },
+      db,
+      NOW,
+    );
+
+    // tx.select FOR UPDATE chain'i en az 1 kez çağrıldı — refreshAndLockInfo
+    // her stock-out'ta lock alır (SPRINT-PLAN §7.4 race koruması)
+    expect(selectImpl).toHaveBeenCalledTimes(1);
   });
 });
