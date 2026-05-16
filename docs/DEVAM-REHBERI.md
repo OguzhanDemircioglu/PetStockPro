@@ -1,9 +1,9 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-17 (Sprint 8/10/12 MVP TAM + Sprint 15 polish 4'lü + Sprint 12 ext ürün detay + WhatsApp Feedback Balonu + Feedback dashboard + Pano feedback widget + /vitrin pagination/sort + SEO il/ilçe sayfaları + vitrin moderation paneli + audit log pagination fix + sitemap.xml + robots.txt + vitrin_reports şikayet sistemi + report rate-limit + reset-password fix)
-**Mevcut Branch:** `cray61` — origin'in **55 commit** ileri (push edilmedi)
-**Son commit:** `f414616` feat(vitrin): submitReport rate-limit gate (1 IP × tenant × 24h max 5)
-**Test:** 1016 passed (72 dosya) — vitest
+**Tarih:** 2026-05-17 (Sprint 8/10/12 MVP TAM + Sprint 15 polish 4'lü + Sprint 12 ext ürün detay + WhatsApp Feedback Balonu + Feedback dashboard + Pano feedback widget + /vitrin pagination/sort + SEO il/ilçe sayfaları + vitrin moderation paneli + audit log pagination fix + sitemap.xml + robots.txt + vitrin_reports şikayet sistemi + report rate-limit + report Telegram alert + reset-password fix)
+**Mevcut Branch:** `cray61` — origin'in **57 commit** ileri (push edilmedi)
+**Son commit:** `9bdc957` feat(vitrin): yeni şikayet süperadmin Telegram alert (warning severity)
+**Test:** 1022 passed (72 dosya) — vitest
 **Lint+typecheck:** 0 error
 **Migration:** 14 (0014 vitrin_reports + 0013 vitrin_whatsapp_feedback + 0012 telegram + 0008/0009/0010/0011 + 7 öncesi)
 
@@ -41,11 +41,11 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 |---|---|---|---|
 | 1 | **Sitemap pre-build (pg_cron + R2)** | 1 gün | MVP dynamic sitemap hazır, 50K+ URL'de pre-build gerekecek (şu an erken) |
 | 2 | **Cloudflare Workers KV rate-limit migration** | 30 dk | DB-level COUNT MVP'de yeter ama production'da KV ~5ms vs ~50ms |
-| 3 | **Tenant Telegram alert: yeni şikayet** | 30 dk | Süperadmin Telegram'a sadece feedback alert atıyor, şikayet için de |
+| 3 | **Şikayet alert dedup** (10 şikayet 1 saat içinde → 1 toplu alert) | 30 dk | Yüksek-trafik tenant'larda spam alert önlemek için group-by-window |
 | 4 | **Storage upload — Sprint 3.3** | ⛔ BLOKER | `SUPABASE_SERVICE_ROLE_KEY` gerek (kullanıcı sağlayacak) |
 | 5 | **Sprint 13/14 production deploy** | ⛔ BLOKER | Şirket kuruluş + vergi no + IBAN (2-4 hafta) |
 
-**Plana sadık sıra (CLAUDE.md SPRINT-PLAN):** Sprint 8 ✅ → Sprint 10 ✅ → Sprint 12 MVP ✅ → Sprint 15 polish 4'lü ✅ → Sprint 12 ext ürün detay + Feedback Balonu ✅ → Feedback dashboard (settings + Pano) ✅ → /vitrin pagination + sort enrichment ✅ → Sprint 12 ext SEO il/ilçe route'lar ✅ → Vitrin moderation süperadmin paneli ✅ → Audit log pagination fix ✅ → Sitemap.xml + robots.txt dynamic ✅ → vitrin_reports şikayet sistemi ✅ → Anti-spam rate-limit DB-level ✅ → **Sitemap pre-build pg_cron / Workers KV migrate / Tenant şikayet alert** → Sprint 16 lansman (bloker bekliyor)
+**Plana sadık sıra (CLAUDE.md SPRINT-PLAN):** Sprint 8 ✅ → Sprint 10 ✅ → Sprint 12 MVP ✅ → Sprint 15 polish 4'lü ✅ → Sprint 12 ext ürün detay + Feedback Balonu ✅ → Feedback dashboard (settings + Pano) ✅ → /vitrin pagination + sort enrichment ✅ → Sprint 12 ext SEO il/ilçe route'lar ✅ → Vitrin moderation süperadmin paneli ✅ → Audit log pagination fix ✅ → Sitemap.xml + robots.txt dynamic ✅ → vitrin_reports şikayet sistemi ✅ → Anti-spam rate-limit DB-level ✅ → Süperadmin Telegram alert yeni şikayet ✅ → **Sitemap pre-build pg_cron / Workers KV migrate / Alert dedup** → Sprint 16 lansman (bloker bekliyor)
 
 ## 📦 Bu Turun Kümülatif Sonucu (22 commit)
 
@@ -132,6 +132,7 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 | **Sitemap.xml + robots.txt** | lib/vitrin/sitemap-data.ts: collectSitemapEntries 5 grup (static + cities + districts + tenants + products, distinct INNER JOIN approved+isEnabled) + getPublicBaseUrl env fallback. src/app/sitemap.ts: Next.js MetadataRoute.Sitemap dynamic (force-dynamic + revalidate 1h). src/app/robots.ts: User-Agent * + 12 disallow (/admin + auth + /api) + sitemap link. +10 unit test (collectSitemapEntries 6 senaryo + getPublicBaseUrl 4 env). Browser E2E: /sitemap.xml 4 URL render + /robots.txt 12 disallow. Pre-build pg_cron+R2 Faz 2'ye saklandı (50K+ URL'de gerek). | `9254077` |
 | **vitrin_reports şikayet sistemi** | Migration 0014 + 3 enum (reason 7 değer + status 3 + targetType 2). lib/vitrin/reports.ts: reportInputSchema superRefine (targetType+productId tutarlılık) + submitReport (anon IP hash + insert) + listReports (companies JOIN + products LEFT JOIN + resolvedBy users LEFT JOIN) + getReportStats (byStatus + pendingTodayCount 24h) + resolveReport (idempotency + companyId return for audit). POST /api/vitrin/reports anon endpoint. ReportButton client: 7 emoji radio + note + KVKK note. Profil + ürün detay sayfalarına entegre. Süperadmin moderation page 3. tab "📨 Şikayetler" + ReportTableRow + ResolveReportButton (resolved/dismissed select + note + audit log). +20 unit test. Browser E2E gerçek DB round-trip: submit → süperadmin → dismiss → KPI güncel + resolver email + audit log. | `300ef65` |
 | **Şikayet rate-limit** | submitReport içinde Zod sonrası INSERT öncesi DB-level COUNT(*) gate: aynı IP × tenant × 24h max 5. Aşılırsa rate_limit_exceeded reject (429). ipHash='unknown' (proxy header yok) → atlanır. report-button.tsx error mapping güncellendi ("Çok fazla şikayet gönderdin"). +2 unit test (rate_limit_exceeded + altında insert geçer). Browser E2E gerçek DB: 5 fetch ardarda → ilk 4 OK, 5. 429 + UI banner. Cloudflare Workers KV migrate Faz 2'de. | `f414616` |
+| **Süperadmin Telegram alert: yeni şikayet** | buildNewVitrinReportAlert template (TR-localize 7 sebep enum + storefront/product hedef ayrımı + note 200 char truncate + panel URL link + severity warning). submitReport içinde insert sonrası fire-and-forget notifySuperadminOnNewReport (companyName + productName lookup → sendTelegramAlert). +6 unit test (storefront/product/note-truncate/note-yok/panel-link/bilinmeyen-reason). Browser E2E: yeni submit → server log `[telegram:mock] [WARNING] 🚩 Yeni vitrin şikayeti...`. | `9bdc957` |
 
 ### Sprint 9 — Kullanıcılar (davet akışı hibrit)
 
