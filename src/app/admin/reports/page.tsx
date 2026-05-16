@@ -22,6 +22,11 @@ import {
   getInventoryValueByCategory,
   getTopInventoryValueVariants,
 } from '@/lib/reports/inventory-value';
+import {
+  topCustomers,
+  customerSummary,
+  busiestHours,
+} from '@/lib/reports/customers';
 
 const RANGE_OPTIONS = [7, 30, 90];
 
@@ -48,6 +53,9 @@ export default async function ReportsPage({
     invSummary,
     invByCategory,
     invTopVariants,
+    custTop,
+    custSummary,
+    hourly,
   ] = await Promise.all([
     periodSummary(session.user.companyId, db, days),
     dailySalesSummary(session.user.companyId, db, days),
@@ -59,6 +67,9 @@ export default async function ReportsPage({
     getInventoryValueSummary(session.user.companyId, db),
     getInventoryValueByCategory(session.user.companyId, db, 8),
     getTopInventoryValueVariants(session.user.companyId, db, 10),
+    topCustomers(session.user.companyId, db, days, 10),
+    customerSummary(session.user.companyId, db, days),
+    busiestHours(session.user.companyId, db, days),
   ]);
 
   // Maks qty bul, bar grafik için ölçek
@@ -383,6 +394,96 @@ export default async function ReportsPage({
                     </div>
                   </li>
                 ))}
+              </ul>
+            )}
+          </Card>
+        </div>
+      </section>
+
+      <section data-testid="customers-report">
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
+          👥 Müşteri analitik (son {days} gün)
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <KPI title="Tekil müşteri" value={custSummary.uniqueCustomers} emoji="👤" />
+          <KPI title="Kayıtlı satış" value={custSummary.totalSalesWithRef} emoji="✓" accent="arrow" />
+          <KPI title="Anonim satış" value={custSummary.totalSalesAnonymous} emoji="?" />
+          <KPI title="Veresiye" value={custSummary.creditSalesCount} emoji="📝" accent={custSummary.creditSalesCount > custSummary.creditPaidCount ? 'cat' : 'arrow'} />
+          <KPI
+            title="Veresiye tahsil"
+            value={`${custSummary.creditPaidCount}/${custSummary.creditSalesCount}`}
+            emoji="💰"
+          />
+        </div>
+
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <Card title={`Top alıcı (customerRef bazında, top ${custTop.length})`}>
+            {custTop.length === 0 ? (
+              <p className="rounded-lg bg-line-soft px-3 py-4 text-center text-xs text-ink-3">
+                Bu dönemde customerRef kayıtlı satış yok.
+              </p>
+            ) : (
+              <ul className="divide-y divide-line-soft text-xs">
+                {custTop.map((c, i) => (
+                  <li key={c.customerRef} className="flex items-center gap-3 py-2">
+                    <span className="grid h-7 w-7 place-items-center rounded-full bg-cat-soft text-[11px] font-bold text-cart">
+                      {i + 1}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-mono font-bold text-ink">
+                        {c.customerRef}
+                      </div>
+                      <div className="text-[10.5px] text-ink-3">
+                        {c.salesCount} satış · {c.totalQty} adet · son:{' '}
+                        {new Date(c.lastSaleAt).toLocaleDateString('tr-TR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                        })}
+                      </div>
+                    </div>
+                    <div className="font-mono text-sm font-bold text-arrow-7">
+                      {Number(c.totalRevenue || 0).toLocaleString('tr-TR', {
+                        maximumFractionDigits: 2,
+                      })}₺
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+
+          <Card title="En yoğun saatler (TR saati)">
+            {hourly.length === 0 ? (
+              <p className="rounded-lg bg-line-soft px-3 py-4 text-center text-xs text-ink-3">
+                Bu dönemde satış yok.
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-1.5" data-testid="hourly-breakdown">
+                {hourly.map((h) => {
+                  const max = hourly.reduce((m, x) => Math.max(m, x.qty), 1);
+                  const pct = max > 0 ? (h.qty / max) * 100 : 0;
+                  return (
+                    <li key={h.hour} className="flex items-center gap-2 text-[11px]">
+                      <span className="w-12 font-mono text-ink-3">
+                        {String(h.hour).padStart(2, '0')}:00
+                      </span>
+                      <div className="flex-1 overflow-hidden rounded-full bg-line-soft">
+                        <div
+                          className="h-2 rounded-full bg-gradient-to-r from-cat to-cat-2"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span className="w-12 text-right font-mono font-bold text-cart">
+                        {h.qty}
+                      </span>
+                      <span className="w-20 text-right font-mono text-[10px] text-ink-4">
+                        {Number(h.revenue || 0).toLocaleString('tr-TR', {
+                          maximumFractionDigits: 0,
+                        })}₺
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </Card>
