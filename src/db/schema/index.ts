@@ -160,6 +160,22 @@ export const vitrinEventTypeEnum = petstockproSchema.enum('vitrin_event_type', [
   'feedback_dismissed',
 ]);
 
+// Sprint 12 ext — WhatsApp Geri Bildirim Balonu enum'ları
+export const feedbackRatingEnum = petstockproSchema.enum('feedback_rating', [
+  'very_good',
+  'good',
+  'neutral',
+  'bad',
+  'unreached',
+]);
+
+export const feedbackStatusEnum = petstockproSchema.enum('feedback_status', [
+  'submitted',
+  'closed_manually',
+  'dismissed',
+  'flagged',
+]);
+
 // ═══════════════════════════════════════════════════════════════
 // TABLES — Sprint 0 iskelet
 // ═══════════════════════════════════════════════════════════════
@@ -907,9 +923,27 @@ export const storefrontSettings = petstockproSchema.table('storefront_settings',
 });
 
 // ═══════════════════════════════════════════════════════════════
+// Sprint 12 ext — vitrin_whatsapp_feedback (EKRAN-PUBLIC-VITRIN §15)
+// ═══════════════════════════════════════════════════════════════
+export const vitrinWhatsappFeedback = petstockproSchema.table('vitrin_whatsapp_feedback', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  branchId: uuid('branch_id').references(() => branches.id, { onDelete: 'set null' }),
+  vitrinEventId: uuid('vitrin_event_id').references(() => vitrinEvents.id, { onDelete: 'set null' }),
+  rating: feedbackRatingEnum('rating'),
+  reporterIpHash: varchar('reporter_ip_hash', { length: 64 }).notNull(),
+  countryCode: varchar('country_code', { length: 2 }),
+  userAgent: text('user_agent'),
+  status: feedbackStatusEnum('status').notNull(),
+  flaggedById: uuid('flagged_by_id').references(() => users.id, { onDelete: 'set null' }),
+  flagReason: text('flag_reason'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ═══════════════════════════════════════════════════════════════
 // TODO Sprint 1B.3+ (sırayla eklenecek)
 // ═══════════════════════════════════════════════════════════════
-// vitrin_reports, vitrin_whatsapp_feedback,
+// vitrin_reports,
 // telegram_bindings (Faz 2 binding flow), system_settings, system_broadcasts,
 // system_errors, bayi_admin_relations (Faz 3), storefront_messages, ...
 // storefront_settings image alanları (hero/about/og) — Faz 2 (service-role key)

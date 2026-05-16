@@ -9,6 +9,8 @@ import {
   listStorefrontProducts,
 } from '@/lib/vitrin/public';
 import { trackVitrinEventAsync } from '@/lib/vitrin/track';
+import { FeedbackBalloon } from './feedback-balloon';
+import { WhatsappLinkScript } from './whatsapp-link-script';
 
 export const dynamic = 'force-dynamic';
 
@@ -230,6 +232,9 @@ export default async function StorefrontProfilePage({
         </Link>{' '}
         — moderation Sprint 12 ext.
       </p>
+
+      <WhatsappLinkScript />
+      <FeedbackBalloon companyId={sf.companyId} companySlug={sf.slug} />
     </main>
   );
 }

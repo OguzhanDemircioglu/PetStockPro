@@ -9,6 +9,8 @@ import {
   getStorefrontProductDetail,
 } from '@/lib/vitrin/public';
 import { trackVitrinEventAsync } from '@/lib/vitrin/track';
+import { FeedbackBalloon } from '../../feedback-balloon';
+import { WhatsappLinkScript } from '../../whatsapp-link-script';
 
 export const dynamic = 'force-dynamic';
 
@@ -252,6 +254,12 @@ export default async function VitrinProductDetailPage({
         sipariş için doğrudan <strong>{product.companyName}</strong> ile WhatsApp
         üzerinden görüş. Bilgiler pet shop tarafından güncellenir.
       </p>
+
+      <WhatsappLinkScript />
+      <FeedbackBalloon
+        companyId={product.companyId}
+        companySlug={product.companySlug}
+      />
     </main>
   );
 }
