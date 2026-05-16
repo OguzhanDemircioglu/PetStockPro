@@ -1,9 +1,9 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-16 (Sprint 7 TAM + 8 partial + 9 davet + 11 ext rapor üçlüsü)
-**Mevcut Branch:** `cray61` — origin'in **22 commit** ileri (push edilmedi)
-**Son commit:** `47a77bf` feat(reports): Dönem karşılaştırma (bu hafta/ay vs öncesi)
-**Test:** 879 passed (64 dosya) — vitest
+**Tarih:** 2026-05-17 (Sprint 8 TAM + reset-password fix)
+**Mevcut Branch:** `cray61` — origin'in **25 commit** ileri (push edilmedi)
+**Son commit:** `bade9f1` fix(auth): reset-password sql template Date binary cast hatası
+**Test:** 901 passed (65 dosya) — vitest (+22)
 **Lint+typecheck:** 0 error
 **Migration:** 11 (0008/0009/0010/0011 + 7 öncesi)
 
@@ -41,14 +41,13 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 |---|---|---|---|
 | 1 | **Sprint 10 — Telegram setup wizard** (kullanıcı kendi bot token + chat_id binding) | 2-3 saat | Alert kanalı şu an env-only, UI eksik |
 | 2 | **Sprint 12 — Merkezi Vitrin Dizini** (public `/vitrin` + WhatsApp deep link) | 4-6 saat | MVP'nin B2C tarafı, lansman öncesi şart |
-| 3 | **Sprint 8 — İndirim önerisi** (yavaş satış + yüksek stok rule) | 1-2 saat | PetPro Asistanı'nın 3. kartı |
-| 4 | **Audit log filtre** (action+entity+kullanıcı query param) | 1 saat | Audit-log sayfası 100 son satır limitli, filtre yok |
-| 5 | **Düşük stok filter** (kategori + şube bazında) | 1 saat | Tek-tenant tablo büyürse navigate zor |
-| 6 | **Notif filter ext** (5 grup yerine fine-grain action) | 30 dk | Sprint 15'te 5 group var, daha ince filtre faydalı |
-| 7 | **Storage upload — Sprint 3.3** | ⛔ BLOKER | `SUPABASE_SERVICE_ROLE_KEY` gerek (kullanıcı sağlayacak) |
-| 8 | **Sprint 13/14 production deploy** | ⛔ BLOKER | Şirket kuruluş + vergi no + IBAN (2-4 hafta) |
+| 3 | **Audit log filtre ext** (kullanıcı + tarih aralığı + pagination) | 1 saat | Action+entity zaten var (12-13 mayıs commit), kullanıcı + date eksik |
+| 4 | **Düşük stok filter** (kategori + şube bazında) | 1 saat | Tek-tenant tablo büyürse navigate zor |
+| 5 | **Notif filter ext** (5 grup yerine fine-grain action) | 30 dk | Sprint 15'te 5 group var, daha ince filtre faydalı |
+| 6 | **Storage upload — Sprint 3.3** | ⛔ BLOKER | `SUPABASE_SERVICE_ROLE_KEY` gerek (kullanıcı sağlayacak) |
+| 7 | **Sprint 13/14 production deploy** | ⛔ BLOKER | Şirket kuruluş + vergi no + IBAN (2-4 hafta) |
 
-**Önerim:** Sprint 12 (Merkezi Vitrin) — kullanıcı görünür, eksik en büyük parça.
+**Plana sadık sıra (CLAUDE.md SPRINT-PLAN):** Sprint 8 ✅ → **Sprint 10** → Sprint 12 → Sprint 15
 
 ## 📦 Bu Turun Kümülatif Sonucu (22 commit)
 
@@ -74,13 +73,19 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 | 2. DB Inspector | SELECT-only güvenli runner + 20 forbidden keyword + 20 test + 6 hazır query | `a91587b` |
 | 3. Sistem Ayarları | Plan tier + 9 env check + DB extensions + 16 kategori (read-only) + 13 test | `9deb921` |
 
-### Sprint 8 — PetPro Asistanı partial (2/3 kart)
+### Sprint 8 — PetPro Asistanı TAM (3/3 kart)
 
 | Parça | İçerik | Commit |
 |---|---|---|
 | 1. Sipariş önerileri | listOrderSuggestions helper (düşük stok + son tedarikçi) + Pano widget + 8 test | `904f68d` |
 | 2. Transfer önerileri | listTopTransferSuggestions flat wrapper + Pano widget | `be177cb` |
-| 3. İndirim önerisi | ⏳ TODO (yavaş satış + yüksek stok rule) | — |
+| 3. **İndirim önerisi** ✅ | listDiscountSuggestions (yavaş satış + yüksek stok, monthsOfInventory tier 10/20/30) + Pano widget + 22 test + browser E2E (yeni ürün eklendi → 200 stok girişi → widget 680→476₺ -%30 görüldü) | `0b041b5` |
+
+### Fix — reset-password postgres-js Date binary cast
+
+| Konu | Detay | Commit |
+|---|---|---|
+| reset-password DB update hatası | sql.raw + Date karışımı production'da fail ediyordu. `sql\`COALESCE(${col}, ${now.toISOString()}::timestamptz)\`` ile düzeltildi. Browser E2E: /forgot-password → /reset-password/[token] → POST 303 redirect, log'da hata yok. | `bade9f1` |
 
 ### Sprint 9 — Kullanıcılar (davet akışı hibrit)
 
