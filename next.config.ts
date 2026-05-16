@@ -1,6 +1,19 @@
 import type { NextConfig } from 'next';
+import bundleAnalyzer from '@next/bundle-analyzer';
 
 const isDev = process.env.NODE_ENV !== 'production';
+
+/**
+ * Bundle analyzer — `ANALYZE=true npm run build` ile aktive olur.
+ * Production build sonrası `.next/analyze/client.html` + `nodejs.html`
+ * + `edge.html` raporlarını yazar. Route bazlı bundle size + tree-shaking
+ * incelemesi için. MVP'de opsiyonel; lansman öncesi performance audit
+ * için kullanılır (SPRINT-PLAN §18.2).
+ */
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+  openAnalyzer: false,
+});
 
 /**
  * Content-Security-Policy — 2026-05-17 production hazırlık.
@@ -85,4 +98,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);
