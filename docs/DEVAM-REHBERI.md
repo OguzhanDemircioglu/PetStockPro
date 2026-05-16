@@ -1,8 +1,8 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-16 (Sprint 7 TAM + Sprint 8 parça 1+2: PetPro Asistanı Sipariş + Transfer Önerileri)
-**Mevcut Branch:** `cray61` — origin'in 17+ commit ileri (push edilmedi)
-**Durum:** ✅ **Sprint 0-15 büyük kısmı tamamlandı + Sprint 7 TAM + Sprint 8 parça 1+2 (PetPro Asistanı 2 kart).** 857 test, 11 migration, 0 lint+typecheck error.
+**Tarih:** 2026-05-16 (Sprint 7 TAM + Sprint 8 parça 1+2 + Sprint 9 davet akışı hibrit)
+**Mevcut Branch:** `cray61` — origin'in 18+ commit ileri (push edilmedi)
+**Durum:** ✅ **Sprint 0-15 büyük kısmı tamamlandı + Sprint 7 TAM + Sprint 8 partial + Sprint 9 davet akışı (hibrit email/link + accept-invite).** 871 test, 11 migration, 0 lint+typecheck error.
 
 ## 🚦 YENİ SESSION BAŞLANGIÇ — KALDIĞIN YER
 
@@ -122,7 +122,7 @@ Plan-konsistent sırayla:
 **Test:** 610 → 762 (+152)
 **Migration:** 7 → 11 (0008/0009/0010/0011)
 **Yeni route/sayfa:** ~40
-**Browser E2E doğrulanan ekranlar:** Pano + 7 settings + 4 stocktake + ürün/şube detay + low-stock + notifications + süperadmin + tenant detay + bypass 1 + bypass 2 + bypass 3 + bypass 4 + bypass 5 + bypass 6 + 7c uzak kullanıcı (3 aksiyon) + 7c DB Inspector + 7c Sistem Ayarları
+**Browser E2E doğrulanan ekranlar:** Pano + 7 settings + 4 stocktake + ürün/şube detay + low-stock + notifications + süperadmin + tenant detay + bypass 1 + bypass 2 + bypass 3 + bypass 4 + bypass 5 + bypass 6 + 7c uzak kullanıcı (3 aksiyon) + 7c DB Inspector + 7c Sistem Ayarları + 8 PetPro Asistanı (2 kart) + 9 Kullanıcılar davet akışı + accept-invite
 
 ---
 

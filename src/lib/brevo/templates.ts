@@ -456,3 +456,64 @@ export function buildEmailChangedFinalTemplate(input: EmailChangedFinalInput): V
     textContent: `E-posta değişikliği tamamlandı\n\nEski: ${input.oldEmail}\nYeni: ${input.newEmail}\n\nGiriş için yeni e-postanı kullan. Sen yapmadıysan destek@petstockpro.com\n\n— © 2026 PetStockPro`,
   };
 }
+
+// ══════════════════════════════════════════════════════════════
+// Sprint 9 — User invite (email yöntemi)
+// ══════════════════════════════════════════════════════════════
+
+export interface UserInviteTemplateInput {
+  inviteeName?: string | null;
+  inviterName: string;
+  companyName: string;
+  roleLabel: string;
+  acceptUrl: string;
+  expiresInDays: number;
+}
+
+export function buildUserInviteTemplate(input: UserInviteTemplateInput): VerifyEmailTemplate {
+  const greeting = input.inviteeName ? `Merhaba ${input.inviteeName},` : 'Merhaba,';
+  const html = emailShell(`
+    <h2 style="margin:0 0 16px;font-size:22px;color:${BRAND_CART};letter-spacing:-.3px;">
+      Ekibe davet edildin
+    </h2>
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.6;">${greeting}</p>
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.6;">
+      <strong>${input.inviterName}</strong>, <strong>${input.companyName}</strong>
+      PetStockPro ekibine seni <strong>${input.roleLabel}</strong> rolüyle davet etti.
+    </p>
+    <p style="margin:0 0 24px;font-size:14px;line-height:1.6;">
+      Davete katılmak ve şifreni belirlemek için aşağıdaki butona tıkla:
+    </p>
+    <table cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td align="center" style="padding:8px 0 24px;">
+      <a href="${input.acceptUrl}" style="display:inline-block;background:${BRAND_CAT};color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-weight:bold;font-size:14px;box-shadow:0 8px 20px rgba(212,74,20,.32);">
+        Daveti kabul et →
+      </a>
+    </td></tr></table>
+    <p style="margin:0 0 8px;font-size:12px;color:#5f6b7c;line-height:1.5;">
+      Bu link <strong>${input.expiresInDays} gün</strong> geçerli ve <strong>sadece bir kez</strong> kullanılabilir.
+      Davet süresi dolarsa <strong>${input.inviterName}</strong> tekrar davet gönderebilir.
+    </p>
+    <p style="margin:16px 0 0;font-size:11px;color:#94a0b0;line-height:1.5;">
+      Bu daveti sen istemediysen ya da ${input.inviterName} ile bağın yoksa
+      e-postayı yok say — hesap oluşturulmaz.
+    </p>
+  `);
+
+  const text = `${greeting}
+
+${input.inviterName}, ${input.companyName} PetStockPro ekibine seni ${input.roleLabel} rolüyle davet etti.
+
+Davete katılmak ve şifreni belirlemek için:
+${input.acceptUrl}
+
+Bu link ${input.expiresInDays} gün geçerli, sadece bir kez kullanılabilir.
+
+—
+© 2026 PetStockPro`;
+
+  return {
+    subject: `PetStockPro · ${input.companyName} ekibi seni davet etti`,
+    htmlContent: html,
+    textContent: text,
+  };
+}

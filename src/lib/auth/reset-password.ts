@@ -16,7 +16,7 @@
  * Dependency injection: db parametre olarak.
  */
 
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { hashPassword, validateNewPassword } from './password';
 import { verifyResetToken } from './password-reset';
@@ -111,6 +111,12 @@ export async function completePasswordReset(
         passwordResetExpiresAt: null,
         failedLoginCount: 0,
         lockedUntil: null,
+        // Davet kabul akışı: emailVerifiedAt NULL ise now set (mevcut kullanıcılarda
+        // dokunma). Davete cevap veren kullanıcı email'ine erişiyor — verified sayılır.
+        // Date sql template kabul etmiyor (postgres-js) → ISO literal cast.
+        emailVerifiedAt: sql.raw(
+          `COALESCE("email_verified_at", '${now.toISOString()}'::timestamptz)`,
+        ),
         updatedAt: now,
       })
       .where(eq(users.id, user.id));
