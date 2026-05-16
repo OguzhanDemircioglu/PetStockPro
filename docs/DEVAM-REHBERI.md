@@ -1,11 +1,11 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-17 (Sprint 8/10/12 MVP TAM + Sprint 15 polish 4'lü + Sprint 12 ext ürün detay + WhatsApp Feedback Balonu + Feedback dashboard + Pano feedback widget + /vitrin pagination/sort + SEO il/ilçe sayfaları + vitrin moderation paneli + audit log pagination fix + sitemap.xml + robots.txt + reset-password fix)
-**Mevcut Branch:** `cray61` — origin'in **51 commit** ileri (push edilmedi)
-**Son commit:** `9254077` feat(seo): sitemap.xml + robots.txt — Next.js Metadata API ile dynamic SEO
-**Test:** 994 passed (71 dosya) — vitest
+**Tarih:** 2026-05-17 (Sprint 8/10/12 MVP TAM + Sprint 15 polish 4'lü + Sprint 12 ext ürün detay + WhatsApp Feedback Balonu + Feedback dashboard + Pano feedback widget + /vitrin pagination/sort + SEO il/ilçe sayfaları + vitrin moderation paneli + audit log pagination fix + sitemap.xml + robots.txt + vitrin_reports şikayet sistemi + reset-password fix)
+**Mevcut Branch:** `cray61` — origin'in **53 commit** ileri (push edilmedi)
+**Son commit:** `300ef65` feat(vitrin): vitrin_reports şikayet sistemi (Bildir butonu + süperadmin tab)
+**Test:** 1014 passed (72 dosya) — vitest
 **Lint+typecheck:** 0 error
-**Migration:** 13 (0013 vitrin_whatsapp_feedback + 0012 telegram + 0008/0009/0010/0011 + 7 öncesi)
+**Migration:** 14 (0014 vitrin_reports + 0013 vitrin_whatsapp_feedback + 0012 telegram + 0008/0009/0010/0011 + 7 öncesi)
 
 ## 🚦 YENİ SESSION'A GİRDİĞİNDE — İLK 5 DK
 
@@ -39,12 +39,12 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 
 | # | İş | Tahmin | Neden |
 |---|---|---|---|
-| 1 | **vitrin_reports tablosu + UI** (kullanıcının ürün/şube şikayet etmesi: yanlış foto/spam/bilgi yanlış) | 1 gün | Şu an sadece feedback moderation var, ayrı şikayet sistemi yok |
-| 2 | **Sitemap pre-build (pg_cron + R2)** | 1 gün | MVP dynamic sitemap hazır, 50K+ URL'de pre-build gerekecek (şu an erken) |
+| 1 | **Sitemap pre-build (pg_cron + R2)** | 1 gün | MVP dynamic sitemap hazır, 50K+ URL'de pre-build gerekecek (şu an erken) |
+| 2 | **Anti-spam rate-limit endpoint-level** (vitrin/reports + vitrin/feedback) | 30 dk | Şu an dedup yok, KV ile 1 IP × tenant × 24h limit (Cloudflare Workers binding) |
 | 3 | **Storage upload — Sprint 3.3** | ⛔ BLOKER | `SUPABASE_SERVICE_ROLE_KEY` gerek (kullanıcı sağlayacak) |
 | 4 | **Sprint 13/14 production deploy** | ⛔ BLOKER | Şirket kuruluş + vergi no + IBAN (2-4 hafta) |
 
-**Plana sadık sıra (CLAUDE.md SPRINT-PLAN):** Sprint 8 ✅ → Sprint 10 ✅ → Sprint 12 MVP ✅ → Sprint 15 polish 4'lü ✅ → Sprint 12 ext ürün detay + Feedback Balonu ✅ → Feedback dashboard (settings + Pano) ✅ → /vitrin pagination + sort enrichment ✅ → Sprint 12 ext SEO il/ilçe route'lar ✅ → Vitrin moderation süperadmin paneli ✅ → Audit log pagination fix ✅ → Sitemap.xml + robots.txt dynamic ✅ → **vitrin_reports tablosu + UI** → Sprint 16 lansman (bloker bekliyor)
+**Plana sadık sıra (CLAUDE.md SPRINT-PLAN):** Sprint 8 ✅ → Sprint 10 ✅ → Sprint 12 MVP ✅ → Sprint 15 polish 4'lü ✅ → Sprint 12 ext ürün detay + Feedback Balonu ✅ → Feedback dashboard (settings + Pano) ✅ → /vitrin pagination + sort enrichment ✅ → Sprint 12 ext SEO il/ilçe route'lar ✅ → Vitrin moderation süperadmin paneli ✅ → Audit log pagination fix ✅ → Sitemap.xml + robots.txt dynamic ✅ → vitrin_reports şikayet sistemi ✅ → **Sitemap pre-build pg_cron / Anti-spam KV** → Sprint 16 lansman (bloker bekliyor)
 
 ## 📦 Bu Turun Kümülatif Sonucu (22 commit)
 
@@ -129,6 +129,7 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 | **Vitrin moderasyon paneli** | lib/vitrin/moderation.ts: listAllFeedback (status/companyId filter + JOIN companies + LEFT JOIN users) + getModerationStats (byStatus + flaggedTodayCount 24h) + flagFeedback (Zod uuid+reason 3-500 + idempotency + companyId return) + unflagFeedback (restoreToStatus override). /admin/superadmin/vitrin-moderation: 4 KPI + 2 tab (Tümü/Flagged) + tablo + inline FlagButton (collapsible reason textarea) + UnflagButton (confirm) + audit log. Süperadmin pano header'a 3 tool link eklendi (Vitrin moderasyon + DB Inspector + Sistem ayarları). +12 unit test (4 schema + 4 flag + 4 unflag). Browser E2E gerçek DB round-trip: flag → KPI güncel + badge + unflag → restore → "✓ sistem temiz". | `d8f6926` |
 | **Audit log pagination fix** | lib/audit/list.ts: countAuditLogs yeni helper (aynı filter, SELECT COUNT(*)::int). /admin/audit-log: Promise.all'a count eklendi → totalCount + totalPages hesaplandı + header "X aksiyon · sayfa N / M" + empty state edge case (page > totalPages → "Bu sayfa boş" + "İlk sayfaya dön" CTA) + pagination koşulu `items.length === PAGE_SIZE` yanıltıcı yerine `totalPages > 1 && items.length > 0` doğru + "Sayfa N / M" gösterimi. +4 unit test (total/empty/filter/invalid-date graceful). Browser E2E: normal sayfa + ?page=99 edge case + ?action=stock.in filter combo. | `8a1d76c` |
 | **Sitemap.xml + robots.txt** | lib/vitrin/sitemap-data.ts: collectSitemapEntries 5 grup (static + cities + districts + tenants + products, distinct INNER JOIN approved+isEnabled) + getPublicBaseUrl env fallback. src/app/sitemap.ts: Next.js MetadataRoute.Sitemap dynamic (force-dynamic + revalidate 1h). src/app/robots.ts: User-Agent * + 12 disallow (/admin + auth + /api) + sitemap link. +10 unit test (collectSitemapEntries 6 senaryo + getPublicBaseUrl 4 env). Browser E2E: /sitemap.xml 4 URL render + /robots.txt 12 disallow. Pre-build pg_cron+R2 Faz 2'ye saklandı (50K+ URL'de gerek). | `9254077` |
+| **vitrin_reports şikayet sistemi** | Migration 0014 + 3 enum (reason 7 değer + status 3 + targetType 2). lib/vitrin/reports.ts: reportInputSchema superRefine (targetType+productId tutarlılık) + submitReport (anon IP hash + insert) + listReports (companies JOIN + products LEFT JOIN + resolvedBy users LEFT JOIN) + getReportStats (byStatus + pendingTodayCount 24h) + resolveReport (idempotency + companyId return for audit). POST /api/vitrin/reports anon endpoint. ReportButton client: 7 emoji radio + note + KVKK note. Profil + ürün detay sayfalarına entegre. Süperadmin moderation page 3. tab "📨 Şikayetler" + ReportTableRow + ResolveReportButton (resolved/dismissed select + note + audit log). +20 unit test. Browser E2E gerçek DB round-trip: submit → süperadmin → dismiss → KPI güncel + resolver email + audit log. | `300ef65` |
 
 ### Sprint 9 — Kullanıcılar (davet akışı hibrit)
 
