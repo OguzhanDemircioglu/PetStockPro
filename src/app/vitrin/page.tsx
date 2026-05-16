@@ -13,6 +13,7 @@ import {
 } from '@/lib/vitrin/public';
 import { cities as citiesTable } from '@/db/schema';
 import { trackVitrinEventAsync } from '@/lib/vitrin/track';
+import { listCategoriesWithStorefrontProducts } from '@/lib/vitrin/category-listings';
 import { asc } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
@@ -59,19 +60,21 @@ export default async function VitrinHomePage({
   filters.limit = PAGE_SIZE;
   filters.offset = (page - 1) * PAGE_SIZE;
 
-  const [storefronts, cityList, totalCount, activeCities] = await Promise.all([
-    listPublicStorefronts(db, filters),
-    db
-      .select({ id: citiesTable.id, name: citiesTable.name })
-      .from(citiesTable)
-      .orderBy(asc(citiesTable.name)),
-    countPublicStorefronts(db, {
-      cityId: filters.cityId,
-      districtId: filters.districtId,
-      q: filters.q,
-    }),
-    listCitiesWithStorefronts(db),
-  ]);
+  const [storefronts, cityList, totalCount, activeCities, activeCategories] =
+    await Promise.all([
+      listPublicStorefronts(db, filters),
+      db
+        .select({ id: citiesTable.id, name: citiesTable.name })
+        .from(citiesTable)
+        .orderBy(asc(citiesTable.name)),
+      countPublicStorefronts(db, {
+        cityId: filters.cityId,
+        districtId: filters.districtId,
+        q: filters.q,
+      }),
+      listCitiesWithStorefronts(db),
+      listCategoriesWithStorefrontProducts(db),
+    ]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const isLastPage = page >= totalPages;
@@ -378,6 +381,35 @@ export default async function VitrinHomePage({
           </nav>
         )}
       </section>
+
+      {activeCategories.length > 0 && (
+        <section
+          data-testid="vitrin-active-categories"
+          className="rounded-2xl border border-line bg-line-soft/50 p-5"
+        >
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
+            🛍 Kategoriler ({activeCategories.length})
+          </h2>
+          <ul className="flex flex-wrap gap-2">
+            {activeCategories.map((c) => (
+              <li key={c.slug}>
+                <Link
+                  href={`/vitrin/kategori/${c.slug}` as never}
+                  data-category-slug={c.slug}
+                  data-product-count={c.productCount}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-[11.5px] font-bold text-cart hover:border-cat hover:bg-cat-soft transition-colors"
+                >
+                  <span aria-hidden>{c.emoji}</span>
+                  <span>{c.name}</span>
+                  <span className="rounded-full bg-cat-soft px-1.5 py-0.5 text-[9.5px] text-cart">
+                    {c.productCount}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {activeCities.length > 0 && (
         <section

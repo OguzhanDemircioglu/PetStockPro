@@ -14,12 +14,14 @@ function makeMockDb(opts: {
     productSlug: string;
     lastModified: Date;
   }>;
+  categories?: Array<{ slug: string }>;
 }) {
   const responses: unknown[][] = [
     opts.cities ?? [],
     opts.districts ?? [],
     opts.tenants ?? [],
     opts.products ?? [],
+    opts.categories ?? [],
   ];
   let i = 0;
 
@@ -131,7 +133,7 @@ describe('collectSitemapEntries', () => {
     expect(productEntry?.priority).toBe(0.6);
   });
 
-  it('full tree — static + city + district + tenant + product = 6 entry', async () => {
+  it('full tree — static + city + district + tenant + product + category = 7 entry', async () => {
     const { db } = makeMockDb({
       cities: [{ id: 35, name: 'İzmir', slug: 'izmir' }],
       districts: [{ citySlug: 'izmir', districtSlug: 'aliaga' }],
@@ -143,10 +145,11 @@ describe('collectSitemapEntries', () => {
           lastModified: NOW,
         },
       ],
+      categories: [{ slug: 'kuru-mama' }],
     });
     const result = await collectSitemapEntries('https://petstockpro.com', db);
 
-    expect(result).toHaveLength(6);
+    expect(result).toHaveLength(7);
     expect(result.map((e) => e.loc)).toEqual([
       'https://petstockpro.com/',
       'https://petstockpro.com/vitrin',
@@ -154,7 +157,21 @@ describe('collectSitemapEntries', () => {
       'https://petstockpro.com/vitrin/izmir/aliaga',
       'https://petstockpro.com/vitrin/magaza/pet-shop-1',
       'https://petstockpro.com/vitrin/magaza/pet-shop-1/urun/urun-1',
+      'https://petstockpro.com/vitrin/kategori/kuru-mama',
     ]);
+  });
+
+  it('kategori — priority 0.7 + changeFreq weekly', async () => {
+    const { db } = makeMockDb({
+      categories: [{ slug: 'oyuncak' }, { slug: 'kedi-kumu' }],
+    });
+    const result = await collectSitemapEntries('https://petstockpro.com', db);
+    const catEntries = result.filter((e) => e.loc.includes('/vitrin/kategori/'));
+    expect(catEntries).toHaveLength(2);
+    expect(catEntries[0].priority).toBe(0.7);
+    expect(catEntries[0].changeFrequency).toBe('weekly');
+    expect(catEntries[0].loc).toBe('https://petstockpro.com/vitrin/kategori/oyuncak');
+    expect(catEntries[1].loc).toBe('https://petstockpro.com/vitrin/kategori/kedi-kumu');
   });
 });
 

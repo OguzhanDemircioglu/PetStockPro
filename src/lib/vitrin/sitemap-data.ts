@@ -16,6 +16,7 @@
 import { and, asc, eq, sql } from 'drizzle-orm';
 import type { DbClient } from '@/lib/db/client';
 import {
+  categories,
   cities,
   companies,
   districts,
@@ -180,6 +181,35 @@ export async function collectSitemapEntries(
       lastModified: p.lastModified,
       changeFrequency: 'weekly',
       priority: 0.6,
+    });
+  }
+
+  // Cross-tenant kategori sayfaları — distinct slug, en az 1 vitrin'de ürünü
+  // olan kategoriler (default 16 slug + tenant'ların custom ekledikleri).
+  const categoryRows = await db
+    .selectDistinct({ slug: categories.slug })
+    .from(categories)
+    .innerJoin(products, eq(products.categoryId, categories.id))
+    .innerJoin(companies, eq(companies.id, products.companyId))
+    .innerJoin(
+      storefrontSettings,
+      eq(storefrontSettings.companyId, companies.id),
+    )
+    .where(
+      and(
+        eq(products.vitrinPublished, true),
+        sql`${products.deletedAt} IS NULL`,
+        eq(companies.storefrontStatus, 'approved'),
+        eq(storefrontSettings.isEnabled, true),
+      ),
+    )
+    .orderBy(asc(categories.slug));
+
+  for (const c of categoryRows) {
+    entries.push({
+      loc: `${baseUrl}/vitrin/kategori/${c.slug}`,
+      changeFrequency: 'weekly',
+      priority: 0.7,
     });
   }
 
