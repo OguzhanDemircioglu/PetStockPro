@@ -1,9 +1,9 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-17 (Sprint 8/10/12 MVP TAM + Sprint 15 polish 4'lü + Sprint 12 ext ürün detay + WhatsApp Feedback Balonu + Feedback dashboard + Pano feedback widget + reset-password fix)
-**Mevcut Branch:** `cray61` — origin'in **41 commit** ileri (push edilmedi)
-**Son commit:** `17587b2` feat(pano): Vitrin feedback widget mini özet — 4 KPI + detay link
-**Test:** 963 passed (69 dosya) — vitest
+**Tarih:** 2026-05-17 (Sprint 8/10/12 MVP TAM + Sprint 15 polish 4'lü + Sprint 12 ext ürün detay + WhatsApp Feedback Balonu + Feedback dashboard + Pano feedback widget + /vitrin pagination/sort + reset-password fix)
+**Mevcut Branch:** `cray61` — origin'in **43 commit** ileri (push edilmedi)
+**Son commit:** `d23a57a` feat(vitrin): /vitrin pagination + sort enrichment (3 sort + tam sayfalama UX)
+**Test:** 968 passed (69 dosya) — vitest
 **Lint+typecheck:** 0 error
 **Migration:** 13 (0013 vitrin_whatsapp_feedback + 0012 telegram + 0008/0009/0010/0011 + 7 öncesi)
 
@@ -39,14 +39,13 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 
 | # | İş | Tahmin | Neden |
 |---|---|---|---|
-| 1 | **Sprint 12 ext — Vitrin /vitrin pagination + arama enrichment** | 1 saat | 24'lü grid var ama daha güzel UX (loading skeleton, sort) |
-| 2 | **Sprint 12 ext — Şehir/ilçe + kategori sayfaları** (SEO) | 1 gün | Sitemap pre-build için temel, /vitrin/[il]/[ilce] route |
-| 3 | **Vitrin moderation süperadmin paneli** (`vitrin_reports` + feedback flagged) | 2-3 saat | Otomatik onay default ama spam/şikayet manuel inceleme |
-| 4 | **Audit log pagination test** (browser, son sayfa edge case) | 30 dk | Şu an 35 kayıt var, 50/sayfa limit, page 2 görmek için seed |
-| 5 | **Storage upload — Sprint 3.3** | ⛔ BLOKER | `SUPABASE_SERVICE_ROLE_KEY` gerek (kullanıcı sağlayacak) |
-| 6 | **Sprint 13/14 production deploy** | ⛔ BLOKER | Şirket kuruluş + vergi no + IBAN (2-4 hafta) |
+| 1 | **Sprint 12 ext — Şehir/ilçe + kategori sayfaları** (SEO) | 1 gün | Sitemap pre-build için temel, /vitrin/[il]/[ilce] route |
+| 2 | **Vitrin moderation süperadmin paneli** (`vitrin_reports` + feedback flagged) | 2-3 saat | Otomatik onay default ama spam/şikayet manuel inceleme |
+| 3 | **Audit log pagination test** (browser, son sayfa edge case) | 30 dk | Şu an 35 kayıt var, 50/sayfa limit, page 2 görmek için seed |
+| 4 | **Storage upload — Sprint 3.3** | ⛔ BLOKER | `SUPABASE_SERVICE_ROLE_KEY` gerek (kullanıcı sağlayacak) |
+| 5 | **Sprint 13/14 production deploy** | ⛔ BLOKER | Şirket kuruluş + vergi no + IBAN (2-4 hafta) |
 
-**Plana sadık sıra (CLAUDE.md SPRINT-PLAN):** Sprint 8 ✅ → Sprint 10 ✅ → Sprint 12 MVP ✅ → Sprint 15 polish 4'lü ✅ → Sprint 12 ext ürün detay + Feedback Balonu ✅ → Feedback dashboard (settings + Pano) ✅ → **Sprint 12 ext vitrin enrichment** → Sprint 16 lansman (bloker bekliyor)
+**Plana sadık sıra (CLAUDE.md SPRINT-PLAN):** Sprint 8 ✅ → Sprint 10 ✅ → Sprint 12 MVP ✅ → Sprint 15 polish 4'lü ✅ → Sprint 12 ext ürün detay + Feedback Balonu ✅ → Feedback dashboard (settings + Pano) ✅ → /vitrin pagination + sort enrichment ✅ → **Sprint 12 ext SEO il/ilçe/kategori sayfaları** → Sprint 16 lansman (bloker bekliyor)
 
 ## 📦 Bu Turun Kümülatif Sonucu (22 commit)
 
@@ -126,6 +125,7 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 | **WhatsApp Feedback Balonu** | Migration 0013 (vitrin_whatsapp_feedback + 2 enum + 4 index + RLS), lib/vitrin/feedback.ts (SHA256 IP hash + 24h status upgrade pattern + 13 test), POST /api/vitrin/feedback (sendBeacon kabul), FeedbackBalloon sticky komponent (5sn delay + 5 emoji + tek tap submit + thanks 1.5sn + beforeunload sendBeacon + localStorage dedup), WhatsappLinkScript event yayını, profile + ürün detay sayfalarına entegre. E2E: rating=very_good submit → DB kayıt doğrulandı | `8dbbfef` |
 | **Feedback dashboard** | /admin/settings/storefront sayfasına 30g vitrin metrikleri widget (4 KPI: aktivite/cevap/ortalama puan/ulaşma oranı + 5-emoji puan dağılımı progress bar). getFeedbackSummary helper UI'a bağlandı. <3 puan + <80% ulaşma oranı danger tone uyarı | `3cc342b` |
 | **Pano feedback widget** | /admin Pano'ya kompakt 4-KPI özet (settings'teki uzun widget'in mini versiyonu): Aktivite + Anket cevabı + Ortalama puan + Ulaşma oranı. "Detay →" link settings/storefront'a. feedbackActivity > 0 conditional render. Mobile/tablet/desktop viewport doğrulandı. | `17587b2` |
+| **/vitrin pagination + sort** | lib/vitrin/public.ts: StorefrontSort + STOREFRONT_SORTS + parseSortParam pure helper + listPublicStorefronts'a sort param (name_asc/recent/products_desc) + countPublicStorefronts yeni helper. Page: 3. form alanı sort dropdown + filter summary "Sıra: X" + Temizle koşulu güncellendi + header "X pet shop · sayfa N / M" + gerçek pagination nav (← Önceki / N/M / Sonraki →) + page>totalPages edge case "Sayfa boş" + "İlk sayfaya dön" CTA + buildPageUrl inline helper. +5 unit test (parseSortParam 4 + STOREFRONT_SORTS exhaustive). 3 viewport browser smoke. | `d23a57a` |
 
 ### Sprint 9 — Kullanıcılar (davet akışı hibrit)
 
