@@ -155,10 +155,12 @@ TXT     _dmarc  "v=DMARC1; p=none; ..."
 
 ### 3.1 Wrangler Configuration
 
+> **2026-05-17:** `wrangler.toml` skeleton repo'ya commitlendi (`/wrangler.toml`). Aşağıdaki içerik **kanonik referans** — repo'daki dosya bundan üretildi. Lansman öncesi Hyperdrive ID + secrets eklenecek.
+
 ```toml
 # wrangler.toml
 name = "petstockpro"
-main = ".open-next/worker.js"
+main = "src/cf/worker-entry.ts"   # OpenNext aktive olunca .open-next/worker.js'e geçer veya wrapper kalır
 compatibility_date = "2026-01-15"
 compatibility_flags = ["nodejs_compat"]
 
@@ -177,24 +179,92 @@ routes = [
 [vars]
 NEXT_PUBLIC_APP_URL = "https://petstockpro.com"
 NEXT_PUBLIC_APP_DOMAIN = "petstockpro.com"
+NEXT_PUBLIC_SITE_URL = "https://petstockpro.com"
+
+# Cron Triggers (Workers Scheduled Events) — Sprint 12 ext daily summary
+[triggers]
+crons = [
+  "0 6 * * *",   # 06:00 UTC = 09:00 TR — günlük vitrin şikayet özeti (süperadmin Telegram alert)
+]
 
 # Secrets (wrangler secret put X)
+# - CRON_SECRET                       # /api/cron/* Bearer auth
 # - DATABASE_URL
 # - DATABASE_URL_DIRECT
 # - NEXT_PUBLIC_SUPABASE_URL
 # - NEXT_PUBLIC_SUPABASE_ANON_KEY
 # - SUPABASE_SERVICE_ROLE_KEY
 # - SUPABASE_JWT_SECRET
-# - NEXTAUTH_SECRET
+# - AUTH_SECRET
+# - IYZICO_API_KEY / IYZICO_SECRET_KEY / IYZICO_WEBHOOK_SECRET
+# - NILVERA_API_KEY
 # - BREVO_API_KEY
 # - TELEGRAM_BOT_TOKEN
+# - TURNSTILE_SECRET_KEY
 # - SENTRY_AUTH_TOKEN
 
 # Hyperdrive (Supabase pooling — Cloudflare)
 [[hyperdrive]]
 binding = "HYPERDRIVE"
 id = "<hyperdrive-id>"   # Cloudflare Dashboard > Workers > Hyperdrive'dan al
+
+[observability]
+enabled = true
 ```
+
+### 3.1.1 Cron Trigger Dispatcher (Scheduled Event Pattern)
+
+Cloudflare Workers `[triggers]` `crons` her tetiklendiğinde Worker runtime `scheduled(event, env, ctx)` çağırır. `event.cron` cron expression'ını içerir, biz cron → endpoint eşlemesi ile ilgili `/api/cron/*` route'una self-invocation yaparız (Bearer auth).
+
+**Yapı (Sprint 12 ext, 2026-05-17 implement):**
+
+| Dosya | Sorumluluk |
+|---|---|
+| `wrangler.toml` `[triggers]` | Cron expression listesi |
+| `src/cf/worker-entry.ts` | Worker fetch + scheduled handler (OpenNext wrapper, Sprint 14'te aktive) |
+| `src/lib/cron/scheduled-handler.ts` | `dispatchScheduledCron(cron, env, deps)` saf fonksiyon (test edilebilir) |
+| `src/lib/cron/scheduled-handler.test.ts` | 11 unit test (happy path + error cases + cron map coverage) |
+| `src/app/api/cron/daily-summary/route.ts` | Mevcut endpoint — Bearer auth + business logic |
+| `CRON_ENDPOINT_MAP` (scheduled-handler.ts) | Cron expression → endpoint path tablosu |
+
+**Akış:**
+
+```
+CF Workers Scheduled Event (cron="0 6 * * *")
+  ↓
+worker-entry.ts scheduled()
+  ↓
+ctx.waitUntil(dispatchScheduledCron(cron, env, { fetch }))
+  ↓
+CRON_ENDPOINT_MAP[cron] → "/api/cron/daily-summary"
+  ↓
+fetch POST ${NEXT_PUBLIC_APP_URL}/api/cron/daily-summary
+  Authorization: Bearer ${CRON_SECRET}
+  ↓
+route.ts → buildDailyReportSummary → buildDailyReportSummaryAlert → sendTelegramAlert
+  ↓
+Süperadmin Telegram kanalı: "📊 Günlük şikayet özeti — 24s: 3 yeni..."
+```
+
+**Neden self-invocation (HTTP) ve direct call değil:**
+- Aynı code path manuel dev test (`curl -X POST .../api/cron/daily-summary`) + production cron — sürpriz yok
+- Scheduled handler thin wrapper; OpenNext re-export'unu değiştirmiyor
+- Bearer auth sayesinde endpoint dış dünyaya açık olsa bile cron secret olmadan tetiklenmez
+
+**Yeni cron eklemek için:**
+1. `wrangler.toml` `[triggers]` `crons` listesine cron expression ekle
+2. `src/lib/cron/scheduled-handler.ts` `CRON_ENDPOINT_MAP`'e `'<expr>': '/api/cron/<name>'` ekle
+3. `/api/cron/<name>/route.ts` endpoint'i yaz (Bearer auth + `CRON_SECRET` check)
+4. Unit test ekle (route test pattern: `route.test.ts`)
+5. `wrangler deploy` ile schedule binding'i yayına al
+
+**Sprint 14 lansman wiring:**
+1. `npm i -D @opennextjs/cloudflare wrangler`
+2. `open-next.config.ts` oluştur
+3. `npm run build && npx opennextjs-cloudflare` → `.open-next/worker.js` üretir
+4. `src/cf/worker-entry.ts` içindeki `openNextHandler` import'unu yorumdan çıkar (placeholder fetch'i değiştir)
+5. `wrangler secret put CRON_SECRET` (production değer — `openssl rand -hex 32`)
+6. `npx wrangler deploy` — schedule binding otomatik ayarlanır
 
 ### 3.2 Cloudflare Hyperdrive (Önerilen)
 

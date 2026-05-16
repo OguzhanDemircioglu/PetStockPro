@@ -1,0 +1,75 @@
+#:schema node_modules/wrangler/config-schema.json
+# PetStockPro — Cloudflare Workers config (skeleton)
+#
+# Bu dosya Sprint 14 production deploy'u için hazırlandı. OpenNext (@opennextjs/cloudflare)
+# henüz aktif değil (next.config.ts §7 notu). Lansman öncesi adımlar:
+#   1. npm install -D @opennextjs/cloudflare wrangler
+#   2. open-next.config.ts oluştur (OpenNext defaults yeter)
+#   3. main alanını ".open-next/worker.js" olarak bırak (OpenNext üretir) VEYA
+#      src/cf/worker-entry.ts kullan (scheduled handler dahil)
+#   4. Cloudflare Hyperdrive ID'sini al, [[hyperdrive]] bloğuna yaz
+#   5. `wrangler secret put X` ile production secrets ekle (DATABASE_URL, AUTH_SECRET, ...)
+#
+# Ref: docs/DEPLOYMENT.md §3 (Cloudflare Workers Setup)
+
+name = "petstockpro"
+main = "src/cf/worker-entry.ts"
+compatibility_date = "2026-01-15"
+compatibility_flags = ["nodejs_compat"]
+
+# Statik asset binding (OpenNext .open-next/assets klasörünü doldurur)
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+# Tek domain routing — 2026-05-13 kararı (tenant subdomain + PRO+ custom domain kapsam dışı)
+routes = [
+  { pattern = "petstockpro.com/*", custom_domain = true },
+  { pattern = "www.petstockpro.com/*", custom_domain = true },
+]
+
+# Public env vars (build-time inlined olmayanlar)
+[vars]
+NEXT_PUBLIC_APP_URL = "https://petstockpro.com"
+NEXT_PUBLIC_APP_DOMAIN = "petstockpro.com"
+NEXT_PUBLIC_SITE_URL = "https://petstockpro.com"
+
+# Cloudflare Hyperdrive — Supabase Postgres pooling
+# Cloudflare Dashboard > Workers > Hyperdrive'dan ID al, buraya yaz
+# Workers runtime'da env.HYPERDRIVE.connectionString ile erişilir
+# [[hyperdrive]]
+# binding = "HYPERDRIVE"
+# id = "<hyperdrive-id-buraya>"
+
+# Cron Triggers — Workers Scheduled Events
+# Her satır UTC cron expression'ı (Cloudflare standart cron syntax: minute hour day month dow)
+# Aktive olduğunda: src/cf/worker-entry.ts içindeki scheduled() handler tetiklenir
+#
+# 0 6 * * * → her gün UTC 06:00 = TR saatiyle 09:00 (yaz/kış değişmez, Workers UTC bazlı)
+# Hedef: /api/cron/daily-summary endpoint (vitrin şikayet 24 saatlik özet → süperadmin Telegram)
+[triggers]
+crons = [
+  "0 6 * * *",  # günlük vitrin şikayet özeti — 09:00 TR (06:00 UTC)
+]
+
+# Production secrets (wrangler secret put X ile ekle, asla wrangler.toml'a yazma):
+# - CRON_SECRET                       # /api/cron/* Bearer auth
+# - DATABASE_URL                      # Postgres (Frankfurt EU pooler)
+# - DATABASE_URL_DIRECT               # Migration için pool dışı
+# - NEXT_PUBLIC_SUPABASE_URL          # Supabase project URL
+# - NEXT_PUBLIC_SUPABASE_ANON_KEY     # client+server anon
+# - SUPABASE_SERVICE_ROLE_KEY         # server-only (Sprint 3.3 image upload bloker)
+# - SUPABASE_JWT_SECRET               # Auth.js JWT signing
+# - AUTH_SECRET                       # Auth.js (openssl rand -base64 32)
+# - IYZICO_API_KEY                    # Sprint 13 production
+# - IYZICO_SECRET_KEY                 # Sprint 13 production
+# - IYZICO_WEBHOOK_SECRET             # Sprint 13 webhook signature
+# - NILVERA_API_KEY                   # Sprint 14 e-Arşiv
+# - BREVO_API_KEY                     # Transactional email
+# - TELEGRAM_BOT_TOKEN                # Süperadmin alert kanalı
+# - TURNSTILE_SECRET_KEY              # Sprint 2 bot koruma server-side verify
+# - SENTRY_AUTH_TOKEN                 # Sentry release upload (opsiyonel)
+
+# Observability — Workers Logs (Cloudflare Dashboard'dan opt-in)
+[observability]
+enabled = true

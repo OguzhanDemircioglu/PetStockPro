@@ -1,9 +1,9 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-17 (Sprint 8/10/12 MVP TAM + Sprint 15 polish 4'lü + Sprint 12 ext ürün detay + WhatsApp Feedback Balonu + Feedback dashboard + Pano feedback widget + /vitrin pagination/sort + SEO il/ilçe sayfaları + vitrin moderation paneli + audit log pagination fix + sitemap.xml + robots.txt + vitrin_reports şikayet sistemi + report rate-limit + report Telegram alert + alert dedup + günlük summary alert + JSX whitespace polish + reset-password fix)
-**Mevcut Branch:** `cray61` — origin'in **63 commit** ileri (push edilmedi)
-**Son commit:** `11ca04b` fix(vitrin): JSX whitespace bug — adjacent strong text yapısı
-**Test:** 1028 passed (72 dosya) — vitest
+**Tarih:** 2026-05-17 (Sprint 8/10/12 MVP TAM + Sprint 15 polish 4'lü + Sprint 12 ext ürün detay + WhatsApp Feedback Balonu + Feedback dashboard + Pano feedback widget + /vitrin pagination/sort + SEO il/ilçe sayfaları + vitrin moderation paneli + audit log pagination fix + sitemap.xml + robots.txt + vitrin_reports şikayet sistemi + report rate-limit + report Telegram alert + alert dedup + günlük summary alert + JSX whitespace polish + reset-password fix + **Workers cron scheduler config**)
+**Mevcut Branch:** `cray61` — origin'in **66 commit** ileri (push edilmedi)
+**Son commit:** (pending) chore(cf): wrangler.toml + cron trigger scheduler dispatcher
+**Test:** 1046 passed (74 dosya) — vitest
 **Lint+typecheck:** 0 error
 **Migration:** 14 (0014 vitrin_reports + 0013 vitrin_whatsapp_feedback + 0012 telegram + 0008/0009/0010/0011 + 7 öncesi)
 
@@ -39,13 +39,13 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 
 | # | İş | Tahmin | Neden |
 |---|---|---|---|
-| 1 | **Workers cron scheduler config** (wrangler.toml + daily-summary 06:00 UTC) | 30 dk | Endpoint hazır, schedule binding eksik |
+| 1 | ~~Workers cron scheduler config~~ ✅ | — | **Tamamlandı 2026-05-17.** wrangler.toml + scheduled dispatcher + 18 test + DEPLOYMENT §3.1.1 |
 | 2 | **Sitemap pre-build (pg_cron + R2)** | 1 gün | MVP dynamic sitemap hazır, 50K+ URL'de pre-build gerekecek (şu an erken) |
 | 3 | **Cloudflare Workers KV rate-limit migration** | 30 dk | DB-level COUNT MVP'de yeter ama production'da KV ~5ms vs ~50ms |
 | 4 | **Storage upload — Sprint 3.3** | ⛔ BLOKER | `SUPABASE_SERVICE_ROLE_KEY` gerek (kullanıcı sağlayacak) |
 | 5 | **Sprint 13/14 production deploy** | ⛔ BLOKER | Şirket kuruluş + vergi no + IBAN (2-4 hafta) |
 
-**Plana sadık sıra (CLAUDE.md SPRINT-PLAN):** Sprint 8 ✅ → Sprint 10 ✅ → Sprint 12 MVP ✅ → Sprint 15 polish 4'lü ✅ → Sprint 12 ext ürün detay + Feedback Balonu ✅ → Feedback dashboard (settings + Pano) ✅ → /vitrin pagination + sort enrichment ✅ → Sprint 12 ext SEO il/ilçe route'lar ✅ → Vitrin moderation süperadmin paneli ✅ → Audit log pagination fix ✅ → Sitemap.xml + robots.txt dynamic ✅ → vitrin_reports şikayet sistemi ✅ → Anti-spam rate-limit DB-level ✅ → Süperadmin Telegram alert yeni şikayet ✅ → Alert dedup 1h window ✅ → Günlük summary alert (endpoint hazır) ✅ → **Workers cron scheduler / Sitemap pre-build / Workers KV migrate** → Sprint 16 lansman (bloker bekliyor)
+**Plana sadık sıra (CLAUDE.md SPRINT-PLAN):** Sprint 8 ✅ → Sprint 10 ✅ → Sprint 12 MVP ✅ → Sprint 15 polish 4'lü ✅ → Sprint 12 ext ürün detay + Feedback Balonu ✅ → Feedback dashboard (settings + Pano) ✅ → /vitrin pagination + sort enrichment ✅ → Sprint 12 ext SEO il/ilçe route'lar ✅ → Vitrin moderation süperadmin paneli ✅ → Audit log pagination fix ✅ → Sitemap.xml + robots.txt dynamic ✅ → vitrin_reports şikayet sistemi ✅ → Anti-spam rate-limit DB-level ✅ → Süperadmin Telegram alert yeni şikayet ✅ → Alert dedup 1h window ✅ → Günlük summary alert (endpoint hazır) ✅ → **Workers cron scheduler binding** ✅ → Sitemap pre-build / Workers KV migrate → Sprint 16 lansman (bloker bekliyor)
 
 ## 📦 Bu Turun Kümülatif Sonucu (22 commit)
 
@@ -136,6 +136,7 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 | **Şikayet alert dedup (1h window)** | notifySuperadminOnNewReport içinde, alert build öncesi `ALERT_DEDUP_WINDOW_MS=1h` ile DB COUNT(*) WHERE companyId+status='pending'+createdAt>=cutoff. pendingInWindow > 1 → erken return (skip). 2 mevcut test update (countQueries=1/2 — alert dedup COUNT eklendi). Browser E2E: 5 pending var DB'de → yeni submit → INSERT OK + `[telegram:mock]` log YOK (skip ✓). | `0843565` |
 | **Günlük summary alert (cron endpoint)** | lib/vitrin/summary.ts: buildDailyReportSummary helper (status group + top 5 tenant by pending DESC). buildDailyReportSummaryAlert template (0→info+sessiz, <5 pending→info+sessiz, ≥5→warning+sesli). POST /api/cron/daily-summary endpoint Bearer auth (CRON_SECRET env, 503/401/200). +6 unit test (boş/düşük/yüksek/windowHours/panelUrl/topTenants-boş). Workers cron scheduler binding production'da. | `1e79f4e` |
 | **JSX whitespace polish** | Profile + ürün detay sayfalarındaki `<strong>PetStockPro</strong> sadece...` disclaimer paragraflarında JSX render leading whitespace yutmuştu ("PetStockProsadece"). `{'...'}` text literal pattern ile bölündü. SEO turundaki H1 fix'ine paralel devam. | `11ca04b` |
+| **Workers cron scheduler config** | `wrangler.toml` skeleton repo'ya commitlendi (Sprint 0'da unutulmuş, DEPLOYMENT §3.1 hep "yapılacak"tı): tek domain routing + `[triggers]` `crons = ["0 6 * * *"]` + Hyperdrive placeholder + observability + 15 secret listesi. `src/lib/cron/scheduled-handler.ts`: `dispatchScheduledCron(cron, env, deps)` saf fonksiyon + `CRON_ENDPOINT_MAP` cron→endpoint tablosu — self-invocation pattern (Workers fetch'i ile `/api/cron/*` Bearer auth'a iç istek). `src/cf/worker-entry.ts`: scheduled handler iskeleti — Sprint 14 OpenNext aktive olunca `openNextHandler.fetch` import edilecek, şu an placeholder fetch (503). Tests: scheduled-handler.test.ts 11 test (happy path + unknown cron + secret missing + 401/503 http_error + fetch throw + JSON parse fail + non-Error throw + CRON_ENDPOINT_MAP shape) + daily-summary route.test.ts 7 test (503 cron_disabled + 401 wrong/missing/no-Bearer + happy path + summary helper throw + telegram throw). DEPLOYMENT.md §3.1.1 yeni bölüm: dosya yapısı tablosu + akış diyagramı + neden HTTP self-invocation gerekçe + "yeni cron eklemek için" 5 adım + Sprint 14 wiring 6 adım. +18 test (1028 → 1046). | (pending) |
 
 ### Sprint 9 — Kullanıcılar (davet akışı hibrit)
 
