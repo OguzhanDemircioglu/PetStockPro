@@ -42,6 +42,20 @@ export default async function SuperadminTenantsPage() {
         <p className="mt-1 text-sm text-ink-3">
           Sistem geneli görünüm — tüm tenant&apos;lar + global istatistikler.
         </p>
+        <nav
+          data-testid="superadmin-tools"
+          className="mt-4 flex flex-wrap gap-2 text-xs"
+        >
+          <ToolLink href="/admin/superadmin/vitrin-moderation" emoji="📋">
+            Vitrin moderasyon
+          </ToolLink>
+          <ToolLink href="/admin/superadmin/db-inspector" emoji="🔍">
+            DB Inspector
+          </ToolLink>
+          <ToolLink href="/admin/superadmin/system-settings" emoji="⚙">
+            Sistem ayarları
+          </ToolLink>
+        </nav>
       </header>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -248,6 +262,25 @@ export default async function SuperadminTenantsPage() {
         ← Pano&apos;ya dön
       </Link>
     </main>
+  );
+}
+
+function ToolLink({
+  href,
+  emoji,
+  children,
+}: {
+  href: string;
+  emoji: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href as never}
+      className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-white px-3 py-2 font-bold text-cart hover:border-cat hover:bg-cat-soft"
+    >
+      <span aria-hidden>{emoji}</span> {children}
+    </Link>
   );
 }
 
