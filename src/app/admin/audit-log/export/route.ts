@@ -12,11 +12,17 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const action = url.searchParams.get('action') ?? undefined;
   const entityType = url.searchParams.get('entity') ?? undefined;
+  const userId = url.searchParams.get('userId') ?? undefined;
+  const fromDate = url.searchParams.get('from') ?? undefined;
+  const toDate = url.searchParams.get('to') ?? undefined;
 
   const rows = await listAuditLogs(session.user.companyId, db, {
     limit: 5000,
     action: action || undefined,
     entityType: entityType || undefined,
+    userId: userId || undefined,
+    fromDate: fromDate || undefined,
+    toDate: toDate || undefined,
   });
 
   const body = csvResponseBody(

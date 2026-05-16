@@ -2,8 +2,10 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
-import { listAuditLogs } from '@/lib/audit/list';
+import { listAuditLogs, listAuditUsers } from '@/lib/audit/list';
 import { SettingsShell } from '@/components/settings-shell';
+
+const PAGE_SIZE = 50;
 
 const ACTION_LABELS: Record<string, { label: string; cls: string }> = {
   'product.created': { label: '🐾 Ürün eklendi', cls: 'bg-arrow-soft text-arrow-7' },
@@ -59,21 +61,51 @@ const ACTION_GROUPS: { value: string; label: string }[] = [
 export default async function AuditLogPage({
   searchParams,
 }: {
-  searchParams: Promise<{ action?: string; entity?: string }>;
+  searchParams: Promise<{
+    action?: string;
+    entity?: string;
+    userId?: string;
+    from?: string;
+    to?: string;
+    page?: string;
+  }>;
 }) {
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
 
   const params = await searchParams;
   const validAction = ACTION_GROUPS.find((g) => g.value === params.action)?.value;
+  const page = Math.max(1, Number.parseInt(params.page ?? '1', 10) || 1);
+  const offset = (page - 1) * PAGE_SIZE;
 
-  const items = await listAuditLogs(session.user.companyId, db, {
-    limit: 100,
-    action: validAction || undefined,
-    entityType: params.entity || undefined,
-  });
+  const [items, userOptions] = await Promise.all([
+    listAuditLogs(session.user.companyId, db, {
+      limit: PAGE_SIZE,
+      offset,
+      action: validAction || undefined,
+      entityType: params.entity || undefined,
+      userId: params.userId || undefined,
+      fromDate: params.from || undefined,
+      toDate: params.to || undefined,
+    }),
+    listAuditUsers(session.user.companyId, db),
+  ]);
 
-  const hasFilter = !!validAction || !!params.entity;
+  const hasFilter =
+    !!validAction || !!params.entity || !!params.userId || !!params.from || !!params.to;
+
+  // Pagination URL helper'ı (tüm aktif filtre param'larını korur)
+  const buildPageUrl = (targetPage: number) => {
+    const q = new URLSearchParams();
+    if (validAction) q.set('action', validAction);
+    if (params.entity) q.set('entity', params.entity);
+    if (params.userId) q.set('userId', params.userId);
+    if (params.from) q.set('from', params.from);
+    if (params.to) q.set('to', params.to);
+    if (targetPage > 1) q.set('page', String(targetPage));
+    const qs = q.toString();
+    return qs ? `/admin/audit-log?${qs}` : '/admin/audit-log';
+  };
 
   return (
     <SettingsShell
@@ -134,6 +166,60 @@ export default async function AuditLogPage({
             <option value="company">Firma</option>
           </select>
         </div>
+        <div className="min-w-[180px]">
+          <label
+            htmlFor="user-select"
+            className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+          >
+            Kullanıcı
+          </label>
+          <select
+            id="user-select"
+            name="userId"
+            defaultValue={params.userId ?? ''}
+            data-testid="audit-user"
+            className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          >
+            <option value="">Tüm kullanıcılar</option>
+            {userOptions.map((u) => (
+              <option key={u.userId} value={u.userId}>
+                {u.email}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label
+            htmlFor="from-date"
+            className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+          >
+            Başlangıç
+          </label>
+          <input
+            id="from-date"
+            name="from"
+            type="date"
+            defaultValue={params.from ?? ''}
+            data-testid="audit-from"
+            className="rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="to-date"
+            className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+          >
+            Bitiş
+          </label>
+          <input
+            id="to-date"
+            name="to"
+            type="date"
+            defaultValue={params.to ?? ''}
+            data-testid="audit-to"
+            className="rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          />
+        </div>
         <button
           type="submit"
           className="rounded-xl bg-cat px-5 py-2.5 text-sm font-bold text-white shadow-sm"
@@ -149,7 +235,16 @@ export default async function AuditLogPage({
           </Link>
         )}
         <a
-          href={`/admin/audit-log/export${validAction || params.entity ? `?${new URLSearchParams({ ...(validAction ? { action: validAction } : {}), ...(params.entity ? { entity: params.entity } : {}) }).toString()}` : ''}`}
+          href={`/admin/audit-log/export${(() => {
+            const q = new URLSearchParams();
+            if (validAction) q.set('action', validAction);
+            if (params.entity) q.set('entity', params.entity);
+            if (params.userId) q.set('userId', params.userId);
+            if (params.from) q.set('from', params.from);
+            if (params.to) q.set('to', params.to);
+            const qs = q.toString();
+            return qs ? `?${qs}` : '';
+          })()}`}
           download
           className="ml-auto rounded-xl border border-line bg-white px-3 py-2.5 text-xs font-bold text-cart hover:bg-cat-soft"
           data-testid="audit-export"
@@ -237,6 +332,45 @@ export default async function AuditLogPage({
             </tbody>
           </table>
         </div>
+      )}
+
+      {(page > 1 || items.length === PAGE_SIZE) && (
+        <nav
+          data-testid="audit-pagination"
+          className="flex items-center justify-between rounded-2xl border border-line bg-white px-4 py-3 text-[12px]"
+        >
+          <span className="text-ink-3">
+            Sayfa <strong className="text-cart">{page}</strong>
+          </span>
+          <div className="flex gap-2">
+            {page > 1 ? (
+              <Link
+                href={buildPageUrl(page - 1) as never}
+                data-testid="audit-prev"
+                className="rounded-xl border border-line bg-white px-3 py-1.5 font-bold text-cart hover:bg-cat-soft"
+              >
+                ← Önceki
+              </Link>
+            ) : (
+              <span className="rounded-xl border border-line bg-line-soft px-3 py-1.5 font-bold text-ink-4">
+                ← Önceki
+              </span>
+            )}
+            {items.length === PAGE_SIZE ? (
+              <Link
+                href={buildPageUrl(page + 1) as never}
+                data-testid="audit-next"
+                className="rounded-xl bg-cat px-3 py-1.5 font-bold text-white hover:bg-cat-2"
+              >
+                Sonraki →
+              </Link>
+            ) : (
+              <span className="rounded-xl border border-line bg-line-soft px-3 py-1.5 font-bold text-ink-4">
+                Sonraki →
+              </span>
+            )}
+          </div>
+        </nav>
       )}
 
       </div>

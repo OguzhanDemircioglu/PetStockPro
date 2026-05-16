@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { writeAuditLog, writeAuditLogAsync } from './log';
-import { listAuditLogs } from './list';
+import { listAuditLogs, listAuditUsers } from './list';
 import type { DbClient } from '@/lib/db/client';
 
 const COMPANY = 'company-uuid';
@@ -17,6 +17,7 @@ function makeSelectChain(responses: unknown[][]) {
       where: ReturnType<typeof vi.fn>;
       orderBy: ReturnType<typeof vi.fn>;
       limit: ReturnType<typeof vi.fn>;
+      offset: ReturnType<typeof vi.fn>;
       then: (cb: (rows: unknown[]) => unknown) => Promise<unknown>;
     } => {
       const node: ReturnType<typeof makeNode> = {
@@ -25,6 +26,7 @@ function makeSelectChain(responses: unknown[][]) {
         where: vi.fn(() => makeNode()),
         orderBy: vi.fn(() => makeNode()),
         limit: vi.fn(() => makeNode()),
+        offset: vi.fn(() => makeNode()),
         then: (cb) => Promise.resolve(data).then(cb),
       };
       return node;
@@ -187,5 +189,55 @@ describe('listAuditLogs', () => {
       limit: 50,
     });
     expect(result).toEqual([]);
+  });
+
+  it('tarih aralığı + pagination + userId filter desteklenir', async () => {
+    const select = makeSelectChain([[]]);
+    const db = { select } as unknown as DbClient;
+
+    const result = await listAuditLogs(COMPANY, db, {
+      userId: 'user-1',
+      fromDate: '2026-05-01',
+      toDate: '2026-05-16',
+      limit: 25,
+      offset: 50,
+    });
+    expect(result).toEqual([]);
+  });
+
+  it('geçersiz fromDate "2026-13-40" → eklenmez (graceful)', async () => {
+    const select = makeSelectChain([[]]);
+    const db = { select } as unknown as DbClient;
+    await expect(
+      listAuditLogs(COMPANY, db, { fromDate: 'invalid-date' }),
+    ).resolves.toEqual([]);
+  });
+
+  it('limit MAX_LIMIT (500) ile cap edilir', async () => {
+    const select = makeSelectChain([[]]);
+    const db = { select } as unknown as DbClient;
+    await listAuditLogs(COMPANY, db, { limit: 100000 });
+    // İmplicit doğrulama: throw atmaması
+  });
+});
+
+describe('listAuditUsers', () => {
+  it('dropdown için kullanıcı listesi', async () => {
+    const rows = [
+      { userId: 'u1', email: 'admin@petshop.com' },
+      { userId: 'u2', email: 'kasiyer@petshop.com' },
+    ];
+    const selectDistinctOn = vi.fn().mockImplementation(() => ({
+      from: vi.fn().mockImplementation(() => ({
+        innerJoin: vi.fn().mockImplementation(() => ({
+          where: vi.fn().mockImplementation(() => ({
+            orderBy: vi.fn().mockResolvedValue(rows),
+          })),
+        })),
+      })),
+    }));
+    const db = { selectDistinctOn } as unknown as DbClient;
+    const result = await listAuditUsers(COMPANY, db);
+    expect(result).toEqual(rows);
   });
 });

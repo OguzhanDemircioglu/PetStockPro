@@ -5,7 +5,7 @@
  * kaydı gösterir. Süperadmin tarafından sistem-geneli viewer Sprint 7c'de.
  */
 
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, lt, sql } from 'drizzle-orm';
 import type { DbClient } from '@/lib/db/client';
 import { auditLogs, users } from '@/db/schema';
 
@@ -26,7 +26,30 @@ export interface ListAuditLogOptions {
   action?: string;
   entityType?: string;
   userId?: string;
+  /** ISO date string "YYYY-MM-DD" — gün başlangıcı (00:00 UTC) >= */
+  fromDate?: string;
+  /** ISO date string "YYYY-MM-DD" — gün sonu (ertesi gün 00:00 UTC) < */
+  toDate?: string;
   limit?: number;
+  offset?: number;
+}
+
+const DEFAULT_LIMIT = 100;
+const MAX_LIMIT = 500;
+
+function parseDateBoundary(
+  iso: string,
+  end: boolean,
+): Date | null {
+  // YYYY-MM-DD bekle
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+  const d = new Date(`${iso}T00:00:00.000Z`);
+  if (Number.isNaN(d.getTime())) return null;
+  if (end) {
+    // toDate dahil — ertesi günün başlangıcı (exclusive upper bound)
+    d.setUTCDate(d.getUTCDate() + 1);
+  }
+  return d;
 }
 
 export async function listAuditLogs(
@@ -44,6 +67,17 @@ export async function listAuditLogs(
   if (opts.userId) {
     conditions.push(eq(auditLogs.userId, opts.userId));
   }
+  if (opts.fromDate) {
+    const from = parseDateBoundary(opts.fromDate, false);
+    if (from) conditions.push(gte(auditLogs.createdAt, from));
+  }
+  if (opts.toDate) {
+    const to = parseDateBoundary(opts.toDate, true);
+    if (to) conditions.push(lt(auditLogs.createdAt, to));
+  }
+
+  const limit = Math.min(opts.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
+  const offset = Math.max(0, opts.offset ?? 0);
 
   return db
     .select({
@@ -62,5 +96,30 @@ export async function listAuditLogs(
     .leftJoin(users, eq(users.id, auditLogs.userId))
     .where(and(...conditions))
     .orderBy(desc(auditLogs.createdAt))
-    .limit(opts.limit ?? 100);
+    .limit(limit)
+    .offset(offset);
+}
+
+export interface AuditUserOption {
+  userId: string;
+  email: string;
+}
+
+/**
+ * Tenant'ın audit log'larında görünen kullanıcı listesi —
+ * filter dropdown'u için.
+ */
+export async function listAuditUsers(
+  companyId: string,
+  db: DbClient,
+): Promise<AuditUserOption[]> {
+  return db
+    .selectDistinctOn([auditLogs.userId], {
+      userId: auditLogs.userId,
+      email: users.email,
+    })
+    .from(auditLogs)
+    .innerJoin(users, eq(users.id, auditLogs.userId))
+    .where(eq(auditLogs.companyId, companyId))
+    .orderBy(auditLogs.userId, users.email);
 }
