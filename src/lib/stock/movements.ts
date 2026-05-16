@@ -353,6 +353,25 @@ export async function recordStockIn(
         false,
       );
 
+      // Stock-in özel: branch_inventory.expiryDate / lotNumber, son partinin
+      // bilgisi (yakın SKT izleme için PetPro Asistanı kullanır). Mevcut
+      // değer üzerinden yazılır; null/empty gelirse dokunulmaz.
+      if (data.expiryDate || data.lotNumber) {
+        await tx
+          .update(branchInventory)
+          .set({
+            ...(data.expiryDate ? { expiryDate: data.expiryDate } : {}),
+            ...(data.lotNumber ? { lotNumber: data.lotNumber } : {}),
+            updatedAt: now,
+          })
+          .where(
+            and(
+              eq(branchInventory.branchId, lockedInfo.branchId),
+              eq(branchInventory.variantId, lockedInfo.variantId),
+            ),
+          );
+      }
+
       return m.id;
     });
 
