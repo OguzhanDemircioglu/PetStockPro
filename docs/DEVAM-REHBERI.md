@@ -1,8 +1,8 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-16 (Sprint 7b TAM + Sprint 7c **Uzak Kullanıcı Yönetimi** parça 1 (3 aksiyon))
-**Mevcut Branch:** `cray61` — origin'in 13+ commit ileri (push edilmedi)
-**Durum:** ✅ **Sprint 0-15 büyük kısmı tamamlandı + Sprint 7a tam + Sprint 7b TAM + Sprint 7c uzak kullanıcı parça 1.** 816 test, 11 migration, 0 lint+typecheck error.
+**Tarih:** 2026-05-16 (Sprint 7b TAM + Sprint 7c parça 1+2: Uzak kullanıcı + DB Inspector)
+**Mevcut Branch:** `cray61` — origin'in 14+ commit ileri (push edilmedi)
+**Durum:** ✅ **Sprint 0-15 büyük kısmı tamamlandı + Sprint 7a tam + Sprint 7b TAM + Sprint 7c parça 1+2 (uzak kullanıcı + DB Inspector).** 836 test, 11 migration, 0 lint+typecheck error.
 
 ## 🚦 YENİ SESSION BAŞLANGIÇ — KALDIĞIN YER
 
@@ -43,6 +43,19 @@ Screenshot timeout sorunu: stale .next cache, server stop + `rm -rf .next` + pre
 - ✅ **Hesap kilitle / kilidi aç** (lockedUntil 1..720h + lockedReason='SUPERADMIN' + Telegram critical/info)
 
 Browser E2E: sprint27lock@petshop.com hedef → şifre reset linki ✓ banner / 2h hesap kilit → revalidate UI lock→unlock form switch → kilit aç → revalidate → lock form geri. Audit log'da 3 entry `bypass` damgalı görsel doğrulandı.
+
+### Sprint 7c — DB Inspector (parça 2 / 3) ✅ committed
+
+`/admin/superadmin/db-inspector` SELECT-only güvenli SQL runner — Toolbox FAB'a 🔬 link eklendi.
+
+- ✅ **validateSelectQuery** — pure validator (SELECT/WITH only + chain `;` reject + 20 forbidden keyword word-boundary regex)
+- ✅ **runInspectorSelect** — postgres connection (statement_timeout 5sn, subquery LIMIT 101, truncated flag)
+- ✅ **Action** — her query (success + failure) audit log'a yazılır (`superadmin.dbinspector.query_run` / `.query_failed`)
+- ✅ **UI** — sql textarea + Çalıştır + result table (id/email/role+) + 6 hazır preset query (kullanıcılar/tenant'lar/hareketler/audit/negatif stok/ürün count)
+
+Browser E2E: SELECT happy 4 satır 378ms / DROP TABLE reject "Sadece SELECT veya WITH (CTE)" / Chain attack `SELECT 1; DROP TABLE` reject "Tek statement" / 5 audit log entry (3 failed + 1 success) görsel doğrulandı.
+
+Bug fix: Drizzle template literal SET statement_timeout parametre binding kabul etmiyor → `sql.unsafe('SET statement_timeout = 5000')`. Query'de zaten LIMIT varsa double LIMIT syntax error → subquery wrap `SELECT * FROM (user_query) AS _inspector LIMIT 101`.
 
 ### Sprint 7c kalan iş (sonraki turlar)
 
@@ -94,7 +107,7 @@ Plan-konsistent sırayla:
 **Test:** 610 → 762 (+152)
 **Migration:** 7 → 11 (0008/0009/0010/0011)
 **Yeni route/sayfa:** ~40
-**Browser E2E doğrulanan ekranlar:** Pano + 7 settings + 4 stocktake + ürün/şube detay + low-stock + notifications + süperadmin + tenant detay + bypass 1 + bypass 2 + bypass 3 + bypass 4 + bypass 5 + bypass 6 + 7c uzak kullanıcı (3 aksiyon)
+**Browser E2E doğrulanan ekranlar:** Pano + 7 settings + 4 stocktake + ürün/şube detay + low-stock + notifications + süperadmin + tenant detay + bypass 1 + bypass 2 + bypass 3 + bypass 4 + bypass 5 + bypass 6 + 7c uzak kullanıcı (3 aksiyon) + 7c DB Inspector
 
 ---
 

@@ -72,6 +72,13 @@ const ITEMS: ToolboxItem[] = [
     href: '/admin/superadmin/bypass/metadata-fix',
     desc: 'Immutable ledger reason/note düzeltmesi',
   },
+  {
+    key: 'db_inspector',
+    emoji: '🔬',
+    label: 'DB Inspector',
+    href: '/admin/superadmin/db-inspector',
+    desc: 'Read-only ad-hoc SELECT query runner',
+  },
 ];
 
 export function SuperadminToolbox() {
