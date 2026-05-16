@@ -120,6 +120,14 @@ export default async function VitrinProductDetailPage({
         </Link>
         <span aria-hidden>›</span>
         <span className="text-cart font-bold">{product.productName}</span>
+        <span aria-hidden>·</span>
+        <Link
+          href={`/vitrin/urun/${product.slug}` as never}
+          className="text-cat hover:underline"
+          data-testid="cross-tenant-compare-link"
+        >
+          🔁 Tüm pet shop&apos;larda fiyatı karşılaştır
+        </Link>
       </nav>
 
       <section

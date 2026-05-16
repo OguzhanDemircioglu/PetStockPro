@@ -213,6 +213,41 @@ export async function collectSitemapEntries(
     });
   }
 
+  // Cross-tenant ürün aggregate sayfaları — `/vitrin/urun/[slug]` fiyat
+  // kıyaslama. Sadece 2+ tenant'ta aynı slug'la satılan ürünler (tek
+  // tenant'ta ise `/vitrin/magaza/[slug]/urun/[productSlug]` zaten
+  // sitemap'te, duplicate URL açma).
+  const crossProductRows = await db
+    .select({
+      slug: products.slug,
+      tenantCount: sql<number>`COUNT(DISTINCT ${products.companyId})::int`,
+    })
+    .from(products)
+    .innerJoin(companies, eq(companies.id, products.companyId))
+    .innerJoin(
+      storefrontSettings,
+      eq(storefrontSettings.companyId, companies.id),
+    )
+    .where(
+      and(
+        eq(products.vitrinPublished, true),
+        sql`${products.deletedAt} IS NULL`,
+        eq(companies.storefrontStatus, 'approved'),
+        eq(storefrontSettings.isEnabled, true),
+      ),
+    )
+    .groupBy(products.slug)
+    .having(sql`COUNT(DISTINCT ${products.companyId}) > 1`)
+    .orderBy(asc(products.slug));
+
+  for (const cp of crossProductRows) {
+    entries.push({
+      loc: `${baseUrl}/vitrin/urun/${cp.slug}`,
+      changeFrequency: 'weekly',
+      priority: 0.65,
+    });
+  }
+
   return entries;
 }
 

@@ -15,6 +15,7 @@ function makeMockDb(opts: {
     lastModified: Date;
   }>;
   categories?: Array<{ slug: string }>;
+  crossProducts?: Array<{ slug: string; tenantCount: number }>;
 }) {
   const responses: unknown[][] = [
     opts.cities ?? [],
@@ -22,6 +23,7 @@ function makeMockDb(opts: {
     opts.tenants ?? [],
     opts.products ?? [],
     opts.categories ?? [],
+    opts.crossProducts ?? [],
   ];
   let i = 0;
 
@@ -29,6 +31,8 @@ function makeMockDb(opts: {
     from: ReturnType<typeof vi.fn>;
     innerJoin: ReturnType<typeof vi.fn>;
     where: ReturnType<typeof vi.fn>;
+    groupBy: ReturnType<typeof vi.fn>;
+    having: ReturnType<typeof vi.fn>;
     orderBy: ReturnType<typeof vi.fn>;
     then: (cb: (rows: unknown[]) => unknown) => Promise<unknown>;
   } => {
@@ -36,6 +40,8 @@ function makeMockDb(opts: {
       from: vi.fn(() => makeNode()),
       innerJoin: vi.fn(() => makeNode()),
       where: vi.fn(() => makeNode()),
+      groupBy: vi.fn(() => makeNode()),
+      having: vi.fn(() => makeNode()),
       orderBy: vi.fn(() => {
         const data = responses[i++] ?? [];
         return {
@@ -172,6 +178,25 @@ describe('collectSitemapEntries', () => {
     expect(catEntries[0].changeFrequency).toBe('weekly');
     expect(catEntries[0].loc).toBe('https://petstockpro.com/vitrin/kategori/oyuncak');
     expect(catEntries[1].loc).toBe('https://petstockpro.com/vitrin/kategori/kedi-kumu');
+  });
+
+  it('cross-tenant ürün — priority 0.65 + sadece 2+ tenant\'lılar', async () => {
+    const { db } = makeMockDb({
+      crossProducts: [
+        { slug: 'royal-canin-adult-kedi', tenantCount: 3 },
+        { slug: 'acana-yetiskin-kopek', tenantCount: 2 },
+      ],
+    });
+    const result = await collectSitemapEntries('https://petstockpro.com', db);
+    const crossEntries = result.filter((e) =>
+      e.loc.includes('/vitrin/urun/'),
+    );
+    expect(crossEntries).toHaveLength(2);
+    expect(crossEntries[0].priority).toBe(0.65);
+    expect(crossEntries[0].changeFrequency).toBe('weekly');
+    expect(crossEntries[0].loc).toBe(
+      'https://petstockpro.com/vitrin/urun/royal-canin-adult-kedi',
+    );
   });
 });
 
