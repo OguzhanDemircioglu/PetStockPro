@@ -1,8 +1,8 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-17 (Sprint 8/10/12 MVP TAM + Sprint 15 polish 4'lü + Sprint 12 ext ürün detay + WhatsApp Feedback Balonu + reset-password fix)
-**Mevcut Branch:** `cray61` — origin'in **38 commit** ileri (push edilmedi)
-**Son commit:** `8dbbfef` feat(vitrin): Sprint 12 ext — WhatsApp Geri Bildirim Balonu
+**Tarih:** 2026-05-17 (Sprint 8/10/12 MVP TAM + Sprint 15 polish 4'lü + Sprint 12 ext ürün detay + WhatsApp Feedback Balonu + Feedback dashboard + reset-password fix)
+**Mevcut Branch:** `cray61` — origin'in **40 commit** ileri (push edilmedi)
+**Son commit:** `3cc342b` feat(storefront): Vitrin metrikleri widget (Feedback Balonu dashboard)
 **Test:** 963 passed (69 dosya) — vitest (+84 bu session)
 **Lint+typecheck:** 0 error
 **Migration:** 13 (0013 vitrin_whatsapp_feedback + 0012 telegram + 0008/0009/0010/0011 + 7 öncesi)
@@ -125,6 +125,7 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 |---|---|---|
 | **Ürün detay** | `/vitrin/magaza/[slug]/urun/[productSlug]` — getStorefrontProductDetail helper (4 gating + variants LEFT JOIN/GROUP BY). Breadcrumb + hero (kategori/marka/stok count/fiyat aralığı) + description + variant grid (★ Varsayılan + Stok yok + variant-specific WhatsApp). Profil kart linkleri update. product_view event tracking | `c17169d` |
 | **WhatsApp Feedback Balonu** | Migration 0013 (vitrin_whatsapp_feedback + 2 enum + 4 index + RLS), lib/vitrin/feedback.ts (SHA256 IP hash + 24h status upgrade pattern + 13 test), POST /api/vitrin/feedback (sendBeacon kabul), FeedbackBalloon sticky komponent (5sn delay + 5 emoji + tek tap submit + thanks 1.5sn + beforeunload sendBeacon + localStorage dedup), WhatsappLinkScript event yayını, profile + ürün detay sayfalarına entegre. E2E: rating=very_good submit → DB kayıt doğrulandı | `8dbbfef` |
+| **Feedback dashboard** | /admin/settings/storefront sayfasına 30g vitrin metrikleri widget (4 KPI: aktivite/cevap/ortalama puan/ulaşma oranı + 5-emoji puan dağılımı progress bar). getFeedbackSummary helper UI'a bağlandı. <3 puan + <80% ulaşma oranı danger tone uyarı | `3cc342b` |
 
 ### Sprint 9 — Kullanıcılar (davet akışı hibrit)
 
