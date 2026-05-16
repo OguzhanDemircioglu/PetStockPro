@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { writeAuditLog, writeAuditLogAsync } from './log';
-import { listAuditLogs, listAuditUsers } from './list';
+import { countAuditLogs, listAuditLogs, listAuditUsers } from './list';
 import type { DbClient } from '@/lib/db/client';
 
 const COMPANY = 'company-uuid';
@@ -218,6 +218,42 @@ describe('listAuditLogs', () => {
     const db = { select } as unknown as DbClient;
     await listAuditLogs(COMPANY, db, { limit: 100000 });
     // İmplicit doğrulama: throw atmaması
+  });
+});
+
+describe('countAuditLogs', () => {
+  it('toplam satır sayısı döner', async () => {
+    const select = makeSelectChain([[{ total: 137 }]]);
+    const db = { select } as unknown as DbClient;
+    const total = await countAuditLogs(COMPANY, db);
+    expect(total).toBe(137);
+  });
+
+  it('boş sonuç → 0', async () => {
+    const select = makeSelectChain([[]]);
+    const db = { select } as unknown as DbClient;
+    const total = await countAuditLogs(COMPANY, db);
+    expect(total).toBe(0);
+  });
+
+  it('filter param desteklenir (action + userId + tarih)', async () => {
+    const select = makeSelectChain([[{ total: 4 }]]);
+    const db = { select } as unknown as DbClient;
+    const total = await countAuditLogs(COMPANY, db, {
+      action: 'stock.in',
+      userId: 'user-1',
+      fromDate: '2026-05-01',
+      toDate: '2026-05-16',
+    });
+    expect(total).toBe(4);
+  });
+
+  it('geçersiz fromDate graceful (eklenmez, throw atmaz)', async () => {
+    const select = makeSelectChain([[{ total: 0 }]]);
+    const db = { select } as unknown as DbClient;
+    await expect(
+      countAuditLogs(COMPANY, db, { fromDate: 'invalid-date' }),
+    ).resolves.toBe(0);
   });
 });
 

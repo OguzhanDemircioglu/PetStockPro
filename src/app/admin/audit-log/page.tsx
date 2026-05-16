@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
-import { listAuditLogs, listAuditUsers } from '@/lib/audit/list';
+import { countAuditLogs, listAuditLogs, listAuditUsers } from '@/lib/audit/list';
 import { SettingsShell } from '@/components/settings-shell';
 
 const PAGE_SIZE = 50;
@@ -78,7 +78,7 @@ export default async function AuditLogPage({
   const page = Math.max(1, Number.parseInt(params.page ?? '1', 10) || 1);
   const offset = (page - 1) * PAGE_SIZE;
 
-  const [items, userOptions] = await Promise.all([
+  const [items, userOptions, totalCount] = await Promise.all([
     listAuditLogs(session.user.companyId, db, {
       limit: PAGE_SIZE,
       offset,
@@ -89,10 +89,20 @@ export default async function AuditLogPage({
       toDate: params.to || undefined,
     }),
     listAuditUsers(session.user.companyId, db),
+    countAuditLogs(session.user.companyId, db, {
+      action: validAction || undefined,
+      entityType: params.entity || undefined,
+      userId: params.userId || undefined,
+      fromDate: params.from || undefined,
+      toDate: params.to || undefined,
+    }),
   ]);
 
   const hasFilter =
     !!validAction || !!params.entity || !!params.userId || !!params.from || !!params.to;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const isPageOverflow = page > totalPages && totalCount > 0;
+  const isLastPage = page >= totalPages;
 
   // Pagination URL helper'ı (tüm aktif filtre param'larını korur)
   const buildPageUrl = (targetPage: number) => {
@@ -111,7 +121,11 @@ export default async function AuditLogPage({
     <SettingsShell
       current="audit"
       title="Audit log"
-      description={`Son ${items.length} aksiyon${hasFilter ? ' (filtreli)' : ' · Append-only (KVKK 5 yıl saklama)'}`}
+      description={
+        totalCount > 0
+          ? `${totalCount} aksiyon${hasFilter ? ' (filtreli)' : ' · Append-only (KVKK 5 yıl saklama)'} · sayfa ${Math.min(page, totalPages)} / ${totalPages}`
+          : `Henüz audit kaydı yok${hasFilter ? ' (filtreli)' : ''}`
+      }
     >
       <div className="flex flex-col gap-6">
       <form
@@ -257,13 +271,28 @@ export default async function AuditLogPage({
         <div className="rounded-2xl border-2 border-dashed border-line bg-paper py-16 text-center">
           <div className="text-6xl">📜</div>
           <h2 className="mt-4 text-xl font-bold text-cart">
-            {hasFilter ? 'Filtreye uyan kayıt yok' : 'Henüz audit kaydı yok'}
+            {isPageOverflow
+              ? 'Bu sayfa boş'
+              : hasFilter
+                ? 'Filtreye uyan kayıt yok'
+                : 'Henüz audit kaydı yok'}
           </h2>
           <p className="mt-2 text-sm text-ink-3">
-            {hasFilter
-              ? 'Filtreyi temizleyerek tüm aksiyonları görüntüle.'
-              : 'Ürün ekleme, stok hareketi gibi aksiyonlar otomatik kayıt olur.'}
+            {isPageOverflow
+              ? `Toplam ${totalPages} sayfa var, ilk sayfaya dön.`
+              : hasFilter
+                ? 'Filtreyi temizleyerek tüm aksiyonları görüntüle.'
+                : 'Ürün ekleme, stok hareketi gibi aksiyonlar otomatik kayıt olur.'}
           </p>
+          {isPageOverflow && (
+            <Link
+              href={buildPageUrl(1) as never}
+              data-testid="audit-back-to-first"
+              className="mt-4 inline-block rounded-xl bg-cat px-4 py-2 text-sm font-bold text-white"
+            >
+              İlk sayfaya dön
+            </Link>
+          )}
         </div>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-line bg-white">
@@ -334,13 +363,14 @@ export default async function AuditLogPage({
         </div>
       )}
 
-      {(page > 1 || items.length === PAGE_SIZE) && (
+      {totalPages > 1 && items.length > 0 && (
         <nav
           data-testid="audit-pagination"
           className="flex items-center justify-between rounded-2xl border border-line bg-white px-4 py-3 text-[12px]"
         >
           <span className="text-ink-3">
             Sayfa <strong className="text-cart">{page}</strong>
+            <span className="text-ink-4"> / {totalPages}</span>
           </span>
           <div className="flex gap-2">
             {page > 1 ? (
@@ -356,7 +386,7 @@ export default async function AuditLogPage({
                 ← Önceki
               </span>
             )}
-            {items.length === PAGE_SIZE ? (
+            {!isLastPage ? (
               <Link
                 href={buildPageUrl(page + 1) as never}
                 data-testid="audit-next"

@@ -100,6 +100,45 @@ export async function listAuditLogs(
     .offset(offset);
 }
 
+/**
+ * Aynı filtrelerle toplam audit log sayısı — pagination için.
+ *
+ * `listAuditLogs` ile aynı WHERE şartları, limit/offset/orderBy YOK.
+ */
+export async function countAuditLogs(
+  companyId: string,
+  db: DbClient,
+  opts: Pick<
+    ListAuditLogOptions,
+    'action' | 'entityType' | 'userId' | 'fromDate' | 'toDate'
+  > = {},
+): Promise<number> {
+  const conditions = [eq(auditLogs.companyId, companyId)];
+  if (opts.action) {
+    conditions.push(eq(auditLogs.action, opts.action));
+  }
+  if (opts.entityType) {
+    conditions.push(eq(auditLogs.entityType, opts.entityType));
+  }
+  if (opts.userId) {
+    conditions.push(eq(auditLogs.userId, opts.userId));
+  }
+  if (opts.fromDate) {
+    const from = parseDateBoundary(opts.fromDate, false);
+    if (from) conditions.push(gte(auditLogs.createdAt, from));
+  }
+  if (opts.toDate) {
+    const to = parseDateBoundary(opts.toDate, true);
+    if (to) conditions.push(lt(auditLogs.createdAt, to));
+  }
+
+  const rows = await db
+    .select({ total: sql<number>`COUNT(*)::int` })
+    .from(auditLogs)
+    .where(and(...conditions));
+  return rows[0]?.total ?? 0;
+}
+
 export interface AuditUserOption {
   userId: string;
   email: string;
