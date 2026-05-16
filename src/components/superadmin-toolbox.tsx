@@ -79,6 +79,13 @@ const ITEMS: ToolboxItem[] = [
     href: '/admin/superadmin/db-inspector',
     desc: 'Read-only ad-hoc SELECT query runner',
   },
+  {
+    key: 'system_settings',
+    emoji: '⚙',
+    label: 'Sistem Ayarları',
+    href: '/admin/superadmin/system-settings',
+    desc: 'Plan tier · env durumu · DB extensions · kategoriler',
+  },
 ];
 
 export function SuperadminToolbox() {

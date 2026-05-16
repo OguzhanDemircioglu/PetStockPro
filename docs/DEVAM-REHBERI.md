@@ -1,8 +1,8 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-16 (Sprint 7b TAM + Sprint 7c parça 1+2: Uzak kullanıcı + DB Inspector)
-**Mevcut Branch:** `cray61` — origin'in 14+ commit ileri (push edilmedi)
-**Durum:** ✅ **Sprint 0-15 büyük kısmı tamamlandı + Sprint 7a tam + Sprint 7b TAM + Sprint 7c parça 1+2 (uzak kullanıcı + DB Inspector).** 836 test, 11 migration, 0 lint+typecheck error.
+**Tarih:** 2026-05-16 (Sprint 7b TAM + Sprint 7c **TAM** — 3/3 parça: Uzak kullanıcı + DB Inspector + Sistem Ayarları)
+**Mevcut Branch:** `cray61` — origin'in 15+ commit ileri (push edilmedi)
+**Durum:** ✅ **Sprint 0-15 büyük kısmı tamamlandı + Sprint 7a tam + Sprint 7b TAM + Sprint 7c TAM (3 parça).** 849 test, 11 migration, 0 lint+typecheck error.
 
 ## 🚦 YENİ SESSION BAŞLANGIÇ — KALDIĞIN YER
 
@@ -57,6 +57,21 @@ Browser E2E: SELECT happy 4 satır 378ms / DROP TABLE reject "Sadece SELECT veya
 
 Bug fix: Drizzle template literal SET statement_timeout parametre binding kabul etmiyor → `sql.unsafe('SET statement_timeout = 5000')`. Query'de zaten LIMIT varsa double LIMIT syntax error → subquery wrap `SELECT * FROM (user_query) AS _inspector LIMIT 101`.
 
+### Sprint 7c — Sistem Ayarları (parça 3 / 3) ✅ committed
+
+`/admin/superadmin/system-settings` read-only sistem bilgi paneli — Toolbox FAB'a ⚙ link eklendi.
+
+- ✅ **lib/constants/plan-limits.ts** — tek-kaynak (FREE 50/0 / PRO 500/750 / PRO_PLUS ∞/1750) + 13 test
+- ✅ **Plan tier kartları** 3-tier B (TR-only) görsel
+- ✅ **Env var checks** 9 key (DATABASE_URL/BREVO/Telegram/iyzico/Nilvera/SUPABASE_SERVICE_ROLE_KEY/NEXT_PUBLIC_APP_URL) — 2/9 tanımlı (sandbox bekliyor)
+- ✅ **DB Extension durumu** moddatetime/pg_jsonschema/pg_trgm/pgcrypto + tablo sayısı (23)
+- ✅ **KDV oranları** (%20 standart / %10 pet mama / %8 indirimli / %0)
+- ✅ **16 default kategori** liste (her yeni tenant'a otomatik seed)
+
+Browser E2E: tüm 5 section + 6 KPI + 16 satır kategori tablosu görsel doğrulandı. Editleme Faz 2 (`system_settings` tablo + UPDATE mode + audit).
+
+### Sprint 7c TAMAMLANDI — Sıradaki sprint kararı sırada
+
 ### Sprint 7c kalan iş (sonraki turlar)
 
 Sprint 7c (1 hafta) — DB Inspector + Sistem Ayarları + Uzak Kullanıcı:
@@ -107,7 +122,7 @@ Plan-konsistent sırayla:
 **Test:** 610 → 762 (+152)
 **Migration:** 7 → 11 (0008/0009/0010/0011)
 **Yeni route/sayfa:** ~40
-**Browser E2E doğrulanan ekranlar:** Pano + 7 settings + 4 stocktake + ürün/şube detay + low-stock + notifications + süperadmin + tenant detay + bypass 1 + bypass 2 + bypass 3 + bypass 4 + bypass 5 + bypass 6 + 7c uzak kullanıcı (3 aksiyon) + 7c DB Inspector
+**Browser E2E doğrulanan ekranlar:** Pano + 7 settings + 4 stocktake + ürün/şube detay + low-stock + notifications + süperadmin + tenant detay + bypass 1 + bypass 2 + bypass 3 + bypass 4 + bypass 5 + bypass 6 + 7c uzak kullanıcı (3 aksiyon) + 7c DB Inspector + 7c Sistem Ayarları
 
 ---
 
