@@ -573,16 +573,35 @@ export default async function AdminDashboardPage() {
               })}
             </ul>
           )}
-          <Link
-            href={'/admin/stock-movements' as never}
-            className="mt-3 block text-center text-[11px] font-bold text-cat hover:underline"
-          >
-            Tüm ledger →
-          </Link>
+          <div className="mt-3 flex items-center justify-center gap-3 text-[11px] font-bold">
+            <Link
+              href={'/admin/stock-movements' as never}
+              className="text-cat hover:underline"
+              data-testid="recent-activity-all-ledger"
+            >
+              Tüm ledger →
+            </Link>
+            <span className="text-ink-4">·</span>
+            <Link
+              href={
+                `/admin/audit-log?from=${todayYmd()}&to=${todayYmd()}` as never
+              }
+              className="text-cat hover:underline"
+              data-testid="recent-activity-today-audit"
+            >
+              📜 Bugünün audit logu →
+            </Link>
+          </div>
         </Card>
       </section>
     </main>
   );
+}
+
+/** Bugün YYYY-MM-DD — Pano audit-log link'i için. */
+function todayYmd(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 function KPI({
