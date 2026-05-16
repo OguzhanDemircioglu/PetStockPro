@@ -35,6 +35,7 @@ export function ReportButton({
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [remaining, setRemaining] = useState<number | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,6 +59,9 @@ export function ReportButton({
       });
       const data = await res.json();
       if (data.ok) {
+        if (typeof data.remainingInWindow === 'number') {
+          setRemaining(data.remainingInWindow);
+        }
         setDone(true);
       } else {
         if (data.reason === 'rate_limit_exceeded') {
@@ -86,6 +90,16 @@ export function ReportButton({
         className="rounded-xl border border-arrow/30 bg-arrow-soft/50 px-4 py-3 text-center text-sm text-arrow-7"
       >
         ✓ Bildiri alındı — incelemeye gönderildi. Teşekkürler 🐾
+        {remaining !== null && (
+          <div
+            data-testid="report-remaining"
+            className="mt-1.5 text-[11px] font-bold text-arrow-7/80"
+          >
+            {remaining === 0
+              ? '⚠ Bu pet shop için günlük şikayet hakkın doldu (5/5). 24 saat içinde yeniden gönderemezsin.'
+              : `Bu pet shop için kalan: ${remaining}/5 şikayet (24 saat içinde).`}
+          </div>
+        )}
       </div>
     );
   }
