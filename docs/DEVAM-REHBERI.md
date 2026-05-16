@@ -1,161 +1,167 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-16 (Sprint 7 TAM + Sprint 8/9 + Sprint 11 ext: stok değer + müşteri + dönem karşılaştırma)
-**Mevcut Branch:** `cray61` — origin'in 21+ commit ileri (push edilmedi)
-**Durum:** ✅ **Sprint 0-15 büyük kısmı + Sprint 7 TAM + Sprint 8 partial + Sprint 9 davet + Sprint 11 ext (3 yeni rapor: stok değer + müşteri analitik + dönem karşılaştırma).** 879 test, 11 migration, 0 lint+typecheck error.
+**Tarih:** 2026-05-16 (Sprint 7 TAM + 8 partial + 9 davet + 11 ext rapor üçlüsü)
+**Mevcut Branch:** `cray61` — origin'in **22 commit** ileri (push edilmedi)
+**Son commit:** `47a77bf` feat(reports): Dönem karşılaştırma (bu hafta/ay vs öncesi)
+**Test:** 879 passed (64 dosya) — vitest
+**Lint+typecheck:** 0 error
+**Migration:** 11 (0008/0009/0010/0011 + 7 öncesi)
 
-## 🚦 YENİ SESSION BAŞLANGIÇ — KALDIĞIN YER
+## 🚦 YENİ SESSION'A GİRDİĞİNDE — İLK 5 DK
 
-**Sprint 7b TAMAMLANDI — 6/6 Bypass aksiyonu + Toolbox FAB committed.**
+1. **Bu dosyayı baştan oku** (sen şu an buradasın)
+2. `CLAUDE.md` (proje genel kararlar + #1 kural: tek geliştirici)
+3. `git log --oneline cray61~22..cray61` (son 22 commit listesi)
+4. **Memory aktif kurallar** (otomatik yükleniyor):
+   - Test-first + temiz çalış
+   - Sorusuz akış, plana sadık
+   - **UI test = preview_screenshot ile gerçek görsel** (DOM eval/fetch yetersiz)
+   - **Her sayfanın testleri tamamlanınca commit** (batch yok, onay isteme)
+   - **Session sonu DEVAM-REHBERI güncelle**
+
+## ⚠ "STOK -5 / -7 NEDİR?" — Test Verisi Açıklaması
+
+Eğer DB'de veya screenshot'ta `branch_inventory.stock_qty` negatif değer (-5, -7 vb.) görürsen **panik etme — bu kasıtlı test verisi**:
+
+| Sprint | Aksiyon | Stok değişim | Hangi commit |
+|---|---|---|---|
+| 7b Bypass 3 | Eksi stoğa zorla giriş — Catit Pixi XL Boy / Merkez Şube'de 53 → **-7** | -60 quantity | `8507e4a` |
+| 7b Bypass 5 | Sayım rollback (allowNegative bypass) — sayım movement reverse → **-5** | +2 reverse | `f26e8d0` |
+| 8 ext | Transfer öneri test verisi için Merkez'e 100 stok girişi → **95** | +100 stock-in | `be177cb` |
+
+**Şu anki DB durumu (2026-05-16):**
+- Merkez Şube · Catit Pixi XL Boy: **95** (negatif değil)
+- Şube 2 - İstanbul · Catit Pixi XL Boy: **0**
+
+Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-auth + audit log ile yapılabilir. Normal kullanıcı `recordStockOut` çağırdığında `newQty<0` ise `InsufficientStockError` throw eder.
+
+## 🟢 Sıradaki olası işler (öncelik sırasıyla)
+
+| # | İş | Tahmin | Neden |
+|---|---|---|---|
+| 1 | **Sprint 10 — Telegram setup wizard** (kullanıcı kendi bot token + chat_id binding) | 2-3 saat | Alert kanalı şu an env-only, UI eksik |
+| 2 | **Sprint 12 — Merkezi Vitrin Dizini** (public `/vitrin` + WhatsApp deep link) | 4-6 saat | MVP'nin B2C tarafı, lansman öncesi şart |
+| 3 | **Sprint 8 — İndirim önerisi** (yavaş satış + yüksek stok rule) | 1-2 saat | PetPro Asistanı'nın 3. kartı |
+| 4 | **Audit log filtre** (action+entity+kullanıcı query param) | 1 saat | Audit-log sayfası 100 son satır limitli, filtre yok |
+| 5 | **Düşük stok filter** (kategori + şube bazında) | 1 saat | Tek-tenant tablo büyürse navigate zor |
+| 6 | **Notif filter ext** (5 grup yerine fine-grain action) | 30 dk | Sprint 15'te 5 group var, daha ince filtre faydalı |
+| 7 | **Storage upload — Sprint 3.3** | ⛔ BLOKER | `SUPABASE_SERVICE_ROLE_KEY` gerek (kullanıcı sağlayacak) |
+| 8 | **Sprint 13/14 production deploy** | ⛔ BLOKER | Şirket kuruluş + vergi no + IBAN (2-4 hafta) |
+
+**Önerim:** Sprint 12 (Merkezi Vitrin) — kullanıcı görünür, eksik en büyük parça.
+
+## 📦 Bu Turun Kümülatif Sonucu (22 commit)
+
+### Sprint 7b — Süperadmin Bypass Override TAM (6/6 aksiyon)
 
 | Bypass | Durum | Commit |
 |---|---|---|
 | Foundation (verifyBypassGuard + writeBypassAudit + 10 test) | ✅ | `7b31adf` |
 | Toolbox FAB component + admin layout entegrasyon | ✅ | `075fee0` |
-| **1. Reverse expired** (24h+ hareket geri al + 1 yaprak) | ✅ + browser E2E | `a837b6c` |
-| **2. Hard delete ürün** (6 test + browser E2E reject + happy) | ✅ + browser E2E | `92665dc` |
-| **Disk doluluğu + top 8 tablo grafiği** (süperadmin sayfa) | ✅ + browser E2E | `b9822cf` |
-| **3. Eksi stoğa zorla giriş** (8 test, sayfa+form+action hazır) | ✅ + browser E2E | `8507e4a` |
-| **4. Plan limit override** (10 test, sayfa+form+action hazır) | ✅ + browser E2E | `b349e54` |
-| **5. Sayım rollback** (10 test + allowNegative bypass + sayfa) | ✅ + browser E2E | `f26e8d0` |
-| **6. Movement metadata düzelt** (14 test + 4 alan diff UI) | ✅ + browser E2E | `fba0f5b` |
+| **1. Reverse expired** (24h+ hareket geri al + 1 yaprak) | ✅ + E2E | `a837b6c` |
+| **2. Hard delete ürün** (6 test) | ✅ + E2E | `92665dc` |
+| **Disk doluluğu + top 8 tablo grafiği** | ✅ + E2E | `b9822cf` |
+| **3. Eksi stoğa zorla giriş** (8 test) | ✅ + E2E | `8507e4a` |
+| **4. Plan limit override** (10 test) | ✅ + E2E | `b349e54` |
+| **5. Sayım rollback** (10 test + allowNegative bypass) | ✅ + E2E | `f26e8d0` |
+| **6. Movement metadata düzelt** (14 test + 4 alan diff UI) | ✅ + E2E | `fba0f5b` |
 
-### Bypass 3 browser smoke ✅ TAMAMLANDI (2026-05-16)
+### Sprint 7c — DB Inspector + Sistem Ayarları + Uzak Kullanıcı TAM (3/3 parça)
 
-`/admin/superadmin/bypass/negative-stock` browser E2E doğrulandı:
+| Parça | İçerik | Commit |
+|---|---|---|
+| 1. Uzak kullanıcı yönetimi | Şifre reset / 2FA reset / lock+unlock + 20 test + 3 Telegram alert + /admin/superadmin/user/[id] sayfa | `cb705c0` |
+| 2. DB Inspector | SELECT-only güvenli runner + 20 forbidden keyword + 20 test + 6 hazır query | `a91587b` |
+| 3. Sistem Ayarları | Plan tier + 9 env check + DB extensions + 16 kategori (read-only) + 13 test | `9deb921` |
 
-- Form: Şube=0c1f5aad / Variant=a956cf52 (Catit Pixi XL Boy) / Düşür=60 / Sebep="Muhasebe kaydı düzeltmesi — fiziksel-sistem uyumsuzluk düzeltiliyor" / Şifre=TestPass123!
-- Submit → success banner "✓ Negatif stok hareketi yazıldı · Önce: 53 → Sonra: -7"
-- Ledger sayfası: 16/05 03:49 satır "Çıkış · Diğer · Catit Pixi XL Boy · Merkez Şube · ÖNCE 53 / Δ -60 / SONRA -7 · Notlar: Süperadmin bypass: eksi stok zorla — Muhasebe kaydı düzeltmesi"
-- Audit log sayfası: `superadmin.bypass.negative_stock` 🔒 Süperadmin · sprint3prod@petshop.com · stock_movement (f15fc882) · afterState={"stockQty":-7,"quantityRemoved":60}
+### Sprint 8 — PetPro Asistanı partial (2/3 kart)
 
-Screenshot timeout sorunu: stale .next cache, server stop + `rm -rf .next` + preview_start ile çözüldü (memory'deki kural).
+| Parça | İçerik | Commit |
+|---|---|---|
+| 1. Sipariş önerileri | listOrderSuggestions helper (düşük stok + son tedarikçi) + Pano widget + 8 test | `904f68d` |
+| 2. Transfer önerileri | listTopTransferSuggestions flat wrapper + Pano widget | `be177cb` |
+| 3. İndirim önerisi | ⏳ TODO (yavaş satış + yüksek stok rule) | — |
 
-### ✅ Bypass 1-6 TAMAMLANDI
+### Sprint 9 — Kullanıcılar (davet akışı hibrit)
 
-### Sprint 7c — Uzak Kullanıcı Yönetimi (parça 1 / 3) ✅ committed
+| Parça | İçerik | Commit |
+|---|---|---|
+| Davet flow tam | Helper + 14 test + email template + form + /admin/settings/users + /accept-invite/[token] + emailVerifiedAt COALESCE | `dbbcf0a` |
 
-`/admin/superadmin/user/[id]` sayfası — tenant detay sayfasından "⚙ Yönet" linkiyle ulaşılır.
+### Sprint 11 ext — 3 yeni rapor
 
-3 aksiyon (her biri şifre re-auth + zorunlu sebep + audit `superadmin.remote.*` + Telegram alert):
-- ✅ **Şifre sıfırlama linki gönder** (Brevo email 30dk TTL, password reset token üret)
-- ✅ **2FA sıfırla** (twoFactorEnabled=false + secret/recoveryCodes temizle + Telegram critical)
-- ✅ **Hesap kilitle / kilidi aç** (lockedUntil 1..720h + lockedReason='SUPERADMIN' + Telegram critical/info)
+| Parça | İçerik | Commit |
+|---|---|---|
+| Stok değer raporu | 3 helper (summary + by-category + top variants) + reports section | `f46c099` |
+| Müşteri analitik | topCustomers + customerSummary + busiestHours + 5 KPI + top 10 + hour bars | `42ffe1e` |
+| Dönem karşılaştırma | week/month delta% + 8 test + ComparisonCard "yeni/up/down/neutral" tone | `47a77bf` |
 
-Browser E2E: sprint27lock@petshop.com hedef → şifre reset linki ✓ banner / 2h hesap kilit → revalidate UI lock→unlock form switch → kilit aç → revalidate → lock form geri. Audit log'da 3 entry `bypass` damgalı görsel doğrulandı.
+### 🔧 Bilinen workaround: preview_screenshot timeout
 
-### Sprint 7c — DB Inspector (parça 2 / 3) ✅ committed
+Bazen Next.js dev server cache stale olduğunda `preview_screenshot` 30sn timeout. Çözüm (memory'de kayıtlı):
 
-`/admin/superadmin/db-inspector` SELECT-only güvenli SQL runner — Toolbox FAB'a 🔬 link eklendi.
+```bash
+preview_stop → rm -rf .next → preview_start
+```
 
-- ✅ **validateSelectQuery** — pure validator (SELECT/WITH only + chain `;` reject + 20 forbidden keyword word-boundary regex)
-- ✅ **runInspectorSelect** — postgres connection (statement_timeout 5sn, subquery LIMIT 101, truncated flag)
-- ✅ **Action** — her query (success + failure) audit log'a yazılır (`superadmin.dbinspector.query_run` / `.query_failed`)
-- ✅ **UI** — sql textarea + Çalıştır + result table (id/email/role+) + 6 hazır preset query (kullanıcılar/tenant'lar/hareketler/audit/negatif stok/ürün count)
+Bu tur'da bir kez yaşandı (bypass 3 sonrası). Çözüm 30 saniye, devam edilebilir.
 
-Browser E2E: SELECT happy 4 satır 378ms / DROP TABLE reject "Sadece SELECT veya WITH (CTE)" / Chain attack `SELECT 1; DROP TABLE` reject "Tek statement" / 5 audit log entry (3 failed + 1 success) görsel doğrulandı.
+### 🎯 Notlar (detay için git log + commit mesajları)
 
-Bug fix: Drizzle template literal SET statement_timeout parametre binding kabul etmiyor → `sql.unsafe('SET statement_timeout = 5000')`. Query'de zaten LIMIT varsa double LIMIT syntax error → subquery wrap `SELECT * FROM (user_query) AS _inspector LIMIT 101`.
+Detaylı açıklamalar her bir commit mesajında. Yukarıdaki tabloda commit hash'lerine `git show <hash>` ile bakabilirsin. Tekrar ihtiyaç olursa:
+- `feedback_test_first` memory → test-first yaklaşım
+- `feedback_workflow` memory → sorusuz akış, browser doğrulama
+- `feedback_commit_per_sprint` memory → batch yok, sayfa bazlı commit
+- `feedback_session_handoff` memory → DEVAM-REHBERI tazele
+- `feedback_screenshot_required` memory → UI test gerçek screenshot
 
-### Sprint 7c — Sistem Ayarları (parça 3 / 3) ✅ committed
+### Sprint plan-konsistent sıra (bundan sonra)
 
-`/admin/superadmin/system-settings` read-only sistem bilgi paneli — Toolbox FAB'a ⚙ link eklendi.
-
-- ✅ **lib/constants/plan-limits.ts** — tek-kaynak (FREE 50/0 / PRO 500/750 / PRO_PLUS ∞/1750) + 13 test
-- ✅ **Plan tier kartları** 3-tier B (TR-only) görsel
-- ✅ **Env var checks** 9 key (DATABASE_URL/BREVO/Telegram/iyzico/Nilvera/SUPABASE_SERVICE_ROLE_KEY/NEXT_PUBLIC_APP_URL) — 2/9 tanımlı (sandbox bekliyor)
-- ✅ **DB Extension durumu** moddatetime/pg_jsonschema/pg_trgm/pgcrypto + tablo sayısı (23)
-- ✅ **KDV oranları** (%20 standart / %10 pet mama / %8 indirimli / %0)
-- ✅ **16 default kategori** liste (her yeni tenant'a otomatik seed)
-
-Browser E2E: tüm 5 section + 6 KPI + 16 satır kategori tablosu görsel doğrulandı. Editleme Faz 2 (`system_settings` tablo + UPDATE mode + audit).
-
-### Sprint 7c TAMAMLANDI — Sıradaki sprint kararı sırada
-
-### Sprint 7c kalan iş (sonraki turlar)
-
-Sprint 7c (1 hafta) — DB Inspector + Sistem Ayarları + Uzak Kullanıcı:
-- DB Inspector sayfası (SELECT-only default + UPDATE kilitli mod)
-- Sistem Ayarları sayfası (Plan tier'lar + Feature flags + Default kategoriler + Email şablonları)
-- Uzak kullanıcı: Şifre reset / 2FA reset / Oturum invalidate / Hesap kilit
-- `system_settings` + `system_broadcasts` tabloları + migration
-
-### Sprint 7 tamamlanınca sıradaki
-
-Plan-konsistent sırayla:
-- **Sprint 8** Pano + Düşük Stok + PetPro Asistanı (Pano kısmı zaten yapıldı, PetPro Asistanı eksik)
-- **Sprint 9** Tedarikçiler + Kullanıcılar (Tedarikçiler yapıldı, Kullanıcılar invite flow eksik)
-- **Sprint 10** Ayarlar + Telegram + Bildirim (Telegram binding tablosu + setup wizard)
-- **Sprint 11** Raporlar (3 section eklendi, kalan: müşteri analitik + stok değer raporu)
-- **Sprint 12** Merkezi Vitrin Dizini ⚠ **BLOCKED** — SUPABASE_SERVICE_ROLE_KEY image upload için gerekli (Sprint 12 partial admin profil tamam)
+- **Sprint 8 kalan** — İndirim önerisi rule (yavaş satış + yüksek stok, Faz 2 SKT yaklaşan)
+- **Sprint 10** — Ayarlar + Telegram setup wizard (Telegram bot config + bildirim tercih UI)
+- **Sprint 12 — Merkezi Vitrin Dizini** ⚠ partial — `/vitrin` public dizin + WhatsApp deep link (admin profil tamam, public sayfalar eksik). Image upload **bloker** SUPABASE_SERVICE_ROLE_KEY
 - **Sprint 13/14** iyzico/Nilvera production deploy ⚠ **BLOCKED** — şirket kuruluş bekliyor
-- **Sprint 15** Polish + Doc (notifications scaffold kısmı yapıldı)
+- **Sprint 15** Polish + Doc (notifications scaffold + audit-log filtre eksik)
 - **Sprint 16** Lansman
 
-### Bu session'da yapılanlar (kümülatif, 13+ feature)
+**Toplam test:** 610 → 879 (+269)
+**Toplam commit:** 24 (5/16 22:00 sonrası)
+**Migration:** 7 → 11
 
-| Sprint | İçerik | Commit |
-|---|---|---|
-| 1B.2 | Schema (sessions/stocktakes/stocktake_items/vitrin_events) + RLS baseline | `69ea943` |
-| 2.10 | Settings sidebar (SettingsShell 7 link + Tailwind v4 fix) | `69ea943` |
-| 14 | Billing orchestrator + /api/webhooks/iyzico + 34 test | `69ea943` |
-| 4.7 | Guided Stocktake (lib + 3 UI + 25 test) | `69ea943` |
-| 11 ext | Reports stocktake history + audit aktivite | `69ea943` |
-| 15 | Notifications scaffold + Pano bell + stocktake trigger | `69ea943` |
-| 15 ext | Auto-trigger (low_stock + out_of_stock + vitrin_auto_unpublished) | `69ea943` |
-| Pano widget | Son bildirimler mini feed | `69ea943` |
-| Mini | Şube detay + Ürün detay (variant×şube matrix) | `69ea943` |
-| 12 partial | Storefront settings admin profil | `69ea943` |
-| 7a | Süperadmin foundation + tenant detay + bug fix | `69ea943` |
-| Düşük stok | Transfer önerisi + drawer auto-open + prefill | `69ea943` |
-| Notif type filter | 5 group (Stok/Sayım/Vitrin/Billing/System) | `69ea943` |
-| 7b foundation | verifyBypassGuard + writeBypassAudit + 10 test | `7b31adf` |
-| 7b Toolbox FAB | SUPERADMIN-only sağ-alt menü + 6 bypass aksiyon link | `075fee0` |
-| 7b Bypass 1 | Reverse expired movement (24h bypass + browser E2E) | `a837b6c` |
-| 7b Bypass 2 | Hard delete ürün (helper + 6 test + browser E2E reject+happy) | `92665dc` |
-| Disk grafiği | Süperadmin paneline disk doluluk + top 8 tablo bar chart | `b9822cf` |
-| 7b Bypass 3 | Eksi stoğa zorla (helper + 8 test + sayfa + ✅ browser E2E) | `8507e4a` |
-| 7b Bypass 4 | Plan limit override (helper + 10 test + sayfa + ✅ browser E2E FREE→PRO) | `b349e54` |
-| 7b Bypass 5 | Sayım rollback (helper + 10 test + sayfa + allowNegative bypass + ✅ E2E -7→-5) | `f26e8d0` |
-| 7b Bypass 6 | Movement metadata düzelt (helper + 14 test + 4 alan diff UI + ✅ E2E PSP-X4F7+FAT) | `fba0f5b` |
-
-**Test:** 610 → 762 (+152)
-**Migration:** 7 → 11 (0008/0009/0010/0011)
-**Yeni route/sayfa:** ~40
-**Browser E2E doğrulanan ekranlar:** Pano + 7 settings + 4 stocktake + ürün/şube detay + low-stock + notifications + süperadmin + tenant detay + bypass 1 + bypass 2 + bypass 3 + bypass 4 + bypass 5 + bypass 6 + 7c uzak kullanıcı (3 aksiyon) + 7c DB Inspector + 7c Sistem Ayarları + 8 PetPro Asistanı (2 kart) + 9 Kullanıcılar davet akışı + accept-invite
+**Browser E2E doğrulanan ekranlar (kümülatif):**
+- Pano (KPI + PetPro Asistanı 2 kart + bell + notif feed)
+- 8 settings sayfası (general/firma/vitrin profili/users/account/security/audit/export)
+- Stocktake (liste + new + detay workflow + complete + cancel)
+- Stok hareketleri (4 drawer: stock-in/out/transfer/sayım)
+- Ürün/şube detay (variant×şube matrix)
+- Düşük stok (transfer önerisi panel + auto-open link)
+- Notifications (5 group filter)
+- Süperadmin: tenant list + tenant detay + user detay + 6 bypass + DB Inspector + Sistem Ayarları
+- Auth: login + register + verify-email + forgot/reset + 2FA setup + change email + cancel + lock + account
+- Onboarding 3 adım wizard
+- Accept-invite davet kabul akışı
+- Reports (5 section: satış + sayım + audit + stok değer + müşteri analitik + dönem karşılaştırma)
 
 ---
 
-## 🎯 SPRINT 0 READINESS — 30 SANİYELİK ÖZET
+## 🚀 YENİ SESSION'A GİRDİĞİNDE — REFERANS DOKÜMANLARI
 
-| Konu | Durum | Sıradaki |
-|---|---|---|
-| Tasarım dokümantasyon (24 doc) | ✅ Tamam | Mockup yapımı + Sprint 0 |
-| Mantık hata taraması (4 tur, 40 bulgu) | ✅ Hepsi çözüldü — `MANTIK-HATALARI-2026-05-14.md` | — |
-| Doc'lar arası tutarlılık | ✅ 4. tur sonrası temiz | Yeni karar çıkarsa tek noktadan revize |
-| Plan tier kararı | ✅ 3-tier B (FREE 50 / PRO 500 750₺ / PRO+ ∞ 1.750₺, TR-only) | — |
-| Vitrin yapısı | ✅ Merkezi tek (`/vitrin`, Sahibinden modeli) | Sprint 12 implementation |
-| Ödeme entegrasyonu | ✅ Dokümante (iyzico Sprint 13 + Nilvera Sprint 14) | Şirket kuruluş bekleniyor |
-| **Kullanıcı blokerları (2 adet)** | ⏳ Bekliyor | (1) Şirket kuruluş 2-4 hafta · (2) Supabase Pro $25/ay |
-| Sprint 0 bootstrap | ⏳ Hazır, başlatılmadı | Next.js + Drizzle + Auth.js + shadcn/ui skeleton |
-| Mockup yapımı (17 yeni mockup) | ⏳ Bekliyor | `UI-MOCKUP-PLAN.md` sırasıyla |
+Kararlar referansı için gerektikçe oku (kod yazma için her seferinde okumana gerek yok):
 
----
+| Doc | Ne zaman bak |
+|---|---|
+| `CLAUDE.md` | Proje genel kararlar + #1 kural (tek geliştirici) |
+| `SPRINT-PLAN.md` | Sıradaki sprint'in detayı için |
+| `PLAN-KADEMELERI.md` | Plan tier limit'leri (FREE 50 / PRO 500 / PRO+ ∞) |
+| `EKRAN-PUBLIC-VITRIN.md` | Sprint 12 vitrin implementation |
+| `EKRAN-KULLANICILAR.md` | Davet flow + STAFF yetki matrisi |
+| `PAYMENT-INTEGRATION.md` | iyzico/Nilvera (Sprint 13/14) |
+| `DATABASE-SCHEMA.md` | Tablo + enum referansı (36 tablo) |
 
-## 🚀 YENİ SESSION'A GİRDİĞİNDE BU SIRAYI TAKİP ET
+**Kullanıcının çok kritik uyarısı (önceki session):**
+> "bu chat de olanlar son kararlar, sakın birşeyi arkaplana atma"
 
-1. **`CLAUDE.md`** — proje genel durumu (TS/Supabase stack, son kararlar)
-2. **Bu doküman (`DEVAM-REHBERI.md`)** — bekleyen kararlar + 13 mantık noktası ⭐
-3. **`PLAN-KADEMELERI.md`** — **3-tier B (2026-05-14): FREE 50 / PRO 500 750₺ / PRO+ ∞ 1.750₺, TR-only**
-4. **`EKRAN-PUBLIC-VITRIN.md`** — merkezi tek vitrin (Sahibinden modeli, 2026-05-13 yeniden yazıldı)
-5. **`PAYMENT-INTEGRATION.md`** — iyzico + Nilvera (Paddle TR-only kararıyla 2026-05-14'te kaldırıldı)
-6. **`UI-MOCKUP-PLAN.md`** — 17 mockup brief + öncelik
-7. **`DATABASE-SCHEMA.md`** — 30 tablo (cities/districts/vitrin_events/bayi_admin eklendi)
-
-Önceki session'da kullanıcı **çok kritik** uyarısı verdi:
-> "bu chat çok kritik, bu chat de olanlar son kararlar, sakın birşeyi arkaplana atma"
-
-Yani önceki PetStockPro/docs/ tasarımı (2026-05-12) ile yeni kararlar arasındaki **çelişkilerde yeni karar geçerli**. Eski tasarımı koruma çabası yapılmamalı.
+Çelişkide yeni karar geçerli, eski tasarım koruma çabası yok.
 
 ---
 
