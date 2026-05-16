@@ -1,8 +1,8 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-17 (Sprint 8/10/12 MVP TAM + Sprint 15 polish 4'lü + Sprint 12 ext ürün detay + WhatsApp Feedback Balonu + Feedback dashboard + Pano feedback widget + /vitrin pagination/sort + SEO il/ilçe sayfaları + vitrin moderation paneli + audit log pagination fix + sitemap.xml + robots.txt + vitrin_reports şikayet sistemi + report rate-limit + report Telegram alert + alert dedup + günlük summary alert + reset-password fix)
-**Mevcut Branch:** `cray61` — origin'in **61 commit** ileri (push edilmedi)
-**Son commit:** `1e79f4e` feat(vitrin): günlük şikayet özeti süperadmin Telegram alert (cron endpoint)
+**Tarih:** 2026-05-17 (Sprint 8/10/12 MVP TAM + Sprint 15 polish 4'lü + Sprint 12 ext ürün detay + WhatsApp Feedback Balonu + Feedback dashboard + Pano feedback widget + /vitrin pagination/sort + SEO il/ilçe sayfaları + vitrin moderation paneli + audit log pagination fix + sitemap.xml + robots.txt + vitrin_reports şikayet sistemi + report rate-limit + report Telegram alert + alert dedup + günlük summary alert + JSX whitespace polish + reset-password fix)
+**Mevcut Branch:** `cray61` — origin'in **63 commit** ileri (push edilmedi)
+**Son commit:** `11ca04b` fix(vitrin): JSX whitespace bug — adjacent strong text yapısı
 **Test:** 1028 passed (72 dosya) — vitest
 **Lint+typecheck:** 0 error
 **Migration:** 14 (0014 vitrin_reports + 0013 vitrin_whatsapp_feedback + 0012 telegram + 0008/0009/0010/0011 + 7 öncesi)
@@ -135,6 +135,7 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 | **Süperadmin Telegram alert: yeni şikayet** | buildNewVitrinReportAlert template (TR-localize 7 sebep enum + storefront/product hedef ayrımı + note 200 char truncate + panel URL link + severity warning). submitReport içinde insert sonrası fire-and-forget notifySuperadminOnNewReport (companyName + productName lookup → sendTelegramAlert). +6 unit test (storefront/product/note-truncate/note-yok/panel-link/bilinmeyen-reason). Browser E2E: yeni submit → server log `[telegram:mock] [WARNING] 🚩 Yeni vitrin şikayeti...`. | `9bdc957` |
 | **Şikayet alert dedup (1h window)** | notifySuperadminOnNewReport içinde, alert build öncesi `ALERT_DEDUP_WINDOW_MS=1h` ile DB COUNT(*) WHERE companyId+status='pending'+createdAt>=cutoff. pendingInWindow > 1 → erken return (skip). 2 mevcut test update (countQueries=1/2 — alert dedup COUNT eklendi). Browser E2E: 5 pending var DB'de → yeni submit → INSERT OK + `[telegram:mock]` log YOK (skip ✓). | `0843565` |
 | **Günlük summary alert (cron endpoint)** | lib/vitrin/summary.ts: buildDailyReportSummary helper (status group + top 5 tenant by pending DESC). buildDailyReportSummaryAlert template (0→info+sessiz, <5 pending→info+sessiz, ≥5→warning+sesli). POST /api/cron/daily-summary endpoint Bearer auth (CRON_SECRET env, 503/401/200). +6 unit test (boş/düşük/yüksek/windowHours/panelUrl/topTenants-boş). Workers cron scheduler binding production'da. | `1e79f4e` |
+| **JSX whitespace polish** | Profile + ürün detay sayfalarındaki `<strong>PetStockPro</strong> sadece...` disclaimer paragraflarında JSX render leading whitespace yutmuştu ("PetStockProsadece"). `{'...'}` text literal pattern ile bölündü. SEO turundaki H1 fix'ine paralel devam. | `11ca04b` |
 
 ### Sprint 9 — Kullanıcılar (davet akışı hibrit)
 
