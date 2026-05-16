@@ -15,6 +15,8 @@ import { FlagButton, ResolveReportButton, UnflagButton } from './buttons';
 
 interface SearchParams {
   tab?: string;
+  reportStatus?: string;
+  targetType?: string;
 }
 
 const REPORT_REASON_LABEL: Record<string, string> = {
@@ -55,18 +57,32 @@ export default async function VitrinModerationPage({
 }) {
   await requireSuperadmin();
 
-  const { tab } = await searchParams;
+  const { tab, reportStatus, targetType } = await searchParams;
   const activeTab =
     tab === 'flagged' ? 'flagged' : tab === 'reports' ? 'reports' : 'all';
 
-  const [stats, allRows, flaggedRows, reportStats, pendingReports] =
-    await Promise.all([
+  const validReportStatus =
+    reportStatus === 'resolved' ||
+    reportStatus === 'dismissed' ||
+    reportStatus === 'pending'
+      ? reportStatus
+      : 'pending'; // varsayılan pending
+  const validTargetType =
+    targetType === 'product' || targetType === 'storefront' ? targetType : null;
+
+  const [stats, allRows, flaggedRows, reportStats, reports] = await Promise.all(
+    [
       getModerationStats(db),
       listAllFeedback(db, { limit: 100 }),
       listAllFeedback(db, { status: 'flagged', limit: 100 }),
       getReportStats(db),
-      listReports(db, { limit: 100 }),
-    ]);
+      listReports(db, {
+        limit: 100,
+        status: validReportStatus,
+        targetType: validTargetType ?? undefined,
+      }),
+    ],
+  );
 
   const rows = activeTab === 'flagged' ? flaggedRows : allRows;
 
@@ -140,12 +156,68 @@ export default async function VitrinModerationPage({
 
       {/* Tablo */}
       {activeTab === 'reports' ? (
-        <section data-testid="reports-results">
-          {pendingReports.length === 0 ? (
+        <section
+          data-testid="reports-results"
+          className="flex flex-col gap-3"
+        >
+          {/* Filter chips */}
+          <div
+            className="flex flex-wrap items-center gap-2"
+            data-testid="reports-filter-bar"
+          >
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+              Durum:
+            </span>
+            <FilterChip
+              href={'/admin/superadmin/vitrin-moderation?tab=reports&reportStatus=pending' as never}
+              active={validReportStatus === 'pending'}
+              label={`⏳ Bekliyor (${reportStats.pending})`}
+            />
+            <FilterChip
+              href={'/admin/superadmin/vitrin-moderation?tab=reports&reportStatus=resolved' as never}
+              active={validReportStatus === 'resolved'}
+              label={`✓ Çözüldü (${reportStats.resolved})`}
+            />
+            <FilterChip
+              href={'/admin/superadmin/vitrin-moderation?tab=reports&reportStatus=dismissed' as never}
+              active={validReportStatus === 'dismissed'}
+              label={`× Geçersiz (${reportStats.dismissed})`}
+            />
+            <span className="ml-3 text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+              Hedef:
+            </span>
+            <FilterChip
+              href={
+                `/admin/superadmin/vitrin-moderation?tab=reports&reportStatus=${validReportStatus}` as never
+              }
+              active={!validTargetType}
+              label="Tümü"
+            />
+            <FilterChip
+              href={
+                `/admin/superadmin/vitrin-moderation?tab=reports&reportStatus=${validReportStatus}&targetType=product` as never
+              }
+              active={validTargetType === 'product'}
+              label="🛍 Ürün"
+            />
+            <FilterChip
+              href={
+                `/admin/superadmin/vitrin-moderation?tab=reports&reportStatus=${validReportStatus}&targetType=storefront` as never
+              }
+              active={validTargetType === 'storefront'}
+              label="🏪 Pet shop"
+            />
+          </div>
+
+          {reports.length === 0 ? (
             <div className="rounded-2xl border-2 border-dashed border-line bg-white py-12 text-center">
               <div className="text-4xl">✓</div>
               <p className="mt-2 text-sm text-ink-3">
-                Henüz hiç şikayet yok — sistem temiz.
+                {validReportStatus === 'pending'
+                  ? 'Bekleyen şikayet yok — sistem temiz.'
+                  : `${validReportStatus === 'resolved' ? 'Çözülmüş' : 'Geçersiz'} kayıt yok.`}
+                {validTargetType &&
+                  ` (${validTargetType === 'product' ? 'ürün' : 'pet shop'} filtreli)`}
               </p>
             </div>
           ) : (
@@ -166,7 +238,7 @@ export default async function VitrinModerationPage({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
-                  {pendingReports.map((r) => (
+                  {reports.map((r) => (
                     <ReportTableRow key={r.id} row={r} />
                   ))}
                 </tbody>
@@ -246,19 +318,43 @@ function ReportTableRow({ row }: { row: ReportRow }) {
           })}
         </span>
       </td>
-      <td className="px-3 py-2 font-bold text-cart truncate max-w-[150px]">
-        {row.companyName}
+      <td className="px-3 py-2 text-cart truncate max-w-[150px]">
+        <Link
+          href={`/vitrin/magaza/${row.companySlug}` as never}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="font-bold hover:underline"
+          data-testid={`report-company-link-${row.id}`}
+          title="Yeni sekmede pet shop profilini aç"
+        >
+          {row.companyName}
+        </Link>
       </td>
       <td className="px-3 py-2 text-ink-2">
         {row.targetType === 'product' ? (
           <>
-            <span className="text-[10px] text-ink-4">Ürün</span>
-            <div className="truncate text-[11px] font-bold">
-              {row.productName ?? '(silinmiş)'}
-            </div>
+            <span className="text-[10px] text-ink-4">🛍 Ürün</span>
+            {row.productSlug ? (
+              <Link
+                href={
+                  `/vitrin/magaza/${row.companySlug}/urun/${row.productSlug}` as never
+                }
+                target="_blank"
+                rel="noreferrer noopener"
+                data-testid={`report-product-link-${row.id}`}
+                className="block truncate text-[11px] font-bold text-cart hover:underline"
+                title="Yeni sekmede ürün vitrin sayfasını aç"
+              >
+                {row.productName ?? '(silinmiş)'} ↗
+              </Link>
+            ) : (
+              <div className="truncate text-[11px] font-bold text-ink-4 italic">
+                {row.productName ?? '(silinmiş)'}
+              </div>
+            )}
           </>
         ) : (
-          <span className="text-[11px]">Tüm pet shop</span>
+          <span className="text-[11px]">🏪 Tüm pet shop</span>
         )}
       </td>
       <td className="px-3 py-2 text-[11px] text-ink-2 font-bold">
@@ -357,6 +453,30 @@ function ModerationRow({ row }: { row: FeedbackRow }) {
         )}
       </td>
     </tr>
+  );
+}
+
+function FilterChip({
+  href,
+  active,
+  label,
+}: {
+  href: string;
+  active: boolean;
+  label: string;
+}) {
+  return (
+    <Link
+      href={href as never}
+      data-active={active}
+      className={
+        active
+          ? 'rounded-full bg-cat px-2.5 py-1 text-[10.5px] font-bold text-white'
+          : 'rounded-full border border-line bg-white px-2.5 py-1 text-[10.5px] font-bold text-ink-3 hover:bg-line-soft'
+      }
+    >
+      {label}
+    </Link>
   );
 }
 

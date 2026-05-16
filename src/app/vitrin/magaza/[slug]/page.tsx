@@ -7,6 +7,7 @@ import {
   buildWhatsappLink,
   getStorefrontBySlug,
   listStorefrontProducts,
+  groupStorefrontProductsByBrand,
 } from '@/lib/vitrin/public';
 import { trackVitrinEventAsync } from '@/lib/vitrin/track';
 import { buildLocalBusinessLd } from '@/lib/vitrin/schema-org';
@@ -181,8 +182,8 @@ export default async function StorefrontProfilePage({
         )}
       </section>
 
-      <section data-testid="products-section">
-        <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-ink-3">
+      <section data-testid="products-section" className="flex flex-col gap-6">
+        <h2 className="text-sm font-bold uppercase tracking-wider text-ink-3">
           🛍 Vitrin&apos;deki ürünler ({products.length})
         </h2>
         {products.length === 0 ? (
@@ -196,39 +197,99 @@ export default async function StorefrontProfilePage({
             </p>
           </div>
         ) : (
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {products.map((p) => (
-              <li
-                key={p.productId}
-                data-product-id={p.productId}
-                data-product-slug={p.slug}
-              >
-                <Link
-                  href={`/vitrin/magaza/${sf.slug}/urun/${p.slug}` as never}
-                  className="flex h-full flex-col rounded-2xl border border-line bg-white p-4 hover:border-cat hover:shadow-md transition-all"
-                >
-                  <h3 className="text-sm font-bold text-cart">{p.productName}</h3>
-                  {p.defaultVariantLabel && (
-                    <p className="text-[10.5px] text-ink-3">
-                      {p.defaultVariantLabel}
-                    </p>
-                  )}
-                  {p.defaultSalePrice && Number(p.defaultSalePrice) > 0 && (
-                    <p className="mt-2 font-mono text-base font-bold text-cart">
-                      {Number(p.defaultSalePrice).toLocaleString('tr-TR', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                      ₺
-                    </p>
-                  )}
-                  <span className="mt-auto pt-2 text-[10.5px] font-bold text-cat">
-                    Detayı gör →
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          (() => {
+            const brandGroups = groupStorefrontProductsByBrand(products);
+            const singleBrand = brandGroups.length === 1;
+            return (
+              <div className="flex flex-col gap-6" data-testid="brand-groups">
+                {!singleBrand && (
+                  <nav
+                    aria-label="Marka filtreleri"
+                    data-testid="brand-anchor-nav"
+                    className="flex flex-wrap gap-1.5"
+                  >
+                    {brandGroups.map((g) => (
+                      <a
+                        key={g.brandId ?? '__no_brand__'}
+                        href={`#brand-${g.brandSlug ?? 'diger'}`}
+                        data-brand-anchor={g.brandSlug ?? 'diger'}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-2.5 py-1 text-[10.5px] font-bold text-cart hover:border-cat hover:bg-cat-soft"
+                      >
+                        {g.brandId ? '🏷' : '🐾'} {g.brandName}
+                        <span className="rounded-full bg-cat-soft px-1.5 py-0.5 text-[9px] text-cart">
+                          {g.productCount}
+                        </span>
+                      </a>
+                    ))}
+                  </nav>
+                )}
+                {brandGroups.map((g) => (
+                  <article
+                    key={g.brandId ?? '__no_brand__'}
+                    id={`brand-${g.brandSlug ?? 'diger'}`}
+                    data-brand-id={g.brandId ?? ''}
+                    data-brand-slug={g.brandSlug ?? 'diger'}
+                    data-brand-count={g.productCount}
+                  >
+                    <header className="mb-2 flex items-baseline justify-between gap-2 border-b border-line-soft pb-1.5">
+                      <h3 className="text-[12.5px] font-bold uppercase tracking-wider text-cart">
+                        {g.brandId ? '🏷' : '🐾'} {g.brandName}
+                      </h3>
+                      <span className="text-[11px] text-ink-3">
+                        {g.productCount} ürün
+                      </span>
+                    </header>
+                    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {g.products.map((p) => (
+                        <li
+                          key={p.productId}
+                          data-product-id={p.productId}
+                          data-product-slug={p.slug}
+                        >
+                          <Link
+                            href={
+                              `/vitrin/magaza/${sf.slug}/urun/${p.slug}` as never
+                            }
+                            className="flex h-full flex-col rounded-2xl border border-line bg-white p-4 hover:border-cat hover:shadow-md transition-all"
+                          >
+                            <h4 className="text-sm font-bold text-cart">
+                              {p.productName}
+                            </h4>
+                            {p.defaultVariantLabel && (
+                              <p className="text-[10.5px] text-ink-3">
+                                {p.defaultVariantLabel}
+                              </p>
+                            )}
+                            {p.categoryName && (
+                              <p className="mt-0.5 text-[10px] text-ink-4">
+                                📂 {p.categoryName}
+                              </p>
+                            )}
+                            {p.defaultSalePrice &&
+                              Number(p.defaultSalePrice) > 0 && (
+                                <p className="mt-2 font-mono text-base font-bold text-cart">
+                                  {Number(p.defaultSalePrice).toLocaleString(
+                                    'tr-TR',
+                                    {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    },
+                                  )}
+                                  ₺
+                                </p>
+                              )}
+                            <span className="mt-auto pt-2 text-[10.5px] font-bold text-cat">
+                              Detayı gör →
+                            </span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </article>
+                ))}
+              </div>
+            );
+          })()
         )}
       </section>
 

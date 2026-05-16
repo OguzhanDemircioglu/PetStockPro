@@ -119,6 +119,11 @@ export interface StorefrontProduct {
   slug: string;
   defaultSalePrice: string | null;
   defaultVariantLabel: string | null;
+  brandId: string | null;
+  brandName: string | null;
+  brandSlug: string | null;
+  categoryName: string | null;
+  categorySlug: string | null;
 }
 
 export interface StorefrontProductDetail {
@@ -566,7 +571,8 @@ export async function listStorefrontProducts(
   limit: number = 48,
 ): Promise<StorefrontProduct[]> {
   // Default variant LEFT JOIN — is_default=true + is_active=true. Eğer
-  // default işaretli variant yoksa NULL (UI fallback).
+  // default işaretli variant yoksa NULL (UI fallback). Brand + kategori
+  // LEFT JOIN: pet shop profilinde marka bazlı gruplama için.
   const rows = await db
     .select({
       productId: products.id,
@@ -574,6 +580,11 @@ export async function listStorefrontProducts(
       slug: products.slug,
       defaultSalePrice: productVariants.salePrice,
       defaultVariantLabel: productVariants.valueLabel,
+      brandId: brands.id,
+      brandName: brands.name,
+      brandSlug: brands.slug,
+      categoryName: categories.name,
+      categorySlug: categories.slug,
     })
     .from(products)
     .leftJoin(
@@ -584,6 +595,8 @@ export async function listStorefrontProducts(
         eq(productVariants.isActive, true),
       ),
     )
+    .leftJoin(brands, eq(brands.id, products.brandId))
+    .leftJoin(categories, eq(categories.id, products.categoryId))
     .where(
       and(
         eq(products.companyId, companyId),
@@ -591,10 +604,56 @@ export async function listStorefrontProducts(
         sql`${products.deletedAt} IS NULL`,
       ),
     )
-    .orderBy(asc(products.name))
+    .orderBy(asc(brands.name), asc(products.name))
     .limit(Math.min(limit, 120));
 
   return rows;
+}
+
+/**
+ * Pet shop profili için marka bazlı gruplandırılmış ürün listesi.
+ *
+ * groupByBrand=true ise: brand bazlı kümeler. Markasız ürünler en altta
+ * "Diğer ürünler" bucket'ında. Tek-brand grupların ürünleri açık.
+ */
+export interface StorefrontBrandGroup {
+  brandId: string | null;
+  brandName: string;
+  brandSlug: string | null;
+  productCount: number;
+  products: StorefrontProduct[];
+}
+
+export function groupStorefrontProductsByBrand(
+  items: StorefrontProduct[],
+): StorefrontBrandGroup[] {
+  const groups = new Map<string, StorefrontBrandGroup>();
+  for (const p of items) {
+    const key = p.brandId ?? '__no_brand__';
+    let group = groups.get(key);
+    if (!group) {
+      group = {
+        brandId: p.brandId,
+        brandName: p.brandName ?? 'Diğer ürünler',
+        brandSlug: p.brandSlug,
+        productCount: 0,
+        products: [],
+      };
+      groups.set(key, group);
+    }
+    group.products.push(p);
+    group.productCount += 1;
+  }
+  // Sıralama: markalı gruplar productCount DESC, alfabetik; en sonda
+  // "Diğer ürünler" (markasız).
+  const arr = Array.from(groups.values());
+  arr.sort((a, b) => {
+    if (a.brandId === null && b.brandId !== null) return 1;
+    if (b.brandId === null && a.brandId !== null) return -1;
+    if (a.productCount !== b.productCount) return b.productCount - a.productCount;
+    return a.brandName.localeCompare(b.brandName, 'tr');
+  });
+  return arr;
 }
 
 /**

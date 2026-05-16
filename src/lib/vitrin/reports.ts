@@ -292,9 +292,11 @@ export interface ReportRow {
   id: string;
   companyId: string;
   companyName: string;
+  companySlug: string;
   targetType: (typeof reportTargetTypeValues)[number];
   productId: string | null;
   productName: string | null;
+  productSlug: string | null;
   reason: (typeof reportReasonValues)[number];
   note: string | null;
   status: (typeof reportStatusValues)[number];
@@ -309,6 +311,7 @@ export interface ReportRow {
 export interface ListReportsFilters {
   status?: (typeof reportStatusValues)[number];
   companyId?: string;
+  targetType?: (typeof reportTargetTypeValues)[number];
   limit?: number;
 }
 
@@ -326,6 +329,9 @@ export async function listReports(
   if (filters.companyId) {
     conditions.push(eq(vitrinReports.companyId, filters.companyId));
   }
+  if (filters.targetType) {
+    conditions.push(eq(vitrinReports.targetType, filters.targetType));
+  }
 
   const limit = Math.min(filters.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
 
@@ -334,9 +340,11 @@ export async function listReports(
       id: vitrinReports.id,
       companyId: vitrinReports.companyId,
       companyName: companies.name,
+      companySlug: companies.slug,
       targetType: vitrinReports.targetType,
       productId: vitrinReports.productId,
       productName: products.name,
+      productSlug: products.slug,
       reason: vitrinReports.reason,
       note: vitrinReports.note,
       status: vitrinReports.status,
