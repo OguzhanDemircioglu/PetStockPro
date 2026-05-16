@@ -11,6 +11,7 @@ import {
 import { trackVitrinEventAsync } from '@/lib/vitrin/track';
 import { FeedbackBalloon } from '../../feedback-balloon';
 import { WhatsappLinkScript } from '../../whatsapp-link-script';
+import { ReportButton } from '@/app/vitrin/report-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -249,11 +250,22 @@ export default async function VitrinProductDetailPage({
         </ul>
       </section>
 
-      <p className="rounded-2xl border border-line bg-paper p-4 text-[11.5px] leading-relaxed text-ink-3">
-        ⚖️ <strong>PetStockPro</strong> sadece dizin sağlar. Fiyat, stok ve
-        sipariş için doğrudan <strong>{product.companyName}</strong> ile WhatsApp
-        üzerinden görüş. Bilgiler pet shop tarafından güncellenir.
-      </p>
+      <section
+        data-testid="product-report-section"
+        className="flex flex-col gap-3 rounded-2xl border border-line bg-paper p-4"
+      >
+        <p className="text-[11.5px] leading-relaxed text-ink-3">
+          ⚖️ <strong>PetStockPro</strong> sadece dizin sağlar. Fiyat, stok ve
+          sipariş için doğrudan <strong>{product.companyName}</strong> ile
+          WhatsApp üzerinden görüş. Bilgiler pet shop tarafından güncellenir.
+        </p>
+        <ReportButton
+          companyId={product.companyId}
+          targetType="product"
+          productId={product.productId}
+          label="🚩 Bu ürünü bildir (yanlış foto / bilgi)"
+        />
+      </section>
 
       <WhatsappLinkScript />
       <FeedbackBalloon

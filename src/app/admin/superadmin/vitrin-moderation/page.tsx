@@ -6,11 +6,32 @@ import {
   listAllFeedback,
   type FeedbackRow,
 } from '@/lib/vitrin/moderation';
-import { FlagButton, UnflagButton } from './buttons';
+import {
+  getReportStats,
+  listReports,
+  type ReportRow,
+} from '@/lib/vitrin/reports';
+import { FlagButton, ResolveReportButton, UnflagButton } from './buttons';
 
 interface SearchParams {
   tab?: string;
 }
+
+const REPORT_REASON_LABEL: Record<string, string> = {
+  wrong_photo: '📷 Yanlış fotoğraf',
+  wrong_info: '⚠ Yanlış bilgi',
+  spam: '🚫 Spam / reklam',
+  duplicate: '👥 Tekrar eden',
+  inappropriate: '⛔ Uygunsuz',
+  closed_shop: '🔒 Mağaza kapanmış',
+  other: '💭 Diğer',
+};
+
+const REPORT_STATUS_LABEL: Record<string, { label: string; cls: string }> = {
+  pending: { label: '⏳ Bekliyor', cls: 'bg-cat-soft text-cart' },
+  resolved: { label: '✓ Çözüldü', cls: 'bg-arrow-soft text-arrow-7' },
+  dismissed: { label: '× Geçersiz', cls: 'bg-line-soft text-ink-3' },
+};
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   submitted: { label: '✅ Cevaplandı', cls: 'bg-arrow-soft text-arrow-7' },
@@ -35,13 +56,17 @@ export default async function VitrinModerationPage({
   await requireSuperadmin();
 
   const { tab } = await searchParams;
-  const activeTab = tab === 'flagged' ? 'flagged' : 'all';
+  const activeTab =
+    tab === 'flagged' ? 'flagged' : tab === 'reports' ? 'reports' : 'all';
 
-  const [stats, allRows, flaggedRows] = await Promise.all([
-    getModerationStats(db),
-    listAllFeedback(db, { limit: 100 }),
-    listAllFeedback(db, { status: 'flagged', limit: 100 }),
-  ]);
+  const [stats, allRows, flaggedRows, reportStats, pendingReports] =
+    await Promise.all([
+      getModerationStats(db),
+      listAllFeedback(db, { limit: 100 }),
+      listAllFeedback(db, { status: 'flagged', limit: 100 }),
+      getReportStats(db),
+      listReports(db, { limit: 100 }),
+    ]);
 
   const rows = activeTab === 'flagged' ? flaggedRows : allRows;
 
@@ -72,22 +97,22 @@ export default async function VitrinModerationPage({
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KPI title="Toplam feedback" value={stats.totalCount} emoji="📊" />
         <KPI
-          title="✅ Cevaplandı"
-          value={stats.byStatus.submitted}
-          emoji="😊"
-          accent="arrow"
-        />
-        <KPI
-          title="🚩 Flagged"
+          title="🚩 Flagged feedback"
           value={stats.byStatus.flagged}
           emoji="🚩"
           accent={stats.byStatus.flagged > 0 ? 'danger' : 'arrow'}
         />
         <KPI
-          title="Son 24s flag"
-          value={stats.flaggedTodayCount}
+          title="📨 Bekleyen şikayet"
+          value={reportStats.pending}
+          emoji="📨"
+          accent={reportStats.pending > 0 ? 'danger' : 'arrow'}
+        />
+        <KPI
+          title="Son 24s yeni şikayet"
+          value={reportStats.pendingTodayCount}
           emoji="⏱"
-          accent={stats.flaggedTodayCount > 5 ? 'danger' : 'neutral'}
+          accent={reportStats.pendingTodayCount > 5 ? 'danger' : 'neutral'}
         />
       </section>
 
@@ -97,7 +122,7 @@ export default async function VitrinModerationPage({
         data-testid="moderation-tabs"
       >
         <TabLink href="/admin/superadmin/vitrin-moderation" active={activeTab === 'all'}>
-          {`Tümü (${stats.totalCount})`}
+          {`Feedback tümü (${stats.totalCount})`}
         </TabLink>
         <TabLink
           href="/admin/superadmin/vitrin-moderation?tab=flagged"
@@ -105,47 +130,90 @@ export default async function VitrinModerationPage({
         >
           {`🚩 Flagged (${stats.byStatus.flagged})`}
         </TabLink>
+        <TabLink
+          href="/admin/superadmin/vitrin-moderation?tab=reports"
+          active={activeTab === 'reports'}
+        >
+          {`📨 Şikayetler (${reportStats.pending})`}
+        </TabLink>
       </nav>
 
       {/* Tablo */}
-      <section data-testid="moderation-results">
-        {rows.length === 0 ? (
-          <div className="rounded-2xl border-2 border-dashed border-line bg-white py-12 text-center">
-            <div className="text-4xl">
-              {activeTab === 'flagged' ? '✓' : '📭'}
+      {activeTab === 'reports' ? (
+        <section data-testid="reports-results">
+          {pendingReports.length === 0 ? (
+            <div className="rounded-2xl border-2 border-dashed border-line bg-white py-12 text-center">
+              <div className="text-4xl">✓</div>
+              <p className="mt-2 text-sm text-ink-3">
+                Henüz hiç şikayet yok — sistem temiz.
+              </p>
             </div>
-            <p className="mt-2 text-sm text-ink-3">
-              {activeTab === 'flagged'
-                ? 'Flagged feedback yok — sistem temiz.'
-                : 'Henüz hiç vitrin feedback yok.'}
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto rounded-2xl border border-line bg-white">
-            <table
-              className="w-full text-xs"
-              data-testid="moderation-table"
-            >
-              <thead className="bg-line-soft text-[10.5px] uppercase tracking-wider text-ink-3">
-                <tr>
-                  <th className="px-3 py-2 text-left">Tarih</th>
-                  <th className="px-3 py-2 text-left">Tenant</th>
-                  <th className="px-3 py-2 text-left">Durum</th>
-                  <th className="px-3 py-2 text-left">Puan</th>
-                  <th className="px-3 py-2 text-left">Ülke</th>
-                  <th className="px-3 py-2 text-left">Flag sebebi</th>
-                  <th className="px-3 py-2 text-right">İşlem</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line">
-                {rows.map((r) => (
-                  <ModerationRow key={r.id} row={r} />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+          ) : (
+            <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+              <table
+                className="w-full text-xs"
+                data-testid="reports-table"
+              >
+                <thead className="bg-line-soft text-[10.5px] uppercase tracking-wider text-ink-3">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Tarih</th>
+                    <th className="px-3 py-2 text-left">Tenant</th>
+                    <th className="px-3 py-2 text-left">Hedef</th>
+                    <th className="px-3 py-2 text-left">Sebep</th>
+                    <th className="px-3 py-2 text-left">Not</th>
+                    <th className="px-3 py-2 text-left">Durum</th>
+                    <th className="px-3 py-2 text-right">İşlem</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {pendingReports.map((r) => (
+                    <ReportTableRow key={r.id} row={r} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      ) : (
+        <section data-testid="moderation-results">
+          {rows.length === 0 ? (
+            <div className="rounded-2xl border-2 border-dashed border-line bg-white py-12 text-center">
+              <div className="text-4xl">
+                {activeTab === 'flagged' ? '✓' : '📭'}
+              </div>
+              <p className="mt-2 text-sm text-ink-3">
+                {activeTab === 'flagged'
+                  ? 'Flagged feedback yok — sistem temiz.'
+                  : 'Henüz hiç vitrin feedback yok.'}
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+              <table
+                className="w-full text-xs"
+                data-testid="moderation-table"
+              >
+                <thead className="bg-line-soft text-[10.5px] uppercase tracking-wider text-ink-3">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Tarih</th>
+                    <th className="px-3 py-2 text-left">Tenant</th>
+                    <th className="px-3 py-2 text-left">Durum</th>
+                    <th className="px-3 py-2 text-left">Puan</th>
+                    <th className="px-3 py-2 text-left">Ülke</th>
+                    <th className="px-3 py-2 text-left">Flag sebebi</th>
+                    <th className="px-3 py-2 text-right">İşlem</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {rows.map((r) => (
+                    <ModerationRow key={r.id} row={r} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
 
       <p className="text-center text-[11px] text-ink-4">
         İşlemler audit log&apos;da{' '}
@@ -153,6 +221,79 @@ export default async function VitrinModerationPage({
         <code>vitrin_feedback.unflagged</code> olarak görünür.
       </p>
     </main>
+  );
+}
+
+function ReportTableRow({ row }: { row: ReportRow }) {
+  const reasonLabel = REPORT_REASON_LABEL[row.reason] ?? row.reason;
+  const statusInfo = REPORT_STATUS_LABEL[row.status] ?? {
+    label: row.status,
+    cls: 'bg-line-soft',
+  };
+
+  return (
+    <tr data-report-id={row.id} data-status={row.status}>
+      <td className="px-3 py-2 text-ink-3 whitespace-nowrap">
+        {row.createdAt.toLocaleDateString('tr-TR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: '2-digit',
+        })}{' '}
+        <span className="text-[10px] text-ink-4">
+          {row.createdAt.toLocaleTimeString('tr-TR', {
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
+        </span>
+      </td>
+      <td className="px-3 py-2 font-bold text-cart truncate max-w-[150px]">
+        {row.companyName}
+      </td>
+      <td className="px-3 py-2 text-ink-2">
+        {row.targetType === 'product' ? (
+          <>
+            <span className="text-[10px] text-ink-4">Ürün</span>
+            <div className="truncate text-[11px] font-bold">
+              {row.productName ?? '(silinmiş)'}
+            </div>
+          </>
+        ) : (
+          <span className="text-[11px]">Tüm pet shop</span>
+        )}
+      </td>
+      <td className="px-3 py-2 text-[11px] text-ink-2 font-bold">
+        {reasonLabel}
+      </td>
+      <td className="px-3 py-2 text-[11px] text-ink-3 max-w-[200px] truncate">
+        {row.note ? <span title={row.note}>{row.note}</span> : <span className="text-ink-4">—</span>}
+      </td>
+      <td className="px-3 py-2">
+        <span
+          className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${statusInfo.cls}`}
+        >
+          {statusInfo.label}
+        </span>
+        {row.resolvedByEmail && (
+          <div className="mt-0.5 text-[9px] text-ink-4 truncate max-w-[120px]">
+            by {row.resolvedByEmail}
+          </div>
+        )}
+      </td>
+      <td className="px-3 py-2 text-right">
+        {row.status === 'pending' ? (
+          <ResolveReportButton reportId={row.id} />
+        ) : (
+          <span className="text-[10px] text-ink-4">
+            {row.resolvedAt
+              ? row.resolvedAt.toLocaleDateString('tr-TR', {
+                  day: '2-digit',
+                  month: '2-digit',
+                })
+              : '—'}
+          </span>
+        )}
+      </td>
+    </tr>
   );
 }
 

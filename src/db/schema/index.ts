@@ -941,9 +941,60 @@ export const vitrinWhatsappFeedback = petstockproSchema.table('vitrin_whatsapp_f
 });
 
 // ═══════════════════════════════════════════════════════════════
+// Sprint 12 ext — vitrin_reports (EKRAN-PUBLIC-VITRIN §14 modlama)
+// ═══════════════════════════════════════════════════════════════
+export const vitrinReportReasonEnum = petstockproSchema.enum('vitrin_report_reason', [
+  'wrong_photo',
+  'wrong_info',
+  'spam',
+  'duplicate',
+  'inappropriate',
+  'closed_shop',
+  'other',
+]);
+
+export const vitrinReportStatusEnum = petstockproSchema.enum('vitrin_report_status', [
+  'pending',
+  'resolved',
+  'dismissed',
+]);
+
+export const vitrinReportTargetTypeEnum = petstockproSchema.enum('vitrin_report_target_type', [
+  'storefront',
+  'product',
+]);
+
+/**
+ * VITRIN_REPORTS — Müşteri "🚩 Bildir" butonu ile şikayet eder.
+ *
+ * Anon endpoint (auth yok), IP hash daily-salted (KVKK).
+ * targetType: 'storefront' (companyId yeter) | 'product' (productId zorunlu).
+ * Süperadmin queue'da görür, resolve/dismiss eder.
+ */
+export const vitrinReports = petstockproSchema.table('vitrin_reports', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  targetType: vitrinReportTargetTypeEnum('target_type').notNull(),
+  productId: uuid('product_id').references(() => products.id, { onDelete: 'set null' }),
+  reason: vitrinReportReasonEnum('reason').notNull(),
+  note: text('note'),
+  reporterIpHash: varchar('reporter_ip_hash', { length: 64 }).notNull(),
+  countryCode: varchar('country_code', { length: 2 }),
+  userAgent: text('user_agent'),
+  status: vitrinReportStatusEnum('status').notNull().default('pending'),
+  resolvedById: uuid('resolved_by_id').references(() => users.id, { onDelete: 'set null' }),
+  resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+  resolutionNote: text('resolution_note'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('idx_vitrin_reports_status').on(t.status, t.createdAt.desc()),
+  index('idx_vitrin_reports_company').on(t.companyId),
+  index('idx_vitrin_reports_target_product').on(t.productId).where(sql`${t.productId} IS NOT NULL`),
+]);
+
+// ═══════════════════════════════════════════════════════════════
 // TODO Sprint 1B.3+ (sırayla eklenecek)
 // ═══════════════════════════════════════════════════════════════
-// vitrin_reports,
 // telegram_bindings (Faz 2 binding flow), system_settings, system_broadcasts,
 // system_errors, bayi_admin_relations (Faz 3), storefront_messages, ...
 // storefront_settings image alanları (hero/about/og) — Faz 2 (service-role key)

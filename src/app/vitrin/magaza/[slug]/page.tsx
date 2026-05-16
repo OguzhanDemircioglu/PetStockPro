@@ -11,6 +11,7 @@ import {
 import { trackVitrinEventAsync } from '@/lib/vitrin/track';
 import { FeedbackBalloon } from './feedback-balloon';
 import { WhatsappLinkScript } from './whatsapp-link-script';
+import { ReportButton } from '@/app/vitrin/report-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -220,18 +221,21 @@ export default async function StorefrontProfilePage({
         )}
       </section>
 
-      <p className="rounded-2xl border border-line bg-paper p-4 text-[11.5px] leading-relaxed text-ink-3">
-        ⚖️ <strong>PetStockPro</strong> sadece pet shop&apos;ların iletişim
-        bilgilerini listeler. Sipariş, ödeme veya kargo bizimle değil, doğrudan
-        pet shop ile yapılır. Sorunlu deneyimleri{' '}
-        <Link
-          href={'/vitrin' as never}
-          className="text-cat underline hover:text-cart"
-        >
-          bize bildir
-        </Link>{' '}
-        — moderation Sprint 12 ext.
-      </p>
+      <section
+        data-testid="storefront-report-section"
+        className="flex flex-col gap-3 rounded-2xl border border-line bg-paper p-4"
+      >
+        <p className="text-[11.5px] leading-relaxed text-ink-3">
+          ⚖️ <strong>PetStockPro</strong> sadece pet shop&apos;ların iletişim
+          bilgilerini listeler. Sipariş, ödeme veya kargo bizimle değil,
+          doğrudan pet shop ile yapılır.
+        </p>
+        <ReportButton
+          companyId={sf.companyId}
+          targetType="storefront"
+          label="🚩 Bu pet shop'u bildir"
+        />
+      </section>
 
       <WhatsappLinkScript />
       <FeedbackBalloon companyId={sf.companyId} companySlug={sf.slug} />
