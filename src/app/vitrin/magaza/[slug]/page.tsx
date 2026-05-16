@@ -9,6 +9,8 @@ import {
   listStorefrontProducts,
 } from '@/lib/vitrin/public';
 import { trackVitrinEventAsync } from '@/lib/vitrin/track';
+import { buildLocalBusinessLd } from '@/lib/vitrin/schema-org';
+import { getPublicBaseUrl } from '@/lib/vitrin/sitemap-data';
 import { FeedbackBalloon } from './feedback-balloon';
 import { WhatsappLinkScript } from './whatsapp-link-script';
 import { ReportButton } from '@/app/vitrin/report-button';
@@ -67,8 +69,17 @@ export default async function StorefrontProfilePage({
     `Merhaba ${sf.name}, vitrin'den size yazıyorum.`,
   );
 
+  const localBusinessLd = buildLocalBusinessLd(sf, getPublicBaseUrl());
+
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8">
+      <script
+        type="application/ld+json"
+        data-testid="ld-local-business"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(localBusinessLd),
+        }}
+      />
       <Link
         href={'/vitrin' as never}
         className="text-xs font-bold text-cat hover:underline"

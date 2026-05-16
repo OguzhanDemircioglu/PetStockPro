@@ -9,6 +9,8 @@ import {
   getStorefrontProductDetail,
 } from '@/lib/vitrin/public';
 import { trackVitrinEventAsync } from '@/lib/vitrin/track';
+import { buildProductLd, buildLocalBusinessLd } from '@/lib/vitrin/schema-org';
+import { getPublicBaseUrl } from '@/lib/vitrin/sitemap-data';
 import { FeedbackBalloon } from '../../feedback-balloon';
 import { WhatsappLinkScript } from '../../whatsapp-link-script';
 import { ReportButton } from '@/app/vitrin/report-button';
@@ -82,8 +84,26 @@ export default async function VitrinProductDetailPage({
   const maxPrice = priceValues.length > 0 ? Math.max(...priceValues) : null;
   const inStockCount = product.variants.filter((v) => v.inStock).length;
 
+  const baseUrl = getPublicBaseUrl();
+  const productLd = buildProductLd(product, baseUrl);
+  const sellerLd = buildLocalBusinessLd(storefront, baseUrl);
+
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-8">
+      <script
+        type="application/ld+json"
+        data-testid="ld-product"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(productLd),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        data-testid="ld-seller"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(sellerLd),
+        }}
+      />
       <nav
         aria-label="breadcrumb"
         className="flex flex-wrap gap-2 text-[11.5px] text-ink-3"
