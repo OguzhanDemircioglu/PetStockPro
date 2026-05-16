@@ -1,11 +1,32 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-17 (Sprint 8/10/12 MVP TAM + Sprint 15 polish 4'lü + Sprint 12 ext ürün detay + WhatsApp Feedback Balonu + Feedback dashboard + Pano feedback widget + /vitrin pagination/sort + SEO il/ilçe sayfaları + vitrin moderation paneli + audit log pagination fix + sitemap.xml + robots.txt + vitrin_reports şikayet sistemi + report rate-limit + report Telegram alert + alert dedup + günlük summary alert + JSX whitespace polish + reset-password fix + **Workers cron scheduler config**)
-**Mevcut Branch:** `cray61` — origin'in **80 commit** ileri (push edilmedi)
-**Son commit:** `92ca9e8` feat(error): global-error.tsx — RootLayout throw fallback (inline-styled)
-**Test:** 1106 passed (80 dosya) — vitest
+**Tarih:** 2026-05-17 (yukarıdaki + Faz 2 batch: Açık Krediler + Concurrent satış lock + Sayım mobile swipe + SKT yaklaşan + Bundle analyzer + Schema.org LD-JSON + Kategori sayfaları + Cross-tenant ürün detay + Yakınlık sorgusu + Moderasyon ürün-spesifik + Brand grupla + **Pano v3 mockup migration + Sidebar + Welcome state + Logo aside + Topbar**)
+**Mevcut Branch:** `cray61` — origin'in **108 commit** ileri (push edilmedi)
+**Son commit:** `0e86e28` feat(admin): sticky topbar (Pano başlık + ⌘K + Vitrin + bell + avatar)
+**Test:** 1180 passed (86 dosya) — vitest
 **Lint+typecheck:** 0 error
-**Migration:** 14 (0014 vitrin_reports + 0013 vitrin_whatsapp_feedback + 0012 telegram + 0008/0009/0010/0011 + 7 öncesi)
+**Migration:** 15 (0015 companies.location_lat/lng + öncekiler)
+
+## 🆕 Son tur (2026-05-17 geç gece) — Faz 2 batch + UI mockup migration
+
+| # | İş | Commit |
+|---|---|---|
+| Faz 2 #1 | Açık Krediler raporu (6. rapor) | `fea8525` + `78054bd` |
+| Faz 2 #2 | Concurrent satış lock (FOR UPDATE) | `403ef47` + `50b3b00` |
+| Faz 2 #3 | Sayım mobile swipe-card UX | `e8a1e31` + `9722ccf` |
+| Faz 2 #4 | PetPro Asistanı SKT yaklaşan kartı | `36b0b6c` + `20113d4` |
+| Faz 2 #5 | Bundle analyzer setup | `5a9eba0` |
+| Faz 2 #6 | Schema.org JSON-LD (Product + LocalBusiness) | `c76fb9b` + `f2ddd72` |
+| Faz 2 #7 | Cross-tenant kategori `/vitrin/kategori/[slug]` | `f47c188` + `f37ed8e` |
+| Faz 2 #8 | Cross-tenant ürün detay `/vitrin/urun/[slug]` | `aeedcbd` + `1e73e91` |
+| Faz 2 #9 | Yakınlık sorgusu (haversine, PostGIS YOK) | `ad6250f` |
+| Faz 2 #10 | Vitrin moderasyon ürün-spesifik + brand grupla | `e4e20d1` |
+| UI #1 | Pano v3 mockup migration (Hero gradient + KPI Trio + Stock Strip + Alert + Quick Chip Row + Zone label) | `71d67cb` |
+| UI #2 | Hero logo aside (rotated white card) | `676ab1e` |
+| UI #3 | Persistent sidebar (brand + 6 nav group + plan card) + Pano welcome state | `c429fd5` |
+| UI #4 | Sticky topbar (Pano başlık + ⌘K + Vitrin + bell + avatar) | `0e86e28` |
+
+**MVP Pano UX artık pano-v3.html mockup'a uyumlu** — sol sticky sidebar + üst sticky topbar + turuncu gradient hero + logo aside + 3 KPI Bold + Stock Strip + Alert + Quick Chip Row + Zone label tablo. Yeni register kullanıcı için `isWelcomeState` branch ("🐾 Hoş geldin, {tenant}! · İlk ürünü ekle" CTA) hazır.
 
 ## 🚦 YENİ SESSION'A GİRDİĞİNDE — İLK 5 DK
 
