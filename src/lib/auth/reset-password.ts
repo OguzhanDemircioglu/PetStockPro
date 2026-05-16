@@ -113,10 +113,9 @@ export async function completePasswordReset(
         lockedUntil: null,
         // Davet kabul akışı: emailVerifiedAt NULL ise now set (mevcut kullanıcılarda
         // dokunma). Davete cevap veren kullanıcı email'ine erişiyor — verified sayılır.
-        // Date sql template kabul etmiyor (postgres-js) → ISO literal cast.
-        emailVerifiedAt: sql.raw(
-          `COALESCE("email_verified_at", '${now.toISOString()}'::timestamptz)`,
-        ),
+        // postgres-js COALESCE içinde Date binary timestamp'ı çıkaramıyor →
+        // ISO string + explicit ::timestamptz cast.
+        emailVerifiedAt: sql`COALESCE(${users.emailVerifiedAt}, ${now.toISOString()}::timestamptz)`,
         updatedAt: now,
       })
       .where(eq(users.id, user.id));
