@@ -11,6 +11,8 @@ import {
 } from '@/lib/dashboard/stats';
 import { unreadCountForUser, listForUser, type NotificationRow } from '@/lib/notifications/manage';
 import { isSuperadmin } from '@/lib/superadmin/access';
+import { listOrderSuggestions } from '@/lib/assistant/order-suggestions';
+import { planProductLimit, planLimitDisplay } from '@/lib/constants/plan-limits';
 
 const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
   stock_in: { label: '📥', cls: 'bg-arrow-soft text-arrow-7' },
@@ -35,28 +37,33 @@ export default async function AdminDashboardPage() {
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
   const userIsSuperadmin = isSuperadmin(session);
 
-  const [companyRow, stats, lowStock, activity, unreadNotifications, recentNotifications] =
-    await Promise.all([
-      db
-        .select({ name: companies.name, plan: companies.plan })
-        .from(companies)
-        .where(eq(companies.id, session.user.companyId))
-        .limit(1),
-      getDashboardStats(session.user.companyId, db),
-      listLowStock(session.user.companyId, db, 6),
-      listRecentActivity(session.user.companyId, db, 8),
-      unreadCountForUser(session.user.companyId, session.user.id, db),
-      listForUser(session.user.companyId, session.user.id, db, { limit: 4 }),
-    ]);
+  const [
+    companyRow,
+    stats,
+    lowStock,
+    activity,
+    unreadNotifications,
+    recentNotifications,
+    orderSuggestions,
+  ] = await Promise.all([
+    db
+      .select({ name: companies.name, plan: companies.plan })
+      .from(companies)
+      .where(eq(companies.id, session.user.companyId))
+      .limit(1),
+    getDashboardStats(session.user.companyId, db),
+    listLowStock(session.user.companyId, db, 6),
+    listRecentActivity(session.user.companyId, db, 8),
+    unreadCountForUser(session.user.companyId, session.user.id, db),
+    listForUser(session.user.companyId, session.user.id, db, { limit: 4 }),
+    listOrderSuggestions(session.user.companyId, db, 5),
+  ]);
 
   const company = companyRow[0];
-  const planLimitMap: Record<string, number> = {
-    FREE: 50,
-    PRO: 500,
-    PRO_PLUS: 0, // sınırsız
-  };
-  const planLimit = planLimitMap[company?.plan ?? 'FREE'] ?? 50;
-  const planLimitLabel = planLimit === 0 ? '∞' : String(planLimit);
+  const rawPlanLimit = planProductLimit(company?.plan ?? 'FREE');
+  // KPI ring progress bar 0 = sınırsız (bar gösterimini gizler)
+  const planLimit = rawPlanLimit === Infinity ? 0 : rawPlanLimit;
+  const planLimitLabel = planLimitDisplay(company?.plan ?? 'FREE');
 
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-12">
@@ -139,6 +146,82 @@ export default async function AdminDashboardPage() {
               <PanoNotificationItem key={n.id} item={n} />
             ))}
           </ul>
+        </section>
+      )}
+
+      {orderSuggestions.length > 0 && (
+        <section data-testid="petpro-assistant">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-cat">
+              🤖 PetPro Asistanı · Sipariş Önerileri
+            </h2>
+            <Link
+              href={'/admin/low-stock' as never}
+              className="text-[11px] font-bold text-cat hover:underline"
+            >
+              Düşük stok detayı →
+            </Link>
+          </div>
+          <article className="rounded-2xl border-2 border-cat/30 bg-gradient-to-br from-cat-soft/40 to-arrow-soft/30 p-4">
+            <p className="mb-3 text-[11px] text-ink-3">
+              Eşik altı stoklar + son tedarikçiden yeniden sipariş önerisi:
+            </p>
+            <ul className="divide-y divide-line-soft text-xs">
+              {orderSuggestions.map((s) => (
+                <li
+                  key={`${s.variantId}-${s.branchId}`}
+                  data-suggestion-id={s.variantId}
+                  className="flex items-center gap-3 py-2.5"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[12px] font-bold text-ink">
+                      {s.productName}{' '}
+                      {s.variantLabel && (
+                        <span className="text-[10px] font-normal text-ink-3">
+                          · {s.variantLabel}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5 text-[10.5px] text-ink-3">
+                      <span>📍 {s.branchName}</span>
+                      <span>·</span>
+                      <span className={s.currentStock === 0 ? 'text-danger-7 font-bold' : ''}>
+                        Stok: {s.currentStock} / eşik {s.threshold}
+                      </span>
+                      {s.lastSupplierName ? (
+                        <>
+                          <span>·</span>
+                          <span className="text-arrow-7">
+                            🚚 {s.lastSupplierName}
+                            {s.lastUnitCost && ` (${s.lastUnitCost}₺ son alış)`}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span>·</span>
+                          <span className="text-ink-4 italic">tedarikçi bilinmiyor</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] text-ink-4">Öneri</div>
+                    <div className="font-mono text-base font-bold text-cart">
+                      +{s.suggestedQty}
+                    </div>
+                  </div>
+                  <Link
+                    href={
+                      `/admin/stock-movements?variant=${s.variantId}&branch=${s.branchId}` as never
+                    }
+                    className="rounded-lg border border-cat/40 bg-white px-2.5 py-1.5 text-[10.5px] font-bold text-cart hover:bg-cat hover:text-white transition-colors"
+                  >
+                    📥 Giriş yap
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </article>
         </section>
       )}
 
