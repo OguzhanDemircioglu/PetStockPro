@@ -1,8 +1,8 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-16 (Sprint 7 TAM + Sprint 8 partial + Sprint 9 davet + Sprint 11 ext stok değer + müşteri analitik)
-**Mevcut Branch:** `cray61` — origin'in 20+ commit ileri (push edilmedi)
-**Durum:** ✅ **Sprint 0-15 büyük kısmı + Sprint 7 TAM + Sprint 8 partial + Sprint 9 davet + Sprint 11 ext stok değer + müşteri analitik.** 871 test, 11 migration, 0 lint+typecheck error.
+**Tarih:** 2026-05-16 (Sprint 7 TAM + Sprint 8/9 + Sprint 11 ext: stok değer + müşteri + dönem karşılaştırma)
+**Mevcut Branch:** `cray61` — origin'in 21+ commit ileri (push edilmedi)
+**Durum:** ✅ **Sprint 0-15 büyük kısmı + Sprint 7 TAM + Sprint 8 partial + Sprint 9 davet + Sprint 11 ext (3 yeni rapor: stok değer + müşteri analitik + dönem karşılaştırma).** 879 test, 11 migration, 0 lint+typecheck error.
 
 ## 🚦 YENİ SESSION BAŞLANGIÇ — KALDIĞIN YER
 

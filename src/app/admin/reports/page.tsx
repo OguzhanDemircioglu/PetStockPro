@@ -27,6 +27,10 @@ import {
   customerSummary,
   busiestHours,
 } from '@/lib/reports/customers';
+import {
+  getPeriodComparison,
+  formatChangePct,
+} from '@/lib/reports/period-comparison';
 
 const RANGE_OPTIONS = [7, 30, 90];
 
@@ -56,6 +60,8 @@ export default async function ReportsPage({
     custTop,
     custSummary,
     hourly,
+    cmpWeek,
+    cmpMonth,
   ] = await Promise.all([
     periodSummary(session.user.companyId, db, days),
     dailySalesSummary(session.user.companyId, db, days),
@@ -70,6 +76,8 @@ export default async function ReportsPage({
     topCustomers(session.user.companyId, db, days, 10),
     customerSummary(session.user.companyId, db, days),
     busiestHours(session.user.companyId, db, days),
+    getPeriodComparison(session.user.companyId, db, 'week'),
+    getPeriodComparison(session.user.companyId, db, 'month'),
   ]);
 
   // Maks qty bul, bar grafik için ölçek
@@ -141,6 +149,16 @@ export default async function ReportsPage({
           value={`${formatTRY(summary.avgBasket)}`}
           emoji="🧾"
         />
+      </section>
+
+      <section data-testid="period-comparison">
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
+          📈 Dönem karşılaştırma
+        </h2>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <ComparisonCard label="Bu hafta vs geçen hafta" cmp={cmpWeek} />
+          <ComparisonCard label="Son 30 gün vs önceki 30 gün" cmp={cmpMonth} />
+        </div>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-5">
@@ -596,6 +614,70 @@ function formatTRY(value: string | number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}₺`;
+}
+
+function ComparisonCard({
+  label,
+  cmp,
+}: {
+  label: string;
+  cmp: import('@/lib/reports/period-comparison').PeriodComparisonResult;
+}) {
+  const qtyChange = formatChangePct(cmp.qtyChangePct);
+  const revChange = formatChangePct(cmp.revenueChangePct);
+  const cntChange = formatChangePct(cmp.countChangePct);
+
+  const toneClass: Record<string, string> = {
+    up: 'text-arrow-7',
+    down: 'text-danger-7',
+    neutral: 'text-ink-3',
+    new: 'text-cat',
+  };
+
+  return (
+    <article className="rounded-2xl border border-line bg-white p-5">
+      <h3 className="text-[11px] font-bold uppercase tracking-wider text-cart">{label}</h3>
+      <ul className="mt-3 flex flex-col divide-y divide-line-soft text-[12px]">
+        <li className="flex items-center justify-between py-2">
+          <span className="text-ink-3">Adet</span>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-ink-2">
+              {cmp.current.qty} <span className="text-[10px] text-ink-4">/ {cmp.previous.qty}</span>
+            </span>
+            <span className={`font-mono text-[11.5px] font-bold ${toneClass[qtyChange.tone]}`}>
+              {qtyChange.label}
+            </span>
+          </div>
+        </li>
+        <li className="flex items-center justify-between py-2">
+          <span className="text-ink-3">Ciro</span>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-ink-2">
+              {formatTRY(cmp.current.revenue)}{' '}
+              <span className="text-[10px] text-ink-4">
+                / {formatTRY(cmp.previous.revenue)}
+              </span>
+            </span>
+            <span className={`font-mono text-[11.5px] font-bold ${toneClass[revChange.tone]}`}>
+              {revChange.label}
+            </span>
+          </div>
+        </li>
+        <li className="flex items-center justify-between py-2">
+          <span className="text-ink-3">Satış sayısı</span>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-ink-2">
+              {cmp.current.saleCount}{' '}
+              <span className="text-[10px] text-ink-4">/ {cmp.previous.saleCount}</span>
+            </span>
+            <span className={`font-mono text-[11.5px] font-bold ${toneClass[cntChange.tone]}`}>
+              {cntChange.label}
+            </span>
+          </div>
+        </li>
+      </ul>
+    </article>
+  );
 }
 
 function KPI({
