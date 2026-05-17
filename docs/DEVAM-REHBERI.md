@@ -53,6 +53,24 @@
 - /admin/audit-log dark mode (tablo, filter form, hızlı tarih chip'leri) ✓
 - /admin/superadmin (geçici SUPERADMIN promo ile) → hero koyu shell + Genel KPI + Vitrin metrik KPI + Top tenant + Tenant aktivite + DB + tenant tablo, light + dark testleri ✓
 
+**Tüm süperadmin sayfa turu (12 sayfa, dark mode):**
+- /admin/superadmin → ✓ 4 zone (Genel/Vitrin Görüntüleme/Tenant Aktivitesi/Veritabanı) + tenant tablo
+- /admin/superadmin/vitrin-moderation → ✓ 4 KPI + 3 tab (Feedback / Flagged / Şikayetler) + tablo + filter
+- /admin/superadmin/db-inspector → ✓ SQL runner çalıştı (SELECT users LIMIT 10 → 7 satır 880ms tablo render)
+- /admin/superadmin/system-settings → ✓ Plan tier 3 kart + env durumu (3/9) + DB extensions + KDV oranları
+- /admin/superadmin/tenant/[id] → ✓ 5 KPI Bold (Kullanıcı/Ürün/Şube/Stok/24s Hareket) + Kullanıcılar + Son Audit + Son Stok Hareketleri
+- /admin/superadmin/user/[id] → ✓ 4 KPI (Email/2FA/Hesap/FailedLogin) + 3 aksiyon form (şifre reset / 2FA reset / hesap kilitle) + audit
+- /admin/superadmin/bypass/reverse-expired → ✓ Hareket UUID + sebep + şifre re-auth
+- /admin/superadmin/bypass/hard-delete → ✓ Ürün UUID + sebep + re-auth
+- /admin/superadmin/bypass/negative-stock → ✓ Şube + Düşür adet + Variant + sebep + re-auth
+- /admin/superadmin/bypass/plan-override → ✓ Hedef tenant + Yeni plan select + sebep + re-auth
+- /admin/superadmin/bypass/stocktake-undo → ✓ Sayım UUID + sebep + re-auth
+- /admin/superadmin/bypass/metadata-fix → ✓ Movement UUID + 4 düzeltilecek alan (sebep/not/müşteri ref/doküman no) + süperadmin sebebi + re-auth
+
+**Tur sırasında bulunan + düzeltilen sorunlar (`6be51bf`):**
+- Meteors hydration mismatch (server/client `Math.random()` farkı) → `useSyncExternalStore` ile server snapshot=null, client cached array
+- "Encountered a script tag" uyarısı → `<head><script>` + `next/script` kombinasyonu yerine doğrudan `<body>` üst kısmında React 19 hoisted script
+
 ### Görsel kontrol notları
 - Hero'daki opacity'li `bg-white/12`, `bg-white/15`, `bg-white/20` vb. korundu (turuncu/koyu hero üstünde dark mode'da da beyaz görünmeleri gerek)
 - Plan card cart→cart-7 gradient + cat radial overlay (sidebar altı her zaman koyu, theme'den bağımsız)
