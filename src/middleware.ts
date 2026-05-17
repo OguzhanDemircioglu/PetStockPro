@@ -1,0 +1,57 @@
+/**
+ * Next.js middleware — /admin/superadmin/* yolları için defansif derinlik.
+ *
+ * Üç katmanlı izin kontrolü zaten var:
+ *   1. Sidebar nav grup (admin-sidebar.tsx): SUPERADMIN değilse grup render edilmez
+ *   2. Sayfa guard (requireSuperadmin): page.tsx başında session role check + /admin redirect
+ *   3. Server action gate (isSuperadmin): her action'da çift kontrol
+ *
+ * Middleware = 4. katman. Sayfa SSR'a varmadan önce JWT cookie'sini decode eder ve
+ * role !== 'SUPERADMIN' ise /admin'e redirect eder. Saldırgan SSR pipeline'da bir
+ * bug bulup guard'ı bypass etse bile request middleware'de düşer.
+ *
+ * NOT: Auth.js v5 JWT strategy ile çalışır — token cookie'sini jose/getToken ile çöz.
+ * Edge runtime uyumlu (Cloudflare Workers).
+ */
+
+import { NextResponse, type NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
+
+export async function middleware(req: NextRequest) {
+  // Sadece /admin/superadmin/* yollarında kontrol — diğer /admin sayfaları layout'ta
+  // requireSession yapıyor zaten.
+  if (!req.nextUrl.pathname.startsWith('/admin/superadmin')) {
+    return NextResponse.next();
+  }
+
+  const token = await getToken({
+    req,
+    secret: process.env.AUTH_SECRET,
+    // Auth.js v5 default cookie ismi
+    cookieName: process.env.NODE_ENV === 'production'
+      ? '__Secure-authjs.session-token'
+      : 'authjs.session-token',
+  });
+
+  // Session yok → login
+  if (!token) {
+    const loginUrl = req.nextUrl.clone();
+    loginUrl.pathname = '/login';
+    loginUrl.searchParams.set('callbackUrl', req.nextUrl.pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Session var ama SUPERADMIN değil → /admin (kendi tenant pano'su)
+  if (token.role !== 'SUPERADMIN') {
+    const adminUrl = req.nextUrl.clone();
+    adminUrl.pathname = '/admin';
+    adminUrl.search = '';
+    return NextResponse.redirect(adminUrl);
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ['/admin/superadmin/:path*'],
+};
