@@ -22,9 +22,9 @@ import { createVerificationToken } from './email-verification';
 import { sendBrevoEmail } from '@/lib/brevo/client';
 import { buildVerifyEmailTemplate } from '@/lib/brevo/templates';
 import { makeSlug } from '@/lib/utils/slug';
-import { DEFAULT_CATEGORIES } from '@/lib/catalog/default-categories';
+import { seedDefaultCategoriesForCompany } from '@/lib/catalog/default-categories';
 import type { DbClient } from '@/lib/db/client';
-import { categories, companies, users } from '@/db/schema';
+import { companies, users } from '@/db/schema';
 
 export const registerSchema = z.object({
   shopName: z.string().min(2, 'Pet shop adı en az 2 karakter').max(200),
@@ -147,18 +147,11 @@ export async function registerNewTenant(
         })
         .returning({ id: users.id });
 
-      // Sprint 1B.1 — Default categories seed (16 kategori, kullanıcı sonra düzenleyebilir/silebilir)
-      await tx.insert(categories).values(
-        DEFAULT_CATEGORIES.map((c) => ({
-          companyId: company.id,
-          name: c.name,
-          slug: c.slug,
-          emoji: c.emoji,
-          vatRate: c.vatRate,
-          sktRequired: c.sktRequired,
-          displayOrder: c.displayOrder,
-        })),
-      );
+      // Sprint 1B.1 (2026-05-17 revize) — Default 49 kategori seed: 6 üst kategori
+      // (Kedi/Köpek/Kuş/Akvaryum/Kemirgen/Sürüngen) + 43 alt kategori. Helper 2-fazlı
+      // insert yapar (root → children) ve parent_id'leri otomatik resolve eder.
+      // Tenant sonradan düzenleyebilir/silebilir.
+      await seedDefaultCategoriesForCompany(company.id, tx as DbClient);
 
       return { companyId: company.id, userId: user.id };
     });

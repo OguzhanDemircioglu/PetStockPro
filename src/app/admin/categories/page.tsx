@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
-import { listCategories } from '@/lib/categories/manage';
+import { listCategories, type CategoryListItem } from '@/lib/categories/manage';
 import { DeleteCategoryButton } from './delete-category-button';
 
 const VAT_LABEL: Record<string, string> = {
@@ -23,11 +23,30 @@ export default async function CategoriesPage({
   const allItems = await listCategories(session.user.companyId, db);
   const params = await searchParams;
   const q = params.q?.trim().toLowerCase() ?? '';
-  const items = q
+
+  // Filtreleme: arama varsa hem root hem child match olabilir; bir match'in
+  // root'unu da göstermek için "match olmasa bile parent'ı match'in alındır"
+  // şeklinde mantık yürütmek karışır. Şimdilik: filtreleme aktifken düz liste,
+  // filtre boşken parent-child gruplama göster.
+  const filtered = q
     ? allItems.filter(
         (c) => c.name.toLowerCase().includes(q) || c.slug.includes(q),
       )
     : allItems;
+
+  // Parent-child gruplama
+  const roots = allItems.filter((c) => !c.parentId);
+  const childrenByParent = new Map<string, CategoryListItem[]>();
+  for (const c of allItems) {
+    if (!c.parentId) continue;
+    const list = childrenByParent.get(c.parentId) ?? [];
+    list.push(c);
+    childrenByParent.set(c.parentId, list);
+  }
+  // Orphan child'lar (parent yok / silinmiş) — diğer kategori olarak grup altı
+  const orphans = allItems.filter(
+    (c) => c.parentId && !allItems.find((r) => r.id === c.parentId),
+  );
 
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-12">
@@ -41,8 +60,8 @@ export default async function CategoriesPage({
           </h1>
           <p className="mt-1 text-sm text-ink-3">
             {q
-              ? `${items.length}/${allItems.length} kategori (filtreli)`
-              : `${items.length} kategori · 16 default + kullanıcı eklemeleri`}
+              ? `${filtered.length}/${allItems.length} kategori (filtreli)`
+              : `${roots.length} üst kategori · ${allItems.length - roots.length} alt kategori · ${allItems.length} toplam`}
           </p>
         </div>
         <div className="flex gap-2">
@@ -74,6 +93,18 @@ export default async function CategoriesPage({
         </div>
       )}
 
+      <div className="flex flex-col gap-3 rounded-2xl border border-line bg-paper p-4">
+        <div className="flex items-start gap-3 text-[13px]">
+          <span aria-hidden className="text-base">🗂</span>
+          <p className="text-ink-3">
+            Kategori yapısı <strong className="text-cart">2 seviyeli</strong>:
+            6 üst kategori (Kedi / Köpek / Kuş / Akvaryum / Kemirgen / Sürüngen)
+            altında alt kategoriler. Üst kategori sadece gruplama içindir —
+            ürünler genellikle alt kategoriye atanır.
+          </p>
+        </div>
+      </div>
+
       <form className="flex gap-2" action="/admin/categories" method="get">
         <input
           type="search"
@@ -93,97 +124,197 @@ export default async function CategoriesPage({
         )}
       </form>
 
-      {items.length === 0 ? (
+      {allItems.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-line bg-paper py-16 text-center">
           <div className="text-6xl">📂</div>
           <h2 className="mt-4 text-xl font-bold text-cart">Henüz kategori yok</h2>
           <p className="mt-2 text-sm text-ink-3">
-            Yeni hesap açtığında 16 default kategori otomatik eklenir.
-            Kendi kategorini de ekleyebilirsin.
+            Yeni hesap açtığında 49 default kategori (6 üst + 43 alt) otomatik
+            eklenir. Kendi kategorini de ekleyebilirsin.
           </p>
         </div>
+      ) : q ? (
+        // Filtre aktifken düz tablo (parent-child gruplama atlanır)
+        <FlatTable items={filtered} />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-line bg-paper">
-          <table className="w-full text-sm">
-            <thead className="bg-paper">
-              <tr className="text-left text-[12px] font-bold uppercase tracking-wider text-ink-3">
-                <th className="px-4 py-3">Kategori</th>
-                <th className="px-4 py-3">Slug</th>
-                <th className="px-4 py-3">KDV</th>
-                <th className="px-4 py-3">SKT</th>
-                <th className="px-4 py-3 text-right">Sıra</th>
-                <th className="px-4 py-3 text-right">Ürün</th>
-                <th className="px-4 py-3 text-right">İşlem</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line-soft">
-              {items.map((c) => (
-                <tr key={c.id} data-category-id={c.id} className="hover:bg-line-soft">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/categories/${c.id}/edit` as never}
-                      className="font-bold text-cart hover:underline"
-                    >
-                      {c.emoji ? `${c.emoji} ` : ''}{c.name}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 font-mono text-[13px] text-ink-3">
-                    {c.slug}
-                  </td>
-                  <td className="px-4 py-3 text-xs">
-                    {c.vatRate ? (
-                      <span className="rounded bg-line-soft px-1.5 py-0.5 font-bold text-ink-2">
-                        {VAT_LABEL[c.vatRate] ?? c.vatRate}
-                      </span>
-                    ) : (
-                      <span className="text-ink-4">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-xs">
-                    {c.sktRequired ? (
-                      <span className="rounded bg-cat-soft px-1.5 py-0.5 font-bold text-cart">
-                        ⏳ Gerekli
-                      </span>
-                    ) : (
-                      <span className="text-ink-4">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right font-mono text-xs text-ink-3">
-                    {c.displayOrder}
-                  </td>
-                  <td className="px-4 py-3 text-right font-mono text-ink">
-                    {c.productCount > 0 ? (
-                      <Link
-                        href={`/admin/products?category=${c.id}` as never}
-                        className="text-cat hover:underline"
-                        title="Bu kategorideki ürünleri göster"
-                      >
-                        {c.productCount}
-                      </Link>
-                    ) : (
-                      <span className="text-ink-4">{c.productCount}</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <DeleteCategoryButton
-                      categoryId={c.id}
-                      categoryName={c.name}
-                      productCount={c.productCount}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        // Filtre boşken parent-child gruplama
+        <div className="flex flex-col gap-4">
+          {roots.map((root) => (
+            <RootCategoryGroup
+              key={root.id}
+              root={root}
+              items={childrenByParent.get(root.id) ?? []}
+            />
+          ))}
+          {orphans.length > 0 && (
+            <RootCategoryGroup root={null} items={orphans} />
+          )}
         </div>
       )}
-
-      <Link
-        href={'/admin' as never}
-        className="text-center text-xs text-ink-4 hover:text-cart"
-      >
-        ← Pano&apos;ya dön
-      </Link>
     </main>
+  );
+}
+
+function RootCategoryGroup({
+  root,
+  items,
+}: {
+  root: CategoryListItem | null;
+  items: CategoryListItem[];
+}) {
+  const childCount = items.length;
+  return (
+    <section
+      data-root-category={root?.id ?? 'orphan'}
+      className="overflow-hidden rounded-2xl border border-line bg-paper"
+    >
+      <header className="flex flex-wrap items-center gap-3 border-b border-line bg-line-soft/40 px-4 py-3">
+        <span aria-hidden className="text-xl">
+          {root?.emoji ?? '🗂'}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            {root ? (
+              <Link
+                href={`/admin/categories/${root.id}/edit` as never}
+                className="text-base font-bold text-cart hover:underline"
+              >
+                {root.name}
+              </Link>
+            ) : (
+              <span className="text-base font-bold text-ink-3">
+                Bağımsız (üst kategori silinmiş)
+              </span>
+            )}
+            <span className="rounded-full bg-cat-soft px-2 py-0.5 text-[11px] font-bold text-cart">
+              {childCount} alt
+            </span>
+          </div>
+          <div className="font-mono text-[11.5px] text-ink-4">
+            {root?.slug ?? '—'}
+          </div>
+        </div>
+        {root && (
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-paper px-2 py-0.5 text-[10.5px] font-bold text-ink-3">
+              ürün: {root.productCount}
+            </span>
+            <DeleteCategoryButton
+              categoryId={root.id}
+              categoryName={root.name}
+              productCount={root.productCount + childCount}
+            />
+          </div>
+        )}
+      </header>
+
+      {childCount === 0 ? (
+        <p className="px-4 py-6 text-center text-[12px] text-ink-4">
+          Henüz alt kategori yok.
+        </p>
+      ) : (
+        <table className="w-full text-sm">
+          <thead className="bg-paper">
+            <tr className="text-left text-[11px] font-bold uppercase tracking-wider text-ink-3">
+              <th className="px-4 py-2.5">Alt kategori</th>
+              <th className="px-4 py-2.5">Slug</th>
+              <th className="px-4 py-2.5">KDV</th>
+              <th className="px-4 py-2.5">SKT</th>
+              <th className="px-4 py-2.5 text-right">Sıra</th>
+              <th className="px-4 py-2.5 text-right">Ürün</th>
+              <th className="px-4 py-2.5 text-right">İşlem</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-line-soft">
+            {items.map((c) => (
+              <CategoryRow key={c.id} c={c} />
+            ))}
+          </tbody>
+        </table>
+      )}
+    </section>
+  );
+}
+
+function FlatTable({ items }: { items: CategoryListItem[] }) {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-line bg-paper">
+      <table className="w-full text-sm">
+        <thead className="bg-paper">
+          <tr className="text-left text-[12px] font-bold uppercase tracking-wider text-ink-3">
+            <th className="px-4 py-3">Kategori</th>
+            <th className="px-4 py-3">Slug</th>
+            <th className="px-4 py-3">KDV</th>
+            <th className="px-4 py-3">SKT</th>
+            <th className="px-4 py-3 text-right">Sıra</th>
+            <th className="px-4 py-3 text-right">Ürün</th>
+            <th className="px-4 py-3 text-right">İşlem</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-line-soft">
+          {items.map((c) => (
+            <CategoryRow key={c.id} c={c} />
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function CategoryRow({ c }: { c: CategoryListItem }) {
+  return (
+    <tr data-category-id={c.id} className="hover:bg-line-soft">
+      <td className="px-4 py-3">
+        <Link
+          href={`/admin/categories/${c.id}/edit` as never}
+          className="font-bold text-cart hover:underline"
+        >
+          {c.emoji ? `${c.emoji} ` : ''}
+          {c.name}
+        </Link>
+      </td>
+      <td className="px-4 py-3 font-mono text-[12.5px] text-ink-3">{c.slug}</td>
+      <td className="px-4 py-3 text-xs">
+        {c.vatRate ? (
+          <span className="rounded bg-line-soft px-1.5 py-0.5 font-bold text-ink-2">
+            {VAT_LABEL[c.vatRate] ?? c.vatRate}
+          </span>
+        ) : (
+          <span className="text-ink-4">—</span>
+        )}
+      </td>
+      <td className="px-4 py-3 text-xs">
+        {c.sktRequired ? (
+          <span className="rounded bg-cat-soft px-1.5 py-0.5 font-bold text-cart">
+            ⏳ Gerekli
+          </span>
+        ) : (
+          <span className="text-ink-4">—</span>
+        )}
+      </td>
+      <td className="px-4 py-3 text-right font-mono text-xs text-ink-3">
+        {c.displayOrder}
+      </td>
+      <td className="px-4 py-3 text-right font-mono text-ink">
+        {c.productCount > 0 ? (
+          <Link
+            href={`/admin/products?category=${c.id}` as never}
+            className="text-cat hover:underline"
+            title="Bu kategorideki ürünleri göster"
+          >
+            {c.productCount}
+          </Link>
+        ) : (
+          <span className="text-ink-4">{c.productCount}</span>
+        )}
+      </td>
+      <td className="px-4 py-3 text-right">
+        <DeleteCategoryButton
+          categoryId={c.id}
+          categoryName={c.name}
+          productCount={c.productCount}
+        />
+      </td>
+    </tr>
   );
 }

@@ -201,45 +201,53 @@ export default async function SystemSettingsPage() {
 
       <section data-testid="default-categories" className="rounded-2xl border border-line bg-paper p-4">
         <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
-          📂 Default kategoriler ({DEFAULT_CATEGORIES.length}) — her yeni tenant&apos;a otomatik seed
+          📂 Default kategoriler ({DEFAULT_CATEGORIES.length}) — 6 üst + 43 alt, her yeni tenant&apos;a otomatik seed
         </h2>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-[13.5px]">
-            <thead>
-              <tr>
-                <th className="border-b-2 border-line bg-paper px-3 py-2 text-left font-bold text-cart">
-                  Emoji
-                </th>
-                <th className="border-b-2 border-line bg-paper px-3 py-2 text-left font-bold text-cart">
-                  İsim
-                </th>
-                <th className="border-b-2 border-line bg-paper px-3 py-2 text-left font-bold text-cart">
-                  Slug
-                </th>
-                <th className="border-b-2 border-line bg-paper px-3 py-2 text-left font-bold text-cart">
-                  KDV
-                </th>
-                <th className="border-b-2 border-line bg-paper px-3 py-2 text-left font-bold text-cart">
-                  SKT
-                </th>
-                <th className="border-b-2 border-line bg-paper px-3 py-2 text-left font-bold text-cart">
-                  Sıra
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {DEFAULT_CATEGORIES.map((c) => (
-                <tr key={c.slug} className="border-b border-line-soft">
-                  <td className="px-3 py-1.5 text-lg">{c.emoji}</td>
-                  <td className="px-3 py-1.5 font-bold text-ink">{c.name}</td>
-                  <td className="px-3 py-1.5 font-mono text-[12.5px] text-ink-3">{c.slug}</td>
-                  <td className="px-3 py-1.5 font-mono text-cart">%{c.vatRate}</td>
-                  <td className="px-3 py-1.5 text-ink-2">{c.sktRequired ? '✓' : '—'}</td>
-                  <td className="px-3 py-1.5 text-ink-3">{c.displayOrder}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="flex flex-col gap-3">
+          {DEFAULT_CATEGORIES.filter((c) => !c.parentSlug).map((root) => {
+            const children = DEFAULT_CATEGORIES.filter(
+              (c) => c.parentSlug === root.slug,
+            );
+            return (
+              <details
+                key={root.slug}
+                className="rounded-xl border border-line bg-paper"
+                data-root-slug={root.slug}
+              >
+                <summary className="flex cursor-pointer items-center gap-2 px-3 py-2 text-[13.5px] font-bold text-cart hover:bg-line-soft">
+                  <span aria-hidden className="text-lg">{root.emoji}</span>
+                  {root.name}
+                  <span className="rounded-full bg-cat-soft px-2 py-0.5 text-[10.5px] text-cart">
+                    {children.length} alt
+                  </span>
+                </summary>
+                <table className="w-full border-collapse text-[12.5px]">
+                  <thead>
+                    <tr>
+                      <th className="border-b border-line bg-paper px-3 py-1.5 text-left font-bold text-ink-3">Alt kategori</th>
+                      <th className="border-b border-line bg-paper px-3 py-1.5 text-left font-bold text-ink-3">Slug</th>
+                      <th className="border-b border-line bg-paper px-3 py-1.5 text-left font-bold text-ink-3">KDV</th>
+                      <th className="border-b border-line bg-paper px-3 py-1.5 text-left font-bold text-ink-3">SKT</th>
+                      <th className="border-b border-line bg-paper px-3 py-1.5 text-left font-bold text-ink-3">Sıra</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {children.map((c) => (
+                      <tr key={c.slug} className="border-b border-line-soft">
+                        <td className="px-3 py-1.5 font-bold text-ink">
+                          {c.emoji} {c.name}
+                        </td>
+                        <td className="px-3 py-1.5 font-mono text-ink-3">{c.slug}</td>
+                        <td className="px-3 py-1.5 font-mono text-cart">%{c.vatRate}</td>
+                        <td className="px-3 py-1.5 text-ink-2">{c.sktRequired ? '✓' : '—'}</td>
+                        <td className="px-3 py-1.5 text-ink-3">{c.displayOrder}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </details>
+            );
+          })}
         </div>
       </section>
 
