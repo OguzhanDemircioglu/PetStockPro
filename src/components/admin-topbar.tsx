@@ -108,7 +108,7 @@ export function AdminTopbar({ userEmail, unreadCount, isSuperadmin }: Props) {
         🏪 Vitrin ↗
       </Link>
 
-      {isSuperadmin && (
+      {isSuperadmin && !pathname.startsWith('/admin/superadmin') && (
         <Link
           href={'/admin/superadmin' as never}
           data-testid="topbar-superadmin"
