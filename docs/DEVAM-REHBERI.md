@@ -1,11 +1,71 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-17 (yukarıdaki + Faz 2 batch: Açık Krediler + Concurrent satış lock + Sayım mobile swipe + SKT yaklaşan + Bundle analyzer + Schema.org LD-JSON + Kategori sayfaları + Cross-tenant ürün detay + Yakınlık sorgusu + Moderasyon ürün-spesifik + Brand grupla + **Pano v3 mockup migration + Sidebar + Welcome state + Logo aside + Topbar**)
-**Mevcut Branch:** `cray61` — origin'in **108 commit** ileri (push edilmedi)
-**Son commit:** `0e86e28` feat(admin): sticky topbar (Pano başlık + ⌘K + Vitrin + bell + avatar)
-**Test:** 1180 passed (86 dosya) — vitest
-**Lint+typecheck:** 0 error
-**Migration:** 15 (0015 companies.location_lat/lng + öncekiler)
+**Tarih:** 2026-05-17 (yukarıdaki + Faz 2 batch + Pano v3 mockup migration + **Magic UI altyapısı + Light/Dark theme + admin shell magicui + Pano magicui + bg-white→bg-paper migration + Süperadmin vitrin events + tenant aktivite metrikleri**)
+**Mevcut Branch:** `cray61` — origin'in **113 commit** ileri (push edilmedi)
+**Son commit:** `7e2b399` refactor(admin): toplu bg-white → bg-paper migration (dark mode theme-aware)
+**Test:** 1180 passed (86 dosya) — vitest (yeni testler bu turda eklenmedi, sadece UI migration)
+**Lint+typecheck:** 0 error (React 19 `set-state-in-effect` lint kuralı için ThemeProvider + NumberTicker + Meteors lazy initializer pattern'i ile geçildi)
+**Migration:** 15 (değişmedi)
+
+## 🆕 Bu tur (2026-05-17, gece) — Magic UI + Light/Dark theme + Süperadmin metrik dashboard
+
+| # | İş | Commit |
+|---|---|---|
+| 1 | Magic UI altyapısı: motion@12.38 + 9 komponent + theme provider + globals dark+keyframes | `995642f` |
+| 2 | Admin shell magicui: glass sidebar/topbar + ThemeToggle + Vitrin ShimmerButton-style gradient | `12770ea` |
+| 3 | Pano magicui: Meteors hero + NumberTicker KPI + PulsatingButton alert | `0e83142` |
+| 4 | Süperadmin: vitrin events + tenant aktivite analytics helper + magicui dashboard hero + 2 yeni metrik zone | `0af4a5c` |
+| 5 | Toplu `bg-white` → `bg-paper` migration (64 dosya, dark mode theme-aware) | `7e2b399` |
+
+**Kullanıcı netleştirmesi (bu turda):** Admin/Staff ile SUPERADMIN ayrı görsel kimlik. Admin tarafı = warm/cesur (turuncu hero + magicui animasyon). Süperadmin tarafı = koyu shell (cart-7 → ink → cart-7 lacivert+kırmızı). SUPERADMIN admin'i de görebilir, admin SUPERADMIN sayfalarına asla erişemez (mevcut `requireSuperadmin` gate korunur). Light/Dark mode toggle topbar'da (sun/moon icon, localStorage persist + flash prevent).
+
+**Magic UI komponentleri (`src/components/magicui/`):**
+- `number-ticker.tsx` — count-up spring animation, suppressHydrationWarning ile SSR-safe
+- `shimmer-button.tsx` — perimeter conic shimmer (CSS-only)
+- `magic-card.tsx` — pointer-follow spotlight gradient
+- `animated-list.tsx` — staggered reveal with motion AnimatePresence
+- `meteors.tsx` — falling streaks bg, lazy useState init (no setState-in-effect)
+- `pulsating-button.tsx` — radial pulse keyframe (CSS-only)
+- `animated-shiny-text.tsx` — gradient text shimmer (CSS-only)
+- `border-beam.tsx` — offset-path animated gradient
+- `dot-pattern.tsx` — subtle SVG bg dots
+
+**Light/Dark theme (`src/components/theme/`):**
+- `theme-provider.tsx` — `html.dark` class strategy + lazy useState initializer (read from html.dark already set by boot script) + localStorage persist
+- `theme-toggle.tsx` — topbar sun/moon button
+- Root layout'a `themeBootScript` inline `<script>` eklendi (head'de senkron çalışır → flash yok, hydration warning suppress edildi)
+- globals.css `html.dark` token override (ink/line/bg/paper + 6 marka soft renkleri için dark variants) + form controls dark-aware default skin
+
+**Süperadmin analytics (`src/lib/superadmin/analytics.ts`):**
+- `getVitrinEventStats(db, windowDays=7)` — funnel (profile_view/product_view/listing_impression/whatsapp_click) + 5 en çok görüntülenen tenant
+- `getTenantActivityStats(db)` — son aktivite (stock_movements + audit_logs UNION ALL → MAX) + 24h/7g/30g aktif sayıları + 5-band distribution + 5 ilgi azalan tenant
+
+**Süperadmin dashboard yeni zone'lar:**
+- 📈 Genel (mevcut KPI'lar)
+- 👁 Vitrin Görüntüleme · Son 7 gün (4 KpiBold + Top 5 tenant + Listede gösterilme + funnel)
+- 🔥 Tenant Aktivitesi (3 KpiBold + 5-band dağılım + ilgi azalan tenant tablosu)
+- 💾 Veritabanı (mevcut DB stats korundu)
+- Tenant tablosu (alt, mevcut)
+
+**Browser E2E (yeni test hesabı `magicui@petshop.test` / BAYI_SAHIBI):**
+- Login → /admin Pano welcome state hero (turuncu gradient + Meteors + 2 CTA + chip row) ✓
+- ThemeToggle sun/moon ile dark mode anında geçiş, html.dark class doğru toggle ✓
+- /admin/audit-log dark mode (tablo, filter form, hızlı tarih chip'leri) ✓
+- /admin/superadmin (geçici SUPERADMIN promo ile) → hero koyu shell + Genel KPI + Vitrin metrik KPI + Top tenant + Tenant aktivite + DB + tenant tablo, light + dark testleri ✓
+
+### Görsel kontrol notları
+- Hero'daki opacity'li `bg-white/12`, `bg-white/15`, `bg-white/20` vb. korundu (turuncu/koyu hero üstünde dark mode'da da beyaz görünmeleri gerek)
+- Plan card cart→cart-7 gradient + cat radial overlay (sidebar altı her zaman koyu, theme'den bağımsız)
+- Hero CTA butonları `bg-white` (sıcak gradient üstünde her zaman beyaz okunur)
+- KPI Bold trio gradient + NumberTicker spring count-up
+- AnimatedShinyText topbar başlığı (cart → cat → cart shimmer)
+
+### Kullanıcı için bekleyen geri alma SQL
+```sql
+-- Browser test sırasında geçici olarak SUPERADMIN'e yükseltilen test hesabını geri al
+UPDATE petstockpro.users SET role = 'BAYI_SAHIBI', updated_at = NOW()
+WHERE email = 'magicui@petshop.test';
+```
 
 ## 🆕 Son tur (2026-05-17 geç gece) — Faz 2 batch + UI mockup migration
 
