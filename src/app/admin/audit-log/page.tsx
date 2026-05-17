@@ -180,7 +180,7 @@ export default async function AuditLogPage({
               className={`rounded-full px-3 py-1.5 text-[11px] font-bold transition-colors ${
                 isActive
                   ? 'bg-cat text-white shadow-sm'
-                  : 'border border-line bg-white text-ink-3 hover:border-cat hover:text-cart'
+                  : 'border border-line bg-paper text-ink-3 hover:border-cat hover:text-cart'
               }`}
             >
               {chip.label}
@@ -198,7 +198,7 @@ export default async function AuditLogPage({
         )}
       </div>
       <form
-        className="flex flex-wrap items-end gap-3 rounded-2xl border border-line bg-white p-4"
+        className="flex flex-wrap items-end gap-3 rounded-2xl border border-line bg-paper p-4"
         action="/admin/audit-log"
         method="get"
         data-testid="audit-filter"
@@ -215,7 +215,7 @@ export default async function AuditLogPage({
             name="action"
             defaultValue={validAction ?? ''}
             data-testid="audit-action"
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             {ACTION_GROUPS.map((g) => (
               <option key={g.value} value={g.value}>
@@ -236,7 +236,7 @@ export default async function AuditLogPage({
             name="entity"
             defaultValue={params.entity ?? ''}
             data-testid="audit-entity"
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             <option value="">Hepsi</option>
             <option value="product">Ürün</option>
@@ -261,7 +261,7 @@ export default async function AuditLogPage({
             name="userId"
             defaultValue={params.userId ?? ''}
             data-testid="audit-user"
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             <option value="">Tüm kullanıcılar</option>
             {userOptions.map((u) => (
@@ -284,7 +284,7 @@ export default async function AuditLogPage({
             type="date"
             defaultValue={params.from ?? ''}
             data-testid="audit-from"
-            className="rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="rounded-xl border-[1.5px] border-line bg-paper px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
         </div>
         <div>
@@ -300,7 +300,7 @@ export default async function AuditLogPage({
             type="date"
             defaultValue={params.to ?? ''}
             data-testid="audit-to"
-            className="rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="rounded-xl border-[1.5px] border-line bg-paper px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
         </div>
         <button
@@ -312,7 +312,7 @@ export default async function AuditLogPage({
         {hasFilter && (
           <Link
             href={'/admin/audit-log' as never}
-            className="rounded-xl border border-line bg-white px-3 py-2.5 text-xs font-bold text-ink-3 hover:bg-line-soft"
+            className="rounded-xl border border-line bg-paper px-3 py-2.5 text-xs font-bold text-ink-3 hover:bg-line-soft"
           >
             × Temizle
           </Link>
@@ -329,7 +329,7 @@ export default async function AuditLogPage({
             return qs ? `?${qs}` : '';
           })()}`}
           download
-          className="ml-auto rounded-xl border border-line bg-white px-3 py-2.5 text-xs font-bold text-cart hover:bg-cat-soft"
+          className="ml-auto rounded-xl border border-line bg-paper px-3 py-2.5 text-xs font-bold text-cart hover:bg-cat-soft"
           data-testid="audit-export"
         >
           ⬇ CSV
@@ -364,7 +364,7 @@ export default async function AuditLogPage({
           )}
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+        <div className="overflow-x-auto rounded-2xl border border-line bg-paper">
           <table className="w-full text-sm">
             <thead className="bg-paper">
               <tr className="text-left text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
@@ -435,7 +435,7 @@ export default async function AuditLogPage({
       {totalPages > 1 && items.length > 0 && (
         <nav
           data-testid="audit-pagination"
-          className="flex items-center justify-between rounded-2xl border border-line bg-white px-4 py-3 text-[12px]"
+          className="flex items-center justify-between rounded-2xl border border-line bg-paper px-4 py-3 text-[12px]"
         >
           <span className="text-ink-3">
             Sayfa <strong className="text-cart">{page}</strong>
@@ -446,7 +446,7 @@ export default async function AuditLogPage({
               <Link
                 href={buildPageUrl(page - 1) as never}
                 data-testid="audit-prev"
-                className="rounded-xl border border-line bg-white px-3 py-1.5 font-bold text-cart hover:bg-cat-soft"
+                className="rounded-xl border border-line bg-paper px-3 py-1.5 font-bold text-cart hover:bg-cat-soft"
               >
                 ← Önceki
               </Link>

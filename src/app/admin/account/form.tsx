@@ -41,7 +41,7 @@ export function AccountForm({
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
-      <section className="rounded-2xl border border-line bg-white p-6">
+      <section className="rounded-2xl border border-line bg-paper p-6">
         <h2 className="text-lg font-bold text-cart">📧 E-posta adresi</h2>
         <p className="mt-1 text-xs text-ink-3">Giriş yaparken kullandığın adres.</p>
 
@@ -74,7 +74,7 @@ export function AccountForm({
           <button
             type="button"
             onClick={() => setShowForm(true)}
-            className="mt-4 rounded-xl border border-line bg-white px-4 py-2 text-xs font-bold text-ink-2 hover:bg-line-soft"
+            className="mt-4 rounded-xl border border-line bg-paper px-4 py-2 text-xs font-bold text-ink-2 hover:bg-line-soft"
           >
             ✏ E-postayı değiştir
           </button>
@@ -95,7 +95,7 @@ export function AccountForm({
                 autoComplete="email"
                 required
                 disabled={pending}
-                className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+                className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
               />
             </div>
             <div>
@@ -113,7 +113,7 @@ export function AccountForm({
                 autoComplete="current-password"
                 required
                 disabled={pending}
-                className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+                className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
               />
             </div>
 
@@ -142,7 +142,7 @@ export function AccountForm({
                 type="button"
                 onClick={() => setShowForm(false)}
                 disabled={pending}
-                className="rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-bold text-ink-3 hover:bg-line-soft"
+                className="rounded-xl border border-line bg-paper px-4 py-2.5 text-sm font-bold text-ink-3 hover:bg-line-soft"
               >
                 Vazgeç
               </button>

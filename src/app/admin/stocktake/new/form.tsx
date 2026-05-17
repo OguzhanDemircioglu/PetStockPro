@@ -14,7 +14,7 @@ export function StartStocktakeForm({ branches }: Props) {
   );
 
   return (
-    <form action={formAction} className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-6">
+    <form action={formAction} className="flex flex-col gap-4 rounded-2xl border border-line bg-paper p-6">
       <div>
         <label
           htmlFor="branchId"
@@ -27,7 +27,7 @@ export function StartStocktakeForm({ branches }: Props) {
           name="branchId"
           required
           disabled={pending}
-          className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2.5 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         >
           <option value="" disabled>
             — şube seç —
@@ -68,7 +68,7 @@ export function StartStocktakeForm({ branches }: Props) {
           placeholder="Aylık sayım"
           maxLength={500}
           disabled={pending}
-          className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-2.5 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-2.5 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>
 

@@ -28,7 +28,7 @@ export function ReverseExpiredForm() {
           </Link>
           <Link
             href={'/admin/audit-log' as never}
-            className="rounded-xl border border-line bg-white px-4 py-2 text-xs font-bold text-ink-2"
+            className="rounded-xl border border-line bg-paper px-4 py-2 text-xs font-bold text-ink-2"
           >
             Audit log
           </Link>
@@ -38,7 +38,7 @@ export function ReverseExpiredForm() {
   }
 
   return (
-    <form action={formAction} className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-6">
+    <form action={formAction} className="flex flex-col gap-4 rounded-2xl border border-line bg-paper p-6">
       <div>
         <label
           htmlFor="movementId"
@@ -54,7 +54,7 @@ export function ReverseExpiredForm() {
           placeholder="00000000-0000-0000-0000-000000000000"
           disabled={pending}
           data-testid="movement-id"
-          className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-2.5 font-mono text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-2.5 font-mono text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
         <p className="mt-1 text-[10.5px] text-ink-4">
           Stok hareketleri ledger&apos;daki hareketin UUID&apos;sini kopyala.
@@ -78,7 +78,7 @@ export function ReverseExpiredForm() {
           placeholder="Örn: Kullanıcı 26 saat sonra fark etti, müşteri iade talebi, ürün hasarlı çıktı"
           disabled={pending}
           data-testid="reason"
-          className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>
 
@@ -98,7 +98,7 @@ export function ReverseExpiredForm() {
           placeholder="••••••••"
           disabled={pending}
           data-testid="superadmin-password"
-          className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-2.5 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-2.5 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>
 

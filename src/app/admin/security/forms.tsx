@@ -62,7 +62,7 @@ export function SecurityForms({
       )}
 
       {/* PANEL 1: 2FA Durum */}
-      <section className="rounded-2xl border border-line bg-white p-6">
+      <section className="rounded-2xl border border-line bg-paper p-6">
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-bold text-cart">🛡 İki faktörlü kimlik doğrulama</h2>
@@ -114,7 +114,7 @@ export function SecurityForms({
 
       {/* PANEL 2: Disable 2FA */}
       {twoFactorEnabled && (
-        <section className="rounded-2xl border border-danger/30 bg-white p-6">
+        <section className="rounded-2xl border border-danger/30 bg-paper p-6">
           <div className="mb-3">
             <h2 className="text-lg font-bold text-danger-7">🔓 2FA&apos;yı kapat</h2>
             <p className="mt-1 text-xs text-ink-3">
@@ -136,7 +136,7 @@ export function SecurityForms({
             <button
               type="button"
               onClick={() => setShowDisable(true)}
-              className="rounded-xl border border-danger/40 bg-white px-4 py-2 text-xs font-bold text-danger-7 hover:bg-danger-soft"
+              className="rounded-xl border border-danger/40 bg-paper px-4 py-2 text-xs font-bold text-danger-7 hover:bg-danger-soft"
             >
               2FA&apos;yı kapat
             </button>
@@ -151,7 +151,7 @@ export function SecurityForms({
                 required
                 disabled={disablePending}
                 maxLength={7}
-                className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-center font-mono text-lg tracking-[0.3em] text-ink focus:border-danger focus:outline-none focus:ring-4 focus:ring-danger/15"
+                className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-center font-mono text-lg tracking-[0.3em] text-ink focus:border-danger focus:outline-none focus:ring-4 focus:ring-danger/15"
               />
               <div className="flex gap-2">
                 <button
@@ -165,7 +165,7 @@ export function SecurityForms({
                   type="button"
                   onClick={() => setShowDisable(false)}
                   disabled={disablePending}
-                  className="rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-bold text-ink-3 hover:bg-line-soft"
+                  className="rounded-xl border border-line bg-paper px-4 py-2.5 text-sm font-bold text-ink-3 hover:bg-line-soft"
                 >
                   Vazgeç
                 </button>
@@ -177,7 +177,7 @@ export function SecurityForms({
 
       {/* PANEL 3: Regenerate recovery codes */}
       {twoFactorEnabled && (
-        <section className="rounded-2xl border border-line bg-white p-6">
+        <section className="rounded-2xl border border-line bg-paper p-6">
           <div className="mb-3">
             <h2 className="text-lg font-bold text-cart">🔑 Yedek kodları yenile</h2>
             <p className="mt-1 text-xs text-ink-3">
@@ -199,7 +199,7 @@ export function SecurityForms({
             <div>
               <div className="mb-3 grid grid-cols-2 gap-2 rounded-xl bg-paper p-4 font-mono text-sm">
                 {regenState.recoveryCodes.map((c) => (
-                  <div key={c} className="rounded-lg bg-white px-3 py-2 text-center">
+                  <div key={c} className="rounded-lg bg-paper px-3 py-2 text-center">
                     {c}
                   </div>
                 ))}
@@ -209,7 +209,7 @@ export function SecurityForms({
                 onClick={() => {
                   navigator.clipboard.writeText(regenState.recoveryCodes.join('\n'));
                 }}
-                className="rounded-xl border border-line bg-white px-4 py-2 text-xs font-bold text-ink-2 hover:bg-line-soft"
+                className="rounded-xl border border-line bg-paper px-4 py-2 text-xs font-bold text-ink-2 hover:bg-line-soft"
               >
                 📋 Tümünü kopyala
               </button>
@@ -221,7 +221,7 @@ export function SecurityForms({
             <button
               type="button"
               onClick={() => setShowRegen(true)}
-              className="rounded-xl border border-line bg-white px-4 py-2 text-xs font-bold text-ink-2 hover:bg-line-soft"
+              className="rounded-xl border border-line bg-paper px-4 py-2 text-xs font-bold text-ink-2 hover:bg-line-soft"
             >
               🔄 Yedek kodları yenile
             </button>
@@ -236,7 +236,7 @@ export function SecurityForms({
                 required
                 disabled={regenPending}
                 maxLength={7}
-                className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-center font-mono text-lg tracking-[0.3em] text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+                className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-center font-mono text-lg tracking-[0.3em] text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
               />
               <div className="flex gap-2">
                 <button
@@ -250,7 +250,7 @@ export function SecurityForms({
                   type="button"
                   onClick={() => setShowRegen(false)}
                   disabled={regenPending}
-                  className="rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-bold text-ink-3 hover:bg-line-soft"
+                  className="rounded-xl border border-line bg-paper px-4 py-2.5 text-sm font-bold text-ink-3 hover:bg-line-soft"
                 >
                   Vazgeç
                 </button>

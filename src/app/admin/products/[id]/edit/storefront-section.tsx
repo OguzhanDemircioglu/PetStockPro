@@ -52,7 +52,7 @@ export function StorefrontSection({
       className={`rounded-2xl border p-6 ${
         published
           ? 'border-arrow/40 bg-arrow-soft/40'
-          : 'border-line bg-white'
+          : 'border-line bg-paper'
       }`}
       data-testid="storefront-section"
     >
@@ -90,7 +90,7 @@ export function StorefrontSection({
             published
               ? 'border-arrow bg-arrow-soft text-arrow-7'
               : canPublish
-              ? 'border-cat bg-white text-cart hover:bg-cat-soft'
+              ? 'border-cat bg-paper text-cart hover:bg-cat-soft'
               : 'cursor-not-allowed border-line bg-line-soft text-ink-4'
           }`}
         >
@@ -154,7 +154,7 @@ function ValidationPanel({ validation }: { validation: StorefrontValidationResul
   ];
 
   return (
-    <div className="mt-4 rounded-xl border border-line bg-white p-4">
+    <div className="mt-4 rounded-xl border border-line bg-paper p-4">
       <div className="flex items-center justify-between">
         <h3 className="text-xs font-bold uppercase tracking-wider text-ink-3">
           🔍 Doğrula

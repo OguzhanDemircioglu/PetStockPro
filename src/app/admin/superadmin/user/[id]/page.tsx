@@ -149,7 +149,7 @@ function Status({
     cat: 'border-cat/30 bg-cat-soft/40',
     arrow: 'border-arrow/30 bg-arrow-soft/40',
     danger: 'border-danger/30 bg-danger-soft/40 text-danger-7',
-    neutral: 'border-line bg-white',
+    neutral: 'border-line bg-paper',
   };
   return (
     <article className={`rounded-xl border p-3 ${cls[accent]}`}>

@@ -98,7 +98,7 @@ function SettingsNav({ current }: { current: SettingsSection }) {
             className={
               isActive
                 ? 'flex items-center gap-3 rounded-xl border border-cat bg-cat-soft px-4 py-2.5 text-sm font-bold text-cart shadow-[var(--shadow-sm)]'
-                : 'flex items-center gap-3 rounded-xl border border-transparent px-4 py-2.5 text-sm text-ink-2 hover:border-line hover:bg-white'
+                : 'flex items-center gap-3 rounded-xl border border-transparent px-4 py-2.5 text-sm text-ink-2 hover:border-line hover:bg-paper'
             }
           >
             <span aria-hidden className="text-lg">

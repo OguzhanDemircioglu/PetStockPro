@@ -95,7 +95,7 @@ export function BranchForm({
           defaultValue={initial?.name ?? ''}
           placeholder="Merkez, Kadıköy, Anadolu vs."
           data-testid="branch-name"
-          className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </Field>
 
@@ -108,7 +108,7 @@ export function BranchForm({
             value={selectedCityId ?? ''}
             onChange={(e) => setSelectedCityId(parseInt(e.target.value, 10) || null)}
             data-testid="branch-city"
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             <option value="" disabled>
               — Seç —
@@ -128,7 +128,7 @@ export function BranchForm({
             disabled={districtsLoading || districts.length === 0}
             defaultValue={initial?.districtId ?? ''}
             data-testid="branch-district"
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15 disabled:opacity-60"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15 disabled:opacity-60"
           >
             <option value="" disabled>
               {districtsLoading
@@ -154,7 +154,7 @@ export function BranchForm({
           maxLength={500}
           defaultValue={initial?.address ?? ''}
           placeholder="Mahalle, sokak, no..."
-          className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </Field>
 
@@ -166,7 +166,7 @@ export function BranchForm({
           maxLength={20}
           defaultValue={initial?.whatsappPhone ?? ''}
           placeholder="+905XXXXXXXXX veya 05XXXXXXXXX"
-          className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
         <p className="mt-1 text-[11px] text-ink-4">
           Vitrin müşterileri buraya WhatsApp mesajı atar.
@@ -203,7 +203,7 @@ export function BranchForm({
         </button>
         <Link
           href={'/admin/branches' as never}
-          className="rounded-xl border border-line bg-white px-6 py-3 text-sm font-bold text-ink-3 hover:bg-line-soft"
+          className="rounded-xl border border-line bg-paper px-6 py-3 text-sm font-bold text-ink-3 hover:bg-line-soft"
         >
           Vazgeç
         </Link>

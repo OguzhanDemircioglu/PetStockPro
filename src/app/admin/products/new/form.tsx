@@ -63,7 +63,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
 
       <form action={formAction} className="flex flex-col gap-6">
         {/* TEMEL BİLGİLER */}
-        <section className="rounded-2xl border border-line bg-white p-6">
+        <section className="rounded-2xl border border-line bg-paper p-6">
           <h2 className="text-lg font-bold text-cart">📦 Temel bilgiler</h2>
 
           <div className="mt-4 flex flex-col gap-4">
@@ -82,7 +82,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
                 required
                 disabled={pending}
                 defaultValue={state?.formValues.name ?? ''}
-                className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+                className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
               />
             </div>
 
@@ -99,7 +99,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
                 rows={3}
                 placeholder="Ürün hakkında kısa bilgi (vitrin'de gösterilir, opsiyonel)"
                 disabled={pending}
-                className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+                className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
               />
             </div>
 
@@ -116,7 +116,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
                   name="categoryId"
                   disabled={pending}
                   defaultValue={state?.formValues.categoryId ?? ''}
-                  className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+                  className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 >
                   <option value="">— Seç (opsiyonel) —</option>
                   {categories.map((c) => (
@@ -139,7 +139,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
                   id="brandId"
                   name="brandId"
                   disabled={pending || brands.length === 0}
-                  className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+                  className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 >
                   <option value="">
                     {brands.length === 0 ? 'Henüz marka yok' : '— Seç (opsiyonel) —'}
@@ -156,7 +156,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
         </section>
 
         {/* VARIANT BİLGİLERİ */}
-        <section className="rounded-2xl border border-line bg-white p-6">
+        <section className="rounded-2xl border border-line bg-paper p-6">
           <h2 className="text-lg font-bold text-cart">🏷 Stok birimi</h2>
           <p className="mt-1 text-xs text-ink-3">
             İlk variant otomatik default olarak işaretlenir. Sprint 3.1&apos;de birden fazla
@@ -179,7 +179,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
                   placeholder="2kg / Standart / Büyük boy"
                   disabled={pending}
                   defaultValue="Standart"
-                  className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+                  className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
               </div>
 
@@ -198,7 +198,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
                   required
                   disabled={pending}
                   defaultValue={state?.formValues.sku ?? ''}
-                  className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+                  className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
               </div>
             </div>
@@ -217,7 +217,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
                 placeholder="3033xxxxxxxxx (EAN-13)"
                 disabled={pending}
                 maxLength={13}
-                className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+                className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
               />
             </div>
 
@@ -236,7 +236,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
                   inputMode="decimal"
                   placeholder="120"
                   disabled={pending}
-                  className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+                  className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
               </div>
 
@@ -256,7 +256,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
                   required
                   disabled={pending}
                   defaultValue={state?.formValues.salePrice ?? ''}
-                  className="w-full rounded-xl border-[1.5px] border-cat bg-white px-4 py-3 font-mono text-sm font-bold text-cart focus:outline-none focus:ring-4 focus:ring-cat/15"
+                  className="w-full rounded-xl border-[1.5px] border-cat bg-paper px-4 py-3 font-mono text-sm font-bold text-cart focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
               </div>
 
@@ -275,7 +275,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
                   max={9999}
                   defaultValue={5}
                   disabled={pending}
-                  className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+                  className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
               </div>
             </div>
@@ -292,7 +292,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
           </button>
           <Link
             href={'/admin/products' as never}
-            className="rounded-xl border border-line bg-white px-6 py-3.5 text-sm font-bold text-ink-3 hover:bg-line-soft"
+            className="rounded-xl border border-line bg-paper px-6 py-3.5 text-sm font-bold text-ink-3 hover:bg-line-soft"
           >
             Vazgeç
           </Link>

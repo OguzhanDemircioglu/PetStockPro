@@ -210,7 +210,7 @@ export default async function VitrinModerationPage({
           </div>
 
           {reports.length === 0 ? (
-            <div className="rounded-2xl border-2 border-dashed border-line bg-white py-12 text-center">
+            <div className="rounded-2xl border-2 border-dashed border-line bg-paper py-12 text-center">
               <div className="text-4xl">✓</div>
               <p className="mt-2 text-sm text-ink-3">
                 {validReportStatus === 'pending'
@@ -221,7 +221,7 @@ export default async function VitrinModerationPage({
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+            <div className="overflow-x-auto rounded-2xl border border-line bg-paper">
               <table
                 className="w-full text-xs"
                 data-testid="reports-table"
@@ -249,7 +249,7 @@ export default async function VitrinModerationPage({
       ) : (
         <section data-testid="moderation-results">
           {rows.length === 0 ? (
-            <div className="rounded-2xl border-2 border-dashed border-line bg-white py-12 text-center">
+            <div className="rounded-2xl border-2 border-dashed border-line bg-paper py-12 text-center">
               <div className="text-4xl">
                 {activeTab === 'flagged' ? '✓' : '📭'}
               </div>
@@ -260,7 +260,7 @@ export default async function VitrinModerationPage({
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+            <div className="overflow-x-auto rounded-2xl border border-line bg-paper">
               <table
                 className="w-full text-xs"
                 data-testid="moderation-table"
@@ -472,7 +472,7 @@ function FilterChip({
       className={
         active
           ? 'rounded-full bg-cat px-2.5 py-1 text-[10.5px] font-bold text-white'
-          : 'rounded-full border border-line bg-white px-2.5 py-1 text-[10.5px] font-bold text-ink-3 hover:bg-line-soft'
+          : 'rounded-full border border-line bg-paper px-2.5 py-1 text-[10.5px] font-bold text-ink-3 hover:bg-line-soft'
       }
     >
       {label}
@@ -519,7 +519,7 @@ function KPI({
     cat: 'border-cat/30 bg-cat-soft/40',
     arrow: 'border-arrow/30 bg-arrow-soft/40',
     danger: 'border-danger/30 bg-danger-soft/40',
-    neutral: 'border-line bg-white',
+    neutral: 'border-line bg-paper',
   };
   return (
     <article

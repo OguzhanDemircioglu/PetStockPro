@@ -40,7 +40,7 @@ interface BaseProps {
 }
 
 const inputClass =
-  'w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15';
+  'w-full rounded-lg border-[1.5px] border-line bg-paper px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15';
 const labelClass =
   'mb-1 block text-[11px] font-bold uppercase tracking-wider text-ink-3';
 const buttonClass =
@@ -57,7 +57,7 @@ export function ForcePasswordResetForm({ targetUserId }: BaseProps) {
   );
 
   return (
-    <form action={formAction} className="rounded-xl border border-line bg-white p-4">
+    <form action={formAction} className="rounded-xl border border-line bg-paper p-4">
       <h3 className="text-sm font-bold text-cart">🔑 Şifre sıfırlama linki gönder</h3>
       <p className="mt-1 text-[11px] text-ink-3">
         Brevo email + 30 dakika TTL token. Kullanıcı linke tıklayıp yeni şifre belirler.
@@ -121,7 +121,7 @@ export function ResetTwoFactorForm({ targetUserId, isEnabled }: BaseProps & { is
   );
 
   return (
-    <form action={formAction} className="rounded-xl border border-line bg-white p-4">
+    <form action={formAction} className="rounded-xl border border-line bg-paper p-4">
       <div className="flex items-center gap-2">
         <h3 className="text-sm font-bold text-cart">🛡 2FA sıfırla (uzaktan)</h3>
         {isEnabled ? (

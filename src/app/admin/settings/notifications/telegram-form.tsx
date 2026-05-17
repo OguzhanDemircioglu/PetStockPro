@@ -53,7 +53,7 @@ export function TelegramForm({
             placeholder={maskedToken || '1234567890:ABCdef...'}
             data-testid="tg-bot-token"
             required
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 font-mono text-xs text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2.5 font-mono text-xs text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
           <p className="mt-1 text-[10.5px] text-ink-4">
             BotFather&apos;dan alınan token. <code>1234567890:hash</code> formatında.
@@ -77,7 +77,7 @@ export function TelegramForm({
             placeholder="987654321 veya -1001234567890 (grup)"
             data-testid="tg-chat-id"
             required
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 font-mono text-xs text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2.5 font-mono text-xs text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
           <p className="mt-1 text-[10.5px] text-ink-4">
             Bireysel: <code>@userinfobot</code>&apos;a /start at, ID&apos;ni öğren. Grup: bot&apos;u
@@ -146,7 +146,7 @@ export function TelegramForm({
             type="submit"
             disabled={testPending || !initialBotToken || !initialChatId}
             data-testid="test-btn"
-            className="rounded-xl border border-cat bg-white px-4 py-2 text-[12.5px] font-bold text-cart disabled:opacity-60"
+            className="rounded-xl border border-cat bg-paper px-4 py-2 text-[12.5px] font-bold text-cart disabled:opacity-60"
           >
             {testPending ? 'Gönderiliyor…' : '🚀 Test mesajı gönder'}
           </button>

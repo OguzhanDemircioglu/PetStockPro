@@ -43,7 +43,7 @@ export function StockInDrawer({ branches, variants, suppliers, onClose }: Props)
             name="branchId"
             required
             defaultValue={branches[0]?.id ?? ''}
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             {branches.map((b) => (
               <option key={b.id} value={b.id}>
@@ -59,7 +59,7 @@ export function StockInDrawer({ branches, variants, suppliers, onClose }: Props)
             name="variantId"
             required
             defaultValue=""
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             <option value="" disabled>
               — Seç —
@@ -81,7 +81,7 @@ export function StockInDrawer({ branches, variants, suppliers, onClose }: Props)
               min={1}
               max={1000000}
               required
-              className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+              className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
               data-testid="quantity"
             />
           </Field>
@@ -93,7 +93,7 @@ export function StockInDrawer({ branches, variants, suppliers, onClose }: Props)
               inputMode="decimal"
               pattern="^\d+(\.\d{1,2})?$"
               placeholder="120.50"
-              className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+              className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
             />
           </Field>
         </div>
@@ -107,7 +107,7 @@ export function StockInDrawer({ branches, variants, suppliers, onClose }: Props)
             name="supplierId"
             disabled={suppliers.length === 0}
             defaultValue=""
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15 disabled:opacity-50"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15 disabled:opacity-50"
           >
             <option value="">— Seçilmedi —</option>
             {suppliers.map((s) => (
@@ -126,7 +126,7 @@ export function StockInDrawer({ branches, variants, suppliers, onClose }: Props)
               type="text"
               maxLength={100}
               placeholder="İrsaliye no"
-              className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+              className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
             />
           </Field>
           <Field label="Lot no" htmlFor="lotNumber">
@@ -135,7 +135,7 @@ export function StockInDrawer({ branches, variants, suppliers, onClose }: Props)
               name="lotNumber"
               type="text"
               maxLength={100}
-              className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+              className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
             />
           </Field>
         </div>
@@ -145,7 +145,7 @@ export function StockInDrawer({ branches, variants, suppliers, onClose }: Props)
             id="expiryDate"
             name="expiryDate"
             type="date"
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
         </Field>
 
@@ -155,7 +155,7 @@ export function StockInDrawer({ branches, variants, suppliers, onClose }: Props)
             name="note"
             rows={2}
             maxLength={500}
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
         </Field>
 
@@ -197,7 +197,7 @@ export function StockInDrawer({ branches, variants, suppliers, onClose }: Props)
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-line bg-white px-5 py-3 text-sm font-bold text-ink-3 hover:bg-line-soft"
+            className="rounded-xl border border-line bg-paper px-5 py-3 text-sm font-bold text-ink-3 hover:bg-line-soft"
           >
             Vazgeç
           </button>

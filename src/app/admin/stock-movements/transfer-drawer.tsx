@@ -45,7 +45,7 @@ export function TransferDrawer({ branches, variants, onClose, initial }: Props) 
               name="sourceBranchId"
               required
               defaultValue={initial?.sourceBranchId ?? ''}
-              className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+              className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
             >
               <option value="" disabled>
                 — Seç —
@@ -63,7 +63,7 @@ export function TransferDrawer({ branches, variants, onClose, initial }: Props) 
               name="targetBranchId"
               required
               defaultValue={initial?.targetBranchId ?? ''}
-              className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+              className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
             >
               <option value="" disabled>
                 — Seç —
@@ -83,7 +83,7 @@ export function TransferDrawer({ branches, variants, onClose, initial }: Props) 
             name="variantId"
             required
             defaultValue={initial?.variantId ?? ''}
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             <option value="" disabled>
               — Seç —
@@ -106,7 +106,7 @@ export function TransferDrawer({ branches, variants, onClose, initial }: Props) 
             required
             defaultValue={initial?.quantity ?? ''}
             data-testid="quantity"
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
         </Field>
 
@@ -116,7 +116,7 @@ export function TransferDrawer({ branches, variants, onClose, initial }: Props) 
             name="note"
             rows={2}
             maxLength={500}
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
         </Field>
 
@@ -158,7 +158,7 @@ export function TransferDrawer({ branches, variants, onClose, initial }: Props) 
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-line bg-white px-5 py-3 text-sm font-bold text-ink-3 hover:bg-line-soft"
+            className="rounded-xl border border-line bg-paper px-5 py-3 text-sm font-bold text-ink-3 hover:bg-line-soft"
           >
             Vazgeç
           </button>

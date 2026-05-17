@@ -33,7 +33,7 @@ export function StorefrontForm({ initial }: Props) {
         </div>
       )}
 
-      <section className="rounded-2xl border border-line bg-white p-5">
+      <section className="rounded-2xl border border-line bg-paper p-5">
         <h2 className="mb-3 text-sm font-bold text-cart">🌐 Yayın durumu</h2>
         <label className="flex items-start gap-3">
           <input
@@ -54,7 +54,7 @@ export function StorefrontForm({ initial }: Props) {
         </label>
       </section>
 
-      <section className="rounded-2xl border border-line bg-white p-5">
+      <section className="rounded-2xl border border-line bg-paper p-5">
         <h2 className="mb-3 text-sm font-bold text-cart">📝 Hakkında</h2>
         <Field
           name="aboutContent"
@@ -76,7 +76,7 @@ export function StorefrontForm({ initial }: Props) {
         />
       </section>
 
-      <section className="rounded-2xl border border-line bg-white p-5">
+      <section className="rounded-2xl border border-line bg-paper p-5">
         <h2 className="mb-3 text-sm font-bold text-cart">📞 İletişim</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <Field
@@ -111,7 +111,7 @@ export function StorefrontForm({ initial }: Props) {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-line bg-white p-5">
+      <section className="rounded-2xl border border-line bg-paper p-5">
         <h2 className="mb-3 text-sm font-bold text-cart">🌐 Sosyal medya</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <Field
@@ -190,7 +190,7 @@ function Field({
           disabled={disabled}
           maxLength={maxLength}
           rows={4}
-          className="rounded-xl border-[1.5px] border-line bg-white px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="rounded-xl border-[1.5px] border-line bg-paper px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       ) : (
         <input
@@ -200,7 +200,7 @@ function Field({
           placeholder={placeholder}
           disabled={disabled}
           maxLength={maxLength}
-          className="rounded-xl border-[1.5px] border-line bg-white px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="rounded-xl border-[1.5px] border-line bg-paper px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       )}
     </label>

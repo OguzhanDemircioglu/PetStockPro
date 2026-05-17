@@ -81,7 +81,7 @@ export function EditForm({
       )}
 
       <form action={formAction} className="flex flex-col gap-6">
-        <section className="rounded-2xl border border-line bg-white p-6">
+        <section className="rounded-2xl border border-line bg-paper p-6">
           <h2 className="text-lg font-bold text-cart">📦 Temel bilgiler</h2>
           <div className="mt-4 flex flex-col gap-4">
             <div>
@@ -95,7 +95,7 @@ export function EditForm({
                 required
                 disabled={pending}
                 defaultValue={initial.name}
-                className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+                className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
               />
             </div>
 
@@ -109,7 +109,7 @@ export function EditForm({
                 rows={3}
                 disabled={pending}
                 defaultValue={initial.description ?? ''}
-                className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+                className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
               />
             </div>
 
@@ -123,7 +123,7 @@ export function EditForm({
                   name="categoryId"
                   disabled={pending}
                   defaultValue={initial.categoryId ?? ''}
-                  className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+                  className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 >
                   <option value="">— Seç —</option>
                   {categories.map((c) => (
@@ -143,7 +143,7 @@ export function EditForm({
                   name="brandId"
                   disabled={pending || brands.length === 0}
                   defaultValue={initial.brandId ?? ''}
-                  className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+                  className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 >
                   <option value="">{brands.length === 0 ? 'Henüz marka yok' : '— Seç —'}</option>
                   {brands.map((b) => (
@@ -166,7 +166,7 @@ export function EditForm({
           </div>
         </section>
 
-        <section className="rounded-2xl border border-line bg-white p-6">
+        <section className="rounded-2xl border border-line bg-paper p-6">
           <h2 className="text-lg font-bold text-cart">🏷 Default variant — hızlı düzenleme</h2>
           <p className="mt-1 text-xs text-ink-3">
             Vitrin&apos;de görünen birincil variant. Tüm variantları aşağıdaki <strong>Variantlar</strong> bölümünden yönetebilirsin.
@@ -185,7 +185,7 @@ export function EditForm({
                   required
                   disabled={pending}
                   defaultValue={initial.variant.valueLabel}
-                  className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+                  className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
               </div>
               <div>
@@ -199,7 +199,7 @@ export function EditForm({
                   required
                   disabled={pending}
                   defaultValue={initial.variant.sku}
-                  className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+                  className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
               </div>
             </div>
@@ -215,7 +215,7 @@ export function EditForm({
                 maxLength={13}
                 disabled={pending}
                 defaultValue={initial.variant.barcode ?? ''}
-                className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+                className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
               />
             </div>
 
@@ -232,7 +232,7 @@ export function EditForm({
                   required
                   disabled={pending}
                   defaultValue={initial.variant.costPrice}
-                  className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+                  className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
               </div>
               <div>
@@ -247,7 +247,7 @@ export function EditForm({
                   required
                   disabled={pending}
                   defaultValue={initial.variant.salePrice}
-                  className="w-full rounded-xl border-[1.5px] border-cat bg-white px-4 py-3 font-mono text-sm font-bold text-cart focus:outline-none focus:ring-4 focus:ring-cat/15"
+                  className="w-full rounded-xl border-[1.5px] border-cat bg-paper px-4 py-3 font-mono text-sm font-bold text-cart focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
               </div>
               <div>
@@ -262,7 +262,7 @@ export function EditForm({
                   max={9999}
                   disabled={pending}
                   defaultValue={initial.variant.threshold}
-                  className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+                  className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
               </div>
             </div>
@@ -279,7 +279,7 @@ export function EditForm({
           </button>
           <Link
             href={'/admin/products' as never}
-            className="rounded-xl border border-line bg-white px-6 py-3.5 text-sm font-bold text-ink-3 hover:bg-line-soft"
+            className="rounded-xl border border-line bg-paper px-6 py-3.5 text-sm font-bold text-ink-3 hover:bg-line-soft"
           >
             Vazgeç
           </Link>
@@ -296,7 +296,7 @@ export function EditForm({
         <form action={deleteProductAction.bind(null, productId)} className="mt-3">
           <button
             type="submit"
-            className="rounded-xl border border-danger/40 bg-white px-4 py-2 text-xs font-bold text-danger-7 hover:bg-danger-soft"
+            className="rounded-xl border border-danger/40 bg-paper px-4 py-2 text-xs font-bold text-danger-7 hover:bg-danger-soft"
           >
             Ürünü sil
           </button>

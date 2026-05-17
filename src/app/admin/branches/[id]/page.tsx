@@ -59,7 +59,7 @@ export default async function BranchDetailPage({
         </div>
         <Link
           href={`/admin/branches/${branch.id}/edit` as never}
-          className="rounded-xl border border-line bg-white px-4 py-2 text-xs font-bold text-cart hover:bg-cat-soft"
+          className="rounded-xl border border-line bg-paper px-4 py-2 text-xs font-bold text-cart hover:bg-cat-soft"
         >
           ✎ Şubeyi düzenle
         </Link>
@@ -83,7 +83,7 @@ export default async function BranchDetailPage({
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <article className="rounded-2xl border border-line bg-white p-5" data-testid="branch-variant-list">
+        <article className="rounded-2xl border border-line bg-paper p-5" data-testid="branch-variant-list">
           <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
             🐾 Variant stoğu
           </h2>
@@ -126,7 +126,7 @@ export default async function BranchDetailPage({
         </article>
 
         <article
-          className="rounded-2xl border border-line bg-white p-5"
+          className="rounded-2xl border border-line bg-paper p-5"
           data-testid="branch-movements"
         >
           <div className="mb-3 flex items-center justify-between">

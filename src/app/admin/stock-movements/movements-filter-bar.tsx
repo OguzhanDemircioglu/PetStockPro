@@ -56,7 +56,7 @@ export function MovementsFilterBar({ branches, variants, initial }: Props) {
 
   return (
     <section
-      className="rounded-2xl border border-line bg-white p-4"
+      className="rounded-2xl border border-line bg-paper p-4"
       data-testid="movements-filter-bar"
     >
       <div className="flex flex-wrap items-end gap-3">
@@ -73,7 +73,7 @@ export function MovementsFilterBar({ branches, variants, initial }: Props) {
             onChange={(e) => apply({ branch: e.target.value })}
             disabled={pending}
             data-testid="mv-branch"
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             <option value="">Tüm şubeler</option>
             {branches.map((b) => (
@@ -97,7 +97,7 @@ export function MovementsFilterBar({ branches, variants, initial }: Props) {
             onChange={(e) => apply({ variant: e.target.value })}
             disabled={pending}
             data-testid="mv-variant"
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             <option value="">Tüm variantlar</option>
             {variants.map((v) => (
@@ -121,7 +121,7 @@ export function MovementsFilterBar({ branches, variants, initial }: Props) {
             onChange={(e) => apply({ type: e.target.value })}
             disabled={pending}
             data-testid="mv-type"
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             {TYPE_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -137,7 +137,7 @@ export function MovementsFilterBar({ branches, variants, initial }: Props) {
             onClick={() => apply({ branch: '', variant: '', type: '' })}
             disabled={pending}
             data-testid="mv-filter-clear"
-            className="rounded-xl border border-line bg-white px-3 py-2.5 text-xs font-bold text-ink-3 hover:bg-line-soft disabled:opacity-50"
+            className="rounded-xl border border-line bg-paper px-3 py-2.5 text-xs font-bold text-ink-3 hover:bg-line-soft disabled:opacity-50"
           >
             × Temizle ({activeCount})
           </button>
@@ -154,7 +154,7 @@ export function MovementsFilterBar({ branches, variants, initial }: Props) {
           }`}
           download
           data-testid="mv-export"
-          className="ml-auto rounded-xl border border-line bg-white px-3 py-2.5 text-xs font-bold text-cart hover:bg-cat-soft"
+          className="ml-auto rounded-xl border border-line bg-paper px-3 py-2.5 text-xs font-bold text-cart hover:bg-cat-soft"
         >
           ⬇ CSV
         </a>

@@ -38,7 +38,7 @@ export function StocktakeDrawer({ branches, variants, onClose }: Props) {
             name="branchId"
             required
             defaultValue={branches[0]?.id ?? ''}
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             {branches.map((b) => (
               <option key={b.id} value={b.id}>
@@ -54,7 +54,7 @@ export function StocktakeDrawer({ branches, variants, onClose }: Props) {
             name="variantId"
             required
             defaultValue=""
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             <option value="" disabled>
               — Seç —
@@ -76,7 +76,7 @@ export function StocktakeDrawer({ branches, variants, onClose }: Props) {
             max={1000000}
             required
             data-testid="countedQty"
-            className="w-full rounded-xl border-[1.5px] border-cat bg-white px-4 py-3 font-mono text-lg font-bold text-cart focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-cat bg-paper px-4 py-3 font-mono text-lg font-bold text-cart focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
           <p className="mt-1 text-[11px] text-ink-3">
             0 yazarsan stok sıfırlanır. Sistemdeki değerle aynıysa kayıt yapılmaz.
@@ -90,7 +90,7 @@ export function StocktakeDrawer({ branches, variants, onClose }: Props) {
             type="text"
             maxLength={500}
             placeholder="Aylık sayım, anlık kontrol, ..."
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
         </Field>
 
@@ -100,7 +100,7 @@ export function StocktakeDrawer({ branches, variants, onClose }: Props) {
             name="note"
             rows={2}
             maxLength={500}
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
         </Field>
 
@@ -143,7 +143,7 @@ export function StocktakeDrawer({ branches, variants, onClose }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-line bg-white px-5 py-3 text-sm font-bold text-ink-3 hover:bg-line-soft"
+            className="rounded-xl border border-line bg-paper px-5 py-3 text-sm font-bold text-ink-3 hover:bg-line-soft"
           >
             Vazgeç
           </button>

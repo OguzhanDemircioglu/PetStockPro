@@ -218,7 +218,7 @@ export function SupplierForm({ action, initial, submitLabel }: Props) {
         </button>
         <Link
           href={'/admin/suppliers' as never}
-          className="rounded-xl border border-line bg-white px-6 py-3 text-sm font-bold text-ink-3 hover:bg-line-soft"
+          className="rounded-xl border border-line bg-paper px-6 py-3 text-sm font-bold text-ink-3 hover:bg-line-soft"
         >
           Vazgeç
         </Link>
@@ -228,7 +228,7 @@ export function SupplierForm({ action, initial, submitLabel }: Props) {
 }
 
 const fieldClasses =
-  'w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15';
+  'w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15';
 
 function Field({
   label,
@@ -254,7 +254,7 @@ function Field({
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-2xl border border-line bg-white p-5">
+    <section className="rounded-2xl border border-line bg-paper p-5">
       <h2 className="mb-3 text-base font-bold text-cart">{title}</h2>
       <div className="flex flex-col gap-3">{children}</div>
     </section>

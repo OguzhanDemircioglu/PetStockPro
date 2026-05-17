@@ -74,7 +74,7 @@ export function FilterBar({ categories, brands, initial }: Props) {
 
   return (
     <section
-      className="rounded-2xl border border-line bg-white p-4"
+      className="rounded-2xl border border-line bg-paper p-4"
       data-testid="product-filter-bar"
     >
       <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-3">
@@ -92,7 +92,7 @@ export function FilterBar({ categories, brands, initial }: Props) {
             onChange={(e) => setQ(e.target.value)}
             placeholder="Ürün adı veya SKU"
             data-testid="filter-q"
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
         </div>
 
@@ -108,7 +108,7 @@ export function FilterBar({ categories, brands, initial }: Props) {
             value={initial.category}
             onChange={(e) => apply({ category: e.target.value })}
             data-testid="filter-category"
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             <option value="">Tümü</option>
             {categories.map((c) => (
@@ -132,7 +132,7 @@ export function FilterBar({ categories, brands, initial }: Props) {
             onChange={(e) => apply({ brand: e.target.value })}
             disabled={brands.length === 0}
             data-testid="filter-brand"
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15 disabled:opacity-60"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15 disabled:opacity-60"
           >
             <option value="">{brands.length === 0 ? 'Marka yok' : 'Tümü'}</option>
             {brands.map((b) => (
@@ -156,7 +156,7 @@ export function FilterBar({ categories, brands, initial }: Props) {
             onChange={(e) =>
               apply({ status: e.target.value as Initial['status'] })
             }
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             <option value="all">Hepsi</option>
             <option value="active">Aktif</option>
@@ -177,7 +177,7 @@ export function FilterBar({ categories, brands, initial }: Props) {
             onChange={(e) =>
               apply({ vitrin: e.target.value as Initial['vitrin'] })
             }
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             <option value="">Hepsi</option>
             <option value="on">✓ Yayında</option>
@@ -201,7 +201,7 @@ export function FilterBar({ categories, brands, initial }: Props) {
               apply({ q: '', category: '', brand: '', status: 'all', vitrin: '' });
             }}
             data-testid="filter-clear"
-            className="rounded-xl border border-line bg-white px-3 py-2.5 text-xs font-bold text-ink-3 hover:bg-line-soft"
+            className="rounded-xl border border-line bg-paper px-3 py-2.5 text-xs font-bold text-ink-3 hover:bg-line-soft"
           >
             × Temizle ({activeFilterCount})
           </button>
@@ -212,7 +212,7 @@ export function FilterBar({ categories, brands, initial }: Props) {
           }`}
           download
           data-testid="products-export"
-          className="ml-auto rounded-xl border border-line bg-white px-3 py-2.5 text-xs font-bold text-cart hover:bg-cat-soft"
+          className="ml-auto rounded-xl border border-line bg-paper px-3 py-2.5 text-xs font-bold text-cart hover:bg-cat-soft"
         >
           ⬇ CSV
         </a>

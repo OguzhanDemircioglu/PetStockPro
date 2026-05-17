@@ -116,7 +116,7 @@ export default async function ReportsPage({
                 className={`rounded-xl border px-3 py-1.5 text-xs font-bold ${
                   d === days
                     ? 'border-cat bg-cat text-white'
-                    : 'border-line bg-white text-ink-3 hover:bg-line-soft'
+                    : 'border-line bg-paper text-ink-3 hover:bg-line-soft'
                 }`}
               >
                 {d} gün
@@ -128,7 +128,7 @@ export default async function ReportsPage({
               href={`/admin/reports/export?days=${days}&kind=daily`}
               download
               data-testid="export-daily"
-              className="rounded-xl border border-line bg-white px-3 py-1.5 text-xs font-bold text-cart hover:bg-cat-soft"
+              className="rounded-xl border border-line bg-paper px-3 py-1.5 text-xs font-bold text-cart hover:bg-cat-soft"
             >
               ⬇ Günlük CSV
             </a>
@@ -136,7 +136,7 @@ export default async function ReportsPage({
               href={`/admin/reports/export?days=${days}&kind=top`}
               download
               data-testid="export-top"
-              className="rounded-xl border border-line bg-white px-3 py-1.5 text-xs font-bold text-cart hover:bg-cat-soft"
+              className="rounded-xl border border-line bg-paper px-3 py-1.5 text-xs font-bold text-cart hover:bg-cat-soft"
             >
               ⬇ Top variant CSV
             </a>
@@ -599,7 +599,7 @@ function AgingBandCard({
           ? 'border-danger/30 bg-danger-soft/40'
           : band.count > 0
             ? 'border-cat/30 bg-cat-soft/40'
-            : 'border-line bg-white'
+            : 'border-line bg-paper'
       }`}
     >
       <span className="text-[10px] font-bold uppercase tracking-wider text-ink-3">
@@ -781,7 +781,7 @@ function ComparisonCard({
   };
 
   return (
-    <article className="rounded-2xl border border-line bg-white p-5">
+    <article className="rounded-2xl border border-line bg-paper p-5">
       <h3 className="text-[11px] font-bold uppercase tracking-wider text-cart">{label}</h3>
       <ul className="mt-3 flex flex-col divide-y divide-line-soft text-[12px]">
         <li className="flex items-center justify-between py-2">
@@ -868,7 +868,7 @@ function Card({
 }) {
   return (
     <article
-      className={`rounded-2xl border border-line bg-white p-5 ${className ?? ''}`}
+      className={`rounded-2xl border border-line bg-paper p-5 ${className ?? ''}`}
     >
       <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-ink-3">
         {title}

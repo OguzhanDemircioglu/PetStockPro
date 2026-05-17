@@ -42,8 +42,8 @@ export function DrawerShell({ title, subtitle, onClose, children, testid }: Prop
         className="flex-1 bg-ink/40 backdrop-blur-sm"
       />
       {/* Panel */}
-      <aside className="flex h-full w-full max-w-lg flex-col overflow-y-auto bg-white shadow-2xl">
-        <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-line bg-white px-6 py-5">
+      <aside className="flex h-full w-full max-w-lg flex-col overflow-y-auto bg-paper shadow-2xl">
+        <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-line bg-paper px-6 py-5">
           <div>
             <h2 className="text-xl font-bold text-cart">{title}</h2>
             {subtitle && (

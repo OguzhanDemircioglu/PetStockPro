@@ -44,7 +44,7 @@ export default async function BrandsPage({
           <a
             href="/admin/brands/export"
             download
-            className="rounded-xl border border-line bg-white px-3 py-2.5 text-xs font-bold text-cart hover:bg-cat-soft"
+            className="rounded-xl border border-line bg-paper px-3 py-2.5 text-xs font-bold text-cart hover:bg-cat-soft"
           >
             ⬇ CSV
           </a>
@@ -77,12 +77,12 @@ export default async function BrandsPage({
             defaultValue={params.q ?? ''}
             placeholder="🔍 Marka ara..."
             data-testid="brand-search"
-            className="flex-1 rounded-xl border-[1.5px] border-line bg-white px-4 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="flex-1 rounded-xl border-[1.5px] border-line bg-paper px-4 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
           {q && (
             <a
               href="/admin/brands"
-              className="rounded-xl border border-line bg-white px-3 py-2.5 text-xs font-bold text-ink-3 hover:bg-line-soft"
+              className="rounded-xl border border-line bg-paper px-3 py-2.5 text-xs font-bold text-ink-3 hover:bg-line-soft"
             >
               × Temizle
             </a>
@@ -100,7 +100,7 @@ export default async function BrandsPage({
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-line bg-white">
+        <div className="overflow-hidden rounded-2xl border border-line bg-paper">
           <table className="w-full text-sm">
             <thead className="bg-paper">
               <tr className="text-left text-[10.5px] font-bold uppercase tracking-wider text-ink-3">

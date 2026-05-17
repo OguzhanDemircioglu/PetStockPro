@@ -63,7 +63,7 @@ export default async function StocktakeListPage() {
                   key={s.id}
                   href={`/admin/stocktake/${s.id}` as never}
                   data-stocktake-id={s.id}
-                  className="group rounded-2xl border-2 border-cat/40 bg-white p-5 hover:border-cat hover:shadow-[var(--shadow-cat)] transition-shadow"
+                  className="group rounded-2xl border-2 border-cat/40 bg-paper p-5 hover:border-cat hover:shadow-[var(--shadow-cat)] transition-shadow"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -140,7 +140,7 @@ export default async function StocktakeListPage() {
           <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
             Geçmiş sayımlar
           </h2>
-          <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+          <div className="overflow-x-auto rounded-2xl border border-line bg-paper">
             <table className="w-full text-sm">
               <thead className="bg-paper">
                 <tr className="text-left text-[10.5px] font-bold uppercase tracking-wider text-ink-3">

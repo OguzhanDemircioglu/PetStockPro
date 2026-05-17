@@ -43,7 +43,7 @@ export function BrandForm({ action, initial, submitLabel }: Props) {
           defaultValue={initial?.name ?? ''}
           placeholder="Royal Canin, Hill's, Catit ..."
           data-testid="brand-name"
-          className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>
 
@@ -61,7 +61,7 @@ export function BrandForm({ action, initial, submitLabel }: Props) {
           maxLength={500}
           defaultValue={initial?.logoUrl ?? ''}
           placeholder="https://..."
-          className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
         <p className="mt-1 text-[11px] text-ink-4">
           Image upload Sprint 3.3 sonrası. Şimdilik tam URL.
@@ -98,7 +98,7 @@ export function BrandForm({ action, initial, submitLabel }: Props) {
         </button>
         <Link
           href={'/admin/brands' as never}
-          className="rounded-xl border border-line bg-white px-6 py-3 text-sm font-bold text-ink-3 hover:bg-line-soft"
+          className="rounded-xl border border-line bg-paper px-6 py-3 text-sm font-bold text-ink-3 hover:bg-line-soft"
         >
           Vazgeç
         </Link>

@@ -47,7 +47,7 @@ export function DbInspectorClient() {
 
   return (
     <div className="flex flex-col gap-4">
-      <form action={formAction} className="rounded-2xl border border-line bg-white p-5">
+      <form action={formAction} className="rounded-2xl border border-line bg-paper p-5">
         <label htmlFor="sql" className="mb-2 block text-[11.5px] font-bold uppercase tracking-wider text-cart">
           SQL Query (SELECT-only · max 100 satır · 5sn timeout)
         </label>
@@ -98,7 +98,7 @@ export function DbInspectorClient() {
                   const inputEvent = new Event('input', { bubbles: true });
                   ta?.dispatchEvent(inputEvent);
                 }}
-                className="block w-full rounded-lg border border-line bg-white px-3 py-2 text-left text-[11.5px] hover:border-cat hover:bg-cat-soft/30 transition-colors"
+                className="block w-full rounded-lg border border-line bg-paper px-3 py-2 text-left text-[11.5px] hover:border-cat hover:bg-cat-soft/30 transition-colors"
               >
                 <span className="font-bold text-cart">{q.label}</span>
                 <code className="block mt-1 text-[10px] text-ink-3 truncate">{q.sql}</code>
@@ -127,7 +127,7 @@ export function DbInspectorClient() {
 
       {state?.ok && state.rows && (
         <article
-          className="rounded-2xl border border-arrow/30 bg-white p-4"
+          className="rounded-2xl border border-arrow/30 bg-paper p-4"
           data-testid="result-panel"
         >
           <div className="mb-3 flex items-center justify-between text-[11.5px] text-ink-3">

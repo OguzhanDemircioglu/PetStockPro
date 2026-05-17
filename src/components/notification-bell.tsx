@@ -7,7 +7,7 @@ export function NotificationBell({ unreadCount }: { unreadCount: number }) {
       data-notif-bell
       data-unread-count={unreadCount}
       aria-label={`Bildirimler${unreadCount > 0 ? ` (${unreadCount} okunmamış)` : ''}`}
-      className="relative grid h-9 w-9 place-items-center rounded-xl border border-line bg-white text-lg hover:bg-cat-soft"
+      className="relative grid h-9 w-9 place-items-center rounded-xl border border-line bg-paper text-lg hover:bg-cat-soft"
     >
       🔔
       {unreadCount > 0 && (

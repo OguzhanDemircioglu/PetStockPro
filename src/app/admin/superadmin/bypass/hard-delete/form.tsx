@@ -22,7 +22,7 @@ export function HardDeleteForm() {
           <Link href={'/admin/products' as never} className="rounded-xl bg-cat px-4 py-2 text-xs font-bold text-white">
             Ürünler
           </Link>
-          <Link href={'/admin/audit-log' as never} className="rounded-xl border border-line bg-white px-4 py-2 text-xs font-bold text-ink-2">
+          <Link href={'/admin/audit-log' as never} className="rounded-xl border border-line bg-paper px-4 py-2 text-xs font-bold text-ink-2">
             Audit log
           </Link>
         </div>
@@ -31,7 +31,7 @@ export function HardDeleteForm() {
   }
 
   return (
-    <form action={formAction} className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-6">
+    <form action={formAction} className="flex flex-col gap-4 rounded-2xl border border-line bg-paper p-6">
       <div>
         <label htmlFor="productId" className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
           Ürün UUID *
@@ -44,7 +44,7 @@ export function HardDeleteForm() {
           placeholder="00000000-0000-0000-0000-000000000000"
           disabled={pending}
           data-testid="product-id"
-          className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-2.5 font-mono text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-2.5 font-mono text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
         <p className="mt-1 text-[10.5px] text-ink-4">
           Ürün listesinden soft-deleted ürünün ID&apos;sini al (products.deletedAt set olmalı).
@@ -65,7 +65,7 @@ export function HardDeleteForm() {
           placeholder="Örn: Test ürünü yanlış kaydedildi, tamamen kaldırılması gerek"
           disabled={pending}
           data-testid="reason"
-          className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>
 
@@ -82,7 +82,7 @@ export function HardDeleteForm() {
           placeholder="••••••••"
           disabled={pending}
           data-testid="superadmin-password"
-          className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-2.5 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-2.5 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>
 

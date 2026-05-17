@@ -138,7 +138,7 @@ export default async function ProductsPage({
           </Link>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-line bg-white">
+        <div className="overflow-hidden rounded-2xl border border-line bg-paper">
           <table className="w-full">
             <thead className="bg-paper">
               <tr className="text-left text-[10.5px] font-bold uppercase tracking-wider text-ink-3">

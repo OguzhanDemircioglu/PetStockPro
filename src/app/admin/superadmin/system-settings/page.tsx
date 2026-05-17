@@ -99,7 +99,7 @@ export default async function SystemSettingsPage() {
               <article
                 key={k}
                 data-plan={k}
-                className="rounded-2xl border border-line bg-white p-4"
+                className="rounded-2xl border border-line bg-paper p-4"
               >
                 <div className="text-[11.5px] font-bold uppercase text-cart">
                   {PLAN_LABELS[k]}
@@ -125,7 +125,7 @@ export default async function SystemSettingsPage() {
         <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
           🔑 Environment variable durumu ({envChecks.filter((e) => e.present).length}/{envChecks.length})
         </h2>
-        <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+        <div className="overflow-x-auto rounded-2xl border border-line bg-paper">
           <table className="w-full border-collapse text-[12px]">
             <thead>
               <tr>
@@ -156,7 +156,7 @@ export default async function SystemSettingsPage() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <article data-testid="db-extensions" className="rounded-2xl border border-line bg-white p-4">
+        <article data-testid="db-extensions" className="rounded-2xl border border-line bg-paper p-4">
           <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
             🗄 DB Extension&apos;ları + Tablo sayısı
           </h2>
@@ -180,7 +180,7 @@ export default async function SystemSettingsPage() {
           )}
         </article>
 
-        <article data-testid="vat-rates" className="rounded-2xl border border-line bg-white p-4">
+        <article data-testid="vat-rates" className="rounded-2xl border border-line bg-paper p-4">
           <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
             💰 KDV oranları (TR 2024+)
           </h2>
@@ -199,7 +199,7 @@ export default async function SystemSettingsPage() {
         </article>
       </section>
 
-      <section data-testid="default-categories" className="rounded-2xl border border-line bg-white p-4">
+      <section data-testid="default-categories" className="rounded-2xl border border-line bg-paper p-4">
         <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
           📂 Default kategoriler ({DEFAULT_CATEGORIES.length}) — her yeni tenant&apos;a otomatik seed
         </h2>

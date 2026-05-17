@@ -59,7 +59,7 @@ export function ReverseButton({ movementId, withinWindow, isTransfer }: Props) {
       disabled={pending}
       data-testid={`reverse-${movementId}`}
       title="24 saat içinde geri alabilirsin"
-      className="rounded border border-line bg-white px-2 py-0.5 text-[10px] font-bold text-ink-2 hover:border-cat hover:text-cart disabled:opacity-50"
+      className="rounded border border-line bg-paper px-2 py-0.5 text-[10px] font-bold text-ink-2 hover:border-cat hover:text-cart disabled:opacity-50"
     >
       {pending ? '...' : '↶ Geri al'}
     </button>

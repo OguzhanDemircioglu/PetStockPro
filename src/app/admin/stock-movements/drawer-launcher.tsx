@@ -59,7 +59,7 @@ export function DrawerLauncher({
         <LaunchButton
           onClick={() => setOpen('transfer')}
           disabled={disabled || branches.length < 2}
-          className="border-2 border-line bg-white text-cart hover:bg-line-soft"
+          className="border-2 border-line bg-paper text-cart hover:bg-line-soft"
           title={
             branches.length < 2
               ? 'Transfer için en az 2 şube gerekli'
@@ -72,7 +72,7 @@ export function DrawerLauncher({
         <LaunchButton
           onClick={() => setOpen('stocktake')}
           disabled={disabled}
-          className="border-2 border-line bg-white text-cart hover:bg-line-soft"
+          className="border-2 border-line bg-paper text-cart hover:bg-line-soft"
           testid="open-stocktake"
         >
           📋 Sayım

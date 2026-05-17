@@ -59,7 +59,7 @@ export function StocktakeWorkflow({ detail }: { detail: StocktakeDetail }) {
 
   return (
     <>
-      <header className="rounded-2xl border border-line bg-white p-5">
+      <header className="rounded-2xl border border-line bg-paper p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
@@ -130,7 +130,7 @@ export function StocktakeWorkflow({ detail }: { detail: StocktakeDetail }) {
       </header>
 
       {isOpen && (
-        <section className="flex flex-wrap items-end justify-between gap-3 rounded-2xl border border-line bg-white p-4">
+        <section className="flex flex-wrap items-end justify-between gap-3 rounded-2xl border border-line bg-paper p-4">
           <div className="flex flex-wrap gap-2">
             {(
               [
@@ -149,7 +149,7 @@ export function StocktakeWorkflow({ detail }: { detail: StocktakeDetail }) {
                 className={
                   filter === key
                     ? 'rounded-full bg-cat px-3 py-1.5 text-[11.5px] font-bold text-white'
-                    : 'rounded-full border border-line bg-white px-3 py-1.5 text-[11.5px] font-bold text-ink-3 hover:bg-line-soft'
+                    : 'rounded-full border border-line bg-paper px-3 py-1.5 text-[11.5px] font-bold text-ink-3 hover:bg-line-soft'
                 }
               >
                 {label} ({count})
@@ -169,7 +169,7 @@ export function StocktakeWorkflow({ detail }: { detail: StocktakeDetail }) {
                 onClick={() => setViewMode('table')}
                 data-view-mode="table"
                 className={`px-3 py-1.5 text-[11px] font-bold ${
-                  viewMode === 'table' ? 'bg-cat text-white' : 'bg-white text-ink-3 hover:bg-line-soft'
+                  viewMode === 'table' ? 'bg-cat text-white' : 'bg-paper text-ink-3 hover:bg-line-soft'
                 }`}
               >
                 📋 Tablo
@@ -181,7 +181,7 @@ export function StocktakeWorkflow({ detail }: { detail: StocktakeDetail }) {
                 onClick={() => setViewMode('card')}
                 data-view-mode="card"
                 className={`px-3 py-1.5 text-[11px] font-bold ${
-                  viewMode === 'card' ? 'bg-cat text-white' : 'bg-white text-ink-3 hover:bg-line-soft'
+                  viewMode === 'card' ? 'bg-cat text-white' : 'bg-paper text-ink-3 hover:bg-line-soft'
                 }`}
               >
                 📱 Tek tek
@@ -192,7 +192,7 @@ export function StocktakeWorkflow({ detail }: { detail: StocktakeDetail }) {
               placeholder="🔍 Ara: ürün, variant, SKU..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="min-w-[200px] rounded-xl border-[1.5px] border-line bg-white px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+              className="min-w-[200px] rounded-xl border-[1.5px] border-line bg-paper px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
             />
           </div>
         </section>
@@ -205,7 +205,7 @@ export function StocktakeWorkflow({ detail }: { detail: StocktakeDetail }) {
           editable={isOpen}
         />
       ) : (
-        <section className="overflow-x-auto rounded-2xl border border-line bg-white">
+        <section className="overflow-x-auto rounded-2xl border border-line bg-paper">
           <table className="w-full text-sm">
             <thead className="bg-paper">
               <tr className="text-left text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
@@ -303,7 +303,7 @@ function SwipeCardView({
 
   if (!item) {
     return (
-      <section className="rounded-2xl border border-line bg-white p-8 text-center text-sm text-ink-3">
+      <section className="rounded-2xl border border-line bg-paper p-8 text-center text-sm text-ink-3">
         Filtreye uyan kayıt yok
       </section>
     );
@@ -338,7 +338,7 @@ function SwipeCardView({
         }}
         data-card-index={safeIndex}
         data-item-id={item.id}
-        className="select-none rounded-2xl border border-line bg-white p-6 shadow-sm"
+        className="select-none rounded-2xl border border-line bg-paper p-6 shadow-sm"
       >
         <SwipeCard
           key={item.id}
@@ -357,7 +357,7 @@ function SwipeCardView({
           onClick={() => go(-1)}
           disabled={safeIndex === 0}
           data-action="prev-card"
-          className="flex-1 rounded-xl border border-line bg-white px-4 py-3 text-sm font-bold text-cart hover:bg-cat-soft disabled:opacity-40"
+          className="flex-1 rounded-xl border border-line bg-paper px-4 py-3 text-sm font-bold text-cart hover:bg-cat-soft disabled:opacity-40"
         >
           ← Önceki
         </button>
@@ -381,7 +381,7 @@ function SwipeCardView({
           onClick={() => go(1)}
           disabled={safeIndex === items.length - 1}
           data-action="next-card"
-          className="flex-1 rounded-xl border border-line bg-white px-4 py-3 text-sm font-bold text-cart hover:bg-cat-soft disabled:opacity-40"
+          className="flex-1 rounded-xl border border-line bg-paper px-4 py-3 text-sm font-bold text-cart hover:bg-cat-soft disabled:opacity-40"
         >
           Sonraki →
         </button>
@@ -519,7 +519,7 @@ function SwipeCard({
           }}
           placeholder="0"
           data-counted-input
-          className="mt-1 w-full rounded-xl border-2 border-line bg-white px-4 py-4 text-right font-mono text-3xl font-bold focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="mt-1 w-full rounded-xl border-2 border-line bg-paper px-4 py-4 text-right font-mono text-3xl font-bold focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>
 
@@ -540,7 +540,7 @@ function SwipeCard({
             disabled={!editable || pending}
             data-reason-select
             className={`mt-1 w-full rounded-xl border-2 px-3 py-3 text-sm focus:border-cat focus:outline-none ${
-              needsReason ? 'border-danger/40 bg-danger-soft/30' : 'border-line bg-white'
+              needsReason ? 'border-danger/40 bg-danger-soft/30' : 'border-line bg-paper'
             }`}
           >
             {REASON_OPTIONS.map((o) => (
@@ -648,7 +648,7 @@ function ItemRow({
               }
             }}
             data-counted-input
-            className="w-20 rounded-lg border border-line bg-white px-2 py-1 text-right font-mono text-sm focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
+            className="w-20 rounded-lg border border-line bg-paper px-2 py-1 text-right font-mono text-sm focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
           />
           {editable && isDirty && counted !== '' && (
             <button
@@ -684,8 +684,8 @@ function ItemRow({
             data-reason-select
             className={
               needsReason
-                ? 'rounded-lg border border-danger/40 bg-white px-2 py-1 text-xs focus:border-cat focus:outline-none'
-                : 'rounded-lg border border-line bg-white px-2 py-1 text-xs focus:border-cat focus:outline-none'
+                ? 'rounded-lg border border-danger/40 bg-paper px-2 py-1 text-xs focus:border-cat focus:outline-none'
+                : 'rounded-lg border border-line bg-paper px-2 py-1 text-xs focus:border-cat focus:outline-none'
             }
           >
             {REASON_OPTIONS.map((o) => (
@@ -790,7 +790,7 @@ function CancelButton({ stocktakeId }: { stocktakeId: string }) {
         onClick={submit}
         disabled={pending}
         data-action="cancel"
-        className="rounded-xl border border-line bg-white px-5 py-2.5 text-sm font-bold text-ink-3 hover:bg-danger-soft hover:text-danger-7 disabled:opacity-50"
+        className="rounded-xl border border-line bg-paper px-5 py-2.5 text-sm font-bold text-ink-3 hover:bg-danger-soft hover:text-danger-7 disabled:opacity-50"
       >
         {pending ? 'İptal ediliyor...' : '× İptal'}
       </button>

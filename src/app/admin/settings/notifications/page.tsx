@@ -39,7 +39,7 @@ export default async function NotificationsPage({
         {params.toggled === '0' && (
           <div
             data-testid="banner-disabled"
-            className="rounded-xl border border-line bg-white px-4 py-3 text-sm text-ink-2"
+            className="rounded-xl border border-line bg-paper px-4 py-3 text-sm text-ink-2"
           >
             Telegram bildirimleri kapatıldı.
           </div>
@@ -53,7 +53,7 @@ export default async function NotificationsPage({
           </div>
         )}
 
-        <section className="rounded-2xl border border-line bg-white p-5">
+        <section className="rounded-2xl border border-line bg-paper p-5">
           <header className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-base font-bold text-cart">🤖 Telegram bot</h2>
@@ -75,7 +75,7 @@ export default async function NotificationsPage({
                 className={
                   settings?.enabled
                     ? 'rounded-full bg-arrow-7 px-4 py-1.5 text-[12px] font-bold text-white shadow-sm hover:bg-arrow-6'
-                    : 'rounded-full border border-line bg-white px-4 py-1.5 text-[12px] font-bold text-ink-3 hover:border-cat disabled:opacity-60'
+                    : 'rounded-full border border-line bg-paper px-4 py-1.5 text-[12px] font-bold text-ink-3 hover:border-cat disabled:opacity-60'
                 }
               >
                 {settings?.enabled ? '✓ Aktif (kapat)' : 'Pasif (aç)'}

@@ -118,7 +118,7 @@ export default async function StockMovementsPage({
           {activeFilter && (
             <Link
               href={'/admin/stock-movements' as never}
-              className="mt-6 inline-flex items-center gap-2 rounded-xl border border-line bg-white px-4 py-2 text-xs font-bold text-ink-3 hover:bg-line-soft"
+              className="mt-6 inline-flex items-center gap-2 rounded-xl border border-line bg-paper px-4 py-2 text-xs font-bold text-ink-3 hover:bg-line-soft"
             >
               × Filtreyi temizle
             </Link>

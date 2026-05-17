@@ -87,7 +87,7 @@ export default async function LowStockPage({
         method="get"
         action="/admin/low-stock"
         data-testid="low-stock-filter"
-        className="flex flex-wrap items-end gap-3 rounded-2xl border border-line bg-white p-4"
+        className="flex flex-wrap items-end gap-3 rounded-2xl border border-line bg-paper p-4"
       >
         <div className="min-w-[200px] flex-1">
           <label
@@ -101,7 +101,7 @@ export default async function LowStockPage({
             name="category"
             defaultValue={filters.categoryId ?? ''}
             data-testid="ls-category"
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             <option value="">Tüm kategoriler</option>
             {categoryList.map((c) => (
@@ -123,7 +123,7 @@ export default async function LowStockPage({
             name="branch"
             defaultValue={filters.branchId ?? ''}
             data-testid="ls-branch"
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             <option value="">Tüm şubeler</option>
             {branchList.map((b) => (
@@ -142,7 +142,7 @@ export default async function LowStockPage({
         {hasFilter && (
           <Link
             href={'/admin/low-stock' as never}
-            className="rounded-xl border border-line bg-white px-3 py-2.5 text-xs font-bold text-ink-3 hover:bg-line-soft"
+            className="rounded-xl border border-line bg-paper px-3 py-2.5 text-xs font-bold text-ink-3 hover:bg-line-soft"
             data-testid="ls-clear"
           >
             × Temizle
@@ -176,7 +176,7 @@ export default async function LowStockPage({
                 <div className="flex flex-wrap gap-2">
                   <Link
                     href={`/admin/stock-movements?variant=${variantId}` as never}
-                    className="rounded-xl border border-line bg-white px-3 py-2 text-[11px] font-bold text-cart hover:bg-cat-soft"
+                    className="rounded-xl border border-line bg-paper px-3 py-2 text-[11px] font-bold text-cart hover:bg-cat-soft"
                     data-testid={`history-${variantId}`}
                   >
                     🕒 Geçmiş
@@ -198,7 +198,7 @@ export default async function LowStockPage({
                     <div
                       key={`${b.variantId}-${b.branchId}`}
                       data-branch-id={b.branchId}
-                      className={`rounded-xl border bg-white p-3 ${
+                      className={`rounded-xl border bg-paper p-3 ${
                         isZero ? 'border-danger/40' : 'border-line'
                       }`}
                     >
@@ -268,7 +268,7 @@ export default async function LowStockPage({
                             `/admin/stock-movements?openTransfer=1&from=${s.sourceBranchId}&to=${s.targetBranchId}&variant=${variantId}&qty=${s.suggestedQty}` as never
                           }
                           data-testid={`open-transfer-${s.sourceBranchId}-${s.targetBranchId}`}
-                          className="rounded-lg border border-arrow/40 bg-white px-2 py-1 text-[10px] font-bold text-arrow-7 hover:bg-arrow-soft"
+                          className="rounded-lg border border-arrow/40 bg-paper px-2 py-1 text-[10px] font-bold text-arrow-7 hover:bg-arrow-soft"
                         >
                           ▶ {s.sourceBranchName} → {s.targetBranchName} ({s.suggestedQty} ad)
                         </Link>

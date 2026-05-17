@@ -33,7 +33,7 @@ export function FlagButton({ feedbackId }: { feedbackId: string }) {
         type="button"
         onClick={() => setOpen(true)}
         data-flag-trigger={feedbackId}
-        className="rounded-lg border border-danger/40 bg-white px-2 py-1 text-[10.5px] font-bold text-danger-7 hover:bg-danger hover:text-white transition-colors"
+        className="rounded-lg border border-danger/40 bg-paper px-2 py-1 text-[10.5px] font-bold text-danger-7 hover:bg-danger hover:text-white transition-colors"
       >
         🚩 Flag
       </button>
@@ -54,7 +54,7 @@ export function FlagButton({ feedbackId }: { feedbackId: string }) {
         placeholder="Spam / küfür / yalan…"
         disabled={pending}
         data-flag-reason
-        className="w-48 rounded-lg border-[1.5px] border-line bg-white px-2 py-1 text-[11px] focus:border-danger focus:outline-none focus:ring-2 focus:ring-danger/15"
+        className="w-48 rounded-lg border-[1.5px] border-line bg-paper px-2 py-1 text-[11px] focus:border-danger focus:outline-none focus:ring-2 focus:ring-danger/15"
       />
       <div className="flex gap-1">
         <button
@@ -72,7 +72,7 @@ export function FlagButton({ feedbackId }: { feedbackId: string }) {
             setReason('');
           }}
           disabled={pending}
-          className="rounded-lg border border-line bg-white px-2 py-1 text-[10.5px] font-bold text-ink-3"
+          className="rounded-lg border border-line bg-paper px-2 py-1 text-[10.5px] font-bold text-ink-3"
         >
           Vazgeç
         </button>
@@ -121,7 +121,7 @@ export function UnflagButton({ feedbackId }: { feedbackId: string }) {
         type="submit"
         disabled={pending}
         data-unflag-trigger={feedbackId}
-        className="rounded-lg border border-arrow/40 bg-white px-2 py-1 text-[10.5px] font-bold text-arrow-7 hover:bg-arrow hover:text-white transition-colors disabled:opacity-40"
+        className="rounded-lg border border-arrow/40 bg-paper px-2 py-1 text-[10.5px] font-bold text-arrow-7 hover:bg-arrow hover:text-white transition-colors disabled:opacity-40"
       >
         {pending ? '...' : '↶ Flag kaldır'}
       </button>
@@ -165,7 +165,7 @@ export function ResolveReportButton({ reportId }: { reportId: string }) {
         type="button"
         onClick={() => setOpen(true)}
         data-resolve-trigger={reportId}
-        className="rounded-lg border border-cat/40 bg-white px-2 py-1 text-[10.5px] font-bold text-cart hover:bg-cat hover:text-white transition-colors"
+        className="rounded-lg border border-cat/40 bg-paper px-2 py-1 text-[10.5px] font-bold text-cart hover:bg-cat hover:text-white transition-colors"
       >
         ⚖ Ele al
       </button>
@@ -187,7 +187,7 @@ export function ResolveReportButton({ reportId }: { reportId: string }) {
         }
         disabled={pending}
         data-resolve-resolution
-        className="w-32 rounded-lg border-[1.5px] border-line bg-white px-2 py-1 text-[11px] focus:border-cat focus:outline-none"
+        className="w-32 rounded-lg border-[1.5px] border-line bg-paper px-2 py-1 text-[11px] focus:border-cat focus:outline-none"
       >
         <option value="resolved">✓ Çözüldü</option>
         <option value="dismissed">× Geçersiz</option>
@@ -201,7 +201,7 @@ export function ResolveReportButton({ reportId }: { reportId: string }) {
         placeholder="Not (opsiyonel)"
         disabled={pending}
         data-resolve-note
-        className="w-48 rounded-lg border-[1.5px] border-line bg-white px-2 py-1 text-[11px] focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
+        className="w-48 rounded-lg border-[1.5px] border-line bg-paper px-2 py-1 text-[11px] focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
       />
       <div className="flex gap-1">
         <button
@@ -219,7 +219,7 @@ export function ResolveReportButton({ reportId }: { reportId: string }) {
             setNote('');
           }}
           disabled={pending}
-          className="rounded-lg border border-line bg-white px-2 py-1 text-[10.5px] font-bold text-ink-3"
+          className="rounded-lg border border-line bg-paper px-2 py-1 text-[10.5px] font-bold text-ink-3"
         >
           Vazgeç
         </button>

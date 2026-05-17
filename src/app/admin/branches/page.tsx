@@ -35,7 +35,7 @@ export default async function BranchesPage({
           <a
             href="/admin/branches/export"
             download
-            className="rounded-xl border border-line bg-white px-3 py-2.5 text-xs font-bold text-cart hover:bg-cat-soft"
+            className="rounded-xl border border-line bg-paper px-3 py-2.5 text-xs font-bold text-cart hover:bg-cat-soft"
           >
             ⬇ CSV
           </a>
@@ -65,7 +65,7 @@ export default async function BranchesPage({
           <article
             key={b.id}
             data-branch-id={b.id}
-            className={`rounded-2xl border bg-white p-5 ${
+            className={`rounded-2xl border bg-paper p-5 ${
               b.isActive ? 'border-line' : 'border-line bg-line-soft/40 opacity-70'
             }`}
           >

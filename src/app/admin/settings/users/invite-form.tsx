@@ -27,7 +27,7 @@ function InviteResult({ state }: { state: InviteUserState }) {
       {(state.method === 'link' || !state.emailSent) && state.acceptUrl && (
         <div className="mt-3 flex items-stretch gap-1">
           <code
-            className="flex-1 truncate rounded-lg border border-line bg-white px-3 py-2 font-mono text-[11px] text-ink-2"
+            className="flex-1 truncate rounded-lg border border-line bg-paper px-3 py-2 font-mono text-[11px] text-ink-2"
             data-testid="invite-accept-url"
           >
             {state.acceptUrl}
@@ -67,7 +67,7 @@ export function InviteUserForm() {
   );
 
   return (
-    <form action={formAction} className="rounded-2xl border border-line bg-white p-5">
+    <form action={formAction} className="rounded-2xl border border-line bg-paper p-5">
       <h2 className="text-sm font-bold text-cart">➕ Yeni kullanıcı davet et</h2>
       <p className="mt-1 text-[11px] text-ink-3">
         Davet methodunu seç: 📧 email (Brevo gönderir, 7 gün) ya da 🔗 link (URL döner,
@@ -86,7 +86,7 @@ export function InviteUserForm() {
             required
             disabled={pending}
             data-testid="invite-email"
-            className="w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
+            className="w-full rounded-lg border-[1.5px] border-line bg-paper px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
           />
         </div>
         <div>
@@ -100,7 +100,7 @@ export function InviteUserForm() {
             maxLength={120}
             disabled={pending}
             data-testid="invite-name"
-            className="w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
+            className="w-full rounded-lg border-[1.5px] border-line bg-paper px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
           />
         </div>
         <div>
@@ -114,7 +114,7 @@ export function InviteUserForm() {
             disabled={pending}
             defaultValue="STAFF"
             data-testid="invite-role"
-            className="w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
+            className="w-full rounded-lg border-[1.5px] border-line bg-paper px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
           >
             <option value="SUBE_MUDURU">🏪 Şube Müdürü</option>
             <option value="STAFF">💼 Kasiyer (STAFF)</option>
@@ -131,7 +131,7 @@ export function InviteUserForm() {
             disabled={pending}
             defaultValue="link"
             data-testid="invite-method"
-            className="w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
+            className="w-full rounded-lg border-[1.5px] border-line bg-paper px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
           >
             <option value="email">📧 Email (Brevo, 7 gün)</option>
             <option value="link">🔗 Link (24 saat, elden ilet)</option>

@@ -31,7 +31,7 @@ export function MetadataFixForm() {
           return (
             <ul className="mt-3 flex flex-col gap-2 text-[12px]">
               {state.changedFields.map((f) => (
-                <li key={f} className="rounded-lg border border-line bg-white p-2">
+                <li key={f} className="rounded-lg border border-line bg-paper p-2">
                   <div className="text-[10.5px] font-bold uppercase text-ink-3">
                     {FIELD_LABELS[f] ?? f}
                   </div>
@@ -63,7 +63,7 @@ export function MetadataFixForm() {
           </Link>
           <Link
             href={'/admin/audit-log' as never}
-            className="rounded-xl border border-line bg-white px-4 py-2 text-xs font-bold text-ink-2"
+            className="rounded-xl border border-line bg-paper px-4 py-2 text-xs font-bold text-ink-2"
           >
             Audit log
           </Link>
@@ -73,7 +73,7 @@ export function MetadataFixForm() {
   }
 
   return (
-    <form action={formAction} className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-6">
+    <form action={formAction} className="flex flex-col gap-4 rounded-2xl border border-line bg-paper p-6">
       <div>
         <label htmlFor="movementId" className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
           Movement UUID *
@@ -85,7 +85,7 @@ export function MetadataFixForm() {
           required
           disabled={pending}
           data-testid="movement-id"
-          className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2 font-mono text-[11px] focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2 font-mono text-[11px] focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
         <p className="mt-1 text-[10.5px] text-ink-4">
           Ledger&apos;dan hareketin id&apos;sini kopyala. Sadece metadata
@@ -109,7 +109,7 @@ export function MetadataFixForm() {
             disabled={pending}
             data-testid="reason"
             placeholder="Yeni sebep (boş → değişmez, boşaltmak için tek boşluk + sil)"
-            className="w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-[12.5px] focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
+            className="w-full rounded-lg border-[1.5px] border-line bg-paper px-3 py-2 text-[12.5px] focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
           />
         </div>
         <div>
@@ -124,7 +124,7 @@ export function MetadataFixForm() {
             disabled={pending}
             data-testid="note"
             placeholder="Yeni not"
-            className="w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-[12.5px] focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
+            className="w-full rounded-lg border-[1.5px] border-line bg-paper px-3 py-2 text-[12.5px] focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
           />
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -139,7 +139,7 @@ export function MetadataFixForm() {
               maxLength={100}
               disabled={pending}
               data-testid="customer-ref"
-              className="w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 font-mono text-[12px] focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
+              className="w-full rounded-lg border-[1.5px] border-line bg-paper px-3 py-2 font-mono text-[12px] focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
             />
           </div>
           <div>
@@ -153,7 +153,7 @@ export function MetadataFixForm() {
               maxLength={100}
               disabled={pending}
               data-testid="document-no"
-              className="w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 font-mono text-[12px] focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
+              className="w-full rounded-lg border-[1.5px] border-line bg-paper px-3 py-2 font-mono text-[12px] focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
             />
           </div>
         </div>
@@ -173,7 +173,7 @@ export function MetadataFixForm() {
           placeholder="Örn: Doküman no FAT-0023 yazılmış olmalıydı, kullanıcı yanlışlıkla boş bırakmış — düzeltiliyor"
           disabled={pending}
           data-testid="bypass-reason"
-          className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-2.5 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-2.5 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>
 
@@ -190,7 +190,7 @@ export function MetadataFixForm() {
           placeholder="••••••••"
           disabled={pending}
           data-testid="superadmin-password"
-          className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-2.5 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-2.5 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>
 

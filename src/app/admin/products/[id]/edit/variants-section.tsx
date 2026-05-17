@@ -21,7 +21,7 @@ export function VariantsSection({ productId, variants, branches }: Props) {
   const [addingNew, setAddingNew] = useState(false);
 
   return (
-    <section className="rounded-2xl border border-line bg-white p-6">
+    <section className="rounded-2xl border border-line bg-paper p-6">
       <header className="flex items-end justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-cart">📋 Variantlar</h2>
@@ -224,7 +224,7 @@ function DisplayVariantRow({
 
   return (
     <div
-      className={`flex flex-col gap-3 rounded-xl border bg-white p-4 sm:flex-row sm:items-center sm:justify-between ${
+      className={`flex flex-col gap-3 rounded-xl border bg-paper p-4 sm:flex-row sm:items-center sm:justify-between ${
         !variant.isActive
           ? 'border-line opacity-60'
           : variant.isDefault
@@ -271,7 +271,7 @@ function DisplayVariantRow({
             type="button"
             onClick={handleSetDefault}
             disabled={pending}
-            className="rounded-lg border border-cat/30 bg-white px-3 py-1.5 text-[11px] font-bold text-cart hover:bg-cat-soft disabled:opacity-50"
+            className="rounded-lg border border-cat/30 bg-paper px-3 py-1.5 text-[11px] font-bold text-cart hover:bg-cat-soft disabled:opacity-50"
           >
             ★ Default yap
           </button>
@@ -280,7 +280,7 @@ function DisplayVariantRow({
           type="button"
           onClick={onEdit}
           disabled={pending}
-          className="rounded-lg border border-line bg-white px-3 py-1.5 text-[11px] font-bold text-ink-2 hover:bg-line-soft disabled:opacity-50"
+          className="rounded-lg border border-line bg-paper px-3 py-1.5 text-[11px] font-bold text-ink-2 hover:bg-line-soft disabled:opacity-50"
         >
           ✎ Düzenle
         </button>
@@ -289,7 +289,7 @@ function DisplayVariantRow({
             type="button"
             onClick={handleDelete}
             disabled={pending}
-            className="rounded-lg border border-danger/30 bg-white px-3 py-1.5 text-[11px] font-bold text-danger-7 hover:bg-danger-soft disabled:opacity-50"
+            className="rounded-lg border border-danger/30 bg-paper px-3 py-1.5 text-[11px] font-bold text-danger-7 hover:bg-danger-soft disabled:opacity-50"
           >
             🗑 Sil
           </button>
@@ -416,7 +416,7 @@ function VariantFormFields({
             required
             defaultValue={initial?.valueLabel ?? ''}
             placeholder="2kg"
-            className="w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-lg border-[1.5px] border-line bg-paper px-3 py-2 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
         </div>
         <div>
@@ -429,7 +429,7 @@ function VariantFormFields({
             required
             defaultValue={initial?.sku ?? ''}
             placeholder="ROY-CAT-2KG"
-            className="w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-lg border-[1.5px] border-line bg-paper px-3 py-2 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
         </div>
       </div>
@@ -444,7 +444,7 @@ function VariantFormFields({
           maxLength={13}
           defaultValue={initial?.barcode ?? ''}
           placeholder="8690000000000"
-          className="w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-lg border-[1.5px] border-line bg-paper px-3 py-2 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>
 
@@ -458,7 +458,7 @@ function VariantFormFields({
             type="text"
             inputMode="decimal"
             defaultValue={initial?.costPrice ?? '0'}
-            className="w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-lg border-[1.5px] border-line bg-paper px-3 py-2 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
         </div>
         <div>
@@ -471,7 +471,7 @@ function VariantFormFields({
             inputMode="decimal"
             required
             defaultValue={initial?.salePrice ?? ''}
-            className="w-full rounded-lg border-[1.5px] border-cat bg-white px-3 py-2 font-mono text-sm font-bold text-cart focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-lg border-[1.5px] border-cat bg-paper px-3 py-2 font-mono text-sm font-bold text-cart focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
         </div>
         <div>
@@ -484,13 +484,13 @@ function VariantFormFields({
             min={0}
             max={9999}
             defaultValue={initial?.threshold ?? 5}
-            className="w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-lg border-[1.5px] border-line bg-paper px-3 py-2 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
         </div>
       </div>
 
       {editing && initial && (
-        <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-line bg-white px-3 py-2 text-xs text-ink-2">
+        <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-line bg-paper px-3 py-2 text-xs text-ink-2">
           <input
             type="checkbox"
             name="isActive"
@@ -504,7 +504,7 @@ function VariantFormFields({
       )}
 
       {branches.length > 0 && (
-        <details className="rounded-lg border border-line bg-white p-3" open={Object.keys(branchThresholds).length > 0}>
+        <details className="rounded-lg border border-line bg-paper p-3" open={Object.keys(branchThresholds).length > 0}>
           <summary className="cursor-pointer text-xs font-bold text-cart">
             🏪 Şube bazlı eşik (opsiyonel)
             <span className="ml-2 font-normal text-ink-3">
@@ -524,7 +524,7 @@ function VariantFormFields({
                     handleBranchThresholdChange(branch.id, e.target.value)
                   }
                   placeholder="—"
-                  className="w-20 rounded border-[1.5px] border-line bg-white px-2 py-1 font-mono text-xs text-ink focus:border-cat focus:outline-none"
+                  className="w-20 rounded border-[1.5px] border-line bg-paper px-2 py-1 font-mono text-xs text-ink focus:border-cat focus:outline-none"
                 />
               </div>
             ))}

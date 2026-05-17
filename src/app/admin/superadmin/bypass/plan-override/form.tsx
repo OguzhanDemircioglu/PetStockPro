@@ -34,7 +34,7 @@ export function PlanOverrideForm() {
           </Link>
           <Link
             href={'/admin/audit-log' as never}
-            className="rounded-xl border border-line bg-white px-4 py-2 text-xs font-bold text-ink-2"
+            className="rounded-xl border border-line bg-paper px-4 py-2 text-xs font-bold text-ink-2"
           >
             Audit log
           </Link>
@@ -44,7 +44,7 @@ export function PlanOverrideForm() {
   }
 
   return (
-    <form action={formAction} className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-6">
+    <form action={formAction} className="flex flex-col gap-4 rounded-2xl border border-line bg-paper p-6">
       <div>
         <label htmlFor="targetCompanyId" className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
           Hedef tenant UUID *
@@ -56,7 +56,7 @@ export function PlanOverrideForm() {
           required
           disabled={pending}
           data-testid="target-company-id"
-          className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2 font-mono text-[11px] focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2 font-mono text-[11px] focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
         <p className="mt-1 text-[10.5px] text-ink-4">
           Süperadmin tenant listesinden company.id&apos;yi kopyala.
@@ -74,7 +74,7 @@ export function PlanOverrideForm() {
           disabled={pending}
           defaultValue="PRO"
           data-testid="new-plan"
-          className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         >
           {Object.entries(PLAN_LABELS).map(([v, label]) => (
             <option key={v} value={v}>
@@ -98,7 +98,7 @@ export function PlanOverrideForm() {
           placeholder="Örn: Müşteri PRO satın aldı 12:30'da, iyzico webhook gecikti hâlâ FREE — manuel düzeltme"
           disabled={pending}
           data-testid="reason"
-          className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>
 
@@ -115,7 +115,7 @@ export function PlanOverrideForm() {
           placeholder="••••••••"
           disabled={pending}
           data-testid="superadmin-password"
-          className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-2.5 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-2.5 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>
 

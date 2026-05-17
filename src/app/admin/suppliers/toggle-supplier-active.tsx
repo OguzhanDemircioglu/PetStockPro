@@ -44,7 +44,7 @@ export function ToggleSupplierActive({ supplierId, currentlyActive }: Props) {
       data-testid={`toggle-supplier-${supplierId}`}
       className={`rounded px-2 py-1 text-[10px] font-bold transition-colors disabled:opacity-50 ${
         active
-          ? 'bg-white border border-line text-ink-3 hover:bg-line-soft'
+          ? 'bg-paper border border-line text-ink-3 hover:bg-line-soft'
           : 'bg-arrow text-white hover:bg-arrow-2'
       }`}
     >

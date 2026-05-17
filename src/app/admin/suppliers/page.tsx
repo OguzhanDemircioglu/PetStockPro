@@ -42,7 +42,7 @@ export default async function SuppliersPage({
           <a
             href="/admin/suppliers/export"
             download
-            className="rounded-xl border border-line bg-white px-3 py-2.5 text-xs font-bold text-cart hover:bg-cat-soft"
+            className="rounded-xl border border-line bg-paper px-3 py-2.5 text-xs font-bold text-cart hover:bg-cat-soft"
           >
             ⬇ CSV
           </a>
@@ -76,7 +76,7 @@ export default async function SuppliersPage({
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-line bg-white">
+        <div className="overflow-hidden rounded-2xl border border-line bg-paper">
           <table className="w-full text-sm">
             <thead className="bg-paper">
               <tr className="text-left text-[10.5px] font-bold uppercase tracking-wider text-ink-3">

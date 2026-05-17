@@ -42,7 +42,7 @@ export default async function UsersSettingsPage() {
           </div>
         )}
 
-        <article className="rounded-2xl border border-line bg-white p-5" data-testid="users-list">
+        <article className="rounded-2xl border border-line bg-paper p-5" data-testid="users-list">
           <h2 className="text-sm font-bold text-cart">
             👥 Ekip kullanıcıları ({users.length})
           </h2>

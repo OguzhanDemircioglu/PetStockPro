@@ -56,7 +56,7 @@ export default async function ProductDetailPage({
         </div>
         <Link
           href={`/admin/products/${product.id}/edit` as never}
-          className="rounded-xl border border-line bg-white px-4 py-2 text-xs font-bold text-cart hover:bg-cat-soft"
+          className="rounded-xl border border-line bg-paper px-4 py-2 text-xs font-bold text-cart hover:bg-cat-soft"
         >
           ✎ Ürünü düzenle
         </Link>
@@ -96,7 +96,7 @@ export default async function ProductDetailPage({
       )}
 
       {product.description && (
-        <section className="rounded-2xl border border-line bg-white p-5">
+        <section className="rounded-2xl border border-line bg-paper p-5">
           <h2 className="mb-2 text-xs font-bold uppercase tracking-wider text-ink-3">
             Açıklama
           </h2>
@@ -107,7 +107,7 @@ export default async function ProductDetailPage({
       )}
 
       <section
-        className="overflow-x-auto rounded-2xl border border-line bg-white"
+        className="overflow-x-auto rounded-2xl border border-line bg-paper"
         data-testid="variant-matrix"
       >
         <table className="w-full text-sm">
@@ -199,7 +199,7 @@ export default async function ProductDetailPage({
         </table>
       </section>
 
-      <section className="rounded-2xl border border-line bg-white p-5" data-testid="product-movements">
+      <section className="rounded-2xl border border-line bg-paper p-5" data-testid="product-movements">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-xs font-bold uppercase tracking-wider text-ink-3">
             🕒 Son hareketler

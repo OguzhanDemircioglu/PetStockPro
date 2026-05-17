@@ -37,7 +37,7 @@ const PAYMENT_LABEL: Record<string, string> = {
 export function MovementsTable({ movements, now }: Props) {
   const nowMs = (now ?? new Date()).getTime();
   return (
-    <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+    <div className="overflow-x-auto rounded-2xl border border-line bg-paper">
       <table className="w-full text-sm">
         <thead className="bg-paper">
           <tr className="text-left text-[10.5px] font-bold uppercase tracking-wider text-ink-3">

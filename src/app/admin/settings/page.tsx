@@ -184,7 +184,7 @@ function StatusCard({ href, label, value, hint, kind }: StatusItem) {
     <Link
       href={href as never}
       data-status-card={label}
-      className="group flex flex-col gap-1 rounded-2xl border border-line bg-white p-4 hover:border-cat hover:shadow-sm transition-shadow"
+      className="group flex flex-col gap-1 rounded-2xl border border-line bg-paper p-4 hover:border-cat hover:shadow-sm transition-shadow"
     >
       <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
         {label}
@@ -212,7 +212,7 @@ function DataLink({
     <Link
       href={href as never}
       data-data-link={href}
-      className="group flex items-center gap-3 rounded-2xl border border-line bg-white p-4 hover:border-cat hover:shadow-sm transition-shadow"
+      className="group flex items-center gap-3 rounded-2xl border border-line bg-paper p-4 hover:border-cat hover:shadow-sm transition-shadow"
     >
       <span className="grid h-12 w-12 place-items-center rounded-xl bg-cat-soft text-2xl">
         {emoji}

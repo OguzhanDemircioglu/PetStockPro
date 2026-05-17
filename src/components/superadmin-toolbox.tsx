@@ -114,7 +114,7 @@ export function SuperadminToolbox() {
 
       {open && (
         <div
-          className="fixed bottom-24 right-6 z-50 flex w-80 flex-col gap-1 rounded-2xl border-2 border-cat/40 bg-white p-2 shadow-2xl"
+          className="fixed bottom-24 right-6 z-50 flex w-80 flex-col gap-1 rounded-2xl border-2 border-cat/40 bg-paper p-2 shadow-2xl"
           data-testid="superadmin-toolbox-menu"
         >
           <div className="px-3 py-2 text-[11.5px] font-bold uppercase tracking-wider text-cart">

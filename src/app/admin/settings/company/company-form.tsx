@@ -190,7 +190,7 @@ export function CompanyForm({ initial, cities, initialDistricts }: Props) {
               type="button"
               onClick={detectLocation}
               data-testid="detect-location-btn"
-              className="rounded-lg border border-cat/40 bg-white px-2.5 py-1 text-[10.5px] font-bold text-cart hover:bg-cat hover:text-white"
+              className="rounded-lg border border-cat/40 bg-paper px-2.5 py-1 text-[10.5px] font-bold text-cart hover:bg-cat hover:text-white"
             >
               Konumumu kullan
             </button>
@@ -271,7 +271,7 @@ export function CompanyForm({ initial, cities, initialDistricts }: Props) {
 }
 
 const fieldClasses =
-  'w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15';
+  'w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15';
 
 function Field({
   label,
@@ -297,7 +297,7 @@ function Field({
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-2xl border border-line bg-white p-5">
+    <section className="rounded-2xl border border-line bg-paper p-5">
       <h2 className="mb-3 text-base font-bold text-cart">{title}</h2>
       <div className="flex flex-col gap-3">{children}</div>
     </section>

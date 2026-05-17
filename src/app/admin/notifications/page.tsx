@@ -131,7 +131,7 @@ export default async function NotificationsPage({
             <button
               type="submit"
               data-action="mark-all-read"
-              className="rounded-xl border border-line bg-white px-4 py-2 text-xs font-bold text-ink-2 hover:bg-line-soft"
+              className="rounded-xl border border-line bg-paper px-4 py-2 text-xs font-bold text-ink-2 hover:bg-line-soft"
             >
               ✓ Tümünü okundu işaretle
             </button>
@@ -146,7 +146,7 @@ export default async function NotificationsPage({
             className={`rounded-xl border px-3 py-1.5 text-xs font-bold ${
               !unreadOnly
                 ? 'border-cat bg-cat text-white'
-                : 'border-line bg-white text-ink-3 hover:bg-line-soft'
+                : 'border-line bg-paper text-ink-3 hover:bg-line-soft'
             }`}
           >
             Hepsi
@@ -156,7 +156,7 @@ export default async function NotificationsPage({
             className={`rounded-xl border px-3 py-1.5 text-xs font-bold ${
               unreadOnly
                 ? 'border-cat bg-cat text-white'
-                : 'border-line bg-white text-ink-3 hover:bg-line-soft'
+                : 'border-line bg-paper text-ink-3 hover:bg-line-soft'
             }`}
           >
             Okunmamış ({unreadCount})
@@ -170,7 +170,7 @@ export default async function NotificationsPage({
             className={`rounded-full border px-2.5 py-1 text-[10.5px] font-bold ${
               activeGroup === null
                 ? 'border-cart bg-cart-soft text-cart'
-                : 'border-line bg-white text-ink-3 hover:bg-line-soft'
+                : 'border-line bg-paper text-ink-3 hover:bg-line-soft'
             }`}
           >
             Tüm türler
@@ -190,7 +190,7 @@ export default async function NotificationsPage({
                 className={`rounded-full border px-2.5 py-1 text-[10.5px] font-bold ${
                   activeGroup === key
                     ? 'border-cat bg-cat-soft text-cart'
-                    : 'border-line bg-white text-ink-3 hover:bg-line-soft'
+                    : 'border-line bg-paper text-ink-3 hover:bg-line-soft'
                 }`}
               >
                 {def.label} ({count})
@@ -219,7 +219,7 @@ export default async function NotificationsPage({
               className={`rounded-full border px-2.5 py-1 text-[10.5px] font-bold ${
                 activeType === null
                   ? 'border-cart bg-cart-soft text-cart'
-                  : 'border-line bg-white text-ink-3 hover:bg-line-soft'
+                  : 'border-line bg-paper text-ink-3 hover:bg-line-soft'
               }`}
             >
               Tümü ({groupCounts[activeGroup] ?? 0})
@@ -240,7 +240,7 @@ export default async function NotificationsPage({
                   className={`rounded-full border px-2.5 py-1 text-[10.5px] font-bold ${
                     activeType === t
                       ? 'border-cat bg-cat text-white'
-                      : 'border-line bg-white text-ink-3 hover:bg-line-soft'
+                      : 'border-line bg-paper text-ink-3 hover:bg-line-soft'
                   }`}
                 >
                   {TYPE_EMOJI[t] ?? '🔔'} {TYPE_LABEL[t] ?? t} ({count})
@@ -290,10 +290,10 @@ function NotificationItem({ item }: { item: NotificationRow }) {
       data-notification-id={item.id}
       data-unread={isUnread ? '1' : '0'}
       className={`flex items-start gap-3 rounded-2xl border p-4 ${
-        isUnread ? 'border-cat/40 bg-cat-soft/30' : 'border-line bg-white'
+        isUnread ? 'border-cat/40 bg-cat-soft/30' : 'border-line bg-paper'
       }`}
     >
-      <span className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl bg-white text-xl">
+      <span className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl bg-paper text-xl">
         {emoji}
       </span>
       <div className="min-w-0 flex-1">
@@ -332,7 +332,7 @@ function NotificationItem({ item }: { item: NotificationRow }) {
             type="submit"
             data-action="mark-read"
             aria-label="Okundu işaretle"
-            className="rounded-lg border border-line bg-white px-2 py-1 text-[10px] font-bold text-ink-3 hover:bg-line-soft"
+            className="rounded-lg border border-line bg-paper px-2 py-1 text-[10px] font-bold text-ink-3 hover:bg-line-soft"
           >
             ✓
           </button>

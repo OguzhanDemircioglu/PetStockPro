@@ -80,7 +80,7 @@ export default async function TenantDetailSuperadminPage({
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <article className="rounded-2xl border border-line bg-white p-5" data-testid="tenant-users">
+        <article className="rounded-2xl border border-line bg-paper p-5" data-testid="tenant-users">
           <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
             👥 Kullanıcılar ({tenantUsers.length})
           </h2>
@@ -135,7 +135,7 @@ export default async function TenantDetailSuperadminPage({
         </article>
 
         <article
-          className="rounded-2xl border border-line bg-white p-5"
+          className="rounded-2xl border border-line bg-paper p-5"
           data-testid="tenant-audit"
         >
           <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
@@ -173,7 +173,7 @@ export default async function TenantDetailSuperadminPage({
         </article>
       </section>
 
-      <section className="rounded-2xl border border-line bg-white p-5" data-testid="tenant-movements">
+      <section className="rounded-2xl border border-line bg-paper p-5" data-testid="tenant-movements">
         <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
           📦 Son stok hareketleri ({movements.length})
         </h2>
@@ -241,7 +241,7 @@ function KPI({
   const cls: Record<string, string> = {
     cat: 'border-cat/30 bg-cat-soft/40',
     arrow: 'border-arrow/30 bg-arrow-soft/40',
-    neutral: 'border-line bg-white',
+    neutral: 'border-line bg-paper',
   };
   return (
     <article className={`flex flex-col gap-2 rounded-2xl border p-5 ${cls[accent]}`}>

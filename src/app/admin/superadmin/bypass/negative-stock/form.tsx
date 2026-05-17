@@ -21,7 +21,7 @@ export function NegativeStockForm() {
           <Link href={'/admin/stock-movements' as never} className="rounded-xl bg-cat px-4 py-2 text-xs font-bold text-white">
             Ledger
           </Link>
-          <Link href={'/admin/audit-log' as never} className="rounded-xl border border-line bg-white px-4 py-2 text-xs font-bold text-ink-2">
+          <Link href={'/admin/audit-log' as never} className="rounded-xl border border-line bg-paper px-4 py-2 text-xs font-bold text-ink-2">
             Audit log
           </Link>
         </div>
@@ -30,7 +30,7 @@ export function NegativeStockForm() {
   }
 
   return (
-    <form action={formAction} className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-6">
+    <form action={formAction} className="flex flex-col gap-4 rounded-2xl border border-line bg-paper p-6">
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label htmlFor="branchId" className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
@@ -43,7 +43,7 @@ export function NegativeStockForm() {
             required
             disabled={pending}
             data-testid="branch-id"
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2 font-mono text-[11px] focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2 font-mono text-[11px] focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
         </div>
         <div>
@@ -59,7 +59,7 @@ export function NegativeStockForm() {
             required
             disabled={pending}
             data-testid="quantity"
-            className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2 text-right font-mono text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+            className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2 text-right font-mono text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
         </div>
       </div>
@@ -74,7 +74,7 @@ export function NegativeStockForm() {
           required
           disabled={pending}
           data-testid="variant-id"
-          className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2 font-mono text-[11px] focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2 font-mono text-[11px] focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
         <p className="mt-1 text-[10.5px] text-ink-4">
           Ürün detay sayfasından variant.id&apos;yi kopyala. Quantity adet kadar branch_inventory
@@ -96,7 +96,7 @@ export function NegativeStockForm() {
           placeholder="Örn: Muhasebe kaydında 5 adet satış ama sistemde yok, fiziksel stok kontrol edildi düzeltiliyor"
           disabled={pending}
           data-testid="reason"
-          className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>
 
@@ -113,7 +113,7 @@ export function NegativeStockForm() {
           placeholder="••••••••"
           disabled={pending}
           data-testid="superadmin-password"
-          className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-2.5 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-2.5 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>
 

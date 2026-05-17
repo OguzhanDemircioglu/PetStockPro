@@ -94,7 +94,7 @@ export default async function ExportHubPage() {
           ))}
         </div>
 
-        <section className="rounded-2xl border border-line bg-white p-5 text-xs text-ink-3">
+        <section className="rounded-2xl border border-line bg-paper p-5 text-xs text-ink-3">
           <h2 className="mb-2 text-sm font-bold text-cart">ℹ Bilgi</h2>
           <ul className="list-inside list-disc space-y-1">
             <li>İndirme limiti: her CSV dosyası en fazla 5.000 satır içerir.</li>
@@ -127,7 +127,7 @@ function ExportCard({ href, emoji, title, desc, filename }: ExportCardProps) {
       href={href}
       download
       data-export-link={href}
-      className="group flex items-center gap-4 rounded-2xl border border-line bg-white p-4 hover:border-cat hover:shadow-sm transition-shadow"
+      className="group flex items-center gap-4 rounded-2xl border border-line bg-paper p-4 hover:border-cat hover:shadow-sm transition-shadow"
     >
       <span className="grid h-14 w-14 place-items-center rounded-xl bg-cat-soft text-3xl">
         {emoji}
