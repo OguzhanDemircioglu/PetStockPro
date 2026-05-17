@@ -113,7 +113,7 @@ export function AdminSidebar({
   return (
     <aside
       data-testid="admin-sidebar"
-      className="sticky top-0 hidden h-screen w-[220px] shrink-0 flex-col overflow-y-auto border-r border-line bg-white/95 px-3 py-5 backdrop-blur md:flex"
+      className="sticky top-0 hidden h-screen w-[220px] shrink-0 flex-col overflow-y-auto border-r border-line bg-paper/75 px-3 py-5 backdrop-blur-xl md:flex"
     >
       {/* Brand */}
       <Link
@@ -185,41 +185,56 @@ export function AdminSidebar({
         ))}
       </nav>
 
-      {/* Plan card */}
+      {/* Plan card — gradient cart bg, dark-safe (white text fixed) */}
       <div
         data-testid="sidebar-plan-card"
-        className={`mt-5 rounded-2xl border p-3 ${
-          isNearLimit
-            ? 'border-cat/40 bg-cat-soft/40'
-            : 'border-line bg-line-soft/30'
-        }`}
+        className="mt-auto relative overflow-hidden rounded-2xl bg-gradient-to-br from-cart to-cart-7 p-3.5 text-white shadow-[0_8px_24px_rgba(26,85,136,.32)]"
       >
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-ink-3">
-            Plan
-          </span>
-          <span className="rounded-full bg-cat px-2 py-0.5 text-[10px] font-bold text-white">
-            {planLabel[plan]}
-          </span>
-        </div>
-        <div className="mt-2 flex items-baseline justify-between text-[11px]">
-          <span className="text-ink-3">Ürün limiti</span>
-          <span className="font-mono font-bold text-cart">
-            {productCount} / {planLimitLabel}
-          </span>
-        </div>
-        {productLimit > 0 && (
-          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-line-soft">
-            <div
-              className={isNearLimit ? 'h-full bg-cat' : 'h-full bg-arrow'}
-              style={{ width: `${usagePct}%` }}
-            />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-5 -bottom-5 h-24 w-24 rounded-full"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(212,74,20,.4), transparent 60%)',
+          }}
+        />
+        <div className="relative flex items-center justify-between">
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-wider opacity-75">
+              PLAN
+            </div>
+            <div className="mt-0.5 text-base font-bold tracking-tight">
+              {planLabel[plan]}
+            </div>
           </div>
-        )}
+          {isNearLimit && (
+            <span className="rounded-full bg-cat px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider shadow-sm">
+              limit
+            </span>
+          )}
+        </div>
+        <div className="relative mt-2.5">
+          <div className="mb-1 flex justify-between text-[11px] font-bold opacity-90">
+            <span>Ürün limiti</span>
+            <span className="font-mono tabular-nums">
+              {productCount} / {planLimitLabel}
+            </span>
+          </div>
+          {productLimit > 0 ? (
+            <div className="h-1.5 overflow-hidden rounded-full bg-white/16">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-cat-2 to-cat"
+                style={{ width: `${usagePct}%` }}
+              />
+            </div>
+          ) : (
+            <div className="h-1.5 rounded-full bg-gradient-to-r from-arrow to-arrow-2" />
+          )}
+        </div>
         {plan === 'FREE' && (
           <Link
             href={'/admin/settings' as never}
-            className="mt-2 block rounded-lg bg-cart px-2 py-1.5 text-center text-[10.5px] font-bold text-white hover:bg-cart-2"
+            className="relative mt-3 block rounded-[9px] bg-white/18 px-2.5 py-2 text-center text-[11.5px] font-bold text-white transition-colors hover:bg-white/30"
           >
             PRO&apos;ya geç →
           </Link>
@@ -227,7 +242,7 @@ export function AdminSidebar({
       </div>
 
       {/* Footer mini */}
-      <p className="mt-4 text-center text-[9px] text-ink-4">
+      <p className="mt-3 text-center text-[9px] text-ink-4">
         © 2026 PetStockPro
       </p>
     </aside>

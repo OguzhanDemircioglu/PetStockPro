@@ -74,7 +74,7 @@ export default async function AdminLayout({
   const lowStockCount = lowStockRow[0]?.count ?? 0;
 
   return (
-    <div className="flex min-h-screen bg-paper">
+    <div className="flex min-h-screen bg-bg text-ink">
       <AdminSidebar
         tenantName={tenantName}
         plan={plan}
