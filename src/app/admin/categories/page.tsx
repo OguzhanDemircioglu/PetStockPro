@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { listCategories, type CategoryListItem } from '@/lib/categories/manage';
 import { DeleteCategoryButton } from './delete-category-button';
-import { AdminCategoryGrid } from '@/components/admin/category-grid';
+import { AdminCategoryBar } from '@/components/admin/category-bar';
 
 const VAT_LABEL: Record<string, string> = {
   '1.00': '%1',
@@ -83,6 +83,9 @@ export default async function CategoriesPage({
         </div>
       </header>
 
+      {/* Pet projesi CategoryBar tarzı — yatay nav + hover dropdown */}
+      <AdminCategoryBar categories={allItems} />
+
       {params.created === 'success' && (
         <div className="rounded-xl border border-arrow/40 bg-arrow-soft px-4 py-3 text-sm font-bold text-arrow-7">
           ✅ Kategori eklendi.
@@ -94,8 +97,6 @@ export default async function CategoriesPage({
         </div>
       )}
 
-      {/* Renkli 6 root showcase — popüler kategoriler grid */}
-      <AdminCategoryGrid companyId={session.user.companyId} />
 
       <div className="flex flex-col gap-3 rounded-2xl border border-line bg-paper p-4">
         <div className="flex items-start gap-3 text-[13px]">
