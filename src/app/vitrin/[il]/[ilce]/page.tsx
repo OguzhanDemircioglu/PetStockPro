@@ -13,6 +13,7 @@ import {
   type StorefrontSort,
 } from '@/lib/vitrin/public';
 import { trackVitrinEventAsync } from '@/lib/vitrin/track';
+import { WhatsappButton } from '@/components/vitrin/whatsapp-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -324,15 +325,13 @@ export default async function VitrinDistrictPage({
                     </p>
                   </Link>
                   {wa && (
-                    <a
+                    <WhatsappButton
                       href={wa}
-                      target="_blank"
-                      rel="noreferrer noopener"
                       data-testid={`wa-${s.slug}`}
-                      className="mt-3 rounded-xl bg-arrow px-3 py-2 text-center text-xs font-bold text-white hover:bg-arrow-7 transition-colors"
-                    >
-                      💬 WhatsApp ile yaz
-                    </a>
+                      width="block"
+                      size="sm"
+                      className="mt-3"
+                    />
                   )}
                 </li>
               );

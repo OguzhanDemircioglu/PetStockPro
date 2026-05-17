@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { db } from '@/lib/db/client';
 import { getCrossTenantProduct } from '@/lib/vitrin/cross-tenant-product';
 import { buildWhatsappLink } from '@/lib/vitrin/public';
+import { WhatsappButton } from '@/components/vitrin/whatsapp-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -228,15 +229,11 @@ export default async function CrossTenantProductPage({
                     Detay →
                   </Link>
                   {whatsappUrl && (
-                    <a
+                    <WhatsappButton
                       href={whatsappUrl}
-                      target="_blank"
-                      rel="noreferrer noopener"
                       data-testid={`offer-wa-${offer.companyId}`}
-                      className="rounded-xl bg-arrow px-3 py-2 text-[13px] font-bold text-white shadow-sm hover:bg-arrow-7"
-                    >
-                      💬 WhatsApp
-                    </a>
+                      size="md"
+                    />
                   )}
                 </div>
               </li>

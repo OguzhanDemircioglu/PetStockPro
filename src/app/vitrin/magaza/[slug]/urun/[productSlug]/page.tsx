@@ -14,6 +14,7 @@ import { getPublicBaseUrl } from '@/lib/vitrin/sitemap-data';
 import { FeedbackBalloon } from '../../feedback-balloon';
 import { WhatsappLinkScript } from '../../whatsapp-link-script';
 import { ReportButton } from '@/app/vitrin/report-button';
+import { WhatsappButton } from '@/components/vitrin/whatsapp-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -181,15 +182,11 @@ export default async function VitrinProductDetailPage({
             )}
           </div>
           {whatsappUrl && (
-            <a
+            <WhatsappButton
               href={whatsappUrl}
-              target="_blank"
-              rel="noreferrer noopener"
               data-testid="hero-whatsapp"
-              className="rounded-xl bg-arrow px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-arrow-7 transition-colors"
-            >
-              💬 WhatsApp ile sor
-            </a>
+              size="lg"
+            />
           )}
         </div>
       </section>
@@ -258,19 +255,16 @@ export default async function VitrinProductDetailPage({
                   )}
                 </div>
                 {whatsappUrl && (
-                  <a
+                  <WhatsappButton
                     href={
                       buildWhatsappLink(
                         waPhone,
                         `Merhaba ${storefront.name}, ${product.productName} (${v.valueLabel}) hakkında soracağım.`,
                       ) ?? whatsappUrl
                     }
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="rounded-lg border border-arrow/40 bg-paper px-3 py-1.5 text-[12px] font-bold text-arrow-7 hover:bg-arrow-soft"
-                  >
-                    💬 Bu variant&apos;ı sor
-                  </a>
+                    size="sm"
+                    label="WhatsApp"
+                  />
                 )}
               </li>
             );

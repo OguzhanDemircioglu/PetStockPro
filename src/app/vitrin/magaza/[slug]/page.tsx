@@ -15,6 +15,7 @@ import { getPublicBaseUrl } from '@/lib/vitrin/sitemap-data';
 import { FeedbackBalloon } from './feedback-balloon';
 import { WhatsappLinkScript } from './whatsapp-link-script';
 import { ReportButton } from '@/app/vitrin/report-button';
+import { WhatsappButton } from '@/components/vitrin/whatsapp-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -105,15 +106,11 @@ export default async function StorefrontProfilePage({
             </p>
           </div>
           {whatsappUrl && (
-            <a
+            <WhatsappButton
               href={whatsappUrl}
-              target="_blank"
-              rel="noreferrer noopener"
               data-testid="hero-whatsapp"
-              className="rounded-xl bg-arrow px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-arrow-7 transition-colors"
-            >
-              💬 WhatsApp ile yaz
-            </a>
+              size="lg"
+            />
           )}
         </div>
 

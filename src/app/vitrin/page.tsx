@@ -13,6 +13,7 @@ import {
 } from '@/lib/vitrin/public';
 import { cities as citiesTable } from '@/db/schema';
 import { trackVitrinEventAsync } from '@/lib/vitrin/track';
+import { WhatsappButton } from '@/components/vitrin/whatsapp-button';
 import { listCategoriesWithStorefrontProducts } from '@/lib/vitrin/category-listings';
 import { parseLocationQuery } from '@/lib/vitrin/geolocation';
 import { NearbyToggle } from './nearby-toggle';
@@ -354,15 +355,12 @@ export default async function VitrinHomePage({
                     </p>
                   </Link>
                   {wa && (
-                    <a
+                    <WhatsappButton
                       href={wa}
-                      target="_blank"
-                      rel="noreferrer noopener"
                       data-testid={`wa-${s.slug}`}
-                      className="mt-3 rounded-xl bg-arrow px-3 py-2 text-center text-xs font-bold text-white hover:bg-arrow-7 transition-colors"
-                    >
-                      💬 WhatsApp ile yaz
-                    </a>
+                      width="block"
+                      className="mt-3"
+                    />
                   )}
                 </li>
               );
