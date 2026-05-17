@@ -61,12 +61,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr" className="h-full antialiased" suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{ __html: themeBootScript }}
-        />
-      </head>
       <body className="min-h-full flex flex-col">
+        {/* React 19 hoisted script — React, server-renderlandığında bu <script>
+            etiketini `<head>` 'e otomatik taşır. beforeInteractive davranış sağlar,
+            ek paket gereksiz. */}
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

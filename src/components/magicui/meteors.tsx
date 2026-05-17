@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useSyncExternalStore } from 'react';
 
 interface Props {
   number?: number;
@@ -16,16 +16,37 @@ function makeMeteors(count: number): Meteor[] {
   }));
 }
 
+// useSyncExternalStore'un identity stability requirement'i — getSnapshot her
+// renderlarda aynı referans dönmeli. number bazlı cache.
+let cachedNumber: number | null = null;
+let cachedItems: Meteor[] | null = null;
+function makeMeteorsCached(count: number): Meteor[] {
+  if (cachedNumber !== count || !cachedItems) {
+    cachedNumber = count;
+    cachedItems = makeMeteors(count);
+  }
+  return cachedItems;
+}
+
+function subscribeNoop(): () => void {
+  // Server'da çağrılmaz. Client'ta tek seferlik (random sabitlendiği için).
+  return () => undefined;
+}
+
 /**
  * Meteors — falling streaks background (magicui port).
  *
  * Pure CSS animation (animate-meteor keyframe in globals). Position/duration
- * randomized via lazy useState initializer (client-only via 'use client').
- * No SSR/CSR mismatch because suppressHydrationWarning on the wrapper.
+ * randomized client-side only via useSyncExternalStore (server returns null,
+ * client returns the random array after hydration). No SSR/CSR mismatch.
  */
 export function Meteors({ number = 12 }: Props) {
-  const [items] = useState<Meteor[]>(() => makeMeteors(number));
-  if (items.length === 0) return null;
+  const items = useSyncExternalStore<Meteor[] | null>(
+    subscribeNoop,
+    () => makeMeteorsCached(number),
+    () => null,
+  );
+  if (!items) return null;
   return (
     <>
       {items.map((m, i) => (
