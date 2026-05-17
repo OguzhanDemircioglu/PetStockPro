@@ -1,5 +1,23 @@
 import type { Metadata, Viewport } from 'next';
+import { ThemeProvider } from '@/components/theme/theme-provider';
 import './globals.css';
+
+/**
+ * Theme flash prevention — runs before React hydrates.
+ * Reads localStorage pp-theme (or matchMedia prefers-color-scheme) and
+ * applies html.dark synchronously so first paint matches user pref.
+ */
+const themeBootScript = `
+(function() {
+  try {
+    var t = localStorage.getItem('pp-theme');
+    if (t !== 'dark' && t !== 'light') {
+      t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    if (t === 'dark') document.documentElement.classList.add('dark');
+  } catch (e) {}
+})();
+`;
 
 export const metadata: Metadata = {
   title: {
@@ -42,8 +60,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="tr" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="tr" className="h-full antialiased" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{ __html: themeBootScript }}
+        />
+      </head>
+      <body className="min-h-full flex flex-col">
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }

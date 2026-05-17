@@ -70,6 +70,29 @@
   --font-mono: Consolas, "Lucida Console", Monaco, monospace;
 }
 
+/* Dark mode — class strategy (html.dark) — Tailwind v4 manual */
+html.dark {
+  --ink: #f5f7fa;
+  --ink-2: #d6dde5;
+  --ink-3: #9aa6b5;
+  --ink-4: #6c7888;
+
+  --line: #2b333f;
+  --line-soft: #1f2731;
+  --bg: #0d1218;
+  --paper: #161c25;
+  --paper-glass: rgba(22,28,37,0.62);
+  --paper-glass-strong: rgba(22,28,37,0.84);
+
+  /* brand tints slightly more saturated for dark backgrounds */
+  --cat-soft: #4a1d0b;
+  --cart-soft: #0e2438;
+  --arrow-soft: #093a31;
+  --bars-soft: #0b3553;
+  --danger-soft: #4a1614;
+  --dog-soft: #2a2a2a;
+}
+
 /* Tailwind v4 theme — utility class generation */
 @theme inline {
   --color-cat: var(--cat);
@@ -151,4 +174,88 @@ body::before {
     linear-gradient(180deg, #faf9f4 0%, #f0eee8 100%);
   z-index: -2;
   pointer-events: none;
+}
+
+html.dark body::before {
+  background:
+    radial-gradient(ellipse 60% 50% at 0% 0%, rgba(212,74,20,.18), transparent 60%),
+    radial-gradient(ellipse 50% 50% at 100% 0%, rgba(48,144,208,.16), transparent 60%),
+    radial-gradient(ellipse 60% 60% at 100% 100%, rgba(22,160,138,.14), transparent 60%),
+    radial-gradient(ellipse 50% 50% at 0% 100%, rgba(26,85,136,.18), transparent 60%),
+    linear-gradient(180deg, #0d1218 0%, #161c25 100%);
+}
+
+/* ============================================================
+   Magic UI — keyframes + utility animations
+   ============================================================ */
+@keyframes shimmer-slide {
+  to { transform: translate(calc(100cqw - 100%), 0); }
+}
+@keyframes spin-around {
+  0%        { transform: translateZ(0) rotate(0deg); }
+  15%, 35%  { transform: translateZ(0) rotate(90deg); }
+  65%, 85%  { transform: translateZ(0) rotate(270deg); }
+  100%      { transform: translateZ(0) rotate(360deg); }
+}
+@keyframes pulse-soft {
+  0%, 100% { box-shadow: 0 0 0 0 var(--pulse-color, rgba(196,69,58,.5)); }
+  50%      { box-shadow: 0 0 0 10px transparent; }
+}
+@keyframes meteor {
+  0%   { transform: rotate(215deg) translateX(0); opacity: 1; }
+  70%  { opacity: 1; }
+  100% { transform: rotate(215deg) translateX(-500px); opacity: 0; }
+}
+@keyframes shiny-text {
+  0%, 100% { background-position: 200% 0; }
+  50%      { background-position: 0% 0; }
+}
+@keyframes border-beam {
+  to { offset-distance: 100%; }
+}
+
+.animate-shimmer-slide { animation: shimmer-slide 3s ease-in-out infinite alternate; }
+.animate-spin-around   { animation: spin-around calc(var(--mui-speed, 3s) * 2) infinite linear; }
+.animate-pulse-soft    { animation: pulse-soft 1.5s ease-out infinite; }
+.animate-meteor        { animation: meteor 5s linear infinite; }
+.animate-shiny-text {
+  background-image: linear-gradient(110deg, var(--cart) 40%, var(--cat) 55%, var(--cart) 70%);
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: shiny-text 3.5s linear infinite;
+}
+
+/* utility: tabular numbers */
+.tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* ============================================================
+   Form controls — dark-aware default skin
+   Hardcoded bg-white / bg-paper kullanılmayan native input/select/textarea
+   tagları için tema-aware default. Hardcoded class'lar override eder.
+   ============================================================ */
+html.dark input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button']):not([type='file']),
+html.dark select,
+html.dark textarea {
+  background-color: var(--paper);
+  color: var(--ink);
+  border-color: var(--line);
+}
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: var(--ink-4);
+  opacity: .85;
+}
+html.dark input[type='checkbox']:not(:checked),
+html.dark input[type='radio']:not(:checked) {
+  background-color: var(--paper);
+  border-color: var(--line);
+}
+html.dark hr { border-color: var(--line); }
+/* Native date/time pickers icon */
+html.dark input[type='date'],
+html.dark input[type='datetime-local'],
+html.dark input[type='time'] {
+  color-scheme: dark;
 }
