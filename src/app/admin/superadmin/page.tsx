@@ -8,6 +8,7 @@ import {
   getTenantActivityStats,
 } from '@/lib/superadmin/analytics';
 import { NumberTicker } from '@/components/magicui/number-ticker';
+import { startImpersonationAction } from './impersonate-actions';
 
 const PLAN_COLORS: Record<string, string> = {
   FREE: 'bg-line-soft text-ink-2',
@@ -75,9 +76,6 @@ export default async function SuperadminTenantsPage() {
             </SupChip>
             <SupChip href="/admin/superadmin/system-settings" emoji="⚙">
               Sistem ayarları
-            </SupChip>
-            <SupChip href="/admin" emoji="🐾">
-              Admin&apos;e dön
             </SupChip>
           </div>
         </div>
@@ -444,12 +442,13 @@ export default async function SuperadminTenantsPage() {
               <th className="px-4 py-3 text-right">Şube</th>
               <th className="px-4 py-3 text-right">Stok</th>
               <th className="px-4 py-3">Kayıt</th>
+              <th className="px-4 py-3 text-right">Aksiyon</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line-soft">
             {tenants.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-8 text-center text-xs text-ink-3">
+                <td colSpan={9} className="py-8 text-center text-xs text-ink-3">
                   Henüz tenant yok.
                 </td>
               </tr>
@@ -500,6 +499,19 @@ export default async function SuperadminTenantsPage() {
                         year: '2-digit',
                       })}
                     </td>
+                    <td className="px-4 py-3 text-right">
+                      <form action={startImpersonationAction}>
+                        <input type="hidden" name="companyId" value={t.id} />
+                        <button
+                          type="submit"
+                          data-testid={`impersonate-${t.id}`}
+                          title={`${t.name} olarak görüntüle`}
+                          className="inline-flex items-center gap-1 rounded-lg border border-cat/40 bg-cat-soft px-2.5 py-1.5 text-[10.5px] font-bold text-cart transition-colors hover:border-cat hover:bg-cat hover:text-white"
+                        >
+                          🎭 Gir
+                        </button>
+                      </form>
+                    </td>
                   </tr>
                 );
               })
@@ -509,12 +521,11 @@ export default async function SuperadminTenantsPage() {
       </section>
 
       <p className="text-center text-[11px] text-ink-4">
-        🛡 Süperadmin · Sistem geneli görünüm. Impersonation + DB Inspector + Toolbox FAB Faz 2&apos;de.
+        🛡 Süperadmin · Sistem geneli görünüm. Tenant&apos;a girmek için satır sonundaki 🎭 Gir butonunu kullan.
       </p>
 
-      <Link href={'/admin' as never} className="text-center text-xs text-ink-4 hover:text-cart">
-        ← Pano&apos;ya dön
-      </Link>
+      {/* Süperadmin kendi tenant pano'sunu görmek için sidebar Pano linkini kullanabilir.
+          Buradaki "Pano'ya dön" link kaldırıldı — tenant'a impersonate akışı için karışıklık yaratıyordu. */}
     </main>
   );
 }

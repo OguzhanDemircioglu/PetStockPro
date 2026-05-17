@@ -25,7 +25,7 @@ if (!process.env.AUTH_SECRET) {
   throw new Error('AUTH_SECRET is not set in environment');
 }
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+export const { handlers, signIn, signOut, auth: baseAuth } = NextAuth({
   adapter: DrizzleAdapter(db),
   session: { strategy: 'jwt' },
   secret: process.env.AUTH_SECRET,
@@ -75,3 +75,37 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   },
 });
+
+/**
+ * Effective auth — Auth.js auth() üzerine impersonation override.
+ *
+ * Eğer aktif kullanıcı SUPERADMIN ise ve `pp-impersonate-tenant` cookie set ise,
+ * session.user.companyId cookie'deki company_id ile değiştirilir. Tüm admin sayfaları
+ * bu override edilmiş companyId ile veri çeker — kullanıcı "tenant gibi" görür.
+ *
+ * Hedef tenant'ın asıl rolünü taklit etmez (SUPERADMIN olarak kalır) — sadece
+ * scope değişir. Audit log her zaman superadmin damgalı yazılır.
+ *
+ * Performance: cookie read sync (Next.js cookies()), DB sorgusu YOK
+ * (validation impersonate.ts helper'da setImpersonationCookie sırasında yapılır).
+ *
+ * Non-SUPERADMIN'in cookie'si silent olarak yok sayılır (override yapılmaz).
+ */
+export async function auth() {
+  const session = await baseAuth();
+  if (!session?.user?.id) return session;
+  // Lazy import: cookies() çağrısı sırasına bağımlı olmasın — auth.ts'in kendisi
+  // farklı context'lerden çağrılabilir (auth.ts → impersonate.ts → auth.ts) cycle.
+  const { cookies: getCookies } = await import('next/headers');
+  const cookieStore = await getCookies();
+  const impersonateCompanyId = cookieStore.get('pp-impersonate-tenant')?.value;
+  if (!impersonateCompanyId) return session;
+  if (session.user.role !== 'SUPERADMIN') return session; // silent reject
+  return {
+    ...session,
+    user: {
+      ...session.user,
+      companyId: impersonateCompanyId,
+    },
+  };
+}

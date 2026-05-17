@@ -4,8 +4,10 @@ import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { companies, productVariants, products, branchInventory } from '@/db/schema';
 import { isSuperadmin } from '@/lib/superadmin/access';
+import { readImpersonation } from '@/lib/superadmin/impersonate';
 import { AdminSidebar } from '@/components/admin-sidebar';
 import { AdminTopbar } from '@/components/admin-topbar';
+import { ImpersonationBanner } from '@/components/impersonation-banner';
 import { SuperadminToolbox } from '@/components/superadmin-toolbox';
 import { planProductLimit } from '@/lib/constants/plan-limits';
 import { unreadCountForUser } from '@/lib/notifications/manage';
@@ -13,12 +15,9 @@ import { unreadCountForUser } from '@/lib/notifications/manage';
 /**
  * /admin/* layout — sidebar (brand + nav + plan) + main content area.
  *
- * Sidebar persistent (sticky), Toolbox FAB sadece SUPERADMIN için.
- * lg+ breakpoint'inde sidebar görünür; mobil'de gizli (Faz 2'de hamburger).
- *
- * Plan progress ve düşük stok badge'i için lightweight 3 query (companies +
- * products count + branch_inventory low stock count). Bu data Pano sayfasında
- * tekrar fetch ediliyor (KPI için) — küçük overhead, kabul edilebilir.
+ * Süperadmin impersonation: `pp-impersonate-tenant` cookie varsa ve aktif kullanıcı
+ * SUPERADMIN ise, sayfa o tenant'ın verileriyle render edilir. Sticky banner üstte.
+ * Non-SUPERADMIN için cookie yok sayılır (silent reject).
  */
 export default async function AdminLayout({
   children,
@@ -30,18 +29,24 @@ export default async function AdminLayout({
 
   const showToolbox = isSuperadmin(session);
 
+  // Impersonation: SUPERADMIN için cookie'den effective companyId
+  const impersonation = showToolbox
+    ? await readImpersonation(session.user.id, session.user.email ?? '')
+    : null;
+  const effectiveCompanyId = impersonation?.companyId ?? session.user.companyId;
+
   const [companyRow, productCountRow, lowStockRow, unreadCount] = await Promise.all([
     db
       .select({ name: companies.name, plan: companies.plan })
       .from(companies)
-      .where(eq(companies.id, session.user.companyId))
+      .where(eq(companies.id, effectiveCompanyId))
       .limit(1),
     db
       .select({ count: sql<number>`COUNT(*)::int` })
       .from(products)
       .where(
         and(
-          eq(products.companyId, session.user.companyId),
+          eq(products.companyId, effectiveCompanyId),
           isNull(products.deletedAt),
         ),
       ),
@@ -54,7 +59,7 @@ export default async function AdminLayout({
       )
       .where(
         and(
-          eq(branchInventory.companyId, session.user.companyId),
+          eq(branchInventory.companyId, effectiveCompanyId),
           eq(productVariants.isActive, true),
           sql`${branchInventory.stockQty} <= COALESCE(
             (${productVariants.branchThresholds} ->> ${branchInventory.branchId}::text)::int,
@@ -62,7 +67,7 @@ export default async function AdminLayout({
           )`,
         ),
       ),
-    unreadCountForUser(session.user.companyId, session.user.id, db),
+    unreadCountForUser(effectiveCompanyId, session.user.id, db),
   ]);
 
   const company = companyRow[0];
@@ -84,6 +89,12 @@ export default async function AdminLayout({
         isSuperadmin={showToolbox}
       />
       <div className="flex min-h-screen flex-1 min-w-0 flex-col">
+        {impersonation && (
+          <ImpersonationBanner
+            companyName={impersonation.companyName}
+            impersonatorEmail={impersonation.impersonatorEmail}
+          />
+        )}
         <AdminTopbar
           userEmail={session.user.email ?? ''}
           unreadCount={unreadCount}
