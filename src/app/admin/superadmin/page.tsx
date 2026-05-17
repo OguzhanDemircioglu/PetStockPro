@@ -125,28 +125,24 @@ export default async function SuperadminTenantsPage() {
       >
         <KpiBold
           tone="bars"
-          emoji="👁"
           label="Profil görüntüleme"
           value={vitrinStats.profileView}
           sub="/vitrin/magaza/[slug] ziyaret"
         />
         <KpiBold
           tone="cart"
-          emoji="🛍"
           label="Ürün görüntüleme"
           value={vitrinStats.productView}
           sub="ürün detay sayfası"
         />
         <KpiBold
           tone="arrow"
-          emoji="📞"
           label="WhatsApp tıklama"
           value={vitrinStats.whatsappClick}
           sub="en kıymetli — conversion"
         />
         <KpiBold
           tone="cat"
-          emoji="🎯"
           label="Conversion oranı"
           value={`%${vitrinStats.conversionRate.toFixed(1)}`}
           sub="WA tıklama / profil görüntüleme"
@@ -571,7 +567,8 @@ function KpiBold({
   sub,
 }: {
   tone: 'cat' | 'cart' | 'arrow' | 'bars' | 'danger';
-  emoji: string;
+  /** Opsiyonel — verilmezse sağ üst ikon kutusu render edilmez. */
+  emoji?: string;
   label: string;
   value: number | string;
   sub: string;
@@ -590,9 +587,11 @@ function KpiBold({
       data-kpi-tone={tone}
       className={`relative overflow-hidden rounded-2xl p-6 text-white transition-transform hover:-translate-y-1 ${toneCls[tone]}`}
     >
-      <div className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-xl bg-white/20 text-lg">
-        {emoji}
-      </div>
+      {emoji && (
+        <div className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-xl bg-white/20 text-lg">
+          {emoji}
+        </div>
+      )}
       <span className="text-[11px] font-bold uppercase tracking-wider opacity-85">
         {label}
       </span>
