@@ -1,9 +1,14 @@
 import Link from 'next/link';
+import { VitrinAdminReturnLink } from './admin-return-link';
 
 /**
  * /vitrin/* public layout — auth yok, üst bar + footer.
  *
  * Pet shop merkezi dizini. Sahibinden / Yelp modeli.
+ *
+ * VitrinAdminReturnLink: sadece login admin/staff/superadmin'e görünür
+ * (server-side `auth()` check, anonim ziyaretçi için null render — auth state
+ * sızıntısı yok). Detay: admin-return-link.tsx içindeki güvenlik notları.
  */
 export default function VitrinLayout({
   children,
@@ -14,18 +19,22 @@ export default function VitrinLayout({
     <div className="min-h-screen bg-gradient-to-br from-paper to-cat-soft/10">
       <header className="sticky top-0 z-30 border-b border-line bg-paper/85 backdrop-blur supports-[backdrop-filter]:bg-paper/70">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
-          <Link
-            href={'/vitrin' as never}
-            className="flex items-center gap-2 text-cart"
-            data-testid="vitrin-logo"
-          >
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-cat text-lg text-white shadow-sm">
-              🐾
-            </span>
-            <span className="text-base font-bold leading-tight">
-              PetStockPro <span className="text-cat">Vitrin</span>
-            </span>
-          </Link>
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Sadece login admin/staff/süperadmin: ← Admin paneli */}
+            <VitrinAdminReturnLink />
+            <Link
+              href={'/vitrin' as never}
+              className="flex items-center gap-2 text-cart"
+              data-testid="vitrin-logo"
+            >
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-cat text-lg text-white shadow-sm">
+                🐾
+              </span>
+              <span className="text-base font-bold leading-tight">
+                PetStockPro <span className="text-cat">Vitrin</span>
+              </span>
+            </Link>
+          </div>
           <nav className="flex flex-wrap items-center gap-2 text-[14px]">
             <Link
               href={'/vitrin' as never}
