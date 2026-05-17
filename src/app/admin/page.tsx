@@ -5,6 +5,9 @@ import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { companies } from '@/db/schema';
+import { Meteors } from '@/components/magicui/meteors';
+import { NumberTicker } from '@/components/magicui/number-ticker';
+import { PulsatingButton } from '@/components/magicui/pulsating-button';
 import {
   getDashboardStats,
   listLowStock,
@@ -106,16 +109,23 @@ export default async function AdminDashboardPage() {
 
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 lg:px-6 py-8 lg:py-10">
-      {/* ============ HERO — Cat orange gradient + logo aside ============ */}
+      {/* ============ HERO — Cat orange gradient + meteors + logo aside ============ */}
       <section
         data-testid="pano-hero"
-        className="relative grid items-center gap-6 overflow-hidden rounded-3xl px-8 py-9 text-white shadow-xl md:grid-cols-[1fr_auto]"
+        className="relative grid items-center gap-6 overflow-hidden rounded-3xl px-8 py-9 text-white shadow-[0_22px_50px_rgba(212,74,20,.32)] md:grid-cols-[1fr_auto]"
         style={{
           background:
             'radial-gradient(circle at 88% 30%, rgba(255,255,255,.18), transparent 60%), linear-gradient(135deg, #d44a14 0%, #ed6a2c 55%, #d44a14 100%)',
         }}
       >
-        <div className="min-w-0">
+        <Meteors number={14} />
+
+        <div className="absolute top-[22px] left-8 z-10 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-white/85">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-arrow-2" />
+          Tüm sistemler çalışıyor
+        </div>
+
+        <div className="relative z-10 min-w-0 pt-4">
           <div className="text-[11px] font-bold uppercase tracking-wider opacity-85">
             🐾 Bugün · {company?.name ?? 'Pet shop'}
           </div>
@@ -210,7 +220,7 @@ export default async function AdminDashboardPage() {
         {/* Logo aside — mockup'taki rotated white card + logo */}
         <div
           data-testid="hero-logo-wrap"
-          className="relative hidden h-44 w-44 place-items-center md:grid"
+          className="relative z-10 hidden h-44 w-44 place-items-center md:grid"
         >
           <span
             aria-hidden
@@ -268,7 +278,7 @@ export default async function AdminDashboardPage() {
 
       {/* ============ STOCK STRIP — envanter özeti + plan ============ */}
       <article
-        className="grid items-center gap-4 rounded-2xl border border-line bg-white p-5 lg:grid-cols-[1.5fr_1fr_auto]"
+        className="grid items-center gap-4 rounded-2xl border border-line bg-paper p-5 lg:grid-cols-[1.5fr_1fr_auto]"
         data-testid="stock-strip"
       >
         <div>
@@ -334,9 +344,15 @@ export default async function AdminDashboardPage() {
           </div>
           <Link
             href={'/admin/low-stock' as never}
-            className="rounded-xl bg-danger px-4 py-2 text-[12px] font-bold text-white shadow-sm hover:bg-danger-7"
+            data-testid="pano-alert-cta"
+            className="inline-block"
           >
-            Düşük stoğa git →
+            <PulsatingButton
+              className="bg-cat hover:bg-cat-2"
+              pulseColor="rgba(212,74,20,.5)"
+            >
+              Düşük stoğa git →
+            </PulsatingButton>
           </Link>
         </article>
       )}
@@ -415,7 +431,7 @@ export default async function AdminDashboardPage() {
               Detay →
             </Link>
           </div>
-          <article className="grid gap-3 rounded-2xl border border-line bg-white p-4 sm:grid-cols-4">
+          <article className="grid gap-3 rounded-2xl border border-line bg-paper p-4 sm:grid-cols-4">
             <FeedbackKpi
               label="Aktivite"
               value={String(feedbackActivity)}
@@ -527,7 +543,7 @@ export default async function AdminDashboardPage() {
                     href={
                       `/admin/stock-movements?transfer=open&variant=${t.variantId}&source=${t.sourceBranchId}&target=${t.targetBranchId}&qty=${t.suggestedQty}` as never
                     }
-                    className="rounded-lg border border-arrow/40 bg-white px-2.5 py-1.5 text-[10.5px] font-bold text-arrow-7 hover:bg-arrow hover:text-white transition-colors"
+                    className="rounded-lg border border-arrow/40 bg-paper px-2.5 py-1.5 text-[10.5px] font-bold text-arrow-7 hover:bg-arrow hover:text-white transition-colors"
                   >
                     🔁 Transfer
                   </Link>
@@ -610,7 +626,7 @@ export default async function AdminDashboardPage() {
                     </div>
                     <Link
                       href={`/admin/products/${d.productId}/edit` as never}
-                      className="rounded-lg border border-danger/40 bg-white px-2.5 py-1.5 text-[10.5px] font-bold text-danger-7 hover:bg-danger hover:text-white transition-colors"
+                      className="rounded-lg border border-danger/40 bg-paper px-2.5 py-1.5 text-[10.5px] font-bold text-danger-7 hover:bg-danger hover:text-white transition-colors"
                     >
                       ✏ Fiyatı düzenle
                     </Link>
@@ -692,7 +708,7 @@ export default async function AdminDashboardPage() {
                       href={
                         `/admin/stock-movements?variant=${e.variantId}&branch=${e.branchId}` as never
                       }
-                      className="rounded-lg border border-danger/40 bg-white px-2.5 py-1.5 text-[10.5px] font-bold text-danger-7 hover:bg-danger hover:text-white transition-colors"
+                      className="rounded-lg border border-danger/40 bg-paper px-2.5 py-1.5 text-[10.5px] font-bold text-danger-7 hover:bg-danger hover:text-white transition-colors"
                     >
                       📤 Fire kaydı
                     </Link>
@@ -769,7 +785,7 @@ export default async function AdminDashboardPage() {
                     href={
                       `/admin/stock-movements?variant=${s.variantId}&branch=${s.branchId}` as never
                     }
-                    className="rounded-lg border border-cat/40 bg-white px-2.5 py-1.5 text-[10.5px] font-bold text-cart hover:bg-cat hover:text-white transition-colors"
+                    className="rounded-lg border border-cat/40 bg-paper px-2.5 py-1.5 text-[10.5px] font-bold text-cart hover:bg-cat hover:text-white transition-colors"
                   >
                     📥 Giriş yap
                   </Link>
@@ -928,7 +944,8 @@ function ZoneLabel({ emoji, label }: { emoji: string; label: string }) {
   );
 }
 
-/** v3 pano: bold renkli KPI kartı (3 marka rengi: cat/cart/arrow + danger). */
+/** v3 pano: bold renkli KPI kartı (3 marka rengi: cat/cart/arrow + danger).
+ *  Sayısal `value` ise NumberTicker ile count-up animasyonu uygulanır. */
 function KpiBold({
   tone,
   label,
@@ -948,11 +965,12 @@ function KpiBold({
     arrow: 'bg-gradient-to-br from-arrow to-arrow-7 shadow-[0_12px_32px_rgba(22,160,138,.18)]',
     danger: 'bg-gradient-to-br from-danger to-danger-7 shadow-[0_12px_32px_rgba(196,49,49,.20)]',
   };
+  const numeric = typeof value === 'number';
   return (
     <article
       data-kpi-bold={label}
       data-kpi-tone={tone}
-      className={`relative overflow-hidden rounded-2xl p-6 text-white transition-transform hover:-translate-y-0.5 ${toneCls[tone]}`}
+      className={`relative overflow-hidden rounded-2xl p-6 text-white transition-transform hover:-translate-y-1 ${toneCls[tone]}`}
     >
       <div className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-xl bg-white/20 text-lg">
         {emoji}
@@ -961,7 +979,7 @@ function KpiBold({
         {label}
       </span>
       <div className="mt-2 font-mono text-4xl font-bold leading-none tracking-tight">
-        {value}
+        {numeric ? <NumberTicker value={value as number} className="text-white" /> : value}
       </div>
       <div className="mt-2 text-[11.5px] opacity-90">{sub}</div>
     </article>
@@ -1015,7 +1033,7 @@ function FeedbackKpi({
     cat: 'border-cat/30 bg-cat-soft/40',
     arrow: 'border-arrow/30 bg-arrow-soft/40',
     danger: 'border-danger/30 bg-danger-soft/40',
-    neutral: 'border-line bg-white',
+    neutral: 'border-line bg-paper',
   };
   return (
     <article
@@ -1042,7 +1060,7 @@ function Card({
 }) {
   return (
     <article
-      className="rounded-2xl border border-line bg-white p-5"
+      className="rounded-2xl border border-line bg-paper p-5"
       data-testid={testid}
     >
       <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-ink-3">
@@ -1064,10 +1082,10 @@ function PanoNotificationItem({ item }: { item: NotificationRow }) {
         data-pano-notif-id={item.id}
         data-unread={isUnread ? '1' : '0'}
         className={`flex items-start gap-3 rounded-2xl border p-3 hover:shadow-sm transition-shadow ${
-          isUnread ? 'border-cat/40 bg-cat-soft/30' : 'border-line bg-white'
+          isUnread ? 'border-cat/40 bg-cat-soft/30' : 'border-line bg-paper'
         }`}
       >
-        <span className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-xl bg-white text-lg">
+        <span className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-xl bg-paper text-lg">
           {emoji}
         </span>
         <div className="min-w-0 flex-1">
