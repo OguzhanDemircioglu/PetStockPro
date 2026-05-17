@@ -8,6 +8,7 @@ import {
   listTenantMovements,
   listTenantAudit,
 } from '@/lib/superadmin/tenant-detail';
+import { ResetCategoriesButton } from './reset-categories-button';
 
 const ROLE_BADGE: Record<string, string> = {
   SUPERADMIN: 'bg-cat-soft text-cart',
@@ -77,6 +78,20 @@ export default async function TenantDetailSuperadminPage({
           emoji="🔄"
           accent={tenant.movements24h > 0 ? 'arrow' : 'neutral'}
         />
+      </section>
+
+      <section
+        data-testid="tenant-actions"
+        className="rounded-2xl border-2 border-danger/30 bg-danger-soft/30 p-4"
+      >
+        <h2 className="mb-2 text-xs font-bold uppercase tracking-wider text-danger-7">
+          ⚠ Tehlikeli aksiyonlar
+        </h2>
+        <p className="mb-3 text-[13px] text-ink-2">
+          Bu aksiyonlar tenant&apos;ın verilerini değiştirir. Audit log&apos;a
+          süperadmin damgalı yazılır.
+        </p>
+        <ResetCategoriesButton companyId={tenant.id} />
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
