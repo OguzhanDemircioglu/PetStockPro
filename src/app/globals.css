@@ -276,6 +276,7 @@ html.dark body::before {
 .pt-cat-nav {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 0;
 }
 .pt-cat-nav-item {
@@ -364,7 +365,8 @@ html.dark body::before {
 }
 
 @media (max-width: 700px) {
-  .pt-cat-nav { overflow-x: auto; flex-wrap: nowrap; }
+  /* Mobile: ortalama yerine yatay kaydırma — küçük ekranda 6 buton sığmaz */
+  .pt-cat-nav { overflow-x: auto; flex-wrap: nowrap; justify-content: flex-start; }
   .pt-cat-nav-btn { padding: 10px 12px; font-size: 13px; }
   .pt-cat-dropdown { left: auto; right: 0; min-width: 200px; }
 }
