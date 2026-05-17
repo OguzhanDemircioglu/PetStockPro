@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { VitrinAdminReturnLink } from './admin-return-link';
+import { VitrinCategoryBar } from '@/components/vitrin/category-bar';
 
 /**
  * /vitrin/* public layout — auth yok, üst bar + footer.
@@ -51,6 +52,9 @@ export default function VitrinLayout({
           </nav>
         </div>
       </header>
+
+      {/* Yatay kategori bar (server component, hover dropdown ile 2-seviyeli) */}
+      <VitrinCategoryBar />
 
       {children}
 

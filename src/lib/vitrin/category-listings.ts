@@ -181,6 +181,62 @@ export interface CategoryWithCount extends CategoryInfo {
   productCount: number;
 }
 
+export interface CategoryNavRoot extends CategoryInfo {
+  /** Root altındaki ürün sayısı (root'a doğrudan atanmış + tüm child'larından gelen toplam). */
+  totalProductCount: number;
+  /** Alt kategoriler — sadece DEFAULT_CATEGORIES'te bu root'a bağlı olanlar. */
+  children: CategoryWithCount[];
+}
+
+/**
+ * Vitrin yatay kategori nav için 2-seviyeli tree döner.
+ *
+ * Her root: 6 üst kategori (Kedi/Köpek/...). Children: DEFAULT_CATEGORIES'te
+ * parentSlug eşleşen child'lar. Her child'da productCount (vitrin'de görünen
+ * approved + isEnabled + vitrin_published ürün sayısı).
+ *
+ * Boş root'lar (hiç child'ında ürün yok) yine listede yer alır — keşif amacıyla.
+ */
+export async function listCategoryNavTree(
+  db: DbClient,
+): Promise<CategoryNavRoot[]> {
+  // listCategoriesWithStorefrontProducts cross-tenant slug → count haritası verir
+  const withProducts = await listCategoriesWithStorefrontProducts(db);
+  const countBySlug = new Map<string, number>();
+  for (const c of withProducts) countBySlug.set(c.slug, c.productCount);
+
+  // DEFAULT_CATEGORIES'ten root + child yapısını oku (static source of truth)
+  const { DEFAULT_CATEGORIES } = await import('@/lib/catalog/default-categories');
+  const roots = DEFAULT_CATEGORIES.filter((c) => !c.parentSlug);
+  const childrenBySlug = new Map<string, typeof DEFAULT_CATEGORIES>();
+  for (const c of DEFAULT_CATEGORIES) {
+    if (!c.parentSlug) continue;
+    const list = childrenBySlug.get(c.parentSlug) ?? [];
+    list.push(c);
+    childrenBySlug.set(c.parentSlug, list);
+  }
+
+  return roots.map((root) => {
+    const children: CategoryWithCount[] = (childrenBySlug.get(root.slug) ?? [])
+      .map((c) => ({
+        slug: c.slug,
+        name: c.name,
+        emoji: c.emoji,
+        productCount: countBySlug.get(c.slug) ?? 0,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+    const rootDirect = countBySlug.get(root.slug) ?? 0;
+    const childrenTotal = children.reduce((s, c) => s + c.productCount, 0);
+    return {
+      slug: root.slug,
+      name: root.name,
+      emoji: root.emoji,
+      totalProductCount: rootDirect + childrenTotal,
+      children,
+    };
+  });
+}
+
 export async function listCategoriesWithStorefrontProducts(
   db: DbClient,
 ): Promise<CategoryWithCount[]> {
