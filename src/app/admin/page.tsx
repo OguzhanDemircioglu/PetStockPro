@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { companies } from '@/db/schema';
-import { Meteors } from '@/components/magicui/meteors';
+import { Snowfall } from '@/components/magicui/snowfall';
 import { NumberTicker } from '@/components/magicui/number-ticker';
 import { PulsatingButton } from '@/components/magicui/pulsating-button';
 import {
@@ -118,7 +118,7 @@ export default async function AdminDashboardPage() {
             'radial-gradient(circle at 88% 30%, rgba(255,255,255,.18), transparent 60%), linear-gradient(135deg, #d44a14 0%, #ed6a2c 55%, #d44a14 100%)',
         }}
       >
-        <Meteors number={14} />
+        <Snowfall number={40} />
 
         <div className="absolute top-[22px] left-8 z-10 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-white/85">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-arrow-2" />

@@ -10,9 +10,12 @@ type Meteor = { left: string; delay: string; duration: string };
 
 function makeMeteors(count: number): Meteor[] {
   return Array.from({ length: count }, () => ({
+    // mockup ile uyumlu: tüm genişliğe yay (0-100%)
     left: Math.floor(Math.random() * 100) + '%',
-    delay: (Math.random() * 1.6).toFixed(2) + 's',
-    duration: (Math.random() * 4 + 4).toFixed(2) + 's',
+    // delay: 0-5s arası — meteor'lar dağıtık görünür, sürekli yağar
+    delay: (Math.random() * 5).toFixed(2) + 's',
+    // duration: 3-6s arası — daha sık görünür için kısaltıldı
+    duration: (Math.random() * 3 + 3).toFixed(2) + 's',
   }));
 }
 
@@ -52,15 +55,16 @@ export function Meteors({ number = 12 }: Props) {
       {items.map((m, i) => (
         <span
           key={i}
-          className="pointer-events-none absolute h-0.5 w-0.5 rounded-full bg-white shadow-[0_0_0_1px_#ffffff10] rotate-[215deg] animate-meteor"
+          className="pointer-events-none absolute h-1 w-1 rounded-full bg-white shadow-[0_0_2px_1px_rgba(255,255,255,.45)] rotate-[215deg] animate-meteor"
           style={{
-            top: -2,
+            top: -4,
             left: m.left,
             animationDelay: m.delay,
             animationDuration: m.duration,
           }}
         >
-          <span className="absolute top-1/2 -translate-y-1/2 h-px w-[60px] bg-gradient-to-r from-white to-transparent" />
+          {/* Daha uzun ve belirgin tail (kuyruk). Mockup uyumlu, dark gradient hero üstünde net kontrast. */}
+          <span className="absolute top-1/2 -translate-y-1/2 h-[1.5px] w-[90px] bg-gradient-to-r from-white to-transparent" />
         </span>
       ))}
     </>
