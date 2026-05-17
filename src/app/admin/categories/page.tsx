@@ -190,9 +190,6 @@ function RootCategoryGroup({
               {childCount} alt
             </span>
           </div>
-          <div className="font-mono text-[11.5px] text-ink-4">
-            {root?.slug ?? '—'}
-          </div>
         </div>
         {root && (
           <div className="flex items-center gap-2">
