@@ -1,23 +1,7 @@
 import type { Metadata, Viewport } from 'next';
+import { cookies } from 'next/headers';
 import { ThemeProvider } from '@/components/theme/theme-provider';
 import './globals.css';
-
-/**
- * Theme flash prevention — runs before React hydrates.
- * Reads localStorage pp-theme (or matchMedia prefers-color-scheme) and
- * applies html.dark synchronously so first paint matches user pref.
- */
-const themeBootScript = `
-(function() {
-  try {
-    var t = localStorage.getItem('pp-theme');
-    if (t !== 'dark' && t !== 'light') {
-      t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-    if (t === 'dark') document.documentElement.classList.add('dark');
-  } catch (e) {}
-})();
-`;
 
 export const metadata: Metadata = {
   title: {
@@ -54,19 +38,24 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Server-side theme resolve from cookie (no flash, no inline script).
+  // Client toggle yazarken hem `document.cookie` hem localStorage'a yazar.
+  const cookieStore = await cookies();
+  const themeCookie = cookieStore.get('pp-theme')?.value;
+  const isDark = themeCookie === 'dark';
+  const htmlClass = `h-full antialiased${isDark ? ' dark' : ''}`;
+
   return (
-    <html lang="tr" className="h-full antialiased" suppressHydrationWarning>
+    <html lang="tr" className={htmlClass} suppressHydrationWarning>
       <body className="min-h-full flex flex-col">
-        {/* React 19 hoisted script — React, server-renderlandığında bu <script>
-            etiketini `<head>` 'e otomatik taşır. beforeInteractive davranış sağlar,
-            ek paket gereksiz. */}
-        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider initialTheme={isDark ? 'dark' : 'light'}>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

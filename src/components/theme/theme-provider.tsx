@@ -4,6 +4,9 @@ import { createContext, useContext, useEffect, useState } from 'react';
 
 type Theme = 'light' | 'dark';
 const STORAGE_KEY = 'pp-theme';
+const COOKIE_KEY = 'pp-theme';
+// 1 yıl — kullanıcı tercihi uzun süre kalsın.
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
 interface ThemeContextValue {
   theme: Theme;
@@ -13,19 +16,23 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-// Read initial theme synchronously from DOM (set by themeBootScript in <head>)
-// to avoid cascading setState-in-effect. Falls back to light during SSR.
-function readInitialTheme(): Theme {
-  if (typeof document === 'undefined') return 'light';
-  return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+interface ProviderProps {
+  children: React.ReactNode;
+  /** Cookie'den server-side okunan başlangıç teması. */
+  initialTheme?: Theme;
 }
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Lazy initializer pulls from the html.dark class the boot script already set.
-  // No setState in effect → no cascading renders.
-  const [theme, setThemeState] = useState<Theme>(readInitialTheme);
+/**
+ * ThemeProvider — cookie + localStorage hibrit persist.
+ *
+ * Initial theme cookie üzerinden server-side gelir; client'ta toggle olunca
+ * hem cookie hem localStorage güncellenir. Inline script gerek YOK → React 19
+ * "script tag in component" uyarısı yok.
+ */
+export function ThemeProvider({ children, initialTheme = 'light' }: ProviderProps) {
+  const [theme, setThemeState] = useState<Theme>(initialTheme);
 
-  // Sync html.dark class on every change (idempotent).
+  // Sync html.dark on every change (idempotent).
   useEffect(() => {
     applyHtmlClass(theme);
   }, [theme]);
@@ -35,8 +42,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     applyHtmlClass(t);
     try {
       window.localStorage.setItem(STORAGE_KEY, t);
+      // 1 yıl ttl, Lax SameSite. Secure flag prod'da HTTPS'te otomatik gelir.
+      document.cookie = `${COOKIE_KEY}=${t}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
     } catch {
-      /* localStorage unavailable */
+      /* localStorage/cookie unavailable */
     }
   };
   const toggle = () => setTheme(theme === 'dark' ? 'light' : 'dark');
