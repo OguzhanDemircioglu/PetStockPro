@@ -1,11 +1,77 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-17 (yukarıdaki + Faz 2 batch + Pano v3 mockup migration + **Magic UI altyapısı + Light/Dark theme + admin shell magicui + Pano magicui + bg-white→bg-paper migration + Süperadmin vitrin events + tenant aktivite metrikleri**)
-**Mevcut Branch:** `cray61` — origin'in **113 commit** ileri (push edilmedi)
-**Son commit:** `7e2b399` refactor(admin): toplu bg-white → bg-paper migration (dark mode theme-aware)
-**Test:** 1180 passed (86 dosya) — vitest (yeni testler bu turda eklenmedi, sadece UI migration)
-**Lint+typecheck:** 0 error (React 19 `set-state-in-effect` lint kuralı için ThemeProvider + NumberTicker + Meteors lazy initializer pattern'i ile geçildi)
+**Tarih:** 2026-05-18 (yukarıdaki + Faz 2 + Pano v3 mockup + Magic UI altyapısı + Light/Dark theme + bg-paper migration + Süperadmin metrik dashboard + **vitrin dark + cookie theme + tenant impersonation + middleware guard + WhatsApp button + tipografi büyütme + 2-seviyeli kategori + benzersiz emoji + kategori bar + admin/superadmin kategori reset**)
+**Mevcut Branch:** `cray61` — origin'in **145 commit** ileri (push edilmedi)
+**Son commit:** `1c3af65` refactor(admin/categories): AdminCategoryGrid → AdminCategoryBar (Pet CategoryBar yapısı)
+**Test:** 1192+ passed (kategori benzersiz emoji + 49 hiyerarşik testleri eklendi)
+**Lint+typecheck:** 0 error
 **Migration:** 15 (değişmedi)
+
+## 🆕 Son tur (2026-05-18, sabah) — Vitrin dark + Impersonation + Tipografi + Hiyerarşik kategori + Pet CategoryBar
+
+23 yeni commit (en son `995642f` Magic UI altyapısından bu yana — bir önceki turun devamı):
+
+| # | İş | Commit |
+|---|---|---|
+| Hydration fix | Meteors hydration mismatch + script tag warning (sonra cookie theme ile tam çözüldü) | `6be51bf`, `381812a` |
+| Vitrin dark | bg-white → bg-paper, 11 dosya 52 yer | `f66ca1d` |
+| Tenant impersonation | 🎭 Gir butonu + sticky banner + cookie `pp-impersonate-tenant` + auth() wrapper companyId override + audit log | `cd416f8` |
+| Süperadmin emoji ikonları kaldır | Vitrin Görüntüleme zone 4 kart sağ üst emoji kutuları | `819a4db` |
+| Snowfall efekti | Pano hero meteorlar → 40 yumuşak kar tanesi + toggle ❄/× sağ alt köşe + localStorage persist | `58a73dc`, `f347974` |
+| Topbar süperadmin button conditional | /admin/superadmin/* sayfalarında gizle | `45d3b0f` |
+| Middleware guard | /admin/superadmin/:path* için 4. katman, getToken + role check, edge runtime | `3590808` |
+| Tipografi büyütme | html font-size 16→18, body 13→16, 783 hardcoded text-[Npx] +1.5px büyüt (108 dosya), Verdana doğrula | `89d5b5f` |
+| Vitrin admin-return-link | Login admin/staff için '← Admin paneli' chip, server-side auth gate, anonim sızıntı yok | `1810776` |
+| WhatsApp button | Resmi #25D366 yeşil + SVG logo, label 'WhatsApp', 6 vitrin sayfasında migrate | `258e0b8` |
+| 2-seviyeli kategori | 16 flat → 49 hiyerarşik (6 üst + 43 alt) + parentSlug field + 2-fazlı seed (root→child, parentId resolve) + register helper + /admin/categories parent-child accordion + system-settings collapsible | `d7fd2d9` |
+| Kategori form refactor | KDV form'dan kaldır + üst/alt mod toggle + parent select + sıralama selectbox (1..max+1) | `94fcdc2` |
+| Tenant default kategorilere sıfırla | Süperadmin tenant detay sayfası '🔄 Default kategorilere sıfırla' aksiyonu + audit | `9f963ff` |
+| Hero rotated white card | Logo aside (önceki turda eklendi) | (önceki tur) |
+| Benzersiz emoji | 49 default kategoride emoji çakışmaları düzeltildi + addCategory/updateCategory emoji_taken validation + 12. test | `ec9a08f` |
+| Vitrin kategori bar | Yatay nav + hover/focus-within dropdown, listCategoryNavTree (root + child + productCount), 2-seviyeli sticky bar | `3332109`, `33af63b` |
+| Admin CategoryGrid → CategoryBar | Pet projesi CategoryBar yapısı admin'de de — eski 6 renkli kart kaldırıldı, yatay nav + dropdown (mevcut tenant kategorilerinden) | `f464f30`→`1c3af65` |
+
+## 📌 Önemli notlar (bu turda netleşen)
+
+### Cookie-based theme — flash önleyici (final çözüm)
+React 19'da `<script dangerouslySetInnerHTML>` her yerde "Encountered a script tag" uyarısı. Inline boot script tamamen kaldırıldı. Yerine:
+- **layout.tsx async** + `cookies()` ile `pp-theme` cookie server-side oku
+- `html.dark` className SSR'da render (flash yok)
+- ThemeProvider initialTheme prop alır (server'dan gelen değer)
+- Toggle: `setEnabled()` + `document.cookie` + `localStorage` ikisine birden 1 yıl TTL
+
+### Tenant impersonation mimarisi
+- Süperadmin tenant tablosunda her satırın sonunda '🎭 Gir' butonu (server action form)
+- `setImpersonationCookie(companyId, ...)` HttpOnly+SameSite=Lax 8h TTL
+- `lib/auth/auth.ts` baseAuth → auth() wrapper: SUPERADMIN + cookie ise `session.user.companyId` override (tüm admin sayfaları otomatik tenant verisi görür, manuel migration gerekmedi)
+- Sticky banner üstte: `[email] · [TenantAdı] olarak görüntülüyor` + 'Çıkış · Süperadmin'e dön' formu
+- Audit: `superadmin.impersonate.started/stopped` (entity=company, performedAsSuperadmin=true)
+
+### Süperadmin güvenlik (4 katman + 5. server action gate)
+| Katman | Mekanizma |
+|---|---|
+| 1. Sidebar nav grup | `isSuperadmin ? push : skip` (admin-sidebar.tsx) |
+| 2. Topbar button | `isSuperadmin && !pathname.startsWith('/admin/superadmin')` |
+| 3. Sayfa guard | her `/admin/superadmin/*/page.tsx` `await requireSuperadmin()` |
+| 4. Middleware | `src/middleware.ts` matcher `/admin/superadmin/:path*` → `getToken` → role check → redirect /admin veya /login |
+| 5. Server actions | `isSuperadmin(session) \|\| redirect('/login')` |
+
+Browser test (magicui@petshop.test BAYI_SAHIBI ile): 4 farklı süperadmin URL doğrudan girildi → /admin'e redirect ✓ sidebar süperadmin grup yok ✓ topbar button yok ✓
+
+### Kategori 2-seviyeli yapı
+- DEFAULT_CATEGORIES 49 entry: 6 root (Kedi/Köpek/Kuş/Akvaryum/Kemirgen/Sürüngen) + 43 child
+- `parentSlug` field statik kategori şemasında, seed helper 2-fazlı insert (root→child)
+- Her child `parentId` ile DB'de bağlı (FK ON DELETE CASCADE Drizzle relations'ta)
+- Mevcut tenant'lar eski 16 flat kategori ile kaldı — süperadmin tenant detay sayfasında '🔄 Default kategorilere sıfırla' aksiyonu var
+- Form: 'Üst kategori ekle' vs 'Alt kategori ekle' mod toggle + parent select + sıralama selectbox (1..max+1)
+- 49 default emoji **benzersiz**, addCategory/updateCategory yeni reason `emoji_taken`
+
+### Vitrin & Admin CategoryBar (Pet projesi yapısı)
+- `.pt-cat-bar / .pt-cat-nav / .pt-cat-dropdown / .pt-drop-item` CSS sınıfları globals.css
+- Vitrin: `VitrinCategoryBar` — DEFAULT_CATEGORIES cross-tenant statik
+- Admin: `AdminCategoryBar` — mevcut tenant kategorilerinden inşa, edit link
+- Hover veya focus-within ile dropdown
+- `justify-content: center` (mobile'da overflow-x scroll)
 
 ## 🆕 Bu tur (2026-05-17, gece) — Magic UI + Light/Dark theme + Süperadmin metrik dashboard
 
