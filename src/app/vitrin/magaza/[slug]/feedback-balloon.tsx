@@ -149,7 +149,7 @@ export function FeedbackBalloon({
       data-testid="feedback-balloon"
       data-phase={phase}
       data-company-slug={companySlug}
-      className={`fixed bottom-4 right-4 z-50 w-[calc(100vw-2rem)] max-w-sm rounded-2xl border border-line bg-white p-4 shadow-xl transition-all ${
+      className={`fixed bottom-4 right-4 z-50 w-[calc(100vw-2rem)] max-w-sm rounded-2xl border border-line bg-paper p-4 shadow-xl transition-all ${
         phase === 'closing' ? 'opacity-0 translate-y-2' : 'opacity-100'
       }`}
     >
@@ -192,7 +192,7 @@ export function FeedbackBalloon({
                   aria-label={opt.label}
                   onClick={() => submit('submitted', opt.value)}
                   disabled={submitting}
-                  className="grid h-12 w-12 place-items-center rounded-xl border border-line bg-white text-2xl transition-all hover:scale-110 hover:border-cat hover:bg-cat-soft disabled:opacity-50"
+                  className="grid h-12 w-12 place-items-center rounded-xl border border-line bg-paper text-2xl transition-all hover:scale-110 hover:border-cat hover:bg-cat-soft disabled:opacity-50"
                   title={opt.label}
                 >
                   <span aria-hidden>{opt.emoji}</span>

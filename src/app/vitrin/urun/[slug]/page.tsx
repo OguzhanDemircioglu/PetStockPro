@@ -118,7 +118,7 @@ export default async function CrossTenantProductPage({
       </section>
 
       {meta.description && (
-        <section className="rounded-2xl border border-line bg-white p-5">
+        <section className="rounded-2xl border border-line bg-paper p-5">
           <h2 className="mb-2 text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
             📝 Açıklama
           </h2>
@@ -129,7 +129,7 @@ export default async function CrossTenantProductPage({
       )}
 
       <section
-        className="rounded-2xl border border-line bg-white"
+        className="rounded-2xl border border-line bg-paper"
         data-testid="offers-list"
       >
         <header className="border-b border-line-soft px-5 py-3">
@@ -223,7 +223,7 @@ export default async function CrossTenantProductPage({
                       `/vitrin/magaza/${offer.companySlug}/urun/${offer.productSlug}` as never
                     }
                     data-testid={`offer-detail-${offer.companyId}`}
-                    className="rounded-xl border border-line bg-white px-3 py-2 text-[11.5px] font-bold text-cart hover:bg-cat-soft"
+                    className="rounded-xl border border-line bg-paper px-3 py-2 text-[11.5px] font-bold text-cart hover:bg-cat-soft"
                   >
                     Detay →
                   </Link>

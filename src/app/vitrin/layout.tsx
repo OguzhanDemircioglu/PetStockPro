@@ -12,7 +12,7 @@ export default function VitrinLayout({
 }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-paper to-cat-soft/10">
-      <header className="sticky top-0 z-30 border-b border-line bg-white/85 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+      <header className="sticky top-0 z-30 border-b border-line bg-paper/85 backdrop-blur supports-[backdrop-filter]:bg-paper/70">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
           <Link
             href={'/vitrin' as never}
@@ -29,7 +29,7 @@ export default function VitrinLayout({
           <nav className="flex flex-wrap items-center gap-2 text-[12.5px]">
             <Link
               href={'/vitrin' as never}
-              className="rounded-xl border border-line bg-white px-3 py-1.5 font-bold text-cart hover:bg-cat-soft"
+              className="rounded-xl border border-line bg-paper px-3 py-1.5 font-bold text-cart hover:bg-cat-soft"
             >
               📍 Tüm pet shop&apos;lar
             </Link>
@@ -45,7 +45,7 @@ export default function VitrinLayout({
 
       {children}
 
-      <footer className="border-t border-line bg-white py-6">
+      <footer className="border-t border-line bg-paper py-6">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 text-[11.5px] text-ink-3">
           <span>
             © {new Date().getFullYear()} PetStockPro — Pet shop merkezi vitrin

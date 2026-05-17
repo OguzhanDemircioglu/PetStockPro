@@ -195,7 +195,7 @@ export default async function VitrinProductDetailPage({
       </section>
 
       {product.description && (
-        <section className="rounded-2xl border border-line bg-white p-5">
+        <section className="rounded-2xl border border-line bg-paper p-5">
           <h2 className="mb-2 text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
             📝 Açıklama
           </h2>
@@ -209,7 +209,7 @@ export default async function VitrinProductDetailPage({
       )}
 
       <section
-        className="rounded-2xl border border-line bg-white p-5"
+        className="rounded-2xl border border-line bg-paper p-5"
         data-testid="variants-section"
       >
         <h2 className="mb-3 text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
@@ -267,7 +267,7 @@ export default async function VitrinProductDetailPage({
                     }
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="rounded-lg border border-arrow/40 bg-white px-3 py-1.5 text-[10.5px] font-bold text-arrow-7 hover:bg-arrow-soft"
+                    className="rounded-lg border border-arrow/40 bg-paper px-3 py-1.5 text-[10.5px] font-bold text-arrow-7 hover:bg-arrow-soft"
                   >
                     💬 Bu variant&apos;ı sor
                   </a>

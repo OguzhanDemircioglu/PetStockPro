@@ -187,7 +187,7 @@ export default async function StorefrontProfilePage({
           🛍 Vitrin&apos;deki ürünler ({products.length})
         </h2>
         {products.length === 0 ? (
-          <div className="rounded-2xl border-2 border-dashed border-line bg-white py-12 text-center">
+          <div className="rounded-2xl border-2 border-dashed border-line bg-paper py-12 text-center">
             <div className="text-5xl">🐾</div>
             <p className="mt-4 text-sm text-ink-3">
               Bu pet shop henüz vitrin&apos;e ürün eklemedi.
@@ -213,7 +213,7 @@ export default async function StorefrontProfilePage({
                         key={g.brandId ?? '__no_brand__'}
                         href={`#brand-${g.brandSlug ?? 'diger'}`}
                         data-brand-anchor={g.brandSlug ?? 'diger'}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-2.5 py-1 text-[10.5px] font-bold text-cart hover:border-cat hover:bg-cat-soft"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-line bg-paper px-2.5 py-1 text-[10.5px] font-bold text-cart hover:border-cat hover:bg-cat-soft"
                       >
                         {g.brandId ? '🏷' : '🐾'} {g.brandName}
                         <span className="rounded-full bg-cat-soft px-1.5 py-0.5 text-[9px] text-cart">
@@ -250,7 +250,7 @@ export default async function StorefrontProfilePage({
                             href={
                               `/vitrin/magaza/${sf.slug}/urun/${p.slug}` as never
                             }
-                            className="flex h-full flex-col rounded-2xl border border-line bg-white p-4 hover:border-cat hover:shadow-md transition-all"
+                            className="flex h-full flex-col rounded-2xl border border-line bg-paper p-4 hover:border-cat hover:shadow-md transition-all"
                           >
                             <h4 className="text-sm font-bold text-cart">
                               {p.productName}
@@ -330,7 +330,7 @@ function ContactCard({
 }) {
   if (!value) return null;
   const inner = (
-    <article className="flex items-center gap-3 rounded-2xl border border-line bg-white p-3 hover:border-cat hover:shadow-sm transition-all">
+    <article className="flex items-center gap-3 rounded-2xl border border-line bg-paper p-3 hover:border-cat hover:shadow-sm transition-all">
       <span className="grid h-10 w-10 place-items-center rounded-xl bg-cat-soft text-lg">
         {emoji}
       </span>

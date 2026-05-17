@@ -150,7 +150,7 @@ export default async function VitrinCityPage({
               defaultValue={filters.q ?? ''}
               placeholder="Pet shop adı veya hakkında metin…"
               data-testid="vitrin-search"
-              className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+              className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
             />
           </div>
           <div className="min-w-[180px]">
@@ -165,7 +165,7 @@ export default async function VitrinCityPage({
               name="sort"
               defaultValue={sort}
               data-testid="vitrin-sort"
-              className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+              className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2.5 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
             >
               {STOREFRONT_SORTS.map((s) => (
                 <option key={s} value={s}>
@@ -183,7 +183,7 @@ export default async function VitrinCityPage({
           {(filters.q || sort !== 'name_asc') && (
             <Link
               href={`/vitrin/${city!.slug}` as never}
-              className="rounded-xl border border-line bg-white px-3 py-2.5 text-xs font-bold text-ink-3 hover:bg-line-soft"
+              className="rounded-xl border border-line bg-paper px-3 py-2.5 text-xs font-bold text-ink-3 hover:bg-line-soft"
               data-testid="vitrin-clear"
             >
               × Temizle
@@ -204,7 +204,7 @@ export default async function VitrinCityPage({
                 <Link
                   href={`/vitrin/${city!.slug}/${d.slug}` as never}
                   data-district-slug={d.slug}
-                  className="inline-flex items-center rounded-full border border-line bg-white px-3 py-1.5 text-[11.5px] font-bold text-cart hover:border-cat hover:bg-cat-soft transition-colors"
+                  className="inline-flex items-center rounded-full border border-line bg-paper px-3 py-1.5 text-[11.5px] font-bold text-cart hover:border-cat hover:bg-cat-soft transition-colors"
                 >
                   {d.name}
                 </Link>
@@ -247,7 +247,7 @@ export default async function VitrinCityPage({
         </div>
 
         {storefronts.length === 0 ? (
-          <div className="rounded-2xl border-2 border-dashed border-line bg-white py-16 text-center">
+          <div className="rounded-2xl border-2 border-dashed border-line bg-paper py-16 text-center">
             <div className="text-6xl">🔎</div>
             <h2 className="mt-4 text-xl font-bold text-cart" data-testid="city-empty-heading">
               {page > totalPages && totalCount > 0
@@ -284,7 +284,7 @@ export default async function VitrinCityPage({
                   key={s.companyId}
                   data-storefront-id={s.companyId}
                   data-slug={s.slug}
-                  className="flex flex-col rounded-2xl border border-line bg-white p-4 hover:border-cat hover:shadow-md transition-all"
+                  className="flex flex-col rounded-2xl border border-line bg-paper p-4 hover:border-cat hover:shadow-md transition-all"
                 >
                   <Link
                     href={`/vitrin/magaza/${s.slug}` as never}
@@ -342,7 +342,7 @@ export default async function VitrinCityPage({
             {!isFirstPage ? (
               <Link
                 href={buildPageUrl(page - 1) as never}
-                className="rounded-xl border border-line bg-white px-4 py-2 text-sm font-bold text-cart hover:bg-cat-soft"
+                className="rounded-xl border border-line bg-paper px-4 py-2 text-sm font-bold text-cart hover:bg-cat-soft"
                 data-testid="vitrin-prev"
               >
                 ← Önceki
@@ -366,7 +366,7 @@ export default async function VitrinCityPage({
             {!isLastPage ? (
               <Link
                 href={buildPageUrl(page + 1) as never}
-                className="rounded-xl border border-line bg-white px-4 py-2 text-sm font-bold text-cart hover:bg-cat-soft"
+                className="rounded-xl border border-line bg-paper px-4 py-2 text-sm font-bold text-cart hover:bg-cat-soft"
                 data-testid="vitrin-next"
               >
                 Sonraki →

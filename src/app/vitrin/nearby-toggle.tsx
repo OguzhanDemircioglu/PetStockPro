@@ -72,7 +72,7 @@ export function NearbyToggle({ active, currentRadiusKm = 25, currentLabel }: Pro
     <section
       data-testid="nearby-toggle"
       data-nearby-active={active ? '1' : '0'}
-      className="rounded-2xl border border-line bg-white p-4"
+      className="rounded-2xl border border-line bg-paper p-4"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -92,7 +92,7 @@ export function NearbyToggle({ active, currentRadiusKm = 25, currentLabel }: Pro
               onClick={clear}
               disabled={pending}
               data-testid="nearby-clear"
-              className="rounded-xl border border-line bg-white px-3 py-1.5 text-[11.5px] font-bold text-ink-3 hover:bg-line-soft disabled:opacity-50"
+              className="rounded-xl border border-line bg-paper px-3 py-1.5 text-[11.5px] font-bold text-ink-3 hover:bg-line-soft disabled:opacity-50"
             >
               × Temizle
             </button>
@@ -136,7 +136,7 @@ export function NearbyToggle({ active, currentRadiusKm = 25, currentLabel }: Pro
             className={
               selectedRadius === r
                 ? 'rounded-full bg-cat px-2.5 py-1 text-[10.5px] font-bold text-white'
-                : 'rounded-full border border-line bg-white px-2.5 py-1 text-[10.5px] font-bold text-ink-3 hover:bg-line-soft'
+                : 'rounded-full border border-line bg-paper px-2.5 py-1 text-[10.5px] font-bold text-ink-3 hover:bg-line-soft'
             }
           >
             {r}km

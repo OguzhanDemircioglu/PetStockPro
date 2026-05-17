@@ -145,7 +145,7 @@ export default async function VitrinCategoryPage({
 
       {items.length === 0 ? (
         <section
-          className="rounded-2xl border border-line bg-white p-8 text-center"
+          className="rounded-2xl border border-line bg-paper p-8 text-center"
           data-testid="empty-category"
         >
           <p className="text-base text-ink-2">
@@ -186,7 +186,7 @@ export default async function VitrinCategoryPage({
               <article
                 key={p.productId}
                 data-product-id={p.productId}
-                className="flex flex-col gap-2 rounded-2xl border border-line bg-white p-4 hover:border-cat/40 hover:shadow-md transition"
+                className="flex flex-col gap-2 rounded-2xl border border-line bg-paper p-4 hover:border-cat/40 hover:shadow-md transition"
               >
                 <Link
                   href={
@@ -253,7 +253,7 @@ export default async function VitrinCategoryPage({
           ) : (
             <Link
               href={buildPageUrl(page - 1) as never}
-              className="rounded-xl border border-line bg-white px-3 py-1.5 text-[12px] font-bold text-cart hover:bg-cat-soft"
+              className="rounded-xl border border-line bg-paper px-3 py-1.5 text-[12px] font-bold text-cart hover:bg-cat-soft"
               data-page-prev
             >
               ← Önceki
@@ -269,7 +269,7 @@ export default async function VitrinCategoryPage({
           ) : (
             <Link
               href={buildPageUrl(page + 1) as never}
-              className="rounded-xl border border-line bg-white px-3 py-1.5 text-[12px] font-bold text-cart hover:bg-cat-soft"
+              className="rounded-xl border border-line bg-paper px-3 py-1.5 text-[12px] font-bold text-cart hover:bg-cat-soft"
               data-page-next
             >
               Sonraki →

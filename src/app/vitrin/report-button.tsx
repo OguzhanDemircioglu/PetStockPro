@@ -110,7 +110,7 @@ export function ReportButton({
         type="button"
         onClick={() => setOpen(true)}
         data-testid="report-trigger"
-        className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-white px-3 py-2 text-[11.5px] font-bold text-ink-3 hover:border-danger hover:text-danger-7 transition-colors"
+        className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-paper px-3 py-2 text-[11.5px] font-bold text-ink-3 hover:border-danger hover:text-danger-7 transition-colors"
       >
         {label}
       </button>
@@ -121,7 +121,7 @@ export function ReportButton({
     <form
       onSubmit={handleSubmit}
       data-testid="report-form"
-      className="flex flex-col gap-3 rounded-2xl border border-line bg-white p-4"
+      className="flex flex-col gap-3 rounded-2xl border border-line bg-paper p-4"
     >
       <header className="flex items-baseline justify-between">
         <h3 className="text-sm font-bold text-cart">🚩 Bildirimde bulun</h3>
@@ -145,7 +145,7 @@ export function ReportButton({
               className={`flex cursor-pointer items-center gap-2 rounded-lg border px-2 py-1.5 text-[11px] transition-colors ${
                 reason === opt.value
                   ? 'border-cat bg-cat-soft/40 font-bold text-cart'
-                  : 'border-line bg-white text-ink-2 hover:bg-line-soft'
+                  : 'border-line bg-paper text-ink-2 hover:bg-line-soft'
               }`}
             >
               <input
@@ -180,7 +180,7 @@ export function ReportButton({
           maxLength={1000}
           placeholder="Ekstra detay yazabilirsin…"
           data-testid="report-note"
-          className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-2 text-[12px] focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2 text-[12px] focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
         />
       </div>
 
