@@ -33,16 +33,20 @@ function asStr(v: FormDataEntryValue | null): string | null {
 function parseFormInput(formData: FormData): CategoryInput | null {
   const name = asStr(formData.get('name'));
   if (!name) return null;
-  const vatRaw = asStr(formData.get('vatRate'));
   const dispRaw = asStr(formData.get('displayOrder'));
   const displayOrder = dispRaw ? parseInt(dispRaw, 10) : 100;
+  // parentId: 'Üst kategori ekle' moduunda boş ('root') gelir → null
+  const parentRaw = asStr(formData.get('parentId'));
+  const parentId = parentRaw === 'root' ? null : parentRaw;
 
   return {
     name,
     emoji: asStr(formData.get('emoji')) ?? undefined,
-    vatRate: (vatRaw as '1.00' | '8.00' | '10.00' | '20.00' | null) ?? null,
+    // KDV form'dan kaldırıldı (2026-05-17). vatRate null default.
+    vatRate: null,
     sktRequired: formData.get('sktRequired') === 'on',
     displayOrder: Number.isFinite(displayOrder) ? displayOrder : 100,
+    parentId,
   };
 }
 

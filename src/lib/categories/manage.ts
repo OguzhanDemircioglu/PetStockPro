@@ -87,6 +87,12 @@ export const categorySchema = z.object({
     .max(10)
     .optional()
     .transform((v) => (v === '' || v === undefined ? null : v)),
+  /**
+   * KDV oranı kategori formundan kaldırıldı (2026-05-17). Default seed kategoriler
+   * hardcoded değerlerini korur; kullanıcı eklediği kategoriler null kalır,
+   * ürün eklenirken kullanıcı kendisi belirler. Field nullable bırakıldı (existing
+   * tenant data uyumluluğu).
+   */
   vatRate: z
     .union([
       z.literal('1.00'),
@@ -100,6 +106,13 @@ export const categorySchema = z.object({
     .transform((v) => (v === '' || v === undefined ? null : v)),
   sktRequired: z.boolean().default(false),
   displayOrder: z.number().int().min(0).max(999).default(100),
+  /** Üst kategori ID — root için null. Form'dan boş string gelirse null normalize. */
+  parentId: z
+    .string()
+    .uuid('Geçerli üst kategori seç')
+    .nullable()
+    .optional()
+    .transform((v) => (v === '' || v === undefined ? null : v)),
 });
 
 export type CategoryInput = z.input<typeof categorySchema>;
@@ -161,6 +174,7 @@ export async function addCategory(
         vatRate: data.vatRate ?? null,
         sktRequired: data.sktRequired,
         displayOrder: data.displayOrder,
+        parentId: data.parentId ?? null,
       })
       .returning({ id: categories.id });
     return { ok: true, categoryId: row.id };
@@ -238,6 +252,7 @@ export async function updateCategory(
         vatRate: data.vatRate ?? null,
         sktRequired: data.sktRequired,
         displayOrder: data.displayOrder,
+        parentId: data.parentId ?? null,
       })
       .where(eq(categories.id, categoryId));
     return { ok: true };
