@@ -13,17 +13,17 @@ function StateBanner({ state }: { state: RemoteUserActionState | null }) {
   if (!state) return null;
   if (state.ok && state.message) {
     return (
-      <div className="mt-3 rounded-xl border border-arrow/40 bg-arrow-soft px-4 py-2.5 text-[12px] font-bold text-arrow-7">
+      <div className="mt-3 rounded-xl border border-arrow/40 bg-arrow-soft px-4 py-2.5 text-[13.5px] font-bold text-arrow-7">
         ✓ {state.message}
       </div>
     );
   }
   if (state.error) {
     return (
-      <div className="mt-3 rounded-xl border border-danger/30 bg-danger-soft px-4 py-2.5 text-[12px] font-bold text-danger-7">
+      <div className="mt-3 rounded-xl border border-danger/30 bg-danger-soft px-4 py-2.5 text-[13.5px] font-bold text-danger-7">
         ✕ {state.error}
         {state.issues && state.issues.length > 0 && (
-          <ul className="mt-1 list-inside list-disc text-[10.5px] font-normal">
+          <ul className="mt-1 list-inside list-disc text-[12px] font-normal">
             {state.issues.map((i, idx) => (
               <li key={idx}>{i}</li>
             ))}
@@ -42,7 +42,7 @@ interface BaseProps {
 const inputClass =
   'w-full rounded-lg border-[1.5px] border-line bg-paper px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15';
 const labelClass =
-  'mb-1 block text-[11px] font-bold uppercase tracking-wider text-ink-3';
+  'mb-1 block text-[12.5px] font-bold uppercase tracking-wider text-ink-3';
 const buttonClass =
   'rounded-xl px-4 py-2.5 text-xs font-bold text-white shadow-md hover:-translate-y-0.5 transition-transform disabled:opacity-60';
 
@@ -59,7 +59,7 @@ export function ForcePasswordResetForm({ targetUserId }: BaseProps) {
   return (
     <form action={formAction} className="rounded-xl border border-line bg-paper p-4">
       <h3 className="text-sm font-bold text-cart">🔑 Şifre sıfırlama linki gönder</h3>
-      <p className="mt-1 text-[11px] text-ink-3">
+      <p className="mt-1 text-[12.5px] text-ink-3">
         Brevo email + 30 dakika TTL token. Kullanıcı linke tıklayıp yeni şifre belirler.
       </p>
       <input type="hidden" name="targetUserId" value={targetUserId} />
@@ -125,16 +125,16 @@ export function ResetTwoFactorForm({ targetUserId, isEnabled }: BaseProps & { is
       <div className="flex items-center gap-2">
         <h3 className="text-sm font-bold text-cart">🛡 2FA sıfırla (uzaktan)</h3>
         {isEnabled ? (
-          <span className="rounded-full bg-arrow-soft px-2 py-0.5 text-[10px] font-bold text-arrow-7">
+          <span className="rounded-full bg-arrow-soft px-2 py-0.5 text-[11.5px] font-bold text-arrow-7">
             Aktif
           </span>
         ) : (
-          <span className="rounded-full bg-line-soft px-2 py-0.5 text-[10px] font-bold text-ink-3">
+          <span className="rounded-full bg-line-soft px-2 py-0.5 text-[11.5px] font-bold text-ink-3">
             Kapalı
           </span>
         )}
       </div>
-      <p className="mt-1 text-[11px] text-ink-3">
+      <p className="mt-1 text-[12.5px] text-ink-3">
         2FA secret + recovery codes silinir. Kullanıcı bir sonraki login&apos;de TOTP istenmez,
         kendisi yeniden setup yapmalı. <strong>Telegram alert critical severity</strong>.
       </p>
@@ -201,12 +201,12 @@ export function LockAccountForm({ targetUserId, isLocked }: BaseProps & { isLock
       <div className="flex items-center gap-2">
         <h3 className="text-sm font-bold text-danger-7">🔒 Hesabı kilitle</h3>
         {isLocked && (
-          <span className="rounded-full bg-danger-soft px-2 py-0.5 text-[10px] font-bold text-danger-7">
+          <span className="rounded-full bg-danger-soft px-2 py-0.5 text-[11.5px] font-bold text-danger-7">
             Şu an kilitli
           </span>
         )}
       </div>
-      <p className="mt-1 text-[11px] text-ink-3">
+      <p className="mt-1 text-[12.5px] text-ink-3">
         lockedUntil + lockedReason=&apos;SUPERADMIN&apos;. Kullanıcı sadece bu süre sonra login olabilir.
         1 saat - 30 gün (720 saat).
       </p>
@@ -290,12 +290,12 @@ export function UnlockAccountForm({ targetUserId, isLocked }: BaseProps & { isLo
       <div className="flex items-center gap-2">
         <h3 className="text-sm font-bold text-arrow-7">🔓 Hesap kilidini aç</h3>
         {!isLocked && (
-          <span className="rounded-full bg-line-soft px-2 py-0.5 text-[10px] font-bold text-ink-3">
+          <span className="rounded-full bg-line-soft px-2 py-0.5 text-[11.5px] font-bold text-ink-3">
             Kilitli değil
           </span>
         )}
       </div>
-      <p className="mt-1 text-[11px] text-ink-3">
+      <p className="mt-1 text-[12.5px] text-ink-3">
         lockedUntil + lockedReason temizlenir. failed_login_count + recent_lock_count
         sıfırlanır. Kullanıcı tekrar login olabilir.
       </p>

@@ -96,7 +96,7 @@ export default async function ReportsPage({
     <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-12">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <div className="text-[11.5px] font-bold uppercase tracking-wider text-cat">
+          <div className="text-[13px] font-bold uppercase tracking-wider text-cat">
             Admin · Raporlar
           </div>
           <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
@@ -212,20 +212,20 @@ export default async function ReportsPage({
             <ol className="divide-y divide-line-soft text-xs" data-testid="top-list">
               {topVariants.map((v, i) => (
                 <li key={v.variantId} className="flex items-center gap-2 py-2">
-                  <span className="grid h-7 w-7 place-items-center rounded-full bg-cat-soft text-[10.5px] font-bold text-cart">
+                  <span className="grid h-7 w-7 place-items-center rounded-full bg-cat-soft text-[12px] font-bold text-cart">
                     {i + 1}
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-bold text-ink">
                       {v.productName}
                     </div>
-                    <div className="text-[10.5px] text-ink-3">
+                    <div className="text-[12px] text-ink-3">
                       {v.variantLabel} · SKU {v.sku}
                     </div>
                   </div>
                   <div className="text-right font-mono">
                     <div className="font-bold text-arrow-7">{v.totalQty} ad</div>
-                    <div className="text-[10px] text-cart">
+                    <div className="text-[11.5px] text-cart">
                       {formatTRY(v.totalRevenue)}
                     </div>
                   </div>
@@ -350,7 +350,7 @@ export default async function ReportsPage({
         {invSummary.missingCostCount > 0 && (
           <div
             role="alert"
-            className="mt-3 rounded-xl border border-danger/30 bg-danger-soft px-4 py-2.5 text-[12px] text-danger-7"
+            className="mt-3 rounded-xl border border-danger/30 bg-danger-soft px-4 py-2.5 text-[13.5px] text-danger-7"
           >
             ⚠ {invSummary.missingCostCount} variant&apos;ın <code>cost_price</code>{' '}
             tanımlı değil. Bu variantlar değer hesabına dahil edilmedi —
@@ -378,7 +378,7 @@ export default async function ReportsPage({
                       <div className="truncate font-bold text-ink">
                         {c.categoryEmoji ?? '📂'} {c.categoryName}
                       </div>
-                      <div className="text-[10.5px] text-ink-3">
+                      <div className="text-[12px] text-ink-3">
                         {c.productCount} ürün · {c.totalQty} adet
                       </div>
                     </div>
@@ -405,12 +405,12 @@ export default async function ReportsPage({
                       <div className="truncate font-bold text-ink">
                         {v.productName}{' '}
                         {v.variantLabel && (
-                          <span className="text-[10px] font-normal text-ink-3">
+                          <span className="text-[11.5px] font-normal text-ink-3">
                             · {v.variantLabel}
                           </span>
                         )}
                       </div>
-                      <div className="text-[10.5px] text-ink-3">
+                      <div className="text-[12px] text-ink-3">
                         {v.totalQty} adet × {v.unitCost ?? '?'}₺
                       </div>
                     </div>
@@ -453,14 +453,14 @@ export default async function ReportsPage({
               <ul className="divide-y divide-line-soft text-xs">
                 {custTop.map((c, i) => (
                   <li key={c.customerRef} className="flex items-center gap-3 py-2">
-                    <span className="grid h-7 w-7 place-items-center rounded-full bg-cat-soft text-[11px] font-bold text-cart">
+                    <span className="grid h-7 w-7 place-items-center rounded-full bg-cat-soft text-[12.5px] font-bold text-cart">
                       {i + 1}
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-mono font-bold text-ink">
                         {c.customerRef}
                       </div>
-                      <div className="text-[10.5px] text-ink-3">
+                      <div className="text-[12px] text-ink-3">
                         {c.salesCount} satış · {c.totalQty} adet · son:{' '}
                         {new Date(c.lastSaleAt).toLocaleDateString('tr-TR', {
                           day: '2-digit',
@@ -490,7 +490,7 @@ export default async function ReportsPage({
                   const max = hourly.reduce((m, x) => Math.max(m, x.qty), 1);
                   const pct = max > 0 ? (h.qty / max) * 100 : 0;
                   return (
-                    <li key={h.hour} className="flex items-center gap-2 text-[11px]">
+                    <li key={h.hour} className="flex items-center gap-2 text-[12.5px]">
                       <span className="w-12 font-mono text-ink-3">
                         {String(h.hour).padStart(2, '0')}:00
                       </span>
@@ -503,7 +503,7 @@ export default async function ReportsPage({
                       <span className="w-12 text-right font-mono font-bold text-cart">
                         {h.qty}
                       </span>
-                      <span className="w-20 text-right font-mono text-[10px] text-ink-4">
+                      <span className="w-20 text-right font-mono text-[11.5px] text-ink-4">
                         {Number(h.revenue || 0).toLocaleString('tr-TR', {
                           maximumFractionDigits: 0,
                         })}₺
@@ -602,13 +602,13 @@ function AgingBandCard({
             : 'border-line bg-paper'
       }`}
     >
-      <span className="text-[10px] font-bold uppercase tracking-wider text-ink-3">
+      <span className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
         {band.label} gün
       </span>
       <span className="font-mono text-base font-bold text-cart">
         {band.count} kayıt
       </span>
-      <span className="font-mono text-[11px] text-ink-3">
+      <span className="font-mono text-[12.5px] text-ink-3">
         {formatTRY(band.amount)}
       </span>
     </li>
@@ -631,12 +631,12 @@ function OpenCreditRow({
         <div className="truncate font-bold text-ink">
           {item.customerRef ?? '— anonim —'}
         </div>
-        <div className="text-[10.5px] text-ink-3">
+        <div className="text-[12px] text-ink-3">
           {item.productName}
           {item.variantLabel ? ` · ${item.variantLabel}` : ''} · {item.quantity} ad ·{' '}
           {item.branchName}
         </div>
-        <div className="text-[10px] text-ink-4">
+        <div className="text-[11.5px] text-ink-4">
           {new Date(item.createdAt).toLocaleDateString('tr-TR', {
             day: '2-digit',
             month: 'short',
@@ -695,7 +695,7 @@ function ActivityActionRow({ item, max }: { item: ActivityCountRow; max: number 
       data-action-key={item.action}
       className="grid grid-cols-[180px_1fr_50px] items-center gap-3 text-xs"
     >
-      <span className="truncate font-mono text-[10.5px] text-ink-2">{label}</span>
+      <span className="truncate font-mono text-[12px] text-ink-2">{label}</span>
       <div className="h-2 overflow-hidden rounded-full bg-line-soft">
         <div
           className="h-full bg-gradient-to-r from-cat to-arrow"
@@ -715,7 +715,7 @@ function StocktakeRow({ item }: { item: StocktakeHistoryRow }) {
       className="grid grid-cols-[110px_1fr_auto] items-center gap-3 py-2"
     >
       <span
-        className={`inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+        className={`inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[11.5px] font-bold ${
           isCompleted ? 'bg-arrow-soft text-arrow-7' : 'bg-danger-soft text-danger-7'
         }`}
       >
@@ -728,7 +728,7 @@ function StocktakeRow({ item }: { item: StocktakeHistoryRow }) {
         >
           #{item.id.slice(0, 8)} · {item.branchName ?? '—'}
         </Link>
-        <div className="text-[10.5px] text-ink-3">
+        <div className="text-[12px] text-ink-3">
           {item.startedByEmail ?? '—'} ·{' '}
           {item.closedAt
             ? new Date(item.closedAt).toLocaleString('tr-TR', {
@@ -741,10 +741,10 @@ function StocktakeRow({ item }: { item: StocktakeHistoryRow }) {
         </div>
       </div>
       <div className="text-right font-mono">
-        <div className="text-[11px] font-bold text-ink">
+        <div className="text-[12.5px] font-bold text-ink">
           {item.countedItems}/{item.totalItems}
         </div>
-        <div className="text-[10px] text-cart">
+        <div className="text-[11.5px] text-cart">
           {item.diffItems > 0 ? `${item.diffItems} fark` : 'fark yok'}
           {item.durationMinutes != null && ` · ${item.durationMinutes} dk`}
         </div>
@@ -782,15 +782,15 @@ function ComparisonCard({
 
   return (
     <article className="rounded-2xl border border-line bg-paper p-5">
-      <h3 className="text-[11px] font-bold uppercase tracking-wider text-cart">{label}</h3>
-      <ul className="mt-3 flex flex-col divide-y divide-line-soft text-[12px]">
+      <h3 className="text-[12.5px] font-bold uppercase tracking-wider text-cart">{label}</h3>
+      <ul className="mt-3 flex flex-col divide-y divide-line-soft text-[13.5px]">
         <li className="flex items-center justify-between py-2">
           <span className="text-ink-3">Adet</span>
           <div className="flex items-center gap-2">
             <span className="font-mono text-ink-2">
-              {cmp.current.qty} <span className="text-[10px] text-ink-4">/ {cmp.previous.qty}</span>
+              {cmp.current.qty} <span className="text-[11.5px] text-ink-4">/ {cmp.previous.qty}</span>
             </span>
-            <span className={`font-mono text-[11.5px] font-bold ${toneClass[qtyChange.tone]}`}>
+            <span className={`font-mono text-[13px] font-bold ${toneClass[qtyChange.tone]}`}>
               {qtyChange.label}
             </span>
           </div>
@@ -800,11 +800,11 @@ function ComparisonCard({
           <div className="flex items-center gap-2">
             <span className="font-mono text-ink-2">
               {formatTRY(cmp.current.revenue)}{' '}
-              <span className="text-[10px] text-ink-4">
+              <span className="text-[11.5px] text-ink-4">
                 / {formatTRY(cmp.previous.revenue)}
               </span>
             </span>
-            <span className={`font-mono text-[11.5px] font-bold ${toneClass[revChange.tone]}`}>
+            <span className={`font-mono text-[13px] font-bold ${toneClass[revChange.tone]}`}>
               {revChange.label}
             </span>
           </div>
@@ -814,9 +814,9 @@ function ComparisonCard({
           <div className="flex items-center gap-2">
             <span className="font-mono text-ink-2">
               {cmp.current.saleCount}{' '}
-              <span className="text-[10px] text-ink-4">/ {cmp.previous.saleCount}</span>
+              <span className="text-[11.5px] text-ink-4">/ {cmp.previous.saleCount}</span>
             </span>
-            <span className={`font-mono text-[11.5px] font-bold ${toneClass[cntChange.tone]}`}>
+            <span className={`font-mono text-[13px] font-bold ${toneClass[cntChange.tone]}`}>
               {cntChange.label}
             </span>
           </div>
@@ -847,7 +847,7 @@ function KPI({
       data-kpi={title}
     >
       <div className="flex items-center justify-between">
-        <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+        <span className="text-[12px] font-bold uppercase tracking-wider text-ink-3">
           {title}
         </span>
         <span className="text-xl">{emoji}</span>

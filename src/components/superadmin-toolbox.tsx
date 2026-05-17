@@ -117,7 +117,7 @@ export function SuperadminToolbox() {
           className="fixed bottom-24 right-6 z-50 flex w-80 flex-col gap-1 rounded-2xl border-2 border-cat/40 bg-paper p-2 shadow-2xl"
           data-testid="superadmin-toolbox-menu"
         >
-          <div className="px-3 py-2 text-[11.5px] font-bold uppercase tracking-wider text-cart">
+          <div className="px-3 py-2 text-[13px] font-bold uppercase tracking-wider text-cart">
             🛡 Süperadmin · Bypass aksiyonları
           </div>
           {ITEMS.map((item) => (
@@ -134,14 +134,14 @@ export function SuperadminToolbox() {
             >
               <span className="text-xl">{item.emoji}</span>
               <div className="min-w-0 flex-1">
-                <div className={`text-[12.5px] font-bold ${item.danger ? 'text-danger-7' : 'text-cart'}`}>
+                <div className={`text-[14px] font-bold ${item.danger ? 'text-danger-7' : 'text-cart'}`}>
                   {item.label}
                 </div>
-                <div className="text-[10.5px] text-ink-3">{item.desc}</div>
+                <div className="text-[12px] text-ink-3">{item.desc}</div>
               </div>
             </Link>
           ))}
-          <div className="mt-1 px-3 py-2 text-[10px] text-ink-4">
+          <div className="mt-1 px-3 py-2 text-[11.5px] text-ink-4">
             🚨 Her aksiyon şifre re-auth + zorunlu sebep + audit damga gerektirir.
           </div>
         </div>

@@ -26,7 +26,7 @@ export default async function BrandsPage({
     <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-12">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <div className="text-[11.5px] font-bold uppercase tracking-wider text-cat">
+          <div className="text-[13px] font-bold uppercase tracking-wider text-cat">
             Admin · Markalar
           </div>
           <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
@@ -103,7 +103,7 @@ export default async function BrandsPage({
         <div className="overflow-hidden rounded-2xl border border-line bg-paper">
           <table className="w-full text-sm">
             <thead className="bg-paper">
-              <tr className="text-left text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+              <tr className="text-left text-[12px] font-bold uppercase tracking-wider text-ink-3">
                 <th className="px-4 py-3">Marka</th>
                 <th className="px-4 py-3">Slug</th>
                 <th className="px-4 py-3 text-right">Ürün sayısı</th>
@@ -121,7 +121,7 @@ export default async function BrandsPage({
                       {b.name}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 font-mono text-[11.5px] text-ink-3">
+                  <td className="px-4 py-3 font-mono text-[13px] text-ink-3">
                     {b.slug}
                   </td>
                   <td className="px-4 py-3 text-right font-mono text-ink">

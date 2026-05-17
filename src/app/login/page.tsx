@@ -60,7 +60,7 @@ export default function LoginPage() {
             <span className="text-6xl font-bold leading-none tracking-tighter text-cat">P</span>
           </div>
           <div className="leading-tight">
-            <div className="text-[26px] font-bold tracking-tight leading-none">PetStockPro</div>
+            <div className="text-[27.5px] font-bold tracking-tight leading-none">PetStockPro</div>
             <div className="mt-2 text-xs font-bold opacity-90">
               Pet shop&apos;unun her şeyi tek panelde
             </div>
@@ -69,7 +69,7 @@ export default function LoginPage() {
 
         {/* MID: Slogan */}
         <div className="relative z-10 mt-12">
-          <h1 className="text-[44px] font-bold leading-[1.06] tracking-tight">
+          <h1 className="text-[45.5px] font-bold leading-[1.06] tracking-tight">
             Stoktan satışa,
             <br />
             vitrinden{' '}
@@ -77,7 +77,7 @@ export default function LoginPage() {
               rapora.
             </span>
           </h1>
-          <p className="mt-4 max-w-[480px] text-[15px] leading-relaxed opacity-95">
+          <p className="mt-4 max-w-[480px] text-[16.5px] leading-relaxed opacity-95">
             Pet shop&apos;unun envanteri, satışı, vitrini ve raporları —{' '}
             <strong className="rounded bg-white/20 px-2 py-0.5 font-bold">tek panelde, sade</strong>.
             Cloudflare edge altyapısında çalışır.
@@ -100,13 +100,13 @@ export default function LoginPage() {
                 {f.ic}
               </div>
               <div className="text-sm font-bold leading-tight">{f.title}</div>
-              <div className="mt-1 text-[11.5px] leading-snug opacity-80">{f.sub}</div>
+              <div className="mt-1 text-[13px] leading-snug opacity-80">{f.sub}</div>
             </div>
           ))}
         </div>
 
         {/* BOTTOM: Tech credibility */}
-        <div className="relative z-10 mt-auto flex items-center gap-3 pt-6 text-[11px] font-bold uppercase tracking-wider opacity-80">
+        <div className="relative z-10 mt-auto flex items-center gap-3 pt-6 text-[12.5px] font-bold uppercase tracking-wider opacity-80">
           <span>⚡ Cloudflare Workers</span>
           <span className="h-1 w-1 rounded-full bg-white/40" />
           <span>🔒 KVKK uyumlu</span>
@@ -116,11 +116,11 @@ export default function LoginPage() {
       {/* ============ SAĞ FORM PANELİ ============ */}
       <section className="relative flex items-center justify-center overflow-hidden bg-[#fafaf7] p-10">
         <div className="relative z-10 w-full max-w-[440px]">
-          <div className="mb-2 text-[11px] font-bold uppercase tracking-wider text-cat">Giriş</div>
+          <div className="mb-2 text-[12.5px] font-bold uppercase tracking-wider text-cat">Giriş</div>
           <h2 className="text-3xl font-bold leading-tight tracking-tight text-ink">
             Hesabına giriş yap
           </h2>
-          <p className="mt-2 text-[13.5px] leading-normal text-ink-3">
+          <p className="mt-2 text-[15px] leading-normal text-ink-3">
             Pet shop&apos;unu yönet — stok, satış, vitrin tek panelde.
           </p>
 
@@ -185,7 +185,7 @@ export default function LoginPage() {
           {/* Form */}
           <form action={formAction} className="mt-7 flex flex-col gap-3.5">
             <div>
-              <label className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3" htmlFor="email">
+              <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3" htmlFor="email">
                 E-posta
               </label>
               <input
@@ -203,7 +203,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3" htmlFor="password">
+              <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3" htmlFor="password">
                 Şifre
               </label>
               <input
@@ -222,7 +222,7 @@ export default function LoginPage() {
             {state?.requires2fa && (
               <div>
                 <label
-                  className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+                  className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
                   htmlFor="totp"
                 >
                   2FA Kodu
@@ -240,20 +240,20 @@ export default function LoginPage() {
                   maxLength={20}
                   className="w-full rounded-xl border-[1.5px] border-cat bg-white px-4 py-3 text-center font-mono text-lg tracking-[0.3em] text-ink transition-all focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
-                <p className="mt-1.5 text-[11px] text-ink-4">
+                <p className="mt-1.5 text-[12.5px] text-ink-4">
                   Authenticator app&apos;teki 6 haneli kod ya da yedek kod (ABCD-EFGH).
                 </p>
               </div>
             )}
 
             <div className="mt-0.5 flex items-center justify-between">
-              <label className="flex cursor-pointer items-center gap-2 text-[12.5px] text-ink-2">
+              <label className="flex cursor-pointer items-center gap-2 text-[14px] text-ink-2">
                 <input type="checkbox" name="remember" defaultChecked className="h-4 w-4 accent-cat" />
                 Beni hatırla
               </label>
               <a
                 href="/forgot-password"
-                className="border-b border-dashed border-transparent text-[12.5px] font-bold text-cart transition-colors hover:border-cart"
+                className="border-b border-dashed border-transparent text-[14px] font-bold text-cart transition-colors hover:border-cart"
               >
                 Şifremi unuttum?
               </a>
@@ -275,7 +275,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-5 text-center text-[13px] text-ink-3">
+          <div className="mt-5 text-center text-[14.5px] text-ink-3">
             Hesabın yok mu?{' '}
             <a
               href="/register"
@@ -286,7 +286,7 @@ export default function LoginPage() {
           </div>
 
           {/* Trust strip */}
-          <div className="mt-7 flex flex-wrap justify-center gap-x-5 gap-y-2 border-t border-line-soft pt-4 text-[10.5px] tracking-wide text-ink-4">
+          <div className="mt-7 flex flex-wrap justify-center gap-x-5 gap-y-2 border-t border-line-soft pt-4 text-[12px] tracking-wide text-ink-4">
             <span className="font-bold">🔒 Cloudflare Turnstile</span>
             <span className="font-bold">✓ KVKK uyumlu</span>
             <span className="font-bold">🆓 FREE 50 ürün</span>

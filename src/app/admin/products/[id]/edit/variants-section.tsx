@@ -237,12 +237,12 @@ function DisplayVariantRow({
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-base font-bold text-ink">{variant.valueLabel}</span>
           {variant.isDefault && (
-            <span className="rounded-full bg-cat px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+            <span className="rounded-full bg-cat px-2 py-0.5 text-[11.5px] font-bold uppercase tracking-wider text-white">
               ★ Default
             </span>
           )}
           {!variant.isActive && (
-            <span className="rounded-full bg-line-soft px-2 py-0.5 text-[10px] font-bold text-ink-4">
+            <span className="rounded-full bg-line-soft px-2 py-0.5 text-[11.5px] font-bold text-ink-4">
               Pasif
             </span>
           )}
@@ -257,7 +257,7 @@ function DisplayVariantRow({
           <span>
             Eşik {variant.threshold}
             {branchThresholdCount > 0 && (
-              <span className="ml-1 text-[10px] text-cat">
+              <span className="ml-1 text-[11.5px] text-cat">
                 (+{branchThresholdCount} şube)
               </span>
             )}
@@ -271,7 +271,7 @@ function DisplayVariantRow({
             type="button"
             onClick={handleSetDefault}
             disabled={pending}
-            className="rounded-lg border border-cat/30 bg-paper px-3 py-1.5 text-[11px] font-bold text-cart hover:bg-cat-soft disabled:opacity-50"
+            className="rounded-lg border border-cat/30 bg-paper px-3 py-1.5 text-[12.5px] font-bold text-cart hover:bg-cat-soft disabled:opacity-50"
           >
             ★ Default yap
           </button>
@@ -280,7 +280,7 @@ function DisplayVariantRow({
           type="button"
           onClick={onEdit}
           disabled={pending}
-          className="rounded-lg border border-line bg-paper px-3 py-1.5 text-[11px] font-bold text-ink-2 hover:bg-line-soft disabled:opacity-50"
+          className="rounded-lg border border-line bg-paper px-3 py-1.5 text-[12.5px] font-bold text-ink-2 hover:bg-line-soft disabled:opacity-50"
         >
           ✎ Düzenle
         </button>
@@ -289,7 +289,7 @@ function DisplayVariantRow({
             type="button"
             onClick={handleDelete}
             disabled={pending}
-            className="rounded-lg border border-danger/30 bg-paper px-3 py-1.5 text-[11px] font-bold text-danger-7 hover:bg-danger-soft disabled:opacity-50"
+            className="rounded-lg border border-danger/30 bg-paper px-3 py-1.5 text-[12.5px] font-bold text-danger-7 hover:bg-danger-soft disabled:opacity-50"
           >
             🗑 Sil
           </button>
@@ -407,7 +407,7 @@ function VariantFormFields({
     <div className="flex flex-col gap-3">
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+          <label className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3">
             Boyut/ambalaj *
           </label>
           <input
@@ -420,7 +420,7 @@ function VariantFormFields({
           />
         </div>
         <div>
-          <label className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+          <label className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3">
             SKU *
           </label>
           <input
@@ -435,7 +435,7 @@ function VariantFormFields({
       </div>
 
       <div>
-        <label className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+        <label className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3">
           Barkod
         </label>
         <input
@@ -450,7 +450,7 @@ function VariantFormFields({
 
       <div className="grid grid-cols-3 gap-3">
         <div>
-          <label className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+          <label className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3">
             Alış (₺)
           </label>
           <input
@@ -462,7 +462,7 @@ function VariantFormFields({
           />
         </div>
         <div>
-          <label className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+          <label className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3">
             Satış (₺) *
           </label>
           <input
@@ -475,7 +475,7 @@ function VariantFormFields({
           />
         </div>
         <div>
-          <label className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+          <label className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3">
             Eşik
           </label>
           <input

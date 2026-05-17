@@ -23,14 +23,14 @@ export function ImpersonationBanner({ companyName, impersonatorEmail }: Props) {
         🎭
       </span>
       <div className="min-w-0 flex-1">
-        <div className="text-[12px] font-bold leading-tight">
+        <div className="text-[13.5px] font-bold leading-tight">
           <strong>{impersonatorEmail}</strong> ·{' '}
           <span className="rounded-full bg-white/20 px-2 py-0.5">
             {companyName}
           </span>{' '}
           olarak görüntülüyor
         </div>
-        <div className="text-[10.5px] opacity-85">
+        <div className="text-[12px] opacity-85">
           Tüm aksiyonlar audit log&apos;a süperadmin damgasıyla yazılır.
           Görsel tenant erişimi — kullanıcının gördüğü ekran aynısı.
         </div>
@@ -39,7 +39,7 @@ export function ImpersonationBanner({ companyName, impersonatorEmail }: Props) {
         <button
           type="submit"
           data-testid="impersonation-stop"
-          className="inline-flex items-center gap-1.5 rounded-xl border border-white/40 bg-white/15 px-3 py-1.5 text-[11.5px] font-bold text-white backdrop-blur transition-colors hover:bg-white/30"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-white/40 bg-white/15 px-3 py-1.5 text-[13px] font-bold text-white backdrop-blur transition-colors hover:bg-white/30"
         >
           ✕ Çıkış · Süperadmin&apos;e dön
         </button>

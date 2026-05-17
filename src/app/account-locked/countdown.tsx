@@ -36,7 +36,7 @@ export function LockedCountdown({ initialSeconds }: LockedCountdownProps) {
         isExpired ? 'bg-arrow-soft' : 'bg-line-soft'
       }`}
     >
-      <div className="text-[10.5px] font-bold uppercase tracking-wider text-ink-4">
+      <div className="text-[12px] font-bold uppercase tracking-wider text-ink-4">
         {isExpired ? '✅ Kilit kalktı' : '⏱ Geri sayım'}
       </div>
       <div

@@ -11,7 +11,7 @@ export default async function DbInspectorPage() {
         <Link href={'/admin/superadmin' as never} className="text-xs text-ink-4 hover:text-cart">
           ← Süperadmin
         </Link>
-        <div className="mt-3 text-[11.5px] font-bold uppercase tracking-wider text-cat">
+        <div className="mt-3 text-[13px] font-bold uppercase tracking-wider text-cat">
           🛡 Süperadmin · DB Inspector
         </div>
         <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
@@ -35,7 +35,7 @@ export default async function DbInspectorPage() {
 
       <DbInspectorClient />
 
-      <p className="text-center text-[11px] text-ink-4">
+      <p className="text-center text-[12.5px] text-ink-4">
         Audit log&apos;da bu aksiyon <code>superadmin.dbinspector.query_run</code>{' '}
         veya <code>.query_failed</code> olarak görünür.
       </p>

@@ -137,7 +137,7 @@ function ExportCard({ href, emoji, title, desc, filename }: ExportCardProps) {
           {title}
         </h3>
         <p className="mt-0.5 text-xs text-ink-3">{desc}</p>
-        <p className="mt-1 font-mono text-[10.5px] text-ink-4">{filename}</p>
+        <p className="mt-1 font-mono text-[12px] text-ink-4">{filename}</p>
       </div>
       <span className="rounded-xl bg-cat px-3 py-2 text-xs font-bold text-white group-hover:bg-cat-2">
         ⬇ İndir

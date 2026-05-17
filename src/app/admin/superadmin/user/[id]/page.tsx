@@ -44,7 +44,7 @@ export default async function SuperadminUserDetailPage({
         <Link href={tenantHref} className="text-xs text-ink-4 hover:text-cart">
           ← {user.companyName ?? 'Süperadmin'}
         </Link>
-        <div className="mt-3 text-[11.5px] font-bold uppercase tracking-wider text-cat">
+        <div className="mt-3 text-[13px] font-bold uppercase tracking-wider text-cat">
           🛡 Süperadmin · Uzak Kullanıcı Yönetimi
         </div>
         <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
@@ -53,7 +53,7 @@ export default async function SuperadminUserDetailPage({
         <p className="mt-1 text-sm text-ink-3 font-mono">
           {user.name && <span>{user.name} · </span>}
           {user.companyName && <span>{user.companyName} · </span>}
-          <span className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold ${ROLE_BADGE[user.role] ?? 'bg-line-soft text-ink-3'}`}>
+          <span className={`rounded-full px-1.5 py-0.5 text-[12px] font-bold ${ROLE_BADGE[user.role] ?? 'bg-line-soft text-ink-3'}`}>
             {user.role}
           </span>
         </p>
@@ -95,19 +95,19 @@ export default async function SuperadminUserDetailPage({
           {audit.length === 0 ? (
             <p className="text-center text-xs text-ink-3">Bu kullanıcıya ait audit kaydı yok.</p>
           ) : (
-            <ul className="divide-y divide-line-soft text-[11px]">
+            <ul className="divide-y divide-line-soft text-[12.5px]">
               {audit.map((a) => (
                 <li key={a.id} className="flex flex-col gap-0.5 py-1.5">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-[10px] text-cart truncate flex-1">
+                    <span className="font-mono text-[11.5px] text-cart truncate flex-1">
                       {a.action}
                     </span>
                     {a.performedAsSuperadmin && (
-                      <span className="rounded bg-cat-soft px-1 py-0.5 text-[9px] font-bold text-cart">
+                      <span className="rounded bg-cat-soft px-1 py-0.5 text-[10.5px] font-bold text-cart">
                         🛡 {a.superadminActionType ?? '—'}
                       </span>
                     )}
-                    <span className="text-[10px] text-ink-4 whitespace-nowrap">
+                    <span className="text-[11.5px] text-ink-4 whitespace-nowrap">
                       {new Date(a.createdAt).toLocaleString('tr-TR', {
                         day: '2-digit',
                         month: '2-digit',
@@ -117,7 +117,7 @@ export default async function SuperadminUserDetailPage({
                     </span>
                   </div>
                   {a.superadminReason && (
-                    <div className="text-[10px] text-ink-3 italic">
+                    <div className="text-[11.5px] text-ink-3 italic">
                       &quot;{a.superadminReason}&quot;
                     </div>
                   )}
@@ -128,7 +128,7 @@ export default async function SuperadminUserDetailPage({
         </article>
       </section>
 
-      <p className="text-center text-[11px] text-ink-4">
+      <p className="text-center text-[12.5px] text-ink-4">
         🛡 Tüm aksiyonlar audit log&apos;da <code>superadmin.remote.*</code> action&apos;ları
         olarak kayıtlı + şifre re-auth + zorunlu sebep + Telegram alert.
       </p>
@@ -153,8 +153,8 @@ function Status({
   };
   return (
     <article className={`rounded-xl border p-3 ${cls[accent]}`}>
-      <div className="text-[10px] font-bold uppercase tracking-wider text-ink-3">{title}</div>
-      <div className="mt-1 text-[12.5px] font-bold">{value}</div>
+      <div className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">{title}</div>
+      <div className="mt-1 text-[14px] font-bold">{value}</div>
     </article>
   );
 }

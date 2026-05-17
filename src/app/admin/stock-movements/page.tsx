@@ -72,7 +72,7 @@ export default async function StockMovementsPage({
     <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-12">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="text-[11.5px] font-bold uppercase tracking-wider text-cat">
+          <div className="text-[13px] font-bold uppercase tracking-wider text-cat">
             Admin · Stok Hareketleri
           </div>
           <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">

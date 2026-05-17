@@ -26,7 +26,7 @@ export default async function EditBrandPage({
         <Link href={'/admin/brands' as never} className="text-xs text-ink-4 hover:text-cart">
           ← Markalara dön
         </Link>
-        <div className="mt-3 text-[11.5px] font-bold uppercase tracking-wider text-cat">
+        <div className="mt-3 text-[13px] font-bold uppercase tracking-wider text-cat">
           Admin · Marka düzenle
         </div>
         <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">

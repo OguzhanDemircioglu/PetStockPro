@@ -70,7 +70,7 @@ export default async function ProductsPage({
     <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-12">
       <header className="flex items-end justify-between gap-4">
         <div>
-          <div className="text-[11.5px] font-bold uppercase tracking-wider text-cat">
+          <div className="text-[13px] font-bold uppercase tracking-wider text-cat">
             Admin · Ürünler
           </div>
           <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
@@ -141,7 +141,7 @@ export default async function ProductsPage({
         <div className="overflow-hidden rounded-2xl border border-line bg-paper">
           <table className="w-full">
             <thead className="bg-paper">
-              <tr className="text-left text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+              <tr className="text-left text-[12px] font-bold uppercase tracking-wider text-ink-3">
                 <th className="px-4 py-3">Ürün</th>
                 <th className="px-4 py-3">Kategori</th>
                 <th className="px-4 py-3">Marka</th>
@@ -161,7 +161,7 @@ export default async function ProductsPage({
                     >
                       {item.name}
                     </Link>
-                    <div className="font-mono text-[10.5px] text-ink-4">{item.slug}</div>
+                    <div className="font-mono text-[12px] text-ink-4">{item.slug}</div>
                   </td>
                   <td className="px-4 py-3 text-ink-2">{item.categoryName ?? '—'}</td>
                   <td className="px-4 py-3 text-ink-2">{item.brandName ?? '—'}</td>

@@ -44,7 +44,7 @@ export default function NotFound() {
             🏠 Admin paneline dön
           </Link>
         </div>
-        <p className="mt-8 text-[10.5px] text-ink-4">
+        <p className="mt-8 text-[12px] text-ink-4">
           Bağlantı bozuk gibiyse{' '}
           <a
             href="mailto:destek@petstockpro.com"

@@ -120,13 +120,13 @@ export default async function AdminDashboardPage() {
       >
         <Snowfall number={40} />
 
-        <div className="absolute top-[22px] left-8 z-10 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-white/85">
+        <div className="absolute top-[22px] left-8 z-10 flex items-center gap-2 text-[12.5px] font-bold uppercase tracking-wider text-white/85">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-arrow-2" />
           Tüm sistemler çalışıyor
         </div>
 
         <div className="relative z-10 min-w-0 pt-4">
-          <div className="text-[11px] font-bold uppercase tracking-wider opacity-85">
+          <div className="text-[12.5px] font-bold uppercase tracking-wider opacity-85">
             🐾 Bugün · {company?.name ?? 'Pet shop'}
           </div>
 
@@ -141,7 +141,7 @@ export default async function AdminDashboardPage() {
                 : 'Bugün hareket bekliyor'}
           </h1>
           <p
-            className="mt-2 max-w-xl text-[13.5px] leading-relaxed opacity-92"
+            className="mt-2 max-w-xl text-[15px] leading-relaxed opacity-92"
             data-testid="hero-lead"
           >
             {isWelcomeState ? (
@@ -175,13 +175,13 @@ export default async function AdminDashboardPage() {
                 <Link
                   href={'/admin/products/new' as never}
                   data-testid="hero-add-product"
-                  className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-[12.5px] font-bold text-cart shadow-md hover:-translate-y-0.5 transition-transform"
+                  className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-[14px] font-bold text-cart shadow-md hover:-translate-y-0.5 transition-transform"
                 >
                   🐾 İlk ürünü ekle
                 </Link>
                 <Link
                   href={'/admin/settings/storefront' as never}
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/35 bg-white/15 px-4 py-2.5 text-[12.5px] font-bold text-white backdrop-blur hover:bg-white/25"
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/35 bg-white/15 px-4 py-2.5 text-[14px] font-bold text-white backdrop-blur hover:bg-white/25"
                 >
                   🌐 Vitrin profili
                 </Link>
@@ -191,13 +191,13 @@ export default async function AdminDashboardPage() {
                 <Link
                   href={'/admin/stock-movements' as never}
                   data-testid="hero-stock-in"
-                  className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-[12.5px] font-bold text-cart shadow-md hover:-translate-y-0.5 transition-transform"
+                  className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-[14px] font-bold text-cart shadow-md hover:-translate-y-0.5 transition-transform"
                 >
                   ＋ Hızlı stok girişi
                 </Link>
                 <Link
                   href={'/admin/reports' as never}
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/35 bg-white/15 px-4 py-2.5 text-[12.5px] font-bold text-white backdrop-blur hover:bg-white/25"
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/35 bg-white/15 px-4 py-2.5 text-[14px] font-bold text-white backdrop-blur hover:bg-white/25"
                 >
                   Satışı detaylı gör →
                 </Link>
@@ -206,7 +206,7 @@ export default async function AdminDashboardPage() {
           </div>
 
           {/* Branch rail — toplam stok + şube sayısı kısa özet */}
-          <div className="mt-4 flex flex-wrap gap-1.5 text-[11px]">
+          <div className="mt-4 flex flex-wrap gap-1.5 text-[12.5px]">
             <span className="rounded-full border border-white/30 bg-white px-3 py-1 font-bold text-cart">
               📍 {stats.branchCount} aktif şube · {stats.totalStockQty} adet
               stok
@@ -282,25 +282,25 @@ export default async function AdminDashboardPage() {
         data-testid="stock-strip"
       >
         <div>
-          <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-4">
+          <span className="text-[12px] font-bold uppercase tracking-wider text-ink-4">
             Envanter
           </span>
           <div className="mt-1 font-mono text-2xl font-bold text-cart">
             {stats.totalStockQty.toLocaleString('tr-TR')} adet
           </div>
-          <p className="mt-1 text-[11.5px] text-ink-3">
+          <p className="mt-1 text-[13px] text-ink-3">
             {stats.branchCount} aktif şube · {stats.totalActiveVariants} variant
           </p>
         </div>
         <div>
-          <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-4">
+          <span className="text-[12px] font-bold uppercase tracking-wider text-ink-4">
             Plan kullanımı
           </span>
           <div className="mt-1 flex items-baseline gap-1">
             <span className="font-mono text-2xl font-bold text-cart">
               {stats.totalProducts}
             </span>
-            <span className="text-[12px] text-ink-4">
+            <span className="text-[13.5px] text-ink-4">
               / {planLimit > 0 ? planLimit : '∞'}
             </span>
           </div>
@@ -317,7 +317,7 @@ export default async function AdminDashboardPage() {
         </div>
         <Link
           href={'/admin/products' as never}
-          className="rounded-xl border border-cat/40 bg-cat-soft px-4 py-2 text-[11.5px] font-bold text-cart hover:bg-cat hover:text-white"
+          className="rounded-xl border border-cat/40 bg-cat-soft px-4 py-2 text-[13px] font-bold text-cart hover:bg-cat hover:text-white"
         >
           Ürünleri yönet →
         </Link>
@@ -336,7 +336,7 @@ export default async function AdminDashboardPage() {
             <div className="text-sm font-bold text-danger-7">
               {stats.lowStockCount} ürün eşik altında veya tükenmek üzere
             </div>
-            <div className="text-[11.5px] text-ink-3">
+            <div className="text-[13px] text-ink-3">
               {orderSuggestions.length > 0
                 ? `PetPro Asistanı ${orderSuggestions.length} sipariş önerisi hazırladı — aşağıda incele.`
                 : 'Düşük stok detayında sipariş + transfer akışlarına git.'}
@@ -389,7 +389,7 @@ export default async function AdminDashboardPage() {
         <div className="flex-1" />
         <Link
           href={'/admin/products' as never}
-          className="rounded-xl px-3 py-2 text-[11.5px] font-bold text-ink-3 hover:text-cart"
+          className="rounded-xl px-3 py-2 text-[13px] font-bold text-ink-3 hover:text-cart"
         >
           Tüm ürünleri yönet →
         </Link>
@@ -405,7 +405,7 @@ export default async function AdminDashboardPage() {
             </h2>
             <Link
               href={'/admin/notifications' as never}
-              className="text-[11px] font-bold text-cat hover:underline"
+              className="text-[12.5px] font-bold text-cat hover:underline"
             >
               Tümü →
             </Link>
@@ -426,7 +426,7 @@ export default async function AdminDashboardPage() {
             </h2>
             <Link
               href={'/admin/settings/storefront' as never}
-              className="text-[11px] font-bold text-cat hover:underline"
+              className="text-[12.5px] font-bold text-cat hover:underline"
             >
               Detay →
             </Link>
@@ -498,13 +498,13 @@ export default async function AdminDashboardPage() {
             </h2>
             <Link
               href={'/admin/low-stock' as never}
-              className="text-[11px] font-bold text-cat hover:underline"
+              className="text-[12.5px] font-bold text-cat hover:underline"
             >
               Düşük stok detayı →
             </Link>
           </div>
           <article className="rounded-2xl border-2 border-arrow/30 bg-gradient-to-br from-arrow-soft/30 to-cat-soft/20 p-4">
-            <p className="mb-3 text-[11px] text-ink-3">
+            <p className="mb-3 text-[12.5px] text-ink-3">
               Aynı ürün/variant başka şubede yüksek stoklu — düşük stoklu şubeye transfer öner:
             </p>
             <ul className="divide-y divide-line-soft text-xs">
@@ -515,15 +515,15 @@ export default async function AdminDashboardPage() {
                   className="flex items-center gap-3 py-2.5"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-[12px] font-bold text-ink">
+                    <div className="truncate text-[13.5px] font-bold text-ink">
                       {t.productName}{' '}
                       {t.variantLabel && (
-                        <span className="text-[10px] font-normal text-ink-3">
+                        <span className="text-[11.5px] font-normal text-ink-3">
                           · {t.variantLabel}
                         </span>
                       )}
                     </div>
-                    <div className="flex flex-wrap items-center gap-1.5 text-[10.5px] text-ink-3">
+                    <div className="flex flex-wrap items-center gap-1.5 text-[12px] text-ink-3">
                       <span className="text-arrow-7 font-bold">
                         📤 {t.sourceBranchName} ({t.sourceStock})
                       </span>
@@ -534,7 +534,7 @@ export default async function AdminDashboardPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-[10px] text-ink-4">Öneri</div>
+                    <div className="text-[11.5px] text-ink-4">Öneri</div>
                     <div className="font-mono text-base font-bold text-arrow-7">
                       +{t.suggestedQty}
                     </div>
@@ -543,7 +543,7 @@ export default async function AdminDashboardPage() {
                     href={
                       `/admin/stock-movements?transfer=open&variant=${t.variantId}&source=${t.sourceBranchId}&target=${t.targetBranchId}&qty=${t.suggestedQty}` as never
                     }
-                    className="rounded-lg border border-arrow/40 bg-paper px-2.5 py-1.5 text-[10.5px] font-bold text-arrow-7 hover:bg-arrow hover:text-white transition-colors"
+                    className="rounded-lg border border-arrow/40 bg-paper px-2.5 py-1.5 text-[12px] font-bold text-arrow-7 hover:bg-arrow hover:text-white transition-colors"
                   >
                     🔁 Transfer
                   </Link>
@@ -562,13 +562,13 @@ export default async function AdminDashboardPage() {
             </h2>
             <Link
               href={'/admin/reports' as never}
-              className="text-[11px] font-bold text-cat hover:underline"
+              className="text-[12.5px] font-bold text-cat hover:underline"
             >
               Stok değer raporu →
             </Link>
           </div>
           <article className="rounded-2xl border-2 border-danger/20 bg-gradient-to-br from-danger-soft/20 to-cat-soft/30 p-4">
-            <p className="mb-3 text-[11px] text-ink-3">
+            <p className="mb-3 text-[12.5px] text-ink-3">
               Yavaş satış + yüksek stok — indirim ile cirosu hareketlendir:
             </p>
             <ul className="divide-y divide-line-soft text-xs">
@@ -582,15 +582,15 @@ export default async function AdminDashboardPage() {
                     className="flex items-center gap-3 py-2.5"
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-[12px] font-bold text-ink">
+                      <div className="truncate text-[13.5px] font-bold text-ink">
                         {d.productName}{' '}
                         {d.variantLabel && (
-                          <span className="text-[10px] font-normal text-ink-3">
+                          <span className="text-[11.5px] font-normal text-ink-3">
                             · {d.variantLabel}
                           </span>
                         )}
                       </div>
-                      <div className="flex flex-wrap items-center gap-1.5 text-[10.5px] text-ink-3">
+                      <div className="flex flex-wrap items-center gap-1.5 text-[12px] text-ink-3">
                         <span className="font-bold text-cart">
                           📦 {d.totalStock} adet
                         </span>
@@ -608,9 +608,9 @@ export default async function AdminDashboardPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-[10px] text-ink-4">Fiyat</div>
+                      <div className="text-[11.5px] text-ink-4">Fiyat</div>
                       <div className="flex items-baseline gap-1.5">
-                        <span className="text-[10.5px] text-ink-3 line-through">
+                        <span className="text-[12px] text-ink-3 line-through">
                           {d.salePrice}₺
                         </span>
                         <span className="font-mono text-sm font-bold text-arrow-7">
@@ -619,14 +619,14 @@ export default async function AdminDashboardPage() {
                       </div>
                       <div
                         data-discount-pct
-                        className="mt-0.5 inline-flex rounded-full bg-danger px-1.5 py-0.5 text-[9.5px] font-bold text-white"
+                        className="mt-0.5 inline-flex rounded-full bg-danger px-1.5 py-0.5 text-[11px] font-bold text-white"
                       >
                         -%{d.suggestedDiscountPct}
                       </div>
                     </div>
                     <Link
                       href={`/admin/products/${d.productId}/edit` as never}
-                      className="rounded-lg border border-danger/40 bg-paper px-2.5 py-1.5 text-[10.5px] font-bold text-danger-7 hover:bg-danger hover:text-white transition-colors"
+                      className="rounded-lg border border-danger/40 bg-paper px-2.5 py-1.5 text-[12px] font-bold text-danger-7 hover:bg-danger hover:text-white transition-colors"
                     >
                       ✏ Fiyatı düzenle
                     </Link>
@@ -646,13 +646,13 @@ export default async function AdminDashboardPage() {
             </h2>
             <Link
               href={'/admin/stock-movements' as never}
-              className="text-[11px] font-bold text-cat hover:underline"
+              className="text-[12.5px] font-bold text-cat hover:underline"
             >
               Hareketleri aç →
             </Link>
           </div>
           <article className="rounded-2xl border-2 border-danger/30 bg-gradient-to-br from-danger-soft/30 to-cat-soft/20 p-4">
-            <p className="mb-3 text-[11px] text-ink-3">
+            <p className="mb-3 text-[12.5px] text-ink-3">
               SKT&apos;si yaklaşan (≤30 gün) veya geçmiş stok satırları — fire kaydı al veya indirimle hızlandır:
             </p>
             <ul className="divide-y divide-line-soft text-xs">
@@ -680,15 +680,15 @@ export default async function AdminDashboardPage() {
                     className="flex items-center gap-3 py-2.5"
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-[12px] font-bold text-ink">
+                      <div className="truncate text-[13.5px] font-bold text-ink">
                         {e.productName}{' '}
                         {e.variantLabel && (
-                          <span className="text-[10px] font-normal text-ink-3">
+                          <span className="text-[11.5px] font-normal text-ink-3">
                             · {e.variantLabel}
                           </span>
                         )}
                       </div>
-                      <div className="flex flex-wrap items-center gap-1.5 text-[10.5px] text-ink-3">
+                      <div className="flex flex-wrap items-center gap-1.5 text-[12px] text-ink-3">
                         <span>📍 {e.branchName}</span>
                         <span>·</span>
                         <span className="font-bold text-cart">📦 {e.stockQty} adet</span>
@@ -700,7 +700,7 @@ export default async function AdminDashboardPage() {
                     </div>
                     <span
                       data-expiring-badge
-                      className={`rounded-full px-2 py-0.5 text-[9.5px] font-bold ${badgeClass[e.severity]}`}
+                      className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${badgeClass[e.severity]}`}
                     >
                       {badgeLabel[e.severity]}
                     </span>
@@ -708,7 +708,7 @@ export default async function AdminDashboardPage() {
                       href={
                         `/admin/stock-movements?variant=${e.variantId}&branch=${e.branchId}` as never
                       }
-                      className="rounded-lg border border-danger/40 bg-paper px-2.5 py-1.5 text-[10.5px] font-bold text-danger-7 hover:bg-danger hover:text-white transition-colors"
+                      className="rounded-lg border border-danger/40 bg-paper px-2.5 py-1.5 text-[12px] font-bold text-danger-7 hover:bg-danger hover:text-white transition-colors"
                     >
                       📤 Fire kaydı
                     </Link>
@@ -728,13 +728,13 @@ export default async function AdminDashboardPage() {
             </h2>
             <Link
               href={'/admin/low-stock' as never}
-              className="text-[11px] font-bold text-cat hover:underline"
+              className="text-[12.5px] font-bold text-cat hover:underline"
             >
               Düşük stok detayı →
             </Link>
           </div>
           <article className="rounded-2xl border-2 border-cat/30 bg-gradient-to-br from-cat-soft/40 to-arrow-soft/30 p-4">
-            <p className="mb-3 text-[11px] text-ink-3">
+            <p className="mb-3 text-[12.5px] text-ink-3">
               Eşik altı stoklar + son tedarikçiden yeniden sipariş önerisi:
             </p>
             <ul className="divide-y divide-line-soft text-xs">
@@ -745,15 +745,15 @@ export default async function AdminDashboardPage() {
                   className="flex items-center gap-3 py-2.5"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-[12px] font-bold text-ink">
+                    <div className="truncate text-[13.5px] font-bold text-ink">
                       {s.productName}{' '}
                       {s.variantLabel && (
-                        <span className="text-[10px] font-normal text-ink-3">
+                        <span className="text-[11.5px] font-normal text-ink-3">
                           · {s.variantLabel}
                         </span>
                       )}
                     </div>
-                    <div className="flex flex-wrap items-center gap-1.5 text-[10.5px] text-ink-3">
+                    <div className="flex flex-wrap items-center gap-1.5 text-[12px] text-ink-3">
                       <span>📍 {s.branchName}</span>
                       <span>·</span>
                       <span className={s.currentStock === 0 ? 'text-danger-7 font-bold' : ''}>
@@ -776,7 +776,7 @@ export default async function AdminDashboardPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-[10px] text-ink-4">Öneri</div>
+                    <div className="text-[11.5px] text-ink-4">Öneri</div>
                     <div className="font-mono text-base font-bold text-cart">
                       +{s.suggestedQty}
                     </div>
@@ -785,7 +785,7 @@ export default async function AdminDashboardPage() {
                     href={
                       `/admin/stock-movements?variant=${s.variantId}&branch=${s.branchId}` as never
                     }
-                    className="rounded-lg border border-cat/40 bg-paper px-2.5 py-1.5 text-[10.5px] font-bold text-cart hover:bg-cat hover:text-white transition-colors"
+                    className="rounded-lg border border-cat/40 bg-paper px-2.5 py-1.5 text-[12px] font-bold text-cart hover:bg-cat hover:text-white transition-colors"
                   >
                     📥 Giriş yap
                   </Link>
@@ -820,7 +820,7 @@ export default async function AdminDashboardPage() {
                         <div className="truncate font-bold text-ink">
                           {item.productName}
                         </div>
-                        <div className="text-[11px] text-ink-3">
+                        <div className="text-[12.5px] text-ink-3">
                           {item.variantLabel} · {item.branchName}
                         </div>
                       </div>
@@ -832,7 +832,7 @@ export default async function AdminDashboardPage() {
                         >
                           {item.stockQty}
                         </div>
-                        <div className="text-[10px] text-ink-4">
+                        <div className="text-[11.5px] text-ink-4">
                           / {item.threshold} eşik
                         </div>
                       </div>
@@ -842,7 +842,7 @@ export default async function AdminDashboardPage() {
               </ul>
               <Link
                 href={'/admin/low-stock' as never}
-                className="mt-3 block text-center text-[11px] font-bold text-cat hover:underline"
+                className="mt-3 block text-center text-[12.5px] font-bold text-cat hover:underline"
               >
                 Tümünü gör + sipariş aksiyonları →
               </Link>
@@ -876,11 +876,11 @@ export default async function AdminDashboardPage() {
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-bold text-ink">
                         {a.productName}{' '}
-                        <span className="text-[10px] font-normal text-ink-3">
+                        <span className="text-[11.5px] font-normal text-ink-3">
                           {a.variantLabel}
                         </span>
                       </div>
-                      <div className="text-[10px] text-ink-4">
+                      <div className="text-[11.5px] text-ink-4">
                         {a.branchName}
                         {sub && ` · ${sub}`}
                       </div>
@@ -898,7 +898,7 @@ export default async function AdminDashboardPage() {
               })}
             </ul>
           )}
-          <div className="mt-3 flex items-center justify-center gap-3 text-[11px] font-bold">
+          <div className="mt-3 flex items-center justify-center gap-3 text-[12.5px] font-bold">
             <Link
               href={'/admin/stock-movements' as never}
               className="text-cat hover:underline"
@@ -934,7 +934,7 @@ function ZoneLabel({ emoji, label }: { emoji: string; label: string }) {
   return (
     <div
       data-zone-label={label}
-      className="mt-2 flex items-center gap-3 text-[11px] font-bold uppercase tracking-wider text-ink-4"
+      className="mt-2 flex items-center gap-3 text-[12.5px] font-bold uppercase tracking-wider text-ink-4"
     >
       <span>
         {emoji} {label}
@@ -975,13 +975,13 @@ function KpiBold({
       <div className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-xl bg-white/20 text-lg">
         {emoji}
       </div>
-      <span className="text-[11px] font-bold uppercase tracking-wider opacity-85">
+      <span className="text-[12.5px] font-bold uppercase tracking-wider opacity-85">
         {label}
       </span>
       <div className="mt-2 font-mono text-4xl font-bold leading-none tracking-tight">
         {numeric ? <NumberTicker value={value as number} className="text-white" /> : value}
       </div>
-      <div className="mt-2 text-[11.5px] opacity-90">{sub}</div>
+      <div className="mt-2 text-[13px] opacity-90">{sub}</div>
     </article>
   );
 }
@@ -1008,9 +1008,9 @@ function QuickChip({
     <Link
       href={href as never}
       data-quick-chip={label}
-      className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-[12px] font-bold transition hover:-translate-y-0.5 ${toneCls[tone].bg} ${toneCls[tone].text}`}
+      className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-[13.5px] font-bold transition hover:-translate-y-0.5 ${toneCls[tone].bg} ${toneCls[tone].text}`}
     >
-      <span className="grid h-6 w-6 place-items-center rounded-lg bg-white/70 text-[13px] font-bold">
+      <span className="grid h-6 w-6 place-items-center rounded-lg bg-white/70 text-[14.5px] font-bold">
         {icon}
       </span>
       {label}
@@ -1040,11 +1040,11 @@ function FeedbackKpi({
       data-feedback-kpi={label}
       className={`flex flex-col gap-1 rounded-xl border p-3 ${toneCls[tone]}`}
     >
-      <span className="text-[10px] font-bold uppercase tracking-wider text-ink-3">
+      <span className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
         {label}
       </span>
       <span className="font-mono text-xl font-bold text-cart">{value}</span>
-      <span className="text-[10px] text-ink-3">{hint}</span>
+      <span className="text-[11.5px] text-ink-3">{hint}</span>
     </article>
   );
 }
@@ -1090,17 +1090,17 @@ function PanoNotificationItem({ item }: { item: NotificationRow }) {
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <h3 className="truncate text-[12.5px] font-bold text-cart">
+            <h3 className="truncate text-[14px] font-bold text-cart">
               {item.content.title}
             </h3>
             {isUnread && (
-              <span className="rounded-full bg-cat px-1.5 py-0.5 text-[9px] font-bold text-white">
+              <span className="rounded-full bg-cat px-1.5 py-0.5 text-[10.5px] font-bold text-white">
                 YENİ
               </span>
             )}
           </div>
           {item.content.body && (
-            <p className="truncate text-[10.5px] text-ink-3">{item.content.body}</p>
+            <p className="truncate text-[12px] text-ink-3">{item.content.body}</p>
           )}
         </div>
       </Link>

@@ -166,7 +166,7 @@ export default async function AuditLogPage({
         className="flex flex-wrap items-center gap-2"
         data-testid="audit-date-chips"
       >
-        <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+        <span className="text-[12px] font-bold uppercase tracking-wider text-ink-3">
           Hızlı tarih:
         </span>
         {dateChips.map((chip) => {
@@ -177,7 +177,7 @@ export default async function AuditLogPage({
               href={buildDateRangeUrl(chip.from, chip.to) as never}
               data-testid={`audit-chip-${chip.key}`}
               aria-pressed={isActive}
-              className={`rounded-full px-3 py-1.5 text-[11px] font-bold transition-colors ${
+              className={`rounded-full px-3 py-1.5 text-[12.5px] font-bold transition-colors ${
                 isActive
                   ? 'bg-cat text-white shadow-sm'
                   : 'border border-line bg-paper text-ink-3 hover:border-cat hover:text-cart'
@@ -191,7 +191,7 @@ export default async function AuditLogPage({
           <Link
             href={buildPageUrl(1).replace(/[?&](from|to)=[^&]*/g, '').replace(/\?$/, '') as never}
             data-testid="audit-chip-clear"
-            className="rounded-full px-3 py-1.5 text-[11px] font-bold text-ink-4 hover:text-danger-7"
+            className="rounded-full px-3 py-1.5 text-[12.5px] font-bold text-ink-4 hover:text-danger-7"
           >
             × Tarihi temizle
           </Link>
@@ -206,7 +206,7 @@ export default async function AuditLogPage({
         <div className="min-w-[220px] flex-1">
           <label
             htmlFor="action-select"
-            className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+            className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3"
           >
             Aksiyon
           </label>
@@ -227,7 +227,7 @@ export default async function AuditLogPage({
         <div className="min-w-[180px]">
           <label
             htmlFor="entity-select"
-            className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+            className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3"
           >
             Hedef türü
           </label>
@@ -252,7 +252,7 @@ export default async function AuditLogPage({
         <div className="min-w-[180px]">
           <label
             htmlFor="user-select"
-            className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+            className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3"
           >
             Kullanıcı
           </label>
@@ -274,7 +274,7 @@ export default async function AuditLogPage({
         <div>
           <label
             htmlFor="from-date"
-            className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+            className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3"
           >
             Başlangıç
           </label>
@@ -290,7 +290,7 @@ export default async function AuditLogPage({
         <div>
           <label
             htmlFor="to-date"
-            className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+            className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3"
           >
             Bitiş
           </label>
@@ -367,7 +367,7 @@ export default async function AuditLogPage({
         <div className="overflow-x-auto rounded-2xl border border-line bg-paper">
           <table className="w-full text-sm">
             <thead className="bg-paper">
-              <tr className="text-left text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+              <tr className="text-left text-[12px] font-bold uppercase tracking-wider text-ink-3">
                 <th className="px-4 py-3">Tarih</th>
                 <th className="px-4 py-3">Aksiyon</th>
                 <th className="px-4 py-3">Kullanıcı</th>
@@ -383,7 +383,7 @@ export default async function AuditLogPage({
                 };
                 return (
                   <tr key={row.id} data-audit-id={row.id} className="hover:bg-line-soft">
-                    <td className="px-4 py-3 text-[11px] text-ink-3 whitespace-nowrap">
+                    <td className="px-4 py-3 text-[12.5px] text-ink-3 whitespace-nowrap">
                       {new Date(row.createdAt).toLocaleString('tr-TR', {
                         day: '2-digit',
                         month: '2-digit',
@@ -394,29 +394,29 @@ export default async function AuditLogPage({
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${badge.cls}`}
+                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11.5px] font-bold ${badge.cls}`}
                       >
                         {badge.label}
                       </span>
                       {row.performedAsSuperadmin && (
-                        <span className="ml-2 rounded bg-cat-soft px-1.5 py-0.5 text-[9px] font-bold text-cart">
+                        <span className="ml-2 rounded bg-cat-soft px-1.5 py-0.5 text-[10.5px] font-bold text-cart">
                           🛡 Süperadmin
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-[11px] text-ink-3">
+                    <td className="px-4 py-3 text-[12.5px] text-ink-3">
                       {row.userEmail ?? '—'}
                     </td>
-                    <td className="px-4 py-3 text-[11px] font-mono text-ink-4">
+                    <td className="px-4 py-3 text-[12.5px] font-mono text-ink-4">
                       <EntityCell entityType={row.entityType} entityId={row.entityId} />
                     </td>
-                    <td className="px-4 py-3 text-[11px] text-ink-3">
+                    <td className="px-4 py-3 text-[12.5px] text-ink-3">
                       {row.afterState ? (
                         <details>
                           <summary className="cursor-pointer text-cat hover:underline">
                             Göster
                           </summary>
-                          <pre className="mt-2 max-w-[280px] overflow-x-auto rounded bg-paper p-2 text-[10px] font-mono text-ink-2">
+                          <pre className="mt-2 max-w-[280px] overflow-x-auto rounded bg-paper p-2 text-[11.5px] font-mono text-ink-2">
                             {JSON.stringify(row.afterState, null, 2)}
                           </pre>
                         </details>
@@ -435,7 +435,7 @@ export default async function AuditLogPage({
       {totalPages > 1 && items.length > 0 && (
         <nav
           data-testid="audit-pagination"
-          className="flex items-center justify-between rounded-2xl border border-line bg-paper px-4 py-3 text-[12px]"
+          className="flex items-center justify-between rounded-2xl border border-line bg-paper px-4 py-3 text-[13.5px]"
         >
           <span className="text-ink-3">
             Sayfa <strong className="text-cart">{page}</strong>
@@ -520,7 +520,7 @@ function EntityCell({
         className="text-cat hover:underline"
       >
         {entityType}
-        {shortId && <span className="text-[9px]"> ({shortId})</span>}
+        {shortId && <span className="text-[10.5px]"> ({shortId})</span>}
       </Link>
     );
   }
@@ -528,7 +528,7 @@ function EntityCell({
   return (
     <>
       {entityType}
-      {shortId && <span className="text-[9px]"> ({shortId})</span>}
+      {shortId && <span className="text-[10.5px]"> ({shortId})</span>}
     </>
   );
 }

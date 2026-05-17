@@ -119,7 +119,7 @@ export default async function StorefrontProfilePage({
 
         {sf.aboutContent && (
           <article
-            className="mt-5 whitespace-pre-wrap text-[13.5px] leading-relaxed text-ink-2"
+            className="mt-5 whitespace-pre-wrap text-[15px] leading-relaxed text-ink-2"
             data-testid="storefront-about"
           >
             {sf.aboutContent}
@@ -192,7 +192,7 @@ export default async function StorefrontProfilePage({
             <p className="mt-4 text-sm text-ink-3">
               Bu pet shop henüz vitrin&apos;e ürün eklemedi.
             </p>
-            <p className="mt-1 text-[12px] text-ink-4">
+            <p className="mt-1 text-[13.5px] text-ink-4">
               Stoğunda olan ürünleri WhatsApp&apos;tan sorabilirsin.
             </p>
           </div>
@@ -213,10 +213,10 @@ export default async function StorefrontProfilePage({
                         key={g.brandId ?? '__no_brand__'}
                         href={`#brand-${g.brandSlug ?? 'diger'}`}
                         data-brand-anchor={g.brandSlug ?? 'diger'}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-line bg-paper px-2.5 py-1 text-[10.5px] font-bold text-cart hover:border-cat hover:bg-cat-soft"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-line bg-paper px-2.5 py-1 text-[12px] font-bold text-cart hover:border-cat hover:bg-cat-soft"
                       >
                         {g.brandId ? '🏷' : '🐾'} {g.brandName}
-                        <span className="rounded-full bg-cat-soft px-1.5 py-0.5 text-[9px] text-cart">
+                        <span className="rounded-full bg-cat-soft px-1.5 py-0.5 text-[10.5px] text-cart">
                           {g.productCount}
                         </span>
                       </a>
@@ -232,10 +232,10 @@ export default async function StorefrontProfilePage({
                     data-brand-count={g.productCount}
                   >
                     <header className="mb-2 flex items-baseline justify-between gap-2 border-b border-line-soft pb-1.5">
-                      <h3 className="text-[12.5px] font-bold uppercase tracking-wider text-cart">
+                      <h3 className="text-[14px] font-bold uppercase tracking-wider text-cart">
                         {g.brandId ? '🏷' : '🐾'} {g.brandName}
                       </h3>
-                      <span className="text-[11px] text-ink-3">
+                      <span className="text-[12.5px] text-ink-3">
                         {g.productCount} ürün
                       </span>
                     </header>
@@ -256,12 +256,12 @@ export default async function StorefrontProfilePage({
                               {p.productName}
                             </h4>
                             {p.defaultVariantLabel && (
-                              <p className="text-[10.5px] text-ink-3">
+                              <p className="text-[12px] text-ink-3">
                                 {p.defaultVariantLabel}
                               </p>
                             )}
                             {p.categoryName && (
-                              <p className="mt-0.5 text-[10px] text-ink-4">
+                              <p className="mt-0.5 text-[11.5px] text-ink-4">
                                 📂 {p.categoryName}
                               </p>
                             )}
@@ -278,7 +278,7 @@ export default async function StorefrontProfilePage({
                                   ₺
                                 </p>
                               )}
-                            <span className="mt-auto pt-2 text-[10.5px] font-bold text-cat">
+                            <span className="mt-auto pt-2 text-[12px] font-bold text-cat">
                               Detayı gör →
                             </span>
                           </Link>
@@ -297,7 +297,7 @@ export default async function StorefrontProfilePage({
         data-testid="storefront-report-section"
         className="flex flex-col gap-3 rounded-2xl border border-line bg-paper p-4"
       >
-        <p className="text-[11.5px] leading-relaxed text-ink-3">
+        <p className="text-[13px] leading-relaxed text-ink-3">
           {'⚖️ '}
           <strong>PetStockPro</strong>
           {
@@ -335,10 +335,10 @@ function ContactCard({
         {emoji}
       </span>
       <div className="min-w-0 flex-1">
-        <span className="block text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+        <span className="block text-[12px] font-bold uppercase tracking-wider text-ink-3">
           {label}
         </span>
-        <span className="truncate text-[12.5px] font-bold text-cart">
+        <span className="truncate text-[14px] font-bold text-cart">
           {value}
         </span>
       </div>

@@ -69,7 +69,7 @@ export default async function LowStockPage({
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-12">
       <header>
-        <div className="text-[11.5px] font-bold uppercase tracking-wider text-cat">
+        <div className="text-[13px] font-bold uppercase tracking-wider text-cat">
           Admin · Düşük Stok
         </div>
         <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
@@ -92,7 +92,7 @@ export default async function LowStockPage({
         <div className="min-w-[200px] flex-1">
           <label
             htmlFor="category"
-            className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+            className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3"
           >
             Kategori
           </label>
@@ -114,7 +114,7 @@ export default async function LowStockPage({
         <div className="min-w-[200px] flex-1">
           <label
             htmlFor="branch"
-            className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+            className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3"
           >
             Şube
           </label>
@@ -176,7 +176,7 @@ export default async function LowStockPage({
                 <div className="flex flex-wrap gap-2">
                   <Link
                     href={`/admin/stock-movements?variant=${variantId}` as never}
-                    className="rounded-xl border border-line bg-paper px-3 py-2 text-[11px] font-bold text-cart hover:bg-cat-soft"
+                    className="rounded-xl border border-line bg-paper px-3 py-2 text-[12.5px] font-bold text-cart hover:bg-cat-soft"
                     data-testid={`history-${variantId}`}
                   >
                     🕒 Geçmiş
@@ -202,7 +202,7 @@ export default async function LowStockPage({
                         isZero ? 'border-danger/40' : 'border-line'
                       }`}
                     >
-                      <div className="text-[11px] font-bold uppercase tracking-wider text-ink-3">
+                      <div className="text-[12.5px] font-bold uppercase tracking-wider text-ink-3">
                         {b.branchName}
                       </div>
                       <div className="mt-1 flex items-baseline gap-2">
@@ -213,12 +213,12 @@ export default async function LowStockPage({
                         >
                           {b.stockQty}
                         </span>
-                        <span className="text-[10px] text-ink-4">
+                        <span className="text-[11.5px] text-ink-4">
                           / {b.threshold} eşik
                         </span>
                       </div>
                       {isZero && (
-                        <p className="mt-1 text-[10.5px] font-bold text-danger-7">
+                        <p className="mt-1 text-[12px] font-bold text-danger-7">
                           ⚠ Sıfır stok — vitrin&apos;den otomatik düşmüş olabilir
                         </p>
                       )}
@@ -235,10 +235,10 @@ export default async function LowStockPage({
                     className="mt-3 rounded-xl border border-arrow/30 bg-arrow-soft/30 p-3"
                     data-testid={`transfer-suggestion-${variantId}`}
                   >
-                    <div className="mb-1.5 text-[10.5px] font-bold uppercase tracking-wider text-arrow-7">
+                    <div className="mb-1.5 text-[12px] font-bold uppercase tracking-wider text-arrow-7">
                       🔁 Önerilen transfer
                     </div>
-                    <ul className="flex flex-col gap-1 text-[11.5px] text-ink-2">
+                    <ul className="flex flex-col gap-1 text-[13px] text-ink-2">
                       {suggestions.map((s, idx) => (
                         <li
                           key={`${s.sourceBranchId}-${s.targetBranchId}-${idx}`}
@@ -246,15 +246,15 @@ export default async function LowStockPage({
                           className="flex flex-wrap items-center gap-1.5"
                         >
                           <strong className="text-arrow-7">{s.sourceBranchName}</strong>
-                          <span className="font-mono text-[10px] text-ink-3">
+                          <span className="font-mono text-[11.5px] text-ink-3">
                             (stok {s.sourceStock})
                           </span>
                           <span>→</span>
                           <strong className="text-cart">{s.targetBranchName}</strong>
-                          <span className="font-mono text-[10px] text-ink-3">
+                          <span className="font-mono text-[11.5px] text-ink-3">
                             (stok {s.targetStock})
                           </span>
-                          <span className="ml-auto rounded-full bg-arrow px-2 py-0.5 text-[10px] font-bold text-white">
+                          <span className="ml-auto rounded-full bg-arrow px-2 py-0.5 text-[11.5px] font-bold text-white">
                             +{s.suggestedQty} adet
                           </span>
                         </li>
@@ -268,7 +268,7 @@ export default async function LowStockPage({
                             `/admin/stock-movements?openTransfer=1&from=${s.sourceBranchId}&to=${s.targetBranchId}&variant=${variantId}&qty=${s.suggestedQty}` as never
                           }
                           data-testid={`open-transfer-${s.sourceBranchId}-${s.targetBranchId}`}
-                          className="rounded-lg border border-arrow/40 bg-paper px-2 py-1 text-[10px] font-bold text-arrow-7 hover:bg-arrow-soft"
+                          className="rounded-lg border border-arrow/40 bg-paper px-2 py-1 text-[11.5px] font-bold text-arrow-7 hover:bg-arrow-soft"
                         >
                           ▶ {s.sourceBranchName} → {s.targetBranchName} ({s.suggestedQty} ad)
                         </Link>

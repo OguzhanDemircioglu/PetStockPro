@@ -42,7 +42,7 @@ export default function ErrorBoundary({ error, reset }: Props) {
         {error.digest && (
           <div
             data-testid="error-digest"
-            className="mt-4 inline-block rounded-lg bg-danger-soft px-3 py-1.5 text-[11px] font-mono text-danger-7"
+            className="mt-4 inline-block rounded-lg bg-danger-soft px-3 py-1.5 text-[12.5px] font-mono text-danger-7"
           >
             Hata kodu: {error.digest}
           </div>
@@ -66,7 +66,7 @@ export default function ErrorBoundary({ error, reset }: Props) {
           </Link>
         </div>
 
-        <p className="mt-8 text-[10.5px] text-ink-4">
+        <p className="mt-8 text-[12px] text-ink-4">
           Destek:{' '}
           <a
             href="mailto:destek@petstockpro.com"

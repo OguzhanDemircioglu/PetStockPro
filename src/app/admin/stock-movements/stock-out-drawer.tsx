@@ -160,7 +160,7 @@ export function StockOutDrawer({ branches, variants, onClose }: Props) {
               className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
             />
             {requiresCustomerForCredit && (
-              <p className="mt-1 text-[11px] text-cat">
+              <p className="mt-1 text-[12.5px] text-cat">
                 ⚠ Veresiye satışta müşteri zorunlu
               </p>
             )}
@@ -202,17 +202,17 @@ export function StockOutDrawer({ branches, variants, onClose }: Props) {
           >
             {state.ok ? '✓' : '✕'} {state.message}
             {state.meta?.available !== undefined && (
-              <span className="ml-2 font-mono text-[11px]">
+              <span className="ml-2 font-mono text-[12.5px]">
                 (mevcut: {state.meta.available}, istenen: {state.meta.requested})
               </span>
             )}
             {state.ok && state.meta?.afterQty !== undefined && (
-              <span className="ml-2 font-mono text-[11px]">
+              <span className="ml-2 font-mono text-[12.5px]">
                 kalan: {state.meta.afterQty}
               </span>
             )}
             {state.issues.length > 0 && (
-              <ul className="mt-1 list-inside list-disc text-[11px] font-normal">
+              <ul className="mt-1 list-inside list-disc text-[12.5px] font-normal">
                 {state.issues.map((i, k) => (
                   <li key={k}>{i}</li>
                 ))}
@@ -256,7 +256,7 @@ function Field({
     <div>
       <label
         htmlFor={htmlFor}
-        className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+        className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
       >
         {label}
       </label>

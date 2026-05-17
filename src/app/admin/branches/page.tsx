@@ -21,7 +21,7 @@ export default async function BranchesPage({
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-12">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="text-[11.5px] font-bold uppercase tracking-wider text-cat">
+          <div className="text-[13px] font-bold uppercase tracking-wider text-cat">
             Admin · Şubeler
           </div>
           <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
@@ -77,11 +77,11 @@ export default async function BranchesPage({
                 {b.name}
               </Link>
               {b.isActive ? (
-                <span className="rounded bg-arrow-soft px-2 py-0.5 text-[10px] font-bold text-arrow-7">
+                <span className="rounded bg-arrow-soft px-2 py-0.5 text-[11.5px] font-bold text-arrow-7">
                   Aktif
                 </span>
               ) : (
-                <span className="rounded bg-line-soft px-2 py-0.5 text-[10px] font-bold text-ink-4">
+                <span className="rounded bg-line-soft px-2 py-0.5 text-[11.5px] font-bold text-ink-4">
                   Pasif
                 </span>
               )}
@@ -99,7 +99,7 @@ export default async function BranchesPage({
             </div>
 
             {b.address && (
-              <p className="mt-1 line-clamp-2 text-[11px] text-ink-4">{b.address}</p>
+              <p className="mt-1 line-clamp-2 text-[12.5px] text-ink-4">{b.address}</p>
             )}
 
             {b.whatsappPhone && (
@@ -109,7 +109,7 @@ export default async function BranchesPage({
             )}
 
             <div className="mt-3 flex items-end justify-between border-t border-line-soft pt-3">
-              <div className="text-[11px] text-ink-3">
+              <div className="text-[12.5px] text-ink-3">
                 {b.variantInventoryCount} variant ·{' '}
                 <strong className="text-ink">{b.totalStockQty}</strong> stok
               </div>

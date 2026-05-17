@@ -18,7 +18,7 @@ export function StartStocktakeForm({ branches }: Props) {
       <div>
         <label
           htmlFor="branchId"
-          className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+          className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
         >
           Şube *
         </label>
@@ -41,14 +41,14 @@ export function StartStocktakeForm({ branches }: Props) {
       </div>
 
       <div>
-        <span className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+        <span className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3">
           Sayım modu
         </span>
         <div className="rounded-xl bg-paper px-4 py-3 text-xs text-ink-3">
           <strong className="text-cart">📋 Tam</strong> · Şubedeki tüm aktif variant&apos;lar
           snapshot alınır.
           <br />
-          <span className="text-[10.5px] text-ink-4">
+          <span className="text-[12px] text-ink-4">
             Kategori + manuel mod Faz 2&apos;de eklenecek.
           </span>
         </div>
@@ -57,7 +57,7 @@ export function StartStocktakeForm({ branches }: Props) {
       <div>
         <label
           htmlFor="note"
-          className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+          className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
         >
           Not (opsiyonel)
         </label>

@@ -143,14 +143,21 @@ html.dark {
 
 * { box-sizing: border-box; }
 
+/* Root font-size — Tailwind rem-based değerler bu base'e oranlanır.
+   Default 16px → 18px ile tüm tipografi %12.5 büyütüldü (rem-based class'lar:
+   text-xs/sm/base/lg/xl/2xl/3xl/4xl + py-1.5/py-2/py-2.5/px-2/px-3 vb. hepsi). */
+html {
+  font-size: 18px;
+}
+
 html, body {
   margin: 0;
   padding: 0;
   font-family: var(--font-sans);
   color: var(--ink);
   background: var(--bg);
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 16px; /* body base — Tailwind text-base'le aynı, daha okunur */
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }

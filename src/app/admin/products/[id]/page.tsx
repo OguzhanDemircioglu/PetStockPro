@@ -42,7 +42,7 @@ export default async function ProductDetailPage({
     <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-12">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="text-[11.5px] font-bold uppercase tracking-wider text-cat">
+          <div className="text-[13px] font-bold uppercase tracking-wider text-cat">
             Admin · Ürünler · Detay
           </div>
           <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
@@ -112,7 +112,7 @@ export default async function ProductDetailPage({
       >
         <table className="w-full text-sm">
           <thead className="bg-paper">
-            <tr className="text-left text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+            <tr className="text-left text-[12px] font-bold uppercase tracking-wider text-ink-3">
               <th className="px-4 py-3">Variant</th>
               <th className="px-4 py-3">SKU</th>
               <th className="px-4 py-3 text-right">Fiyat</th>
@@ -146,27 +146,27 @@ export default async function ProductDetailPage({
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       {v.isDefault && (
-                        <span className="rounded-full bg-cat-soft px-1.5 py-0.5 text-[9px] font-bold text-cart">
+                        <span className="rounded-full bg-cat-soft px-1.5 py-0.5 text-[10.5px] font-bold text-cart">
                           DEFAULT
                         </span>
                       )}
                       {!v.isActive && (
-                        <span className="rounded-full bg-line-soft px-1.5 py-0.5 text-[9px] font-bold text-ink-3">
+                        <span className="rounded-full bg-line-soft px-1.5 py-0.5 text-[10.5px] font-bold text-ink-3">
                           PASİF
                         </span>
                       )}
                       <span className="font-bold text-ink">{v.variantLabel}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 font-mono text-[11px] text-ink-3">{v.sku}</td>
-                  <td className="px-4 py-3 text-right font-mono text-[12px] text-cart">
+                  <td className="px-4 py-3 font-mono text-[12.5px] text-ink-3">{v.sku}</td>
+                  <td className="px-4 py-3 text-right font-mono text-[13.5px] text-cart">
                     {Number(v.salePrice).toLocaleString('tr-TR', {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
                     ₺
                   </td>
-                  <td className="px-4 py-3 text-right font-mono text-[11px] text-ink-3">
+                  <td className="px-4 py-3 text-right font-mono text-[12.5px] text-ink-3">
                     {v.threshold}
                   </td>
                   {v.branches.map((br) => {
@@ -175,7 +175,7 @@ export default async function ProductDetailPage({
                     return (
                       <td
                         key={br.branchId}
-                        className="px-4 py-3 text-right font-mono text-[12px]"
+                        className="px-4 py-3 text-right font-mono text-[13.5px]"
                         data-branch-cell={br.branchId}
                         data-stock={br.stockQty}
                       >
@@ -206,7 +206,7 @@ export default async function ProductDetailPage({
           </h2>
           <Link
             href={`/admin/stock-movements?variant=${matrix.variants[0]?.variantId ?? ''}` as never}
-            className="text-[11px] font-bold text-cat hover:underline"
+            className="text-[12.5px] font-bold text-cat hover:underline"
           >
             Tümü →
           </Link>
@@ -225,13 +225,13 @@ export default async function ProductDetailPage({
               return (
                 <li key={m.id} className="flex items-center gap-2 py-2">
                   <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${badge.cls}`}
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-[11.5px] font-bold ${badge.cls}`}
                   >
                     {badge.label}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="text-[11px] font-bold text-ink">{m.variantLabel}</div>
-                    <div className="text-[10px] text-ink-3">
+                    <div className="text-[12.5px] font-bold text-ink">{m.variantLabel}</div>
+                    <div className="text-[11.5px] text-ink-3">
                       {m.branchName} ·{' '}
                       {new Date(m.createdAt).toLocaleString('tr-TR', {
                         day: '2-digit',
@@ -248,7 +248,7 @@ export default async function ProductDetailPage({
                   >
                     {m.quantity > 0 ? '+' : ''}
                     {m.quantity}
-                    <span className="ml-1 text-[10px] text-ink-3">→ {m.afterQty}</span>
+                    <span className="ml-1 text-[11.5px] text-ink-3">→ {m.afterQty}</span>
                   </div>
                 </li>
               );
@@ -286,7 +286,7 @@ function KPI({
   return (
     <article className={`flex flex-col gap-2 rounded-2xl border p-5 ${cls[accent]}`}>
       <div className="flex items-center justify-between">
-        <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+        <span className="text-[12px] font-bold uppercase tracking-wider text-ink-3">
           {title}
         </span>
         <span className="text-xl">{emoji}</span>

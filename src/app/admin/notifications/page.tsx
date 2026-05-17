@@ -114,7 +114,7 @@ export default async function NotificationsPage({
     <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-12">
       <header className="flex items-end justify-between gap-4">
         <div>
-          <div className="text-[11.5px] font-bold uppercase tracking-wider text-cat">
+          <div className="text-[13px] font-bold uppercase tracking-wider text-cat">
             Admin · Bildirimler
           </div>
           <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
@@ -167,7 +167,7 @@ export default async function NotificationsPage({
             href={`/admin/notifications${unreadOnly ? '?filter=unread' : ''}` as never}
             data-group="all"
             data-active={activeGroup === null ? '1' : '0'}
-            className={`rounded-full border px-2.5 py-1 text-[10.5px] font-bold ${
+            className={`rounded-full border px-2.5 py-1 text-[12px] font-bold ${
               activeGroup === null
                 ? 'border-cart bg-cart-soft text-cart'
                 : 'border-line bg-paper text-ink-3 hover:bg-line-soft'
@@ -187,7 +187,7 @@ export default async function NotificationsPage({
                 href={`/admin/notifications?${params.toString()}` as never}
                 data-group={key}
                 data-active={activeGroup === key ? '1' : '0'}
-                className={`rounded-full border px-2.5 py-1 text-[10.5px] font-bold ${
+                className={`rounded-full border px-2.5 py-1 text-[12px] font-bold ${
                   activeGroup === key
                     ? 'border-cat bg-cat-soft text-cart'
                     : 'border-line bg-paper text-ink-3 hover:bg-line-soft'
@@ -204,7 +204,7 @@ export default async function NotificationsPage({
             className="flex flex-wrap gap-1.5 rounded-2xl border border-line bg-paper p-3"
             data-testid="notif-type-filter"
           >
-            <span className="text-[10px] font-bold uppercase tracking-wider text-ink-3 self-center">
+            <span className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3 self-center">
               {TYPE_GROUPS[activeGroup].label} alt-tipler:
             </span>
             <Link
@@ -216,7 +216,7 @@ export default async function NotificationsPage({
               }
               data-type="all"
               data-active={activeType === null ? '1' : '0'}
-              className={`rounded-full border px-2.5 py-1 text-[10.5px] font-bold ${
+              className={`rounded-full border px-2.5 py-1 text-[12px] font-bold ${
                 activeType === null
                   ? 'border-cart bg-cart-soft text-cart'
                   : 'border-line bg-paper text-ink-3 hover:bg-line-soft'
@@ -237,7 +237,7 @@ export default async function NotificationsPage({
                   href={`/admin/notifications?${params.toString()}` as never}
                   data-type={t}
                   data-active={activeType === t ? '1' : '0'}
-                  className={`rounded-full border px-2.5 py-1 text-[10.5px] font-bold ${
+                  className={`rounded-full border px-2.5 py-1 text-[12px] font-bold ${
                     activeType === t
                       ? 'border-cat bg-cat text-white'
                       : 'border-line bg-paper text-ink-3 hover:bg-line-soft'
@@ -300,7 +300,7 @@ function NotificationItem({ item }: { item: NotificationRow }) {
         <div className="flex items-center gap-2">
           <h3 className="truncate text-sm font-bold text-cart">{item.content.title}</h3>
           {isUnread && (
-            <span className="rounded-full bg-cat px-1.5 py-0.5 text-[9px] font-bold text-white">
+            <span className="rounded-full bg-cat px-1.5 py-0.5 text-[10.5px] font-bold text-white">
               YENİ
             </span>
           )}
@@ -308,7 +308,7 @@ function NotificationItem({ item }: { item: NotificationRow }) {
         {item.content.body && (
           <p className="mt-0.5 text-xs leading-relaxed text-ink-2">{item.content.body}</p>
         )}
-        <div className="mt-1 flex items-center gap-3 text-[10.5px] text-ink-3">
+        <div className="mt-1 flex items-center gap-3 text-[12px] text-ink-3">
           <span>{typeLabel}</span>
           <span>·</span>
           <time>
@@ -332,7 +332,7 @@ function NotificationItem({ item }: { item: NotificationRow }) {
             type="submit"
             data-action="mark-read"
             aria-label="Okundu işaretle"
-            className="rounded-lg border border-line bg-paper px-2 py-1 text-[10px] font-bold text-ink-3 hover:bg-line-soft"
+            className="rounded-lg border border-line bg-paper px-2 py-1 text-[11.5px] font-bold text-ink-3 hover:bg-line-soft"
           >
             ✓
           </button>

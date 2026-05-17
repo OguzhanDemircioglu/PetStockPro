@@ -29,7 +29,7 @@ export function BrandForm({ action, initial, submitLabel }: Props) {
       <div>
         <label
           htmlFor="name"
-          className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+          className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
         >
           Marka adı *
         </label>
@@ -50,7 +50,7 @@ export function BrandForm({ action, initial, submitLabel }: Props) {
       <div>
         <label
           htmlFor="logoUrl"
-          className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+          className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
         >
           Logo URL (opsiyonel)
         </label>
@@ -63,7 +63,7 @@ export function BrandForm({ action, initial, submitLabel }: Props) {
           placeholder="https://..."
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
-        <p className="mt-1 text-[11px] text-ink-4">
+        <p className="mt-1 text-[12.5px] text-ink-4">
           Image upload Sprint 3.3 sonrası. Şimdilik tam URL.
         </p>
       </div>
@@ -78,7 +78,7 @@ export function BrandForm({ action, initial, submitLabel }: Props) {
         >
           <p>{state.ok ? '✓' : '✕'} {state.message}</p>
           {state.issues.length > 0 && (
-            <ul className="mt-1 list-inside list-disc text-[11px] font-normal">
+            <ul className="mt-1 list-inside list-disc text-[12.5px] font-normal">
               {state.issues.map((i, k) => (
                 <li key={k}>{i}</li>
               ))}

@@ -93,7 +93,7 @@ export function ReportButton({
         {remaining !== null && (
           <div
             data-testid="report-remaining"
-            className="mt-1.5 text-[11px] font-bold text-arrow-7/80"
+            className="mt-1.5 text-[12.5px] font-bold text-arrow-7/80"
           >
             {remaining === 0
               ? '⚠ Bu pet shop için günlük şikayet hakkın doldu (5/5). 24 saat içinde yeniden gönderemezsin.'
@@ -110,7 +110,7 @@ export function ReportButton({
         type="button"
         onClick={() => setOpen(true)}
         data-testid="report-trigger"
-        className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-paper px-3 py-2 text-[11.5px] font-bold text-ink-3 hover:border-danger hover:text-danger-7 transition-colors"
+        className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-paper px-3 py-2 text-[13px] font-bold text-ink-3 hover:border-danger hover:text-danger-7 transition-colors"
       >
         {label}
       </button>
@@ -135,14 +135,14 @@ export function ReportButton({
       </header>
 
       <div>
-        <label className="mb-1.5 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+        <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-ink-3">
           Sebep *
         </label>
         <div className="grid grid-cols-2 gap-1.5">
           {REASON_OPTIONS.map((opt) => (
             <label
               key={opt.value}
-              className={`flex cursor-pointer items-center gap-2 rounded-lg border px-2 py-1.5 text-[11px] transition-colors ${
+              className={`flex cursor-pointer items-center gap-2 rounded-lg border px-2 py-1.5 text-[12.5px] transition-colors ${
                 reason === opt.value
                   ? 'border-cat bg-cat-soft/40 font-bold text-cart'
                   : 'border-line bg-paper text-ink-2 hover:bg-line-soft'
@@ -167,7 +167,7 @@ export function ReportButton({
       <div>
         <label
           htmlFor="report-note"
-          className="mb-1.5 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+          className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-ink-3"
         >
           Açıklama (opsiyonel, max 1000)
         </label>
@@ -180,11 +180,11 @@ export function ReportButton({
           maxLength={1000}
           placeholder="Ekstra detay yazabilirsin…"
           data-testid="report-note"
-          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2 text-[12px] focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2 text-[13.5px] focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
         />
       </div>
 
-      <p className="text-[10px] text-ink-4">
+      <p className="text-[11.5px] text-ink-4">
         KVKK uyumlu anonim kayıt. IP adresinin hash&apos;i tutulur, kimlik
         bilgisi alınmaz.
       </p>
@@ -193,7 +193,7 @@ export function ReportButton({
         <div
           role="alert"
           data-testid="report-error"
-          className="rounded-lg border border-danger/30 bg-danger-soft px-3 py-2 text-[11px] font-bold text-danger-7"
+          className="rounded-lg border border-danger/30 bg-danger-soft px-3 py-2 text-[12.5px] font-bold text-danger-7"
         >
           ✕ {error}
         </div>

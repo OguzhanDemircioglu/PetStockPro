@@ -78,7 +78,7 @@ export function StocktakeDrawer({ branches, variants, onClose }: Props) {
             data-testid="countedQty"
             className="w-full rounded-xl border-[1.5px] border-cat bg-paper px-4 py-3 font-mono text-lg font-bold text-cart focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
-          <p className="mt-1 text-[11px] text-ink-3">
+          <p className="mt-1 text-[12.5px] text-ink-3">
             0 yazarsan stok sıfırlanır. Sistemdeki değerle aynıysa kayıt yapılmaz.
           </p>
         </Field>
@@ -116,13 +116,13 @@ export function StocktakeDrawer({ branches, variants, onClose }: Props) {
           >
             {state.ok ? '✓' : '✕'} {state.message}
             {state.ok && state.meta?.delta !== undefined && (
-              <span className="ml-2 font-mono text-[11px]">
+              <span className="ml-2 font-mono text-[12.5px]">
                 Δ {state.meta.delta > 0 ? '+' : ''}
                 {state.meta.delta} → yeni stok {state.meta.afterQty}
               </span>
             )}
             {state.issues.length > 0 && (
-              <ul className="mt-1 list-inside list-disc text-[11px] font-normal">
+              <ul className="mt-1 list-inside list-disc text-[12.5px] font-normal">
                 {state.issues.map((i, k) => (
                   <li key={k}>{i}</li>
                 ))}
@@ -166,7 +166,7 @@ function Field({
     <div>
       <label
         htmlFor={htmlFor}
-        className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+        className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
       >
         {label}
       </label>

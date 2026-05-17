@@ -106,7 +106,7 @@ export default async function VitrinProductDetailPage({
       />
       <nav
         aria-label="breadcrumb"
-        className="flex flex-wrap gap-2 text-[11.5px] text-ink-3"
+        className="flex flex-wrap gap-2 text-[13px] text-ink-3"
       >
         <Link href={'/vitrin' as never} className="hover:text-cart">
           Vitrin
@@ -136,7 +136,7 @@ export default async function VitrinProductDetailPage({
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-[11.5px] font-bold uppercase tracking-wider text-cat">
+            <p className="text-[13px] font-bold uppercase tracking-wider text-cat">
               🐾 {product.companyName}
             </p>
             <h1
@@ -145,7 +145,7 @@ export default async function VitrinProductDetailPage({
             >
               {product.productName}
             </h1>
-            <div className="mt-2 flex flex-wrap gap-3 text-[12px] text-ink-3">
+            <div className="mt-2 flex flex-wrap gap-3 text-[13.5px] text-ink-3">
               {product.brandName && (
                 <span>
                   🏷 <strong className="text-ink-2">{product.brandName}</strong>
@@ -196,11 +196,11 @@ export default async function VitrinProductDetailPage({
 
       {product.description && (
         <section className="rounded-2xl border border-line bg-paper p-5">
-          <h2 className="mb-2 text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+          <h2 className="mb-2 text-[13px] font-bold uppercase tracking-wider text-ink-3">
             📝 Açıklama
           </h2>
           <p
-            className="whitespace-pre-wrap text-[13px] leading-relaxed text-ink-2"
+            className="whitespace-pre-wrap text-[14.5px] leading-relaxed text-ink-2"
             data-testid="product-description"
           >
             {product.description}
@@ -212,7 +212,7 @@ export default async function VitrinProductDetailPage({
         className="rounded-2xl border border-line bg-paper p-5"
         data-testid="variants-section"
       >
-        <h2 className="mb-3 text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+        <h2 className="mb-3 text-[13px] font-bold uppercase tracking-wider text-ink-3">
           📦 Variant&apos;lar ({product.variants.length})
         </h2>
         <ul className="flex flex-col divide-y divide-line-soft">
@@ -228,17 +228,17 @@ export default async function VitrinProductDetailPage({
                   <div className="flex items-center gap-2">
                     <strong className="text-sm text-cart">{v.valueLabel}</strong>
                     {v.isDefault && (
-                      <span className="rounded-full bg-cat-soft px-1.5 py-0.5 text-[9.5px] font-bold text-cart">
+                      <span className="rounded-full bg-cat-soft px-1.5 py-0.5 text-[11px] font-bold text-cart">
                         ★ Varsayılan
                       </span>
                     )}
                     {!v.inStock && (
-                      <span className="rounded-full bg-danger-soft px-1.5 py-0.5 text-[9.5px] font-bold text-danger-7">
+                      <span className="rounded-full bg-danger-soft px-1.5 py-0.5 text-[11px] font-bold text-danger-7">
                         Stok yok
                       </span>
                     )}
                   </div>
-                  <p className="mt-0.5 font-mono text-[10.5px] text-ink-4">
+                  <p className="mt-0.5 font-mono text-[12px] text-ink-4">
                     SKU {v.sku}
                   </p>
                 </div>
@@ -252,7 +252,7 @@ export default async function VitrinProductDetailPage({
                       ₺
                     </p>
                   ) : (
-                    <p className="text-[11.5px] text-ink-4">
+                    <p className="text-[13px] text-ink-4">
                       Fiyat için sor
                     </p>
                   )}
@@ -267,7 +267,7 @@ export default async function VitrinProductDetailPage({
                     }
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="rounded-lg border border-arrow/40 bg-paper px-3 py-1.5 text-[10.5px] font-bold text-arrow-7 hover:bg-arrow-soft"
+                    className="rounded-lg border border-arrow/40 bg-paper px-3 py-1.5 text-[12px] font-bold text-arrow-7 hover:bg-arrow-soft"
                   >
                     💬 Bu variant&apos;ı sor
                   </a>
@@ -282,7 +282,7 @@ export default async function VitrinProductDetailPage({
         data-testid="product-report-section"
         className="flex flex-col gap-3 rounded-2xl border border-line bg-paper p-4"
       >
-        <p className="text-[11.5px] leading-relaxed text-ink-3">
+        <p className="text-[13px] leading-relaxed text-ink-3">
           {'⚖️ '}
           <strong>PetStockPro</strong>
           {' sadece dizin sağlar. Fiyat, stok ve sipariş için doğrudan '}

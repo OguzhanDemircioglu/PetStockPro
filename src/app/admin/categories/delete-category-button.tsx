@@ -40,7 +40,7 @@ export function DeleteCategoryButton({
   if (errMsg) {
     return (
       <span
-        className="rounded bg-danger-soft px-2 py-0.5 text-[10px] font-bold text-danger-7"
+        className="rounded bg-danger-soft px-2 py-0.5 text-[11.5px] font-bold text-danger-7"
         title={errMsg}
       >
         ✕ {errMsg}
@@ -54,7 +54,7 @@ export function DeleteCategoryButton({
       onClick={handleDelete}
       disabled={pending}
       data-testid={`delete-category-${categoryId}`}
-      className="rounded border border-danger/30 bg-paper px-2 py-1 text-[10px] font-bold text-danger-7 hover:bg-danger-soft disabled:opacity-50"
+      className="rounded border border-danger/30 bg-paper px-2 py-1 text-[11.5px] font-bold text-danger-7 hover:bg-danger-soft disabled:opacity-50"
     >
       {pending ? '...' : '🗑 Sil'}
     </button>

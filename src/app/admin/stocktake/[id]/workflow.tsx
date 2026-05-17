@@ -64,11 +64,11 @@ export function StocktakeWorkflow({ detail }: { detail: StocktakeDetail }) {
           <div>
             <div className="flex items-center gap-2">
               <span
-                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${STATUS_LABELS[detail.status]?.cls ?? ''}`}
+                className={`rounded-full px-2 py-0.5 text-[11.5px] font-bold ${STATUS_LABELS[detail.status]?.cls ?? ''}`}
               >
                 {STATUS_LABELS[detail.status]?.label ?? detail.status}
               </span>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-ink-3">
+              <span className="text-[12.5px] font-bold uppercase tracking-wider text-ink-3">
                 {detail.mode === 'full' ? 'Tam' : detail.mode} ·{' '}
                 {detail.branchName ?? '—'}
               </span>
@@ -92,7 +92,7 @@ export function StocktakeWorkflow({ detail }: { detail: StocktakeDetail }) {
             <div className="text-3xl font-bold text-cat" data-stocktake-pct>
               {pct}%
             </div>
-            <div className="text-[10.5px] uppercase tracking-wider text-ink-3">
+            <div className="text-[12px] uppercase tracking-wider text-ink-3">
               tamamlandı
             </div>
           </div>
@@ -105,7 +105,7 @@ export function StocktakeWorkflow({ detail }: { detail: StocktakeDetail }) {
           />
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-4 text-[11.5px]">
+        <div className="mt-3 flex flex-wrap items-center gap-4 text-[13px]">
           <span>
             ✓ Sayıldı:{' '}
             <strong className="text-ink" data-counted={detail.countedItems}>
@@ -148,8 +148,8 @@ export function StocktakeWorkflow({ detail }: { detail: StocktakeDetail }) {
                 aria-pressed={filter === key}
                 className={
                   filter === key
-                    ? 'rounded-full bg-cat px-3 py-1.5 text-[11.5px] font-bold text-white'
-                    : 'rounded-full border border-line bg-paper px-3 py-1.5 text-[11.5px] font-bold text-ink-3 hover:bg-line-soft'
+                    ? 'rounded-full bg-cat px-3 py-1.5 text-[13px] font-bold text-white'
+                    : 'rounded-full border border-line bg-paper px-3 py-1.5 text-[13px] font-bold text-ink-3 hover:bg-line-soft'
                 }
               >
                 {label} ({count})
@@ -168,7 +168,7 @@ export function StocktakeWorkflow({ detail }: { detail: StocktakeDetail }) {
                 aria-selected={viewMode === 'table'}
                 onClick={() => setViewMode('table')}
                 data-view-mode="table"
-                className={`px-3 py-1.5 text-[11px] font-bold ${
+                className={`px-3 py-1.5 text-[12.5px] font-bold ${
                   viewMode === 'table' ? 'bg-cat text-white' : 'bg-paper text-ink-3 hover:bg-line-soft'
                 }`}
               >
@@ -180,7 +180,7 @@ export function StocktakeWorkflow({ detail }: { detail: StocktakeDetail }) {
                 aria-selected={viewMode === 'card'}
                 onClick={() => setViewMode('card')}
                 data-view-mode="card"
-                className={`px-3 py-1.5 text-[11px] font-bold ${
+                className={`px-3 py-1.5 text-[12.5px] font-bold ${
                   viewMode === 'card' ? 'bg-cat text-white' : 'bg-paper text-ink-3 hover:bg-line-soft'
                 }`}
               >
@@ -208,7 +208,7 @@ export function StocktakeWorkflow({ detail }: { detail: StocktakeDetail }) {
         <section className="overflow-x-auto rounded-2xl border border-line bg-paper">
           <table className="w-full text-sm">
             <thead className="bg-paper">
-              <tr className="text-left text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+              <tr className="text-left text-[12px] font-bold uppercase tracking-wider text-ink-3">
                 <th className="px-4 py-3">Ürün</th>
                 <th className="px-4 py-3">Variant / SKU</th>
                 <th className="px-4 py-3 text-right">Sistem</th>
@@ -318,7 +318,7 @@ function SwipeCardView({
       data-view="card"
       className="flex flex-col gap-4"
     >
-      <div className="flex items-center justify-between text-[11px] font-bold text-ink-3">
+      <div className="flex items-center justify-between text-[12.5px] font-bold text-ink-3">
         <span>
           <span className="text-cart">{safeIndex + 1}</span> / {items.length}
         </span>
@@ -374,7 +374,7 @@ function SwipeCardView({
               }`}
             />
           ))}
-          {items.length > 12 && <span className="text-[10px] text-ink-4">...</span>}
+          {items.length > 12 && <span className="text-[11.5px] text-ink-4">...</span>}
         </div>
         <button
           type="button"
@@ -451,12 +451,12 @@ function SwipeCard({
         {item.variantLabel && (
           <p className="text-xs text-ink-3">{item.variantLabel}</p>
         )}
-        <p className="mt-1 font-mono text-[10.5px] text-ink-4">SKU {item.sku}</p>
+        <p className="mt-1 font-mono text-[12px] text-ink-4">SKU {item.sku}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-xl bg-line-soft p-3 text-center">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-ink-3">
+          <div className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
             Sistem
           </div>
           <div className="mt-1 font-mono text-2xl font-bold text-ink">
@@ -474,7 +474,7 @@ function SwipeCard({
                   : 'bg-line-soft'
           }`}
         >
-          <div className="text-[10px] font-bold uppercase tracking-wider text-ink-3">
+          <div className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
             Fark
           </div>
           <div
@@ -496,7 +496,7 @@ function SwipeCard({
       <div>
         <label
           htmlFor={`card-counted-${item.id}`}
-          className="text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+          className="text-[12px] font-bold uppercase tracking-wider text-ink-3"
         >
           Sayılan miktar
         </label>
@@ -527,7 +527,7 @@ function SwipeCard({
         <div>
           <label
             htmlFor={`card-reason-${item.id}`}
-            className={`text-[10.5px] font-bold uppercase tracking-wider ${
+            className={`text-[12px] font-bold uppercase tracking-wider ${
               needsReason ? 'text-danger-7' : 'text-ink-3'
             }`}
           >
@@ -565,7 +565,7 @@ function SwipeCard({
       {error && (
         <div
           role="alert"
-          className="rounded-xl bg-danger-soft px-3 py-2 text-[11px] text-danger-7"
+          className="rounded-xl bg-danger-soft px-3 py-2 text-[12.5px] text-danger-7"
         >
           {error}
         </div>
@@ -625,11 +625,11 @@ function ItemRow({
       className="hover:bg-line-soft"
     >
       <td className="px-4 py-3">
-        <div className="text-[12.5px] font-bold text-ink">{item.productName}</div>
+        <div className="text-[14px] font-bold text-ink">{item.productName}</div>
       </td>
       <td className="px-4 py-3">
-        <div className="text-[11px] text-ink-3">{item.variantLabel}</div>
-        <div className="font-mono text-[10.5px] text-ink-4">{item.sku}</div>
+        <div className="text-[12.5px] text-ink-3">{item.variantLabel}</div>
+        <div className="font-mono text-[12px] text-ink-4">{item.sku}</div>
       </td>
       <td className="px-4 py-3 text-right font-mono">{item.systemQty}</td>
       <td className="px-4 py-3 text-right">
@@ -657,7 +657,7 @@ function ItemRow({
               disabled={pending}
               data-action="save-row"
               aria-label="Bu satırı kaydet"
-              className="rounded-md bg-cat px-1.5 py-1 text-[10px] font-bold text-white hover:bg-cat-2 disabled:opacity-50"
+              className="rounded-md bg-cat px-1.5 py-1 text-[11.5px] font-bold text-white hover:bg-cat-2 disabled:opacity-50"
             >
               ✓
             </button>
@@ -709,7 +709,7 @@ function ItemRow({
         {error && (
           <div
             role="alert"
-            className="absolute mt-1 rounded bg-danger-soft px-2 py-1 text-[10px] text-danger-7"
+            className="absolute mt-1 rounded bg-danger-soft px-2 py-1 text-[11.5px] text-danger-7"
           >
             {error}
           </div>
@@ -751,12 +751,12 @@ function CompleteButton({ stocktakeId, disabled }: { stocktakeId: string; disabl
         {pending ? 'Tamamlanıyor...' : '✓ Sayımı tamamla'}
       </button>
       {state?.error && (
-        <div role="alert" className="rounded-lg bg-danger-soft px-3 py-1.5 text-[11px] text-danger-7">
+        <div role="alert" className="rounded-lg bg-danger-soft px-3 py-1.5 text-[12.5px] text-danger-7">
           {state.error}
         </div>
       )}
       {state?.ok && (
-        <div className="rounded-lg bg-arrow-soft px-3 py-1.5 text-[11px] text-arrow-7">
+        <div className="rounded-lg bg-arrow-soft px-3 py-1.5 text-[12.5px] text-arrow-7">
           ✓ {state.movementsCreated ?? 0} stok hareketi üretildi
         </div>
       )}
@@ -794,7 +794,7 @@ function CancelButton({ stocktakeId }: { stocktakeId: string }) {
       >
         {pending ? 'İptal ediliyor...' : '× İptal'}
       </button>
-      {error && <div role="alert" className="text-[11px] text-danger-7">{error}</div>}
+      {error && <div role="alert" className="text-[12.5px] text-danger-7">{error}</div>}
     </div>
   );
 }

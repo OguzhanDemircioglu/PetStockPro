@@ -186,7 +186,7 @@ function StatusCard({ href, label, value, hint, kind }: StatusItem) {
       data-status-card={label}
       className="group flex flex-col gap-1 rounded-2xl border border-line bg-paper p-4 hover:border-cat hover:shadow-sm transition-shadow"
     >
-      <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+      <span className="text-[12px] font-bold uppercase tracking-wider text-ink-3">
         {label}
       </span>
       <span className="truncate text-base font-bold text-cart">{value}</span>
@@ -221,7 +221,7 @@ function DataLink({
         <h3 className="text-sm font-bold text-cart group-hover:text-cat">
           {title}
         </h3>
-        <p className="text-[11px] text-ink-3">
+        <p className="text-[12.5px] text-ink-3">
           <strong className="font-mono text-ink">{count}</strong>{' '}
           {suffix ?? 'kayıt'}
         </p>

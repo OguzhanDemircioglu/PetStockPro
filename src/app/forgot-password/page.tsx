@@ -102,7 +102,7 @@ export default function ForgotPasswordPage() {
         <form action={formAction} className="mt-6 flex flex-col gap-4">
           <div>
             <label
-              className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+              className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
               htmlFor="email"
             >
               E-posta
@@ -143,7 +143,7 @@ export default function ForgotPasswordPage() {
           </Link>
         </div>
 
-        <div className="mt-5 rounded-lg border border-line bg-paper px-3 py-2.5 text-[10.5px] leading-snug text-ink-4 text-center">
+        <div className="mt-5 rounded-lg border border-line bg-paper px-3 py-2.5 text-[12px] leading-snug text-ink-4 text-center">
           <strong className="text-cart">Cloudflare Turnstile</strong> bot koruması Sprint 2.5&apos;te
           aktif olacak.
         </div>

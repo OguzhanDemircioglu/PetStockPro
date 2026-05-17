@@ -181,7 +181,7 @@ function Field({
 }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-[11px] font-bold uppercase tracking-wider text-ink-3">{label}</span>
+      <span className="text-[12.5px] font-bold uppercase tracking-wider text-ink-3">{label}</span>
       {multiline ? (
         <textarea
           name={name}

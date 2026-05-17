@@ -15,7 +15,7 @@ export function StocktakeUndoForm() {
       <div className="rounded-2xl border border-arrow/40 bg-arrow-soft p-6">
         <h2 className="text-xl font-bold text-arrow-7">✓ Sayım rollback uygulandı</h2>
         <p className="mt-2 text-sm leading-relaxed text-ink-2">
-          Sayım <code className="text-[11px]">{state.stocktakeId?.slice(0, 8)}…</code>{' '}
+          Sayım <code className="text-[12.5px]">{state.stocktakeId?.slice(0, 8)}…</code>{' '}
           status&apos;u <strong>cancelled</strong> olarak güncellendi.
         </p>
         <p className="mt-2 text-sm text-ink-2">
@@ -23,7 +23,7 @@ export function StocktakeUndoForm() {
           başarıyla geri alındı.
         </p>
         {state.movementsReversed !== state.movementsTotal && (
-          <p className="mt-2 text-[11.5px] text-danger-7">
+          <p className="mt-2 text-[13px] text-danger-7">
             ⚠ {(state.movementsTotal ?? 0) - (state.movementsReversed ?? 0)} hareket reverse
             edilemedi (zaten reversed veya yetersiz stok). Audit log&apos;dan detaylara bak.
           </p>
@@ -55,7 +55,7 @@ export function StocktakeUndoForm() {
   return (
     <form action={formAction} className="flex flex-col gap-4 rounded-2xl border border-line bg-paper p-6">
       <div>
-        <label htmlFor="stocktakeId" className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+        <label htmlFor="stocktakeId" className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3">
           Sayım UUID *
         </label>
         <input
@@ -65,16 +65,16 @@ export function StocktakeUndoForm() {
           required
           disabled={pending}
           data-testid="stocktake-id"
-          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2 font-mono text-[11px] focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2 font-mono text-[12.5px] focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
-        <p className="mt-1 text-[10.5px] text-ink-4">
+        <p className="mt-1 text-[12px] text-ink-4">
           <code>/admin/stocktake</code> sayfasından completed sayımın URL son
           parçasını kopyala.
         </p>
       </div>
 
       <div>
-        <label htmlFor="reason" className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+        <label htmlFor="reason" className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3">
           Zorunlu sebep * (min 10 karakter)
         </label>
         <textarea
@@ -92,7 +92,7 @@ export function StocktakeUndoForm() {
       </div>
 
       <div>
-        <label htmlFor="superadminPassword" className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+        <label htmlFor="superadminPassword" className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3">
           Süperadmin şifren * (re-auth)
         </label>
         <input
@@ -115,7 +115,7 @@ export function StocktakeUndoForm() {
         >
           ✕ {state.error}
           {state.issues && state.issues.length > 0 && (
-            <ul className="mt-1 list-inside list-disc text-[11px] font-normal">
+            <ul className="mt-1 list-inside list-disc text-[12.5px] font-normal">
               {state.issues.map((i, idx) => (
                 <li key={idx}>{i}</li>
               ))}

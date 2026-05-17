@@ -81,7 +81,7 @@ export function FilterBar({ categories, brands, initial }: Props) {
         <div className="flex-1 min-w-[240px]">
           <label
             htmlFor="filter-q"
-            className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+            className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3"
           >
             🔍 Ara
           </label>
@@ -99,7 +99,7 @@ export function FilterBar({ categories, brands, initial }: Props) {
         <div className="min-w-[180px]">
           <label
             htmlFor="filter-category"
-            className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+            className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3"
           >
             Kategori
           </label>
@@ -122,7 +122,7 @@ export function FilterBar({ categories, brands, initial }: Props) {
         <div className="min-w-[160px]">
           <label
             htmlFor="filter-brand"
-            className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+            className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3"
           >
             Marka
           </label>
@@ -146,7 +146,7 @@ export function FilterBar({ categories, brands, initial }: Props) {
         <div className="min-w-[120px]">
           <label
             htmlFor="filter-status"
-            className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+            className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3"
           >
             Durum
           </label>
@@ -167,7 +167,7 @@ export function FilterBar({ categories, brands, initial }: Props) {
         <div className="min-w-[140px]">
           <label
             htmlFor="filter-vitrin"
-            className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+            className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3"
           >
             Vitrin
           </label>

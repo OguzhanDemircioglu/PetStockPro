@@ -71,7 +71,7 @@ export function SecurityForms({
             </p>
           </div>
           <span
-            className={`shrink-0 rounded-lg px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${
+            className={`shrink-0 rounded-lg px-3 py-1 text-[12.5px] font-bold uppercase tracking-wider ${
               twoFactorEnabled
                 ? 'bg-arrow-soft text-arrow-7'
                 : 'bg-line-soft text-ink-4'
@@ -91,12 +91,12 @@ export function SecurityForms({
               <span className="font-bold text-ink-2">Yedek kodlar:</span>{' '}
               {remainingRecoveryCount} / 8 kullanılmamış
               {remainingRecoveryCount <= 2 && remainingRecoveryCount > 0 && (
-                <span className="ml-2 rounded bg-cat-soft px-2 py-0.5 text-[10px] font-bold text-cart">
+                <span className="ml-2 rounded bg-cat-soft px-2 py-0.5 text-[11.5px] font-bold text-cart">
                   ⚠ Az kaldı — yenilemen önerilir
                 </span>
               )}
               {remainingRecoveryCount === 0 && (
-                <span className="ml-2 rounded bg-danger-soft px-2 py-0.5 text-[10px] font-bold text-danger-7">
+                <span className="ml-2 rounded bg-danger-soft px-2 py-0.5 text-[11.5px] font-bold text-danger-7">
                   🔴 Hepsi kullanıldı — hemen yenile
                 </span>
               )}

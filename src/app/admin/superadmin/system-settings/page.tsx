@@ -74,7 +74,7 @@ export default async function SystemSettingsPage() {
         <Link href={'/admin/superadmin' as never} className="text-xs text-ink-4 hover:text-cart">
           ← Süperadmin
         </Link>
-        <div className="mt-3 text-[11.5px] font-bold uppercase tracking-wider text-cat">
+        <div className="mt-3 text-[13px] font-bold uppercase tracking-wider text-cat">
           🛡 Süperadmin · Sistem Ayarları
         </div>
         <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
@@ -101,18 +101,18 @@ export default async function SystemSettingsPage() {
                 data-plan={k}
                 className="rounded-2xl border border-line bg-paper p-4"
               >
-                <div className="text-[11.5px] font-bold uppercase text-cart">
+                <div className="text-[13px] font-bold uppercase text-cart">
                   {PLAN_LABELS[k]}
                 </div>
                 <div className="mt-2 font-mono text-3xl font-bold text-cart">
                   {limit}
                 </div>
-                <div className="mt-1 text-[10.5px] text-ink-3">ürün limiti</div>
-                <div className="mt-3 text-[12px] font-bold text-arrow-7">
+                <div className="mt-1 text-[12px] text-ink-3">ürün limiti</div>
+                <div className="mt-3 text-[13.5px] font-bold text-arrow-7">
                   {p.priceMonthlyTry === 0 ? '0₺' : `${p.priceMonthlyTry}₺/ay`}
                 </div>
-                <div className="text-[10.5px] text-ink-4">KDV dahil</div>
-                <p className="mt-2 text-[10.5px] text-ink-3 italic">
+                <div className="text-[12px] text-ink-4">KDV dahil</div>
+                <p className="mt-2 text-[12px] text-ink-3 italic">
                   {PLAN_DESCRIPTIONS[k]}
                 </p>
               </article>
@@ -126,7 +126,7 @@ export default async function SystemSettingsPage() {
           🔑 Environment variable durumu ({envChecks.filter((e) => e.present).length}/{envChecks.length})
         </h2>
         <div className="overflow-x-auto rounded-2xl border border-line bg-paper">
-          <table className="w-full border-collapse text-[12px]">
+          <table className="w-full border-collapse text-[13.5px]">
             <thead>
               <tr>
                 <th className="border-b-2 border-line bg-paper px-3 py-2 text-left font-bold text-cart">
@@ -143,7 +143,7 @@ export default async function SystemSettingsPage() {
             <tbody>
               {envChecks.map((e) => (
                 <tr key={e.key} className="border-b border-line-soft">
-                  <td className="px-3 py-2 font-mono text-[11px] text-cart">{e.key}</td>
+                  <td className="px-3 py-2 font-mono text-[12.5px] text-cart">{e.key}</td>
                   <td className="px-3 py-2 text-ink-2">{e.desc}</td>
                   <td className={`px-3 py-2 font-bold ${e.present ? 'text-arrow-7' : 'text-danger-7'}`}>
                     {maskValue(e.present)}
@@ -160,7 +160,7 @@ export default async function SystemSettingsPage() {
           <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
             🗄 DB Extension&apos;ları + Tablo sayısı
           </h2>
-          <div className="mb-3 rounded-lg border border-arrow/30 bg-arrow-soft px-3 py-2 text-[11.5px]">
+          <div className="mb-3 rounded-lg border border-arrow/30 bg-arrow-soft px-3 py-2 text-[13px]">
             <strong className="text-arrow-7">{tableCount}</strong> tablo{' '}
             <span className="text-ink-3">(petstockpro schema)</span>
           </div>
@@ -169,7 +169,7 @@ export default async function SystemSettingsPage() {
               Extension bilgisi çekilemedi.
             </p>
           ) : (
-            <ul className="divide-y divide-line-soft text-[11.5px]">
+            <ul className="divide-y divide-line-soft text-[13px]">
               {extensions.map((e) => (
                 <li key={e.extname} className="flex justify-between py-1.5">
                   <code className="text-cart">{e.extname}</code>
@@ -184,15 +184,15 @@ export default async function SystemSettingsPage() {
           <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
             💰 KDV oranları (TR 2024+)
           </h2>
-          <ul className="divide-y divide-line-soft text-[12px]">
+          <ul className="divide-y divide-line-soft text-[13.5px]">
             {VAT_RATE_OPTIONS.map((v) => (
               <li key={v.value} className="flex items-center justify-between py-1.5">
                 <span className="font-mono font-bold text-cart">{v.label}</span>
-                <span className="text-ink-3 text-[11px]">{v.description}</span>
+                <span className="text-ink-3 text-[12.5px]">{v.description}</span>
               </li>
             ))}
           </ul>
-          <p className="mt-3 rounded-lg border border-cat/30 bg-cat-soft px-3 py-2 text-[10.5px] text-ink-2">
+          <p className="mt-3 rounded-lg border border-cat/30 bg-cat-soft px-3 py-2 text-[12px] text-ink-2">
             Default: <strong>%{DEFAULT_VAT_RATE}</strong>. Pet mama %10 özel oran (kuru-mama,
             yaş-mama, ödül-snack kategorileri).
           </p>
@@ -204,7 +204,7 @@ export default async function SystemSettingsPage() {
           📂 Default kategoriler ({DEFAULT_CATEGORIES.length}) — her yeni tenant&apos;a otomatik seed
         </h2>
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-[12px]">
+          <table className="w-full border-collapse text-[13.5px]">
             <thead>
               <tr>
                 <th className="border-b-2 border-line bg-paper px-3 py-2 text-left font-bold text-cart">
@@ -232,7 +232,7 @@ export default async function SystemSettingsPage() {
                 <tr key={c.slug} className="border-b border-line-soft">
                   <td className="px-3 py-1.5 text-lg">{c.emoji}</td>
                   <td className="px-3 py-1.5 font-bold text-ink">{c.name}</td>
-                  <td className="px-3 py-1.5 font-mono text-[11px] text-ink-3">{c.slug}</td>
+                  <td className="px-3 py-1.5 font-mono text-[12.5px] text-ink-3">{c.slug}</td>
                   <td className="px-3 py-1.5 font-mono text-cart">%{c.vatRate}</td>
                   <td className="px-3 py-1.5 text-ink-2">{c.sktRequired ? '✓' : '—'}</td>
                   <td className="px-3 py-1.5 text-ink-3">{c.displayOrder}</td>
@@ -243,7 +243,7 @@ export default async function SystemSettingsPage() {
         </div>
       </section>
 
-      <p className="text-center text-[11px] text-ink-4">
+      <p className="text-center text-[12.5px] text-ink-4">
         ⚙ Read-only. Editleme Faz 2 (system_settings tablo + UPDATE mode + audit).
         Plan tier&apos;ları manuel değişiyorsa <code>lib/constants/plan-limits.ts</code> dosyasını güncelle.
       </p>

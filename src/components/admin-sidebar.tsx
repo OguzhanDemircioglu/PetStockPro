@@ -131,19 +131,19 @@ export function AdminSidebar({
           />
         </span>
         <div className="min-w-0">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-cart">
+          <div className="text-[12.5px] font-bold uppercase tracking-wider text-cart">
             PetStockPro
           </div>
-          <div className="truncate text-[10.5px] text-ink-3">{tenantName}</div>
+          <div className="truncate text-[12px] text-ink-3">{tenantName}</div>
         </div>
       </Link>
 
       {/* Nav groups */}
-      <nav className="flex flex-col gap-4 text-[12px]" data-testid="sidebar-nav">
+      <nav className="flex flex-col gap-4 text-[13.5px]" data-testid="sidebar-nav">
         {groups.map((g, gi) => (
           <div key={gi} className="flex flex-col gap-0.5">
             {g.label && (
-              <div className="mb-1 px-2 text-[9.5px] font-bold uppercase tracking-[0.08em] text-ink-4">
+              <div className="mb-1 px-2 text-[11px] font-bold uppercase tracking-[0.08em] text-ink-4">
                 {g.label}
               </div>
             )}
@@ -173,7 +173,7 @@ export function AdminSidebar({
                   <span className="flex-1 truncate">{link.label}</span>
                   {link.badge !== undefined && (
                     <span
-                      className={`rounded-full px-1.5 py-0.5 text-[9.5px] font-bold ${badgeToneCls[link.badgeTone ?? 'cat']}`}
+                      className={`rounded-full px-1.5 py-0.5 text-[11px] font-bold ${badgeToneCls[link.badgeTone ?? 'cat']}`}
                     >
                       {link.badge}
                     </span>
@@ -200,7 +200,7 @@ export function AdminSidebar({
         />
         <div className="relative flex items-center justify-between">
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-wider opacity-75">
+            <div className="text-[11.5px] font-bold uppercase tracking-wider opacity-75">
               PLAN
             </div>
             <div className="mt-0.5 text-base font-bold tracking-tight">
@@ -208,13 +208,13 @@ export function AdminSidebar({
             </div>
           </div>
           {isNearLimit && (
-            <span className="rounded-full bg-cat px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider shadow-sm">
+            <span className="rounded-full bg-cat px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider shadow-sm">
               limit
             </span>
           )}
         </div>
         <div className="relative mt-2.5">
-          <div className="mb-1 flex justify-between text-[11px] font-bold opacity-90">
+          <div className="mb-1 flex justify-between text-[12.5px] font-bold opacity-90">
             <span>Ürün limiti</span>
             <span className="font-mono tabular-nums">
               {productCount} / {planLimitLabel}
@@ -234,7 +234,7 @@ export function AdminSidebar({
         {plan === 'FREE' && (
           <Link
             href={'/admin/settings' as never}
-            className="relative mt-3 block rounded-[9px] bg-white/18 px-2.5 py-2 text-center text-[11.5px] font-bold text-white transition-colors hover:bg-white/30"
+            className="relative mt-3 block rounded-[9px] bg-white/18 px-2.5 py-2 text-center text-[13px] font-bold text-white transition-colors hover:bg-white/30"
           >
             PRO&apos;ya geç →
           </Link>
@@ -242,7 +242,7 @@ export function AdminSidebar({
       </div>
 
       {/* Footer mini */}
-      <p className="mt-3 text-center text-[9px] text-ink-4">
+      <p className="mt-3 text-center text-[10.5px] text-ink-4">
         © 2026 PetStockPro
       </p>
     </aside>

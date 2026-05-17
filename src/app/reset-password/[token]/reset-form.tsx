@@ -59,7 +59,7 @@ export function ResetForm({ token, email }: ResetFormProps) {
 
           <div>
             <label
-              className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+              className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
               htmlFor="password"
             >
               Yeni şifre
@@ -79,7 +79,7 @@ export function ResetForm({ token, email }: ResetFormProps) {
 
           <div>
             <label
-              className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+              className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
               htmlFor="passwordRepeat"
             >
               Şifreyi tekrar gir
@@ -97,7 +97,7 @@ export function ResetForm({ token, email }: ResetFormProps) {
             />
           </div>
 
-          <div className="rounded-xl bg-paper px-4 py-3 text-[11.5px] leading-relaxed text-ink-3">
+          <div className="rounded-xl bg-paper px-4 py-3 text-[13px] leading-relaxed text-ink-3">
             ⚠ Şifreni değiştirdiğinde tüm aktif oturumların kapanır (güvenlik gereği,
             Sprint 9&apos;da aktif).
           </div>

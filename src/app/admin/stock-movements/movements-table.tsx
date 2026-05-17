@@ -40,7 +40,7 @@ export function MovementsTable({ movements, now }: Props) {
     <div className="overflow-x-auto rounded-2xl border border-line bg-paper">
       <table className="w-full text-sm">
         <thead className="bg-paper">
-          <tr className="text-left text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+          <tr className="text-left text-[12px] font-bold uppercase tracking-wider text-ink-3">
             <th className="px-4 py-3">Tarih</th>
             <th className="px-4 py-3">Tür</th>
             <th className="px-4 py-3">Ürün</th>
@@ -66,7 +66,7 @@ export function MovementsTable({ movements, now }: Props) {
                 className={`hover:bg-line-soft ${reversed ? 'opacity-50 line-through' : ''}`}
                 data-movement-id={m.id}
               >
-                <td className="px-4 py-3 text-[11px] text-ink-3 whitespace-nowrap">
+                <td className="px-4 py-3 text-[12.5px] text-ink-3 whitespace-nowrap">
                   {new Date(m.createdAt).toLocaleString('tr-TR', {
                     day: '2-digit',
                     month: '2-digit',
@@ -76,19 +76,19 @@ export function MovementsTable({ movements, now }: Props) {
                 </td>
                 <td className="px-4 py-3">
                   <span
-                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${badge.classes}`}
+                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11.5px] font-bold ${badge.classes}`}
                   >
                     {badge.label}
                   </span>
                   {subtypeLabel && (
-                    <span className="ml-1.5 text-[10px] text-ink-4">
+                    <span className="ml-1.5 text-[11.5px] text-ink-4">
                       · {subtypeLabel}
                     </span>
                   )}
                 </td>
                 <td className="px-4 py-3">
                   <div className="font-bold text-ink">{m.productName}</div>
-                  <div className="text-[10.5px] text-ink-4">{m.variantLabel}</div>
+                  <div className="text-[12px] text-ink-4">{m.variantLabel}</div>
                 </td>
                 <td className="px-4 py-3 text-ink-2">{m.branchName}</td>
                 <td className="px-4 py-3 text-right font-mono text-ink-3">
@@ -105,7 +105,7 @@ export function MovementsTable({ movements, now }: Props) {
                 <td className="px-4 py-3 text-right font-mono font-bold text-ink">
                   {m.afterQty}
                 </td>
-                <td className="px-4 py-3 text-[11px] text-ink-3">
+                <td className="px-4 py-3 text-[12.5px] text-ink-3">
                   {m.unitPrice && (
                     <span className="mr-2">
                       <strong className="text-cart">{m.unitPrice}₺</strong>/adet
@@ -128,19 +128,19 @@ export function MovementsTable({ movements, now }: Props) {
                   )}
                   {m.reason && <span className="italic">{m.reason}</span>}
                   {m.transferGroupId && (
-                    <span className="ml-1 text-[10px] text-ink-4">
+                    <span className="ml-1 text-[11.5px] text-ink-4">
                       (TG:{m.transferGroupId.slice(0, 6)})
                     </span>
                   )}
                 </td>
                 <td className="px-4 py-3 text-right whitespace-nowrap">
                   {reversed ? (
-                    <span className="text-[10px] font-bold text-ink-4">
+                    <span className="text-[11.5px] font-bold text-ink-4">
                       ✓ Geri alındı
                     </span>
                   ) : m.reversesId ? (
                     <span
-                      className="text-[10px] text-ink-4"
+                      className="text-[11.5px] text-ink-4"
                       title="Bu kayıt zaten bir geri alma"
                     >
                       ↶ Geri alma

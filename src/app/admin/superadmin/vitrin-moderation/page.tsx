@@ -95,7 +95,7 @@ export default async function VitrinModerationPage({
         >
           ← Süperadmin
         </Link>
-        <div className="mt-3 text-[11.5px] font-bold uppercase tracking-wider text-cat">
+        <div className="mt-3 text-[13px] font-bold uppercase tracking-wider text-cat">
           🛡 Süperadmin · Vitrin moderasyon
         </div>
         <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
@@ -165,7 +165,7 @@ export default async function VitrinModerationPage({
             className="flex flex-wrap items-center gap-2"
             data-testid="reports-filter-bar"
           >
-            <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+            <span className="text-[12px] font-bold uppercase tracking-wider text-ink-3">
               Durum:
             </span>
             <FilterChip
@@ -183,7 +183,7 @@ export default async function VitrinModerationPage({
               active={validReportStatus === 'dismissed'}
               label={`× Geçersiz (${reportStats.dismissed})`}
             />
-            <span className="ml-3 text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+            <span className="ml-3 text-[12px] font-bold uppercase tracking-wider text-ink-3">
               Hedef:
             </span>
             <FilterChip
@@ -226,7 +226,7 @@ export default async function VitrinModerationPage({
                 className="w-full text-xs"
                 data-testid="reports-table"
               >
-                <thead className="bg-line-soft text-[10.5px] uppercase tracking-wider text-ink-3">
+                <thead className="bg-line-soft text-[12px] uppercase tracking-wider text-ink-3">
                   <tr>
                     <th className="px-3 py-2 text-left">Tarih</th>
                     <th className="px-3 py-2 text-left">Tenant</th>
@@ -265,7 +265,7 @@ export default async function VitrinModerationPage({
                 className="w-full text-xs"
                 data-testid="moderation-table"
               >
-                <thead className="bg-line-soft text-[10.5px] uppercase tracking-wider text-ink-3">
+                <thead className="bg-line-soft text-[12px] uppercase tracking-wider text-ink-3">
                   <tr>
                     <th className="px-3 py-2 text-left">Tarih</th>
                     <th className="px-3 py-2 text-left">Tenant</th>
@@ -287,7 +287,7 @@ export default async function VitrinModerationPage({
         </section>
       )}
 
-      <p className="text-center text-[11px] text-ink-4">
+      <p className="text-center text-[12.5px] text-ink-4">
         İşlemler audit log&apos;da{' '}
         <code>vitrin_feedback.flagged</code> /{' '}
         <code>vitrin_feedback.unflagged</code> olarak görünür.
@@ -311,7 +311,7 @@ function ReportTableRow({ row }: { row: ReportRow }) {
           month: '2-digit',
           year: '2-digit',
         })}{' '}
-        <span className="text-[10px] text-ink-4">
+        <span className="text-[11.5px] text-ink-4">
           {row.createdAt.toLocaleTimeString('tr-TR', {
             hour: '2-digit',
             minute: '2-digit',
@@ -333,7 +333,7 @@ function ReportTableRow({ row }: { row: ReportRow }) {
       <td className="px-3 py-2 text-ink-2">
         {row.targetType === 'product' ? (
           <>
-            <span className="text-[10px] text-ink-4">🛍 Ürün</span>
+            <span className="text-[11.5px] text-ink-4">🛍 Ürün</span>
             {row.productSlug ? (
               <Link
                 href={
@@ -342,35 +342,35 @@ function ReportTableRow({ row }: { row: ReportRow }) {
                 target="_blank"
                 rel="noreferrer noopener"
                 data-testid={`report-product-link-${row.id}`}
-                className="block truncate text-[11px] font-bold text-cart hover:underline"
+                className="block truncate text-[12.5px] font-bold text-cart hover:underline"
                 title="Yeni sekmede ürün vitrin sayfasını aç"
               >
                 {row.productName ?? '(silinmiş)'} ↗
               </Link>
             ) : (
-              <div className="truncate text-[11px] font-bold text-ink-4 italic">
+              <div className="truncate text-[12.5px] font-bold text-ink-4 italic">
                 {row.productName ?? '(silinmiş)'}
               </div>
             )}
           </>
         ) : (
-          <span className="text-[11px]">🏪 Tüm pet shop</span>
+          <span className="text-[12.5px]">🏪 Tüm pet shop</span>
         )}
       </td>
-      <td className="px-3 py-2 text-[11px] text-ink-2 font-bold">
+      <td className="px-3 py-2 text-[12.5px] text-ink-2 font-bold">
         {reasonLabel}
       </td>
-      <td className="px-3 py-2 text-[11px] text-ink-3 max-w-[200px] truncate">
+      <td className="px-3 py-2 text-[12.5px] text-ink-3 max-w-[200px] truncate">
         {row.note ? <span title={row.note}>{row.note}</span> : <span className="text-ink-4">—</span>}
       </td>
       <td className="px-3 py-2">
         <span
-          className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${statusInfo.cls}`}
+          className={`inline-flex rounded-full px-2 py-0.5 text-[11.5px] font-bold ${statusInfo.cls}`}
         >
           {statusInfo.label}
         </span>
         {row.resolvedByEmail && (
-          <div className="mt-0.5 text-[9px] text-ink-4 truncate max-w-[120px]">
+          <div className="mt-0.5 text-[10.5px] text-ink-4 truncate max-w-[120px]">
             by {row.resolvedByEmail}
           </div>
         )}
@@ -379,7 +379,7 @@ function ReportTableRow({ row }: { row: ReportRow }) {
         {row.status === 'pending' ? (
           <ResolveReportButton reportId={row.id} />
         ) : (
-          <span className="text-[10px] text-ink-4">
+          <span className="text-[11.5px] text-ink-4">
             {row.resolvedAt
               ? row.resolvedAt.toLocaleDateString('tr-TR', {
                   day: '2-digit',
@@ -408,7 +408,7 @@ function ModerationRow({ row }: { row: FeedbackRow }) {
           month: '2-digit',
           year: '2-digit',
         })}{' '}
-        <span className="text-[10px] text-ink-4">
+        <span className="text-[11.5px] text-ink-4">
           {row.createdAt.toLocaleTimeString('tr-TR', {
             hour: '2-digit',
             minute: '2-digit',
@@ -420,7 +420,7 @@ function ModerationRow({ row }: { row: FeedbackRow }) {
       </td>
       <td className="px-3 py-2">
         <span
-          className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${statusInfo.cls}`}
+          className={`inline-flex rounded-full px-2 py-0.5 text-[11.5px] font-bold ${statusInfo.cls}`}
         >
           {statusInfo.label}
         </span>
@@ -429,16 +429,16 @@ function ModerationRow({ row }: { row: FeedbackRow }) {
         {ratingInfo ? (
           <span title={ratingInfo.label}>
             {ratingInfo.emoji}{' '}
-            <span className="text-[10px] text-ink-4">{ratingInfo.label}</span>
+            <span className="text-[11.5px] text-ink-4">{ratingInfo.label}</span>
           </span>
         ) : (
           <span className="text-ink-4">—</span>
         )}
       </td>
-      <td className="px-3 py-2 text-ink-3 font-mono text-[10px]">
+      <td className="px-3 py-2 text-ink-3 font-mono text-[11.5px]">
         {row.countryCode ?? '—'}
       </td>
-      <td className="px-3 py-2 text-ink-3 text-[11px] max-w-[200px] truncate">
+      <td className="px-3 py-2 text-ink-3 text-[12.5px] max-w-[200px] truncate">
         {row.status === 'flagged' && row.flagReason ? (
           <span title={row.flagReason}>{row.flagReason}</span>
         ) : (
@@ -471,8 +471,8 @@ function FilterChip({
       data-active={active}
       className={
         active
-          ? 'rounded-full bg-cat px-2.5 py-1 text-[10.5px] font-bold text-white'
-          : 'rounded-full border border-line bg-paper px-2.5 py-1 text-[10.5px] font-bold text-ink-3 hover:bg-line-soft'
+          ? 'rounded-full bg-cat px-2.5 py-1 text-[12px] font-bold text-white'
+          : 'rounded-full border border-line bg-paper px-2.5 py-1 text-[12px] font-bold text-ink-3 hover:bg-line-soft'
       }
     >
       {label}
@@ -527,7 +527,7 @@ function KPI({
       data-kpi={title}
     >
       <div className="flex items-center justify-between">
-        <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+        <span className="text-[12px] font-bold uppercase tracking-wider text-ink-3">
           {title}
         </span>
         <span className="text-base">{emoji}</span>

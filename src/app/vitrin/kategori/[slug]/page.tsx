@@ -90,7 +90,7 @@ export default async function VitrinCategoryPage({
     >
       <nav
         aria-label="breadcrumb"
-        className="flex flex-wrap gap-2 text-[11.5px] text-ink-3"
+        className="flex flex-wrap gap-2 text-[13px] text-ink-3"
       >
         <Link href={'/vitrin' as never} className="hover:text-cart">
           Vitrin
@@ -116,7 +116,7 @@ export default async function VitrinCategoryPage({
         className="rounded-3xl bg-gradient-to-br from-cat-soft/30 to-arrow-soft/20 p-6 lg:p-8"
         data-testid="category-hero"
       >
-        <p className="text-[11.5px] font-bold uppercase tracking-wider text-cat">
+        <p className="text-[13px] font-bold uppercase tracking-wider text-cat">
           🐾 Kategori sayfası
         </p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-cart">
@@ -135,7 +135,7 @@ export default async function VitrinCategoryPage({
         {cityFilter && (
           <Link
             href={`/vitrin/kategori/${slug}` as never}
-            className="mt-3 inline-block text-[11.5px] font-bold text-cat hover:underline"
+            className="mt-3 inline-block text-[13px] font-bold text-cat hover:underline"
             data-testid="clear-city-filter"
           >
             × Şehir filtresini kaldır (tüm Türkiye)
@@ -196,7 +196,7 @@ export default async function VitrinCategoryPage({
                 >
                   {p.productName}
                 </Link>
-                <div className="flex flex-wrap items-center gap-2 text-[11px] text-ink-3">
+                <div className="flex flex-wrap items-center gap-2 text-[12.5px] text-ink-3">
                   {p.brandName && <span>🏷 {p.brandName}</span>}
                   {p.defaultVariantLabel && (
                     <>
@@ -218,10 +218,10 @@ export default async function VitrinCategoryPage({
                       ₺
                     </span>
                   ) : (
-                    <span className="text-[11px] text-ink-4">Fiyat için sor</span>
+                    <span className="text-[12.5px] text-ink-4">Fiyat için sor</span>
                   )}
                 </div>
-                <div className="mt-1 border-t border-line-soft pt-2 text-[11px] text-ink-3">
+                <div className="mt-1 border-t border-line-soft pt-2 text-[12.5px] text-ink-3">
                   <Link
                     href={`/vitrin/magaza/${p.companySlug}` as never}
                     className="font-bold text-ink-2 hover:text-cart hover:underline"
@@ -229,7 +229,7 @@ export default async function VitrinCategoryPage({
                     🐾 {p.companyName}
                   </Link>
                   {(p.districtName || p.cityName) && (
-                    <span className="block text-[10px] text-ink-4">
+                    <span className="block text-[11.5px] text-ink-4">
                       📍 {[p.districtName, p.cityName].filter(Boolean).join(', ')}
                     </span>
                   )}
@@ -247,29 +247,29 @@ export default async function VitrinCategoryPage({
           data-testid="category-pagination"
         >
           {isFirstPage ? (
-            <span className="rounded-xl border border-line bg-line-soft px-3 py-1.5 text-[12px] font-bold text-ink-4">
+            <span className="rounded-xl border border-line bg-line-soft px-3 py-1.5 text-[13.5px] font-bold text-ink-4">
               ← Önceki
             </span>
           ) : (
             <Link
               href={buildPageUrl(page - 1) as never}
-              className="rounded-xl border border-line bg-paper px-3 py-1.5 text-[12px] font-bold text-cart hover:bg-cat-soft"
+              className="rounded-xl border border-line bg-paper px-3 py-1.5 text-[13.5px] font-bold text-cart hover:bg-cat-soft"
               data-page-prev
             >
               ← Önceki
             </Link>
           )}
-          <span className="font-mono text-[11px] text-ink-3">
+          <span className="font-mono text-[12.5px] text-ink-3">
             {page} / {totalPages}
           </span>
           {isLastPage ? (
-            <span className="rounded-xl border border-line bg-line-soft px-3 py-1.5 text-[12px] font-bold text-ink-4">
+            <span className="rounded-xl border border-line bg-line-soft px-3 py-1.5 text-[13.5px] font-bold text-ink-4">
               Sonraki →
             </span>
           ) : (
             <Link
               href={buildPageUrl(page + 1) as never}
-              className="rounded-xl border border-line bg-paper px-3 py-1.5 text-[12px] font-bold text-cart hover:bg-cat-soft"
+              className="rounded-xl border border-line bg-paper px-3 py-1.5 text-[13.5px] font-bold text-cart hover:bg-cat-soft"
               data-page-next
             >
               Sonraki →

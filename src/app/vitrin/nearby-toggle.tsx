@@ -76,10 +76,10 @@ export function NearbyToggle({ active, currentRadiusKm = 25, currentLabel }: Pro
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-[12px] font-bold uppercase tracking-wider text-cat">
+          <h2 className="text-[13.5px] font-bold uppercase tracking-wider text-cat">
             📍 Yakındakileri göster
           </h2>
-          <p className="mt-1 text-[11px] text-ink-3">
+          <p className="mt-1 text-[12.5px] text-ink-3">
             {active && currentLabel
               ? `Mevcut: ${currentLabel} · ${currentRadiusKm}km yarıçap`
               : 'Konum izni verirsen mesafeye göre sıralanır (KVKK: koordinatın sunucuda saklanmaz)'}
@@ -92,7 +92,7 @@ export function NearbyToggle({ active, currentRadiusKm = 25, currentLabel }: Pro
               onClick={clear}
               disabled={pending}
               data-testid="nearby-clear"
-              className="rounded-xl border border-line bg-paper px-3 py-1.5 text-[11.5px] font-bold text-ink-3 hover:bg-line-soft disabled:opacity-50"
+              className="rounded-xl border border-line bg-paper px-3 py-1.5 text-[13px] font-bold text-ink-3 hover:bg-line-soft disabled:opacity-50"
             >
               × Temizle
             </button>
@@ -102,7 +102,7 @@ export function NearbyToggle({ active, currentRadiusKm = 25, currentLabel }: Pro
               onClick={() => requestLocation(selectedRadius)}
               disabled={pending}
               data-testid="nearby-detect"
-              className="rounded-xl bg-cat px-3 py-1.5 text-[11.5px] font-bold text-white shadow-sm hover:bg-cat-2 disabled:opacity-50"
+              className="rounded-xl bg-cat px-3 py-1.5 text-[13px] font-bold text-white shadow-sm hover:bg-cat-2 disabled:opacity-50"
             >
               📡 Konumumu paylaş
             </button>
@@ -110,7 +110,7 @@ export function NearbyToggle({ active, currentRadiusKm = 25, currentLabel }: Pro
         </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
-        <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+        <span className="text-[12px] font-bold uppercase tracking-wider text-ink-3">
           Yarıçap:
         </span>
         {RADIUS_OPTIONS.map((r) => (
@@ -135,8 +135,8 @@ export function NearbyToggle({ active, currentRadiusKm = 25, currentLabel }: Pro
             aria-pressed={selectedRadius === r}
             className={
               selectedRadius === r
-                ? 'rounded-full bg-cat px-2.5 py-1 text-[10.5px] font-bold text-white'
-                : 'rounded-full border border-line bg-paper px-2.5 py-1 text-[10.5px] font-bold text-ink-3 hover:bg-line-soft'
+                ? 'rounded-full bg-cat px-2.5 py-1 text-[12px] font-bold text-white'
+                : 'rounded-full border border-line bg-paper px-2.5 py-1 text-[12px] font-bold text-ink-3 hover:bg-line-soft'
             }
           >
             {r}km
@@ -146,7 +146,7 @@ export function NearbyToggle({ active, currentRadiusKm = 25, currentLabel }: Pro
       {status && (
         <p
           data-testid="nearby-status"
-          className={`mt-2 text-[11px] ${
+          className={`mt-2 text-[12.5px] ${
             status.startsWith('✓')
               ? 'text-arrow-7'
               : status.startsWith('✕')

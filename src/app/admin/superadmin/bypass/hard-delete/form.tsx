@@ -33,7 +33,7 @@ export function HardDeleteForm() {
   return (
     <form action={formAction} className="flex flex-col gap-4 rounded-2xl border border-line bg-paper p-6">
       <div>
-        <label htmlFor="productId" className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+        <label htmlFor="productId" className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3">
           Ürün UUID *
         </label>
         <input
@@ -46,13 +46,13 @@ export function HardDeleteForm() {
           data-testid="product-id"
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-2.5 font-mono text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
-        <p className="mt-1 text-[10.5px] text-ink-4">
+        <p className="mt-1 text-[12px] text-ink-4">
           Ürün listesinden soft-deleted ürünün ID&apos;sini al (products.deletedAt set olmalı).
         </p>
       </div>
 
       <div>
-        <label htmlFor="reason" className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+        <label htmlFor="reason" className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3">
           Zorunlu sebep * (min 10 karakter)
         </label>
         <textarea
@@ -70,7 +70,7 @@ export function HardDeleteForm() {
       </div>
 
       <div>
-        <label htmlFor="superadminPassword" className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+        <label htmlFor="superadminPassword" className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3">
           Süperadmin şifren * (re-auth)
         </label>
         <input
@@ -93,7 +93,7 @@ export function HardDeleteForm() {
         >
           ✕ {state.error}
           {state.issues && state.issues.length > 0 && (
-            <ul className="mt-1 list-inside list-disc text-[11px] font-normal">
+            <ul className="mt-1 list-inside list-disc text-[12.5px] font-normal">
               {state.issues.map((i, idx) => (
                 <li key={idx}>{i}</li>
               ))}

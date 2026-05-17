@@ -125,7 +125,7 @@ export function OnboardingWizard({
         {/* STEP 1: İlk Şube */}
         {step === 1 && (
           <div>
-            <div className="mb-2 text-[11.5px] font-bold uppercase tracking-wider text-cat">
+            <div className="mb-2 text-[13px] font-bold uppercase tracking-wider text-cat">
               Adım 1 / 2 — Zorunlu
             </div>
             <h1 className="text-2xl font-bold leading-tight tracking-tight text-cart">
@@ -155,7 +155,7 @@ export function OnboardingWizard({
             <form action={branchFormAction} className="mt-6 flex flex-col gap-4">
               <div>
                 <label
-                  className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+                  className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
                   htmlFor="branch-name"
                 >
                   Şube adı *
@@ -174,7 +174,7 @@ export function OnboardingWizard({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label
-                    className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+                    className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
                     htmlFor="city"
                   >
                     İl *
@@ -201,7 +201,7 @@ export function OnboardingWizard({
 
                 <div>
                   <label
-                    className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+                    className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
                     htmlFor="district"
                   >
                     İlçe *
@@ -231,7 +231,7 @@ export function OnboardingWizard({
 
               <div>
                 <label
-                  className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+                  className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
                   htmlFor="address"
                 >
                   Adres
@@ -248,7 +248,7 @@ export function OnboardingWizard({
 
               <div>
                 <label
-                  className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+                  className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
                   htmlFor="whatsapp"
                 >
                   WhatsApp telefonu (opsiyonel)
@@ -262,7 +262,7 @@ export function OnboardingWizard({
                   disabled={branchPending}
                   className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
-                <p className="mt-1.5 text-[11px] text-ink-4">
+                <p className="mt-1.5 text-[12.5px] text-ink-4">
                   Müşteriler vitrin&apos;den buraya yazar (Sprint 12).
                 </p>
               </div>
@@ -281,7 +281,7 @@ export function OnboardingWizard({
         {/* STEP 2: İlk ürün (opsiyonel) */}
         {step === 2 && (
           <div>
-            <div className="mb-2 text-[11.5px] font-bold uppercase tracking-wider text-cat">
+            <div className="mb-2 text-[13px] font-bold uppercase tracking-wider text-cat">
               Adım 2 / 3 — Opsiyonel
             </div>
             <h1 className="text-2xl font-bold leading-tight tracking-tight text-cart">
@@ -304,7 +304,7 @@ export function OnboardingWizard({
             <form action={productFormAction} className="mt-6 flex flex-col gap-4">
               <div>
                 <label
-                  className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+                  className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
                   htmlFor="product-name"
                 >
                   Ürün adı *
@@ -323,7 +323,7 @@ export function OnboardingWizard({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label
-                    className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+                    className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
                     htmlFor="product-sku"
                   >
                     SKU *
@@ -341,7 +341,7 @@ export function OnboardingWizard({
 
                 <div>
                   <label
-                    className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+                    className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
                     htmlFor="product-price"
                   >
                     Satış fiyatı (₺) *
@@ -359,7 +359,7 @@ export function OnboardingWizard({
                 </div>
               </div>
 
-              <div className="rounded-xl bg-paper px-4 py-3 text-[11.5px] text-ink-3">
+              <div className="rounded-xl bg-paper px-4 py-3 text-[13px] text-ink-3">
                 💡 Detaylı bilgi (kategori, marka, alış fiyatı, barkod, görsel) sonradan
                 Ürünler sayfasından eklenebilir.
               </div>
@@ -389,7 +389,7 @@ export function OnboardingWizard({
         {/* STEP 3: Vitrin (opsiyonel) */}
         {step === 3 && (
           <div>
-            <div className="mb-2 text-[11.5px] font-bold uppercase tracking-wider text-cat">
+            <div className="mb-2 text-[13px] font-bold uppercase tracking-wider text-cat">
               Adım 3 / 3 — Opsiyonel
             </div>
             <h1 className="text-2xl font-bold leading-tight tracking-tight text-cart">
@@ -414,7 +414,7 @@ export function OnboardingWizard({
             <form action={storefrontFormAction} className="mt-6 flex flex-col gap-4">
               <div>
                 <label
-                  className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+                  className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
                   htmlFor="slug"
                 >
                   Vitrin URL slug
@@ -435,12 +435,12 @@ export function OnboardingWizard({
                     className="flex-1 bg-transparent py-3 text-sm text-ink focus:outline-none"
                   />
                 </div>
-                <p className="mt-1.5 text-[11px] text-ink-4">
+                <p className="mt-1.5 text-[12.5px] text-ink-4">
                   Sadece küçük harf, rakam ve tire. Sonradan değiştirebilirsin.
                 </p>
               </div>
 
-              <div className="rounded-xl bg-paper px-4 py-3 text-[11.5px] leading-relaxed text-ink-3">
+              <div className="rounded-xl bg-paper px-4 py-3 text-[13px] leading-relaxed text-ink-3">
                 💡 <strong>Hesabın:</strong> {userEmail} → <strong>{companyName}</strong>
               </div>
 

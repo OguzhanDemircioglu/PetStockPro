@@ -73,10 +73,10 @@ export function AdminTopbar({ userEmail, unreadCount, isSuperadmin }: Props) {
       className="sticky top-0 z-20 flex items-center gap-3 border-b border-line bg-paper/75 px-6 py-3 backdrop-blur-xl"
     >
       <div className="min-w-0">
-        <div className="truncate text-[14px] font-bold tracking-tight text-cart">
+        <div className="truncate text-[15.5px] font-bold tracking-tight text-cart">
           <AnimatedShinyText>{title}</AnimatedShinyText>
         </div>
-        <div className="truncate text-[10.5px] text-ink-3 font-bold">{dateLabel}</div>
+        <div className="truncate text-[12px] text-ink-3 font-bold">{dateLabel}</div>
       </div>
 
       <div className="flex-1" />
@@ -84,14 +84,14 @@ export function AdminTopbar({ userEmail, unreadCount, isSuperadmin }: Props) {
       {/* ⌘K placeholder — Faz 2'de command palette */}
       <div
         data-testid="topbar-cmdk"
-        className="hidden items-center gap-2 rounded-xl border border-line bg-line-soft/60 px-3 py-1.5 text-[11.5px] text-ink-3 transition-colors hover:border-cat hover:text-cat md:flex min-w-[200px]"
+        className="hidden items-center gap-2 rounded-xl border border-line bg-line-soft/60 px-3 py-1.5 text-[13px] text-ink-3 transition-colors hover:border-cat hover:text-cat md:flex min-w-[200px]"
       >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="11" cy="11" r="7" />
           <path d="M21 21l-4.3-4.3" />
         </svg>
         Ara…
-        <kbd className="ml-auto rounded border border-line bg-paper px-1 text-[10px] font-mono text-ink-4">
+        <kbd className="ml-auto rounded border border-line bg-paper px-1 text-[11.5px] font-mono text-ink-4">
           ⌘K
         </kbd>
       </div>
@@ -103,7 +103,7 @@ export function AdminTopbar({ userEmail, unreadCount, isSuperadmin }: Props) {
         target="_blank"
         rel="noreferrer noopener"
         data-testid="topbar-vitrin"
-        className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-br from-arrow to-arrow-2 px-3.5 py-2 text-[11.5px] font-bold text-white shadow-[var(--shadow-arrow)] hover:-translate-y-px transition-transform"
+        className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-br from-arrow to-arrow-2 px-3.5 py-2 text-[13px] font-bold text-white shadow-[var(--shadow-arrow)] hover:-translate-y-px transition-transform"
       >
         🏪 Vitrin ↗
       </Link>
@@ -112,7 +112,7 @@ export function AdminTopbar({ userEmail, unreadCount, isSuperadmin }: Props) {
         <Link
           href={'/admin/superadmin' as never}
           data-testid="topbar-superadmin"
-          className="rounded-xl border border-danger/40 bg-danger-soft px-3 py-1.5 text-[11.5px] font-bold text-danger-7 hover:bg-danger hover:text-white transition-colors"
+          className="rounded-xl border border-danger/40 bg-danger-soft px-3 py-1.5 text-[13px] font-bold text-danger-7 hover:bg-danger hover:text-white transition-colors"
         >
           🛡 Süperadmin
         </Link>
@@ -124,7 +124,7 @@ export function AdminTopbar({ userEmail, unreadCount, isSuperadmin }: Props) {
         href={'/admin/account' as never}
         data-testid="topbar-avatar"
         title={userEmail}
-        className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-cat to-cart text-[11px] font-bold text-white border-2 border-paper hover:scale-105 transition-transform"
+        className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-cat to-cart text-[12.5px] font-bold text-white border-2 border-paper hover:scale-105 transition-transform"
       >
         {initials(userEmail)}
       </Link>

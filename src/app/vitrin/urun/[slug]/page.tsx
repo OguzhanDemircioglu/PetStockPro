@@ -55,7 +55,7 @@ export default async function CrossTenantProductPage({
     >
       <nav
         aria-label="breadcrumb"
-        className="flex flex-wrap gap-2 text-[11.5px] text-ink-3"
+        className="flex flex-wrap gap-2 text-[13px] text-ink-3"
       >
         <Link href={'/vitrin' as never} className="hover:text-cart">
           Vitrin
@@ -81,7 +81,7 @@ export default async function CrossTenantProductPage({
         className="rounded-3xl bg-gradient-to-br from-cat-soft/30 to-arrow-soft/20 p-6 lg:p-8"
         data-testid="product-hero"
       >
-        <p className="text-[11.5px] font-bold uppercase tracking-wider text-cat">
+        <p className="text-[13px] font-bold uppercase tracking-wider text-cat">
           🛍 {offers.length} pet shop&apos;ta satışta
         </p>
         <h1
@@ -90,7 +90,7 @@ export default async function CrossTenantProductPage({
         >
           {meta.productName}
         </h1>
-        <div className="mt-2 flex flex-wrap gap-3 text-[12px] text-ink-2">
+        <div className="mt-2 flex flex-wrap gap-3 text-[13.5px] text-ink-2">
           {meta.brandName && (
             <span>
               🏷 <strong>{meta.brandName}</strong>
@@ -110,7 +110,7 @@ export default async function CrossTenantProductPage({
             {lowest === highest
               ? `${lowest.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}₺`
               : `${lowest.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}₺ — ${highest.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}₺`}
-            <span className="ml-2 text-[12px] font-normal text-ink-3">
+            <span className="ml-2 text-[13.5px] font-normal text-ink-3">
               fiyat aralığı
             </span>
           </p>
@@ -119,10 +119,10 @@ export default async function CrossTenantProductPage({
 
       {meta.description && (
         <section className="rounded-2xl border border-line bg-paper p-5">
-          <h2 className="mb-2 text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+          <h2 className="mb-2 text-[13px] font-bold uppercase tracking-wider text-ink-3">
             📝 Açıklama
           </h2>
-          <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-ink-2">
+          <p className="whitespace-pre-wrap text-[14.5px] leading-relaxed text-ink-2">
             {meta.description}
           </p>
         </section>
@@ -133,10 +133,10 @@ export default async function CrossTenantProductPage({
         data-testid="offers-list"
       >
         <header className="border-b border-line-soft px-5 py-3">
-          <h2 className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+          <h2 className="text-[13px] font-bold uppercase tracking-wider text-ink-3">
             🐾 Hangi pet shop&apos;tan? ({offers.length})
           </h2>
-          <p className="mt-1 text-[11px] text-ink-3">
+          <p className="mt-1 text-[12.5px] text-ink-3">
             En düşük fiyatlı pet shop&apos;tan başlanır. Stok bilgisi sayım
             anına göre — kesin teyit için WhatsApp&apos;tan sor.
           </p>
@@ -164,20 +164,20 @@ export default async function CrossTenantProductPage({
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/vitrin/magaza/${offer.companySlug}` as never}
-                      className="truncate text-[14px] font-bold text-cart hover:underline"
+                      className="truncate text-[15.5px] font-bold text-cart hover:underline"
                     >
                       {offer.companyName}
                     </Link>
                     {isCheapest && (
                       <span
                         data-cheapest-badge
-                        className="rounded-full bg-arrow px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-white"
+                        className="rounded-full bg-arrow px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white"
                       >
                         En uygun
                       </span>
                     )}
                   </div>
-                  <div className="mt-0.5 flex flex-wrap gap-2 text-[11px] text-ink-3">
+                  <div className="mt-0.5 flex flex-wrap gap-2 text-[12.5px] text-ink-3">
                     {(offer.districtName || offer.cityName) && (
                       <span>
                         📍{' '}
@@ -202,7 +202,7 @@ export default async function CrossTenantProductPage({
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-[10px] text-ink-4">Fiyat</div>
+                  <div className="text-[11.5px] text-ink-4">Fiyat</div>
                   {minPrice !== null && maxPrice !== null ? (
                     <div
                       className="font-mono text-base font-bold text-cart"
@@ -214,7 +214,7 @@ export default async function CrossTenantProductPage({
                         : `${minPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}—${maxPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}₺`}
                     </div>
                   ) : (
-                    <div className="text-[11px] text-ink-4">Sor</div>
+                    <div className="text-[12.5px] text-ink-4">Sor</div>
                   )}
                 </div>
                 <div className="flex gap-2">
@@ -223,7 +223,7 @@ export default async function CrossTenantProductPage({
                       `/vitrin/magaza/${offer.companySlug}/urun/${offer.productSlug}` as never
                     }
                     data-testid={`offer-detail-${offer.companyId}`}
-                    className="rounded-xl border border-line bg-paper px-3 py-2 text-[11.5px] font-bold text-cart hover:bg-cat-soft"
+                    className="rounded-xl border border-line bg-paper px-3 py-2 text-[13px] font-bold text-cart hover:bg-cat-soft"
                   >
                     Detay →
                   </Link>
@@ -233,7 +233,7 @@ export default async function CrossTenantProductPage({
                       target="_blank"
                       rel="noreferrer noopener"
                       data-testid={`offer-wa-${offer.companyId}`}
-                      className="rounded-xl bg-arrow px-3 py-2 text-[11.5px] font-bold text-white shadow-sm hover:bg-arrow-7"
+                      className="rounded-xl bg-arrow px-3 py-2 text-[13px] font-bold text-white shadow-sm hover:bg-arrow-7"
                     >
                       💬 WhatsApp
                     </a>
@@ -247,7 +247,7 @@ export default async function CrossTenantProductPage({
 
       {offers.length === 1 && (
         <section
-          className="rounded-2xl border border-line bg-line-soft/30 p-4 text-center text-[11.5px] text-ink-3"
+          className="rounded-2xl border border-line bg-line-soft/30 p-4 text-center text-[13px] text-ink-3"
           data-testid="only-one-offer-note"
         >
           Bu ürünü sadece 1 pet shop satıyor — fiyat kıyaslaması için diğer

@@ -29,7 +29,7 @@ export default async function StocktakeListPage() {
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-12">
       <header className="flex items-end justify-between gap-4">
         <div>
-          <div className="text-[11.5px] font-bold uppercase tracking-wider text-cat">
+          <div className="text-[13px] font-bold uppercase tracking-wider text-cat">
             Admin · Sayım
           </div>
           <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
@@ -69,11 +69,11 @@ export default async function StocktakeListPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${STATUS_LABELS[s.status]?.cls ?? ''}`}
+                          className={`rounded-full px-2 py-0.5 text-[11.5px] font-bold ${STATUS_LABELS[s.status]?.cls ?? ''}`}
                         >
                           {STATUS_LABELS[s.status]?.label ?? s.status}
                         </span>
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-ink-3">
+                        <span className="text-[12.5px] font-bold uppercase tracking-wider text-ink-3">
                           {MODE_LABELS[s.mode] ?? s.mode} · {s.branchName ?? '—'}
                         </span>
                       </div>
@@ -92,7 +92,7 @@ export default async function StocktakeListPage() {
                     </div>
                     <div className="text-right">
                       <div className="text-2xl font-bold text-cat">{pct}%</div>
-                      <div className="text-[10.5px] uppercase tracking-wider text-ink-3">
+                      <div className="text-[12px] uppercase tracking-wider text-ink-3">
                         tamamlandı
                       </div>
                     </div>
@@ -103,7 +103,7 @@ export default async function StocktakeListPage() {
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <div className="mt-2 flex gap-4 text-[11px] text-ink-3">
+                  <div className="mt-2 flex gap-4 text-[12.5px] text-ink-3">
                     <span>
                       ✓ Sayıldı: <strong className="text-ink">{s.countedItems}</strong>
                     </span>
@@ -143,7 +143,7 @@ export default async function StocktakeListPage() {
           <div className="overflow-x-auto rounded-2xl border border-line bg-paper">
             <table className="w-full text-sm">
               <thead className="bg-paper">
-                <tr className="text-left text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+                <tr className="text-left text-[12px] font-bold uppercase tracking-wider text-ink-3">
                   <th className="px-4 py-3">Durum</th>
                   <th className="px-4 py-3">Şube</th>
                   <th className="px-4 py-3">Mod</th>
@@ -159,33 +159,33 @@ export default async function StocktakeListPage() {
                   <tr key={s.id} data-stocktake-id={s.id} className="hover:bg-line-soft">
                     <td className="px-4 py-3">
                       <span
-                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${STATUS_LABELS[s.status]?.cls ?? ''}`}
+                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11.5px] font-bold ${STATUS_LABELS[s.status]?.cls ?? ''}`}
                       >
                         {STATUS_LABELS[s.status]?.label ?? s.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-[12px] text-ink-2">{s.branchName ?? '—'}</td>
-                    <td className="px-4 py-3 text-[11px] text-ink-3">
+                    <td className="px-4 py-3 text-[13.5px] text-ink-2">{s.branchName ?? '—'}</td>
+                    <td className="px-4 py-3 text-[12.5px] text-ink-3">
                       {MODE_LABELS[s.mode] ?? s.mode}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-[12px]">
+                    <td className="px-4 py-3 text-right font-mono text-[13.5px]">
                       {s.countedItems}/{s.totalItems}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-[12px]">
+                    <td className="px-4 py-3 text-right font-mono text-[13.5px]">
                       {s.diffItems > 0 ? (
                         <span className="text-cart">{s.diffItems}</span>
                       ) : (
                         <span className="text-ink-4">0</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-[11px] text-ink-3 whitespace-nowrap">
+                    <td className="px-4 py-3 text-[12.5px] text-ink-3 whitespace-nowrap">
                       {new Date(s.startedAt).toLocaleString('tr-TR', {
                         day: '2-digit',
                         month: '2-digit',
                         year: '2-digit',
                       })}
                     </td>
-                    <td className="px-4 py-3 text-[11px] text-ink-3">
+                    <td className="px-4 py-3 text-[12.5px] text-ink-3">
                       {s.startedByEmail ?? '—'}
                     </td>
                     <td className="px-4 py-3 text-right">

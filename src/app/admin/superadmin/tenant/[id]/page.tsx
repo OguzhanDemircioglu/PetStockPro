@@ -51,7 +51,7 @@ export default async function TenantDetailSuperadminPage({
         >
           ← Tenant listesi
         </Link>
-        <div className="mt-3 text-[11.5px] font-bold uppercase tracking-wider text-cat">
+        <div className="mt-3 text-[13px] font-bold uppercase tracking-wider text-cat">
           🛡 Süperadmin · Tenant Detay
         </div>
         <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
@@ -92,7 +92,7 @@ export default async function TenantDetailSuperadminPage({
                 <li key={u.id} data-user-id={u.id} className="flex items-center gap-3 py-2">
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-bold text-ink">{u.email}</div>
-                    <div className="flex flex-wrap gap-1.5 text-[10px]">
+                    <div className="flex flex-wrap gap-1.5 text-[11.5px]">
                       <span
                         className={`rounded-full px-1.5 py-0.5 font-bold ${ROLE_BADGE[u.role] ?? 'bg-line-soft text-ink-3'}`}
                       >
@@ -117,11 +117,11 @@ export default async function TenantDetailSuperadminPage({
                   </div>
                   <Link
                     href={`/admin/superadmin/user/${u.id}` as never}
-                    className="rounded-lg border border-cat/40 bg-cat-soft px-2 py-1 text-[10px] font-bold text-cart hover:bg-cat hover:text-white transition-colors"
+                    className="rounded-lg border border-cat/40 bg-cat-soft px-2 py-1 text-[11.5px] font-bold text-cart hover:bg-cat hover:text-white transition-colors"
                   >
                     ⚙ Yönet
                   </Link>
-                  <div className="text-[10px] text-ink-4 whitespace-nowrap">
+                  <div className="text-[11.5px] text-ink-4 whitespace-nowrap">
                     {new Date(u.createdAt).toLocaleDateString('tr-TR', {
                       day: '2-digit',
                       month: '2-digit',
@@ -144,21 +144,21 @@ export default async function TenantDetailSuperadminPage({
           {audit.length === 0 ? (
             <p className="text-center text-xs text-ink-3">Audit kaydı yok.</p>
           ) : (
-            <ul className="divide-y divide-line-soft text-[11px]">
+            <ul className="divide-y divide-line-soft text-[12.5px]">
               {audit.map((a) => (
                 <li key={a.id} className="flex items-center gap-2 py-1.5">
-                  <span className="font-mono text-[10px] text-cart truncate flex-1">
+                  <span className="font-mono text-[11.5px] text-cart truncate flex-1">
                     {a.action}
                   </span>
                   {a.performedAsSuperadmin && (
-                    <span className="rounded bg-cat-soft px-1 py-0.5 text-[9px] font-bold text-cart">
+                    <span className="rounded bg-cat-soft px-1 py-0.5 text-[10.5px] font-bold text-cart">
                       🛡
                     </span>
                   )}
-                  <span className="text-[10px] text-ink-3 whitespace-nowrap">
+                  <span className="text-[11.5px] text-ink-3 whitespace-nowrap">
                     {a.userEmail?.split('@')[0] ?? '—'}
                   </span>
-                  <span className="text-[10px] text-ink-4 whitespace-nowrap">
+                  <span className="text-[11.5px] text-ink-4 whitespace-nowrap">
                     {new Date(a.createdAt).toLocaleString('tr-TR', {
                       day: '2-digit',
                       month: '2-digit',
@@ -185,10 +185,10 @@ export default async function TenantDetailSuperadminPage({
               <li key={m.id} className="flex items-center gap-2 py-2">
                 <span className="text-base">{MOVEMENT_BADGE[m.type] ?? '?'}</span>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[11.5px] font-bold text-ink">
+                  <div className="truncate text-[13px] font-bold text-ink">
                     {m.productName} · {m.variantLabel}
                   </div>
-                  <div className="text-[10px] text-ink-3">
+                  <div className="text-[11.5px] text-ink-3">
                     {m.branchName ?? '—'}
                     {m.subtype && <span> · {m.subtype}</span>}
                     {' · '}
@@ -207,10 +207,10 @@ export default async function TenantDetailSuperadminPage({
                 >
                   {m.quantity > 0 ? '+' : ''}
                   {m.quantity}
-                  <span className="ml-1 text-[10px] text-ink-3">→ {m.afterQty}</span>
+                  <span className="ml-1 text-[11.5px] text-ink-3">→ {m.afterQty}</span>
                 </div>
                 {m.performedAsSuperadmin && (
-                  <span className="rounded bg-cat-soft px-1 py-0.5 text-[9px] font-bold text-cart">
+                  <span className="rounded bg-cat-soft px-1 py-0.5 text-[10.5px] font-bold text-cart">
                     🛡
                   </span>
                 )}
@@ -220,7 +220,7 @@ export default async function TenantDetailSuperadminPage({
         )}
       </section>
 
-      <p className="text-center text-[11px] text-ink-4">
+      <p className="text-center text-[12.5px] text-ink-4">
         🛡 Süperadmin · Read-only inceleme. Impersonation + müdahale Faz 2&apos;de.
       </p>
     </main>
@@ -246,7 +246,7 @@ function KPI({
   return (
     <article className={`flex flex-col gap-2 rounded-2xl border p-5 ${cls[accent]}`}>
       <div className="flex items-center justify-between">
-        <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+        <span className="text-[12px] font-bold uppercase tracking-wider text-ink-3">
           {title}
         </span>
         <span className="text-xl">{emoji}</span>

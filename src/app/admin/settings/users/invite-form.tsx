@@ -13,13 +13,13 @@ function InviteResult({ state }: { state: InviteUserState }) {
         ✓ {state.email} davet edildi
       </h3>
       {state.method === 'email' ? (
-        <p className="mt-1 text-[11.5px] text-ink-2">
+        <p className="mt-1 text-[13px] text-ink-2">
           📧 Email gönderildi (
           {state.emailSent ? '✓ Brevo OK' : '⚠ Brevo fail — link aşağıda, elden ilet'}
           ). 7 gün geçerli.
         </p>
       ) : (
-        <p className="mt-1 text-[11.5px] text-ink-2">
+        <p className="mt-1 text-[13px] text-ink-2">
           🔗 Link yöntemi seçildi — aşağıdaki URL&apos;yi kullanıcıya
           WhatsApp/SMS ile gönder. 24 saat geçerli.
         </p>
@@ -27,7 +27,7 @@ function InviteResult({ state }: { state: InviteUserState }) {
       {(state.method === 'link' || !state.emailSent) && state.acceptUrl && (
         <div className="mt-3 flex items-stretch gap-1">
           <code
-            className="flex-1 truncate rounded-lg border border-line bg-paper px-3 py-2 font-mono text-[11px] text-ink-2"
+            className="flex-1 truncate rounded-lg border border-line bg-paper px-3 py-2 font-mono text-[12.5px] text-ink-2"
             data-testid="invite-accept-url"
           >
             {state.acceptUrl}
@@ -41,13 +41,13 @@ function InviteResult({ state }: { state: InviteUserState }) {
                 setTimeout(() => setCopied(false), 1500);
               }
             }}
-            className="rounded-lg border border-cat bg-cat px-3 py-2 text-[11px] font-bold text-white hover:-translate-y-0.5 transition-transform"
+            className="rounded-lg border border-cat bg-cat px-3 py-2 text-[12.5px] font-bold text-white hover:-translate-y-0.5 transition-transform"
           >
             {copied ? '✓' : '📋'} {copied ? 'Kopyalandı' : 'Kopyala'}
           </button>
         </div>
       )}
-      <p className="mt-2 text-[10.5px] text-ink-4">
+      <p className="mt-2 text-[12px] text-ink-4">
         Süresi:{' '}
         {state.expiresAt
           ? new Date(state.expiresAt).toLocaleString('tr-TR', {
@@ -69,14 +69,14 @@ export function InviteUserForm() {
   return (
     <form action={formAction} className="rounded-2xl border border-line bg-paper p-5">
       <h2 className="text-sm font-bold text-cart">➕ Yeni kullanıcı davet et</h2>
-      <p className="mt-1 text-[11px] text-ink-3">
+      <p className="mt-1 text-[12.5px] text-ink-3">
         Davet methodunu seç: 📧 email (Brevo gönderir, 7 gün) ya da 🔗 link (URL döner,
         24 saat, elden ilet).
       </p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <div>
-          <label htmlFor="invite-email" className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-ink-3">
+          <label htmlFor="invite-email" className="mb-1 block text-[12.5px] font-bold uppercase tracking-wider text-ink-3">
             Email *
           </label>
           <input
@@ -90,7 +90,7 @@ export function InviteUserForm() {
           />
         </div>
         <div>
-          <label htmlFor="invite-name" className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-ink-3">
+          <label htmlFor="invite-name" className="mb-1 block text-[12.5px] font-bold uppercase tracking-wider text-ink-3">
             İsim (opsiyonel)
           </label>
           <input
@@ -104,7 +104,7 @@ export function InviteUserForm() {
           />
         </div>
         <div>
-          <label htmlFor="invite-role" className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-ink-3">
+          <label htmlFor="invite-role" className="mb-1 block text-[12.5px] font-bold uppercase tracking-wider text-ink-3">
             Rol *
           </label>
           <select
@@ -121,7 +121,7 @@ export function InviteUserForm() {
           </select>
         </div>
         <div>
-          <label htmlFor="invite-method" className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-ink-3">
+          <label htmlFor="invite-method" className="mb-1 block text-[12.5px] font-bold uppercase tracking-wider text-ink-3">
             Davet yöntemi *
           </label>
           <select
@@ -140,7 +140,7 @@ export function InviteUserForm() {
       </div>
 
       <div className="mt-4 flex items-center justify-between">
-        <p className="text-[10.5px] text-ink-4">
+        <p className="text-[12px] text-ink-4">
           Audit log&apos;a yazılır. Şube Müdürü tüm modüllere erişir; STAFF sadece
           satış kaydı + sayıma katılır.
         </p>
@@ -162,7 +162,7 @@ export function InviteUserForm() {
         >
           ✕ {state.error}
           {state.issues && state.issues.length > 0 && (
-            <ul className="mt-1 list-inside list-disc text-[11px] font-normal">
+            <ul className="mt-1 list-inside list-disc text-[12.5px] font-normal">
               {state.issues.map((i, idx) => (
                 <li key={idx}>{i}</li>
               ))}

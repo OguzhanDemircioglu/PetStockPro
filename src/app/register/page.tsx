@@ -53,7 +53,7 @@ export default function RegisterPage() {
             <span className="text-6xl font-bold leading-none tracking-tighter text-cat">P</span>
           </div>
           <div className="leading-tight">
-            <div className="text-[26px] font-bold tracking-tight leading-none">PetStockPro</div>
+            <div className="text-[27.5px] font-bold tracking-tight leading-none">PetStockPro</div>
             <div className="mt-2 text-xs font-bold opacity-90">
               Pet shop&apos;unun her şeyi tek panelde
             </div>
@@ -61,7 +61,7 @@ export default function RegisterPage() {
         </div>
 
         <div className="relative z-10 mt-12">
-          <h1 className="text-[44px] font-bold leading-[1.06] tracking-tight">
+          <h1 className="text-[45.5px] font-bold leading-[1.06] tracking-tight">
             Stoktan satışa,
             <br />
             vitrinden{' '}
@@ -69,7 +69,7 @@ export default function RegisterPage() {
               rapora.
             </span>
           </h1>
-          <p className="mt-4 max-w-[480px] text-[15px] leading-relaxed opacity-95">
+          <p className="mt-4 max-w-[480px] text-[16.5px] leading-relaxed opacity-95">
             FREE 50 ürün ile <strong className="rounded bg-white/20 px-2 py-0.5 font-bold">ücretsiz başla</strong>.
             Kredi kartı gerekmez, 2 dakikada hazır.
           </p>
@@ -90,12 +90,12 @@ export default function RegisterPage() {
                 {f.ic}
               </div>
               <div className="text-sm font-bold leading-tight">{f.title}</div>
-              <div className="mt-1 text-[11.5px] leading-snug opacity-80">{f.sub}</div>
+              <div className="mt-1 text-[13px] leading-snug opacity-80">{f.sub}</div>
             </div>
           ))}
         </div>
 
-        <div className="relative z-10 mt-auto flex items-center gap-3 pt-6 text-[11px] font-bold uppercase tracking-wider opacity-80">
+        <div className="relative z-10 mt-auto flex items-center gap-3 pt-6 text-[12.5px] font-bold uppercase tracking-wider opacity-80">
           <span>⚡ Cloudflare Workers</span>
           <span className="h-1 w-1 rounded-full bg-white/40" />
           <span>🔒 KVKK uyumlu</span>
@@ -105,13 +105,13 @@ export default function RegisterPage() {
       {/* ============ SAĞ FORM PANELİ ============ */}
       <section className="relative flex items-center justify-center overflow-hidden bg-[#fafaf7] p-10">
         <div className="relative z-10 w-full max-w-[440px]">
-          <div className="mb-2 text-[11px] font-bold uppercase tracking-wider text-cat">
+          <div className="mb-2 text-[12.5px] font-bold uppercase tracking-wider text-cat">
             Pet shop ekle
           </div>
           <h2 className="text-3xl font-bold leading-tight tracking-tight text-ink">
             Ücretsiz başla
           </h2>
-          <p className="mt-2 text-[13.5px] leading-normal text-ink-3">
+          <p className="mt-2 text-[15px] leading-normal text-ink-3">
             FREE 50 ürün · kredi kartı gerekmez · 2 dakikada hazır.
           </p>
 
@@ -126,7 +126,7 @@ export default function RegisterPage() {
 
           <form action={formAction} className="mt-7 flex flex-col gap-3.5">
             <div>
-              <label className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3" htmlFor="shopName">
+              <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3" htmlFor="shopName">
                 Pet shop adı
               </label>
               <input
@@ -142,7 +142,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3" htmlFor="email">
+              <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3" htmlFor="email">
                 E-posta
               </label>
               <input
@@ -158,7 +158,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3" htmlFor="password">
+              <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3" htmlFor="password">
                 Şifre
               </label>
               <input
@@ -221,7 +221,7 @@ export default function RegisterPage() {
             </button>
           </form>
 
-          <div className="mt-5 text-center text-[13px] text-ink-3">
+          <div className="mt-5 text-center text-[14.5px] text-ink-3">
             Zaten hesabın var mı?{' '}
             <a
               href="/login"
@@ -231,7 +231,7 @@ export default function RegisterPage() {
             </a>
           </div>
 
-          <div className="mt-5 rounded-lg border border-line bg-paper px-3 py-2.5 text-[10.5px] leading-snug text-ink-4 text-center">
+          <div className="mt-5 rounded-lg border border-line bg-paper px-3 py-2.5 text-[12px] leading-snug text-ink-4 text-center">
             <strong className="text-cart">Cloudflare Turnstile</strong> bot koruması +{' '}
             <strong className="text-cart">HIBP</strong> şifre sızıntı kontrolü Sprint 2.3&apos;te aktif olacak.
           </div>

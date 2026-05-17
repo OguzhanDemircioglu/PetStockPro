@@ -63,7 +63,7 @@ export function MovementsFilterBar({ branches, variants, initial }: Props) {
         <div className="min-w-[200px] flex-1">
           <label
             htmlFor="mv-branch"
-            className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+            className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3"
           >
             Şube
           </label>
@@ -87,7 +87,7 @@ export function MovementsFilterBar({ branches, variants, initial }: Props) {
         <div className="min-w-[260px] flex-1">
           <label
             htmlFor="mv-variant"
-            className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+            className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3"
           >
             Ürün/Variant
           </label>
@@ -111,7 +111,7 @@ export function MovementsFilterBar({ branches, variants, initial }: Props) {
         <div className="min-w-[170px]">
           <label
             htmlFor="mv-type"
-            className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+            className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3"
           >
             Tür
           </label>

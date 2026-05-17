@@ -13,7 +13,7 @@ export function NotificationBell({ unreadCount }: { unreadCount: number }) {
       {unreadCount > 0 && (
         <span
           data-notif-badge
-          className="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-cat px-1 py-0.5 text-center text-[10px] font-bold leading-none text-white"
+          className="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-cat px-1 py-0.5 text-center text-[11.5px] font-bold leading-none text-white"
         >
           {unreadCount > 99 ? '99+' : unreadCount}
         </span>

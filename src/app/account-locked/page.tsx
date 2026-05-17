@@ -107,7 +107,7 @@ export default async function AccountLockedPage() {
           </p>
         </div>
 
-        <div className="mt-6 border-t border-line-soft pt-4 text-center text-[11px] text-ink-4">
+        <div className="mt-6 border-t border-line-soft pt-4 text-center text-[12.5px] text-ink-4">
           Yardım için:{' '}
           <a href="mailto:destek@petstockpro.com" className="font-bold text-cart hover:underline">
             destek@petstockpro.com

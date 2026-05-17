@@ -57,13 +57,13 @@ export default async function SuperadminTenantsPage() {
             🛡
           </div>
           <div className="min-w-0">
-            <div className="text-[11px] font-bold uppercase tracking-wider opacity-75">
+            <div className="text-[12.5px] font-bold uppercase tracking-wider opacity-75">
               SÜPERADMİN MODU
             </div>
             <h1 className="mt-1 text-2xl font-bold tracking-tight md:text-3xl">
               Sistem geneli görünüm
             </h1>
-            <p className="mt-1 text-[13px] opacity-85">
+            <p className="mt-1 text-[14.5px] opacity-85">
               {stats.tenantCount} tenant · {stats.totalUsers} kullanıcı · son 7 günde {vitrinStats.profileView + vitrinStats.productView} vitrin görüntüleme.
             </p>
           </div>
@@ -169,13 +169,13 @@ export default async function SuperadminTenantsPage() {
                     data-top-tenant={t.companyId}
                     className="grid grid-cols-[18px_1fr_60px_60px] items-center gap-2.5"
                   >
-                    <span className="text-[11px] font-bold text-ink-4 text-right">
+                    <span className="text-[12.5px] font-bold text-ink-4 text-right">
                       #{idx + 1}
                     </span>
                     <div className="min-w-0">
                       <Link
                         href={`/admin/superadmin/tenant/${t.companyId}` as never}
-                        className="block truncate text-[12px] font-bold text-cart hover:underline"
+                        className="block truncate text-[13.5px] font-bold text-cart hover:underline"
                       >
                         {t.companyName}
                       </Link>
@@ -186,10 +186,10 @@ export default async function SuperadminTenantsPage() {
                         />
                       </div>
                     </div>
-                    <span className="text-right font-mono text-[11px] font-bold text-cart">
+                    <span className="text-right font-mono text-[12.5px] font-bold text-cart">
                       {t.totalViews}
                     </span>
-                    <span className="text-right text-[10px] text-ink-3">
+                    <span className="text-right text-[11.5px] text-ink-3">
                       📞 {t.whatsappClicks}
                     </span>
                   </li>
@@ -206,11 +206,11 @@ export default async function SuperadminTenantsPage() {
           <div className="font-mono text-3xl font-bold text-cart">
             <NumberTicker value={vitrinStats.listingImpression} />
           </div>
-          <p className="mt-2 text-[11.5px] text-ink-3">
+          <p className="mt-2 text-[13px] text-ink-3">
             Aramada/kategoride listelenme · son 7 gün
           </p>
           <hr className="my-3 border-line-soft" />
-          <p className="text-[11px] text-ink-4 leading-relaxed">
+          <p className="text-[12.5px] text-ink-4 leading-relaxed">
             Funnel: {vitrinStats.listingImpression} listede gösterim →{' '}
             {vitrinStats.profileView} profil ziyaret →{' '}
             {vitrinStats.whatsappClick} WhatsApp tıklama (
@@ -293,12 +293,12 @@ export default async function SuperadminTenantsPage() {
         <article className="rounded-2xl border border-line bg-paper p-5">
           <h2 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ink-3">
             ⚠ İlgi azalan tenant&apos;lar
-            <span className="rounded-full bg-danger-soft px-2 py-0.5 text-[9px] font-bold uppercase text-danger-7">
+            <span className="rounded-full bg-danger-soft px-2 py-0.5 text-[10.5px] font-bold uppercase text-danger-7">
               {activityStats.inactiveTenants.length}
             </span>
           </h2>
           {activityStats.inactiveTenants.length === 0 ? (
-            <p className="rounded-lg bg-arrow-soft/40 px-3 py-4 text-center text-[11px] text-arrow-7">
+            <p className="rounded-lg bg-arrow-soft/40 px-3 py-4 text-center text-[12.5px] text-arrow-7">
               ✓ Tüm tenant&apos;lar son 7 gün içinde aktif.
             </p>
           ) : (
@@ -316,7 +316,7 @@ export default async function SuperadminTenantsPage() {
                     {t.companyName}
                   </Link>
                   <span
-                    className={`rounded-full px-2 py-0.5 text-[9.5px] font-bold ${
+                    className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
                       t.plan === 'FREE'
                         ? 'bg-line-soft text-ink-3'
                         : t.plan === 'PRO'
@@ -326,7 +326,7 @@ export default async function SuperadminTenantsPage() {
                   >
                     {t.plan}
                   </span>
-                  <span className="text-right text-[10.5px] font-bold text-danger-7">
+                  <span className="text-right text-[12px] font-bold text-danger-7">
                     {t.daysSinceActivity === null
                       ? 'hiç'
                       : `${t.daysSinceActivity}g`}
@@ -354,7 +354,7 @@ export default async function SuperadminTenantsPage() {
             <h2 className="text-xs font-bold uppercase tracking-wider text-ink-3">
               💾 Disk doluluğu (Supabase)
             </h2>
-            <span className="text-[10.5px] font-bold text-ink-3">
+            <span className="text-[12px] font-bold text-ink-3">
               {dbStats.connectionCount} bağlantı
             </span>
           </div>
@@ -367,7 +367,7 @@ export default async function SuperadminTenantsPage() {
             >
               {dbStats.totalSizePretty}
             </span>
-            <span className="text-[11.5px] text-ink-3">
+            <span className="text-[13px] text-ink-3">
               / {dbStats.planLimitMb < 1024 ? `${dbStats.planLimitMb} MB` : `${(dbStats.planLimitMb / 1024).toFixed(1)} GB`} plan limit
             </span>
           </div>
@@ -384,7 +384,7 @@ export default async function SuperadminTenantsPage() {
               data-testid="db-usage-bar"
             />
           </div>
-          <div className="mt-2 flex items-center justify-between text-[11px]">
+          <div className="mt-2 flex items-center justify-between text-[12.5px]">
             <span className="font-mono font-bold text-ink">
               %{dbStats.usagePct.toFixed(2)}
             </span>
@@ -406,7 +406,7 @@ export default async function SuperadminTenantsPage() {
                 <li
                   key={t.name}
                   data-table={t.name}
-                  className="grid grid-cols-[140px_1fr_60px] items-center gap-2 text-[11px]"
+                  className="grid grid-cols-[140px_1fr_60px] items-center gap-2 text-[12.5px]"
                 >
                   <span className="font-mono text-ink-2 truncate">{t.name}</span>
                   <div className="h-1.5 overflow-hidden rounded-full bg-line-soft">
@@ -429,7 +429,7 @@ export default async function SuperadminTenantsPage() {
       >
         <table className="w-full text-sm">
           <thead className="bg-paper">
-            <tr className="text-left text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+            <tr className="text-left text-[12px] font-bold uppercase tracking-wider text-ink-3">
               <th className="px-4 py-3">Tenant</th>
               <th className="px-4 py-3">Plan</th>
               <th className="px-4 py-3">Vitrin</th>
@@ -463,32 +463,32 @@ export default async function SuperadminTenantsPage() {
                       >
                         {t.name}
                       </Link>
-                      <div className="font-mono text-[10.5px] text-ink-4">
+                      <div className="font-mono text-[12px] text-ink-4">
                         {t.slug}
                         {t.vatNo && <span> · VKN {t.vatNo}</span>}
                       </div>
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${PLAN_COLORS[t.plan] ?? ''}`}
+                        className={`rounded-full px-2 py-0.5 text-[11.5px] font-bold ${PLAN_COLORS[t.plan] ?? ''}`}
                       >
                         {t.plan}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${storefront.cls}`}
+                        className={`rounded-full px-2 py-0.5 text-[11.5px] font-bold ${storefront.cls}`}
                       >
                         {storefront.label}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-[11.5px]">{t.userCount}</td>
-                    <td className="px-4 py-3 text-right font-mono text-[11.5px]">{t.productCount}</td>
-                    <td className="px-4 py-3 text-right font-mono text-[11.5px]">{t.branchCount}</td>
-                    <td className="px-4 py-3 text-right font-mono text-[11.5px]">
+                    <td className="px-4 py-3 text-right font-mono text-[13px]">{t.userCount}</td>
+                    <td className="px-4 py-3 text-right font-mono text-[13px]">{t.productCount}</td>
+                    <td className="px-4 py-3 text-right font-mono text-[13px]">{t.branchCount}</td>
+                    <td className="px-4 py-3 text-right font-mono text-[13px]">
                       {t.totalStockQty}
                     </td>
-                    <td className="px-4 py-3 text-[11px] text-ink-3 whitespace-nowrap">
+                    <td className="px-4 py-3 text-[12.5px] text-ink-3 whitespace-nowrap">
                       {new Date(t.createdAt).toLocaleDateString('tr-TR', {
                         day: '2-digit',
                         month: '2-digit',
@@ -502,7 +502,7 @@ export default async function SuperadminTenantsPage() {
                           type="submit"
                           data-testid={`impersonate-${t.id}`}
                           title={`${t.name} olarak görüntüle`}
-                          className="inline-flex items-center gap-1 rounded-lg border border-cat/40 bg-cat-soft px-2.5 py-1.5 text-[10.5px] font-bold text-cart transition-colors hover:border-cat hover:bg-cat hover:text-white"
+                          className="inline-flex items-center gap-1 rounded-lg border border-cat/40 bg-cat-soft px-2.5 py-1.5 text-[12px] font-bold text-cart transition-colors hover:border-cat hover:bg-cat hover:text-white"
                         >
                           🎭 Gir
                         </button>
@@ -516,7 +516,7 @@ export default async function SuperadminTenantsPage() {
         </table>
       </section>
 
-      <p className="text-center text-[11px] text-ink-4">
+      <p className="text-center text-[12.5px] text-ink-4">
         🛡 Süperadmin · Sistem geneli görünüm. Tenant&apos;a girmek için satır sonundaki 🎭 Gir butonunu kullan.
       </p>
 
@@ -538,7 +538,7 @@ function SupChip({
   return (
     <Link
       href={href as never}
-      className="inline-flex items-center gap-1.5 rounded-xl border border-white/30 bg-white/12 px-3 py-1.5 text-[11.5px] font-bold text-white backdrop-blur transition-colors hover:border-white/60 hover:bg-white/22"
+      className="inline-flex items-center gap-1.5 rounded-xl border border-white/30 bg-white/12 px-3 py-1.5 text-[13px] font-bold text-white backdrop-blur transition-colors hover:border-white/60 hover:bg-white/22"
     >
       <span aria-hidden>{emoji}</span> {children}
     </Link>
@@ -549,7 +549,7 @@ function ZoneLabel({ emoji, label }: { emoji: string; label: string }) {
   return (
     <div
       data-zone-label={label}
-      className="mt-2 flex items-center gap-3 text-[11px] font-bold uppercase tracking-wider text-ink-4"
+      className="mt-2 flex items-center gap-3 text-[12.5px] font-bold uppercase tracking-wider text-ink-4"
     >
       <span>
         {emoji} {label}
@@ -592,13 +592,13 @@ function KpiBold({
           {emoji}
         </div>
       )}
-      <span className="text-[11px] font-bold uppercase tracking-wider opacity-85">
+      <span className="text-[12.5px] font-bold uppercase tracking-wider opacity-85">
         {label}
       </span>
       <div className="mt-2 font-mono text-4xl font-bold leading-none tracking-tight">
         {numeric ? <NumberTicker value={value as number} className="text-white" /> : value}
       </div>
-      <div className="mt-2 text-[11.5px] opacity-90">{sub}</div>
+      <div className="mt-2 text-[13px] opacity-90">{sub}</div>
     </article>
   );
 }
@@ -625,14 +625,14 @@ function DistRow({
   };
   return (
     <li className="grid grid-cols-[140px_1fr_44px] items-center gap-2.5">
-      <span className="text-[11px] text-ink-2">{label}</span>
+      <span className="text-[12.5px] text-ink-2">{label}</span>
       <div className="h-1.5 overflow-hidden rounded-full bg-line-soft">
         <div
           className={`h-full ${barCls[tone]}`}
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="text-right font-mono text-[11px] font-bold text-cart">
+      <span className="text-right font-mono text-[12.5px] font-bold text-cart">
         {value}
       </span>
     </li>
@@ -658,7 +658,7 @@ function KPI({
   return (
     <article className={`flex flex-col gap-2 rounded-2xl border p-5 ${cls[accent]}`}>
       <div className="flex items-center justify-between">
-        <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+        <span className="text-[12px] font-bold uppercase tracking-wider text-ink-3">
           {title}
         </span>
         <span className="text-xl">{emoji}</span>

@@ -48,7 +48,7 @@ export function DbInspectorClient() {
   return (
     <div className="flex flex-col gap-4">
       <form action={formAction} className="rounded-2xl border border-line bg-paper p-5">
-        <label htmlFor="sql" className="mb-2 block text-[11.5px] font-bold uppercase tracking-wider text-cart">
+        <label htmlFor="sql" className="mb-2 block text-[13px] font-bold uppercase tracking-wider text-cart">
           SQL Query (SELECT-only · max 100 satır · 5sn timeout)
         </label>
         <textarea
@@ -61,11 +61,11 @@ export function DbInspectorClient() {
           disabled={pending}
           defaultValue={state?.sql ?? "SELECT id, email, role FROM petstockpro.users LIMIT 10"}
           data-testid="sql-input"
-          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-[12px] focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-[13.5px] focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           spellCheck={false}
         />
         <div className="mt-3 flex items-center justify-between gap-3">
-          <p className="text-[10.5px] text-ink-4">
+          <p className="text-[12px] text-ink-4">
             Yasak: DROP / DELETE / UPDATE / INSERT / TRUNCATE / ALTER / CREATE / GRANT / SET …
             Her query audit&apos;e yazılır.
           </p>
@@ -98,10 +98,10 @@ export function DbInspectorClient() {
                   const inputEvent = new Event('input', { bubbles: true });
                   ta?.dispatchEvent(inputEvent);
                 }}
-                className="block w-full rounded-lg border border-line bg-paper px-3 py-2 text-left text-[11.5px] hover:border-cat hover:bg-cat-soft/30 transition-colors"
+                className="block w-full rounded-lg border border-line bg-paper px-3 py-2 text-left text-[13px] hover:border-cat hover:bg-cat-soft/30 transition-colors"
               >
                 <span className="font-bold text-cart">{q.label}</span>
-                <code className="block mt-1 text-[10px] text-ink-3 truncate">{q.sql}</code>
+                <code className="block mt-1 text-[11.5px] text-ink-3 truncate">{q.sql}</code>
               </button>
             </li>
           ))}
@@ -116,7 +116,7 @@ export function DbInspectorClient() {
         >
           ✕ {state.error}
           {state.issues && state.issues.length > 0 && (
-            <ul className="mt-1 list-inside list-disc text-[11px] font-normal">
+            <ul className="mt-1 list-inside list-disc text-[12.5px] font-normal">
               {state.issues.map((i, idx) => (
                 <li key={idx}>{i}</li>
               ))}
@@ -130,7 +130,7 @@ export function DbInspectorClient() {
           className="rounded-2xl border border-arrow/30 bg-paper p-4"
           data-testid="result-panel"
         >
-          <div className="mb-3 flex items-center justify-between text-[11.5px] text-ink-3">
+          <div className="mb-3 flex items-center justify-between text-[13px] text-ink-3">
             <span>
               <strong className="text-arrow-7">{state.rowCount}</strong> satır ·{' '}
               <strong>{state.durationMs}ms</strong>
@@ -140,7 +140,7 @@ export function DbInspectorClient() {
                 </span>
               )}
             </span>
-            <span className="font-mono text-[10px] text-ink-4">
+            <span className="font-mono text-[11.5px] text-ink-4">
               {state.columns?.length ?? 0} kolon
             </span>
           </div>
@@ -150,7 +150,7 @@ export function DbInspectorClient() {
             </p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-[11px]">
+              <table className="w-full border-collapse text-[12.5px]">
                 <thead>
                   <tr>
                     {state.columns?.map((c) => (
@@ -169,7 +169,7 @@ export function DbInspectorClient() {
                       {state.columns?.map((c) => (
                         <td
                           key={c}
-                          className="px-2 py-1.5 font-mono text-[10.5px] text-ink-2 align-top"
+                          className="px-2 py-1.5 font-mono text-[12px] text-ink-2 align-top"
                         >
                           {formatCell(row[c])}
                         </td>

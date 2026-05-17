@@ -57,7 +57,7 @@ export default async function NotificationsPage({
           <header className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-base font-bold text-cart">🤖 Telegram bot</h2>
-              <p className="text-[12px] text-ink-3">
+              <p className="text-[13.5px] text-ink-3">
                 Pet shop&apos;a özel bot — sistem alert kanalından bağımsız.
               </p>
             </div>
@@ -74,8 +74,8 @@ export default async function NotificationsPage({
                 data-enabled={settings?.enabled ? '1' : '0'}
                 className={
                   settings?.enabled
-                    ? 'rounded-full bg-arrow-7 px-4 py-1.5 text-[12px] font-bold text-white shadow-sm hover:bg-arrow-6'
-                    : 'rounded-full border border-line bg-paper px-4 py-1.5 text-[12px] font-bold text-ink-3 hover:border-cat disabled:opacity-60'
+                    ? 'rounded-full bg-arrow-7 px-4 py-1.5 text-[13.5px] font-bold text-white shadow-sm hover:bg-arrow-6'
+                    : 'rounded-full border border-line bg-paper px-4 py-1.5 text-[13.5px] font-bold text-ink-3 hover:border-cat disabled:opacity-60'
                 }
               >
                 {settings?.enabled ? '✓ Aktif (kapat)' : 'Pasif (aç)'}
@@ -83,7 +83,7 @@ export default async function NotificationsPage({
             </form>
           </header>
 
-          <ol className="mb-5 ml-4 list-decimal flex-col gap-1 text-[12px] text-ink-2">
+          <ol className="mb-5 ml-4 list-decimal flex-col gap-1 text-[13.5px] text-ink-2">
             <li>
               Telegram&apos;da{' '}
               <code className="rounded bg-line-soft px-1.5 py-0.5">@BotFather</code>
@@ -108,7 +108,7 @@ export default async function NotificationsPage({
           />
 
           {settings?.configuredAt && (
-            <p className="mt-5 text-[10.5px] text-ink-4">
+            <p className="mt-5 text-[12px] text-ink-4">
               Son yapılandırma:{' '}
               {new Date(settings.configuredAt).toLocaleString('tr-TR', {
                 day: '2-digit',
@@ -125,7 +125,7 @@ export default async function NotificationsPage({
           <h2 className="mb-2 text-sm font-bold text-cart">
             🔮 Bildirim kanalları
           </h2>
-          <ul className="ml-4 list-disc text-[12.5px] text-ink-2">
+          <ul className="ml-4 list-disc text-[14px] text-ink-2">
             <li>
               <b>📧 Email (Brevo)</b> — kayıt + şifre sıfırlama + ciddi olaylar (lock,
               email değişikliği). Her zaman aktif.

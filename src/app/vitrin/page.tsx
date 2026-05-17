@@ -154,7 +154,7 @@ export default async function VitrinHomePage({
           <div className="flex-1 min-w-[200px]">
             <label
               htmlFor="city"
-              className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+              className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3"
             >
               Şehir
             </label>
@@ -176,7 +176,7 @@ export default async function VitrinHomePage({
           <div className="flex-1 min-w-[220px]">
             <label
               htmlFor="q"
-              className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+              className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3"
             >
               Arama
             </label>
@@ -192,7 +192,7 @@ export default async function VitrinHomePage({
           <div className="min-w-[180px]">
             <label
               htmlFor="sort"
-              className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+              className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3"
             >
               Sıralama
             </label>
@@ -251,7 +251,7 @@ export default async function VitrinHomePage({
               : 'Sonuç yok'}
           </h2>
           {(filters.cityId || filters.q || sort !== 'name_asc') && (
-            <span className="text-[11.5px] text-ink-3" data-testid="vitrin-filter-summary">
+            <span className="text-[13px] text-ink-3" data-testid="vitrin-filter-summary">
               {filters.q && <span>Arama: <strong>{filters.q}</strong></span>}
               {filters.cityId && filters.q && <span> · </span>}
               {filters.cityId && (
@@ -323,7 +323,7 @@ export default async function VitrinHomePage({
                       {s.distanceKm !== null && (
                         <span
                           data-distance-km={s.distanceKm}
-                          className="shrink-0 rounded-full bg-cat-soft px-2 py-0.5 text-[10px] font-bold text-cart"
+                          className="shrink-0 rounded-full bg-cat-soft px-2 py-0.5 text-[11.5px] font-bold text-cart"
                         >
                           {s.distanceKm < 1
                             ? `${Math.round(s.distanceKm * 1000)} m`
@@ -331,17 +331,17 @@ export default async function VitrinHomePage({
                         </span>
                       )}
                     </div>
-                    <p className="mt-0.5 text-[11.5px] text-ink-3">
+                    <p className="mt-0.5 text-[13px] text-ink-3">
                       📍{' '}
                       {[s.districtName, s.cityName].filter(Boolean).join(', ') ||
                         'Konum belirtilmemiş'}
                     </p>
                     {s.aboutShort && (
-                      <p className="mt-2 line-clamp-3 text-[12px] text-ink-2">
+                      <p className="mt-2 line-clamp-3 text-[13.5px] text-ink-2">
                         {s.aboutShort}
                       </p>
                     )}
-                    <p className="mt-3 flex gap-3 text-[11px] text-ink-3">
+                    <p className="mt-3 flex gap-3 text-[12.5px] text-ink-3">
                       <span>
                         🐾 <strong className="text-cat">{s.productCount}</strong>{' '}
                         ürün
@@ -437,11 +437,11 @@ export default async function VitrinHomePage({
                   href={`/vitrin/kategori/${c.slug}` as never}
                   data-category-slug={c.slug}
                   data-product-count={c.productCount}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-line bg-paper px-3 py-1.5 text-[11.5px] font-bold text-cart hover:border-cat hover:bg-cat-soft transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-line bg-paper px-3 py-1.5 text-[13px] font-bold text-cart hover:border-cat hover:bg-cat-soft transition-colors"
                 >
                   <span aria-hidden>{c.emoji}</span>
                   <span>{c.name}</span>
-                  <span className="rounded-full bg-cat-soft px-1.5 py-0.5 text-[9.5px] text-cart">
+                  <span className="rounded-full bg-cat-soft px-1.5 py-0.5 text-[11px] text-cart">
                     {c.productCount}
                   </span>
                 </Link>
@@ -465,7 +465,7 @@ export default async function VitrinHomePage({
                 <Link
                   href={`/vitrin/${c.slug}` as never}
                   data-city-slug={c.slug}
-                  className="inline-flex items-center rounded-full border border-line bg-paper px-3 py-1.5 text-[11.5px] font-bold text-cart hover:border-cat hover:bg-cat-soft transition-colors"
+                  className="inline-flex items-center rounded-full border border-line bg-paper px-3 py-1.5 text-[13px] font-bold text-cart hover:border-cat hover:bg-cat-soft transition-colors"
                 >
                   {c.name}
                 </Link>

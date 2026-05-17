@@ -67,12 +67,12 @@ export function StorefrontSection({
               : 'Vitrin\'e açtığında PetStockPro\'da listelenir; müşteri WhatsApp ile sana ulaşır.'}
           </p>
           {published && publishedAt && (
-            <p className="mt-1 text-[11px] text-ink-4">
+            <p className="mt-1 text-[12.5px] text-ink-4">
               Yayın: {new Date(publishedAt).toLocaleString('tr-TR')}
             </p>
           )}
           {!published && unpublishedReason && (
-            <p className="mt-1 text-[11px] text-ink-4">
+            <p className="mt-1 text-[12.5px] text-ink-4">
               Kapanma sebebi:{' '}
               <strong>
                 {unpublishedReason === 'manual'
@@ -160,7 +160,7 @@ function ValidationPanel({ validation }: { validation: StorefrontValidationResul
           🔍 Doğrula
         </h3>
         <span
-          className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+          className={`rounded-full px-2.5 py-0.5 text-[11.5px] font-bold ${
             validation.ok
               ? 'bg-arrow-soft text-arrow-7'
               : 'bg-danger-soft text-danger-7'
@@ -191,8 +191,8 @@ function ValidationPanel({ validation }: { validation: StorefrontValidationResul
       </ul>
       {validation.issues.length > 0 && (
         <div className="mt-3 rounded-lg bg-danger-soft px-3 py-2">
-          <p className="text-[11px] font-bold text-danger-7">Eksiklikler:</p>
-          <ul className="mt-1 flex flex-col gap-0.5 text-[11px] text-danger-7">
+          <p className="text-[12.5px] font-bold text-danger-7">Eksiklikler:</p>
+          <ul className="mt-1 flex flex-col gap-0.5 text-[12.5px] text-danger-7">
             {validation.issues.map((i) => (
               <li key={i.code}>• {i.message}</li>
             ))}

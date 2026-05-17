@@ -37,7 +37,7 @@ export default async function UsersSettingsPage() {
         {canInvite ? (
           <InviteUserForm />
         ) : (
-          <div className="rounded-2xl border border-line bg-paper p-4 text-[12px] text-ink-3">
+          <div className="rounded-2xl border border-line bg-paper p-4 text-[13.5px] text-ink-3">
             Davet etme yetkisi sadece <strong>Sahibi</strong>&apos;ndedir.
           </div>
         )}
@@ -52,7 +52,7 @@ export default async function UsersSettingsPage() {
             </p>
           ) : (
             <div className="mt-3 overflow-x-auto">
-              <table className="w-full border-collapse text-[12px]">
+              <table className="w-full border-collapse text-[13.5px]">
                 <thead>
                   <tr>
                     <th className="border-b-2 border-line bg-paper px-2 py-2 text-left font-bold text-cart">
@@ -99,47 +99,47 @@ export default async function UsersSettingsPage() {
                         <td className="px-2 py-2 text-ink-2">{u.name ?? '—'}</td>
                         <td className="px-2 py-2">
                           <span
-                            className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${role.cls}`}
+                            className={`rounded-full px-1.5 py-0.5 text-[11.5px] font-bold ${role.cls}`}
                           >
                             {role.label}
                           </span>
                         </td>
                         <td className="px-2 py-2">
                           {locked ? (
-                            <span className="rounded-full bg-danger-soft px-1.5 py-0.5 text-[10px] font-bold text-danger-7">
+                            <span className="rounded-full bg-danger-soft px-1.5 py-0.5 text-[11.5px] font-bold text-danger-7">
                               🔒 Kilitli
                             </span>
                           ) : invitePending ? (
                             invExpired ? (
-                              <span className="rounded-full bg-danger-soft px-1.5 py-0.5 text-[10px] font-bold text-danger-7">
+                              <span className="rounded-full bg-danger-soft px-1.5 py-0.5 text-[11.5px] font-bold text-danger-7">
                                 ⏱ Süresi doldu
                               </span>
                             ) : (
-                              <span className="rounded-full bg-cat-soft px-1.5 py-0.5 text-[10px] font-bold text-cart">
+                              <span className="rounded-full bg-cat-soft px-1.5 py-0.5 text-[11.5px] font-bold text-cart">
                                 ⏳ Davet bekliyor
                               </span>
                             )
                           ) : u.emailVerifiedAt ? (
-                            <span className="rounded-full bg-arrow-soft px-1.5 py-0.5 text-[10px] font-bold text-arrow-7">
+                            <span className="rounded-full bg-arrow-soft px-1.5 py-0.5 text-[11.5px] font-bold text-arrow-7">
                               ✓ Aktif
                             </span>
                           ) : (
-                            <span className="rounded-full bg-cat-soft px-1.5 py-0.5 text-[10px] font-bold text-cart">
+                            <span className="rounded-full bg-cat-soft px-1.5 py-0.5 text-[11.5px] font-bold text-cart">
                               ⚠ Email doğrulanmamış
                             </span>
                           )}
                           {u.twoFactorEnabled && (
-                            <span className="ml-1 rounded-full bg-arrow-soft px-1.5 py-0.5 text-[10px] font-bold text-arrow-7">
+                            <span className="ml-1 rounded-full bg-arrow-soft px-1.5 py-0.5 text-[11.5px] font-bold text-arrow-7">
                               🛡 2FA
                             </span>
                           )}
                         </td>
-                        <td className="px-2 py-2 text-[11px] text-ink-3">
+                        <td className="px-2 py-2 text-[12.5px] text-ink-3">
                           {u.inviteMethod
                             ? (METHOD_BADGE[u.inviteMethod] ?? u.inviteMethod)
                             : '—'}
                         </td>
-                        <td className="px-2 py-2 text-[10.5px] text-ink-4">
+                        <td className="px-2 py-2 text-[12px] text-ink-4">
                           {new Date(u.createdAt).toLocaleDateString('tr-TR', {
                             day: '2-digit',
                             month: '2-digit',

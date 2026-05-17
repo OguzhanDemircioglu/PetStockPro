@@ -26,7 +26,7 @@ export default async function EditSupplierPage({
         <Link href={'/admin/suppliers' as never} className="text-xs text-ink-4 hover:text-cart">
           ← Tedarikçilere dön
         </Link>
-        <div className="mt-3 text-[11.5px] font-bold uppercase tracking-wider text-cat">
+        <div className="mt-3 text-[13px] font-bold uppercase tracking-wider text-cat">
           Admin · Tedarikçi düzenle
         </div>
         <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">

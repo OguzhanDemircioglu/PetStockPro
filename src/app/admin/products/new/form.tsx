@@ -37,7 +37,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
         <Link href={'/admin/products' as never} className="text-xs text-ink-4 hover:text-cart">
           ← Ürünlere dön
         </Link>
-        <div className="mt-3 text-[11.5px] font-bold uppercase tracking-wider text-cat">
+        <div className="mt-3 text-[13px] font-bold uppercase tracking-wider text-cat">
           Admin · Yeni ürün
         </div>
         <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
@@ -69,7 +69,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
           <div className="mt-4 flex flex-col gap-4">
             <div>
               <label
-                className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+                className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
                 htmlFor="name"
               >
                 Ürün adı *
@@ -88,7 +88,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
 
             <div>
               <label
-                className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+                className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
                 htmlFor="description"
               >
                 Açıklama
@@ -106,7 +106,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label
-                  className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+                  className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
                   htmlFor="categoryId"
                 >
                   Kategori
@@ -130,7 +130,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
 
               <div>
                 <label
-                  className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+                  className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
                   htmlFor="brandId"
                 >
                   Marka
@@ -167,7 +167,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label
-                  className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+                  className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
                   htmlFor="valueLabel"
                 >
                   Boyut / ambalaj
@@ -185,7 +185,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
 
               <div>
                 <label
-                  className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+                  className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
                   htmlFor="sku"
                 >
                   SKU *
@@ -205,7 +205,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
 
             <div>
               <label
-                className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+                className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
                 htmlFor="barcode"
               >
                 Barkod (opsiyonel)
@@ -224,7 +224,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <label
-                  className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+                  className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
                   htmlFor="costPrice"
                 >
                   Alış fiyatı (₺)
@@ -242,7 +242,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
 
               <div>
                 <label
-                  className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+                  className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
                   htmlFor="salePrice"
                 >
                   Satış fiyatı (₺) *
@@ -262,7 +262,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
 
               <div>
                 <label
-                  className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+                  className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
                   htmlFor="threshold"
                 >
                   Düşük stok eşiği

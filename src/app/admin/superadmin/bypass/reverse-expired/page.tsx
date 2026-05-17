@@ -14,7 +14,7 @@ export default async function ReverseExpiredBypassPage() {
         >
           ← Stok hareketleri
         </Link>
-        <div className="mt-3 text-[11.5px] font-bold uppercase tracking-wider text-cat">
+        <div className="mt-3 text-[13px] font-bold uppercase tracking-wider text-cat">
           🛡 Süperadmin · Bypass
         </div>
         <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
@@ -37,7 +37,7 @@ export default async function ReverseExpiredBypassPage() {
 
       <ReverseExpiredForm />
 
-      <p className="text-center text-[11px] text-ink-4">
+      <p className="text-center text-[12.5px] text-ink-4">
         Audit log&apos;da bu aksiyon <code>superadmin.bypass.reverse_expired</code>{' '}
         olarak görünür (performedAsSuperadmin=true + reason).
       </p>

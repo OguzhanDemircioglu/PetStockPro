@@ -46,7 +46,7 @@ export function PlanOverrideForm() {
   return (
     <form action={formAction} className="flex flex-col gap-4 rounded-2xl border border-line bg-paper p-6">
       <div>
-        <label htmlFor="targetCompanyId" className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+        <label htmlFor="targetCompanyId" className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3">
           Hedef tenant UUID *
         </label>
         <input
@@ -56,15 +56,15 @@ export function PlanOverrideForm() {
           required
           disabled={pending}
           data-testid="target-company-id"
-          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2 font-mono text-[11px] focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+          className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2 font-mono text-[12.5px] focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
-        <p className="mt-1 text-[10.5px] text-ink-4">
+        <p className="mt-1 text-[12px] text-ink-4">
           Süperadmin tenant listesinden company.id&apos;yi kopyala.
         </p>
       </div>
 
       <div>
-        <label htmlFor="newPlan" className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+        <label htmlFor="newPlan" className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3">
           Yeni plan *
         </label>
         <select
@@ -85,7 +85,7 @@ export function PlanOverrideForm() {
       </div>
 
       <div>
-        <label htmlFor="reason" className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+        <label htmlFor="reason" className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3">
           Zorunlu sebep * (min 10 karakter)
         </label>
         <textarea
@@ -103,7 +103,7 @@ export function PlanOverrideForm() {
       </div>
 
       <div>
-        <label htmlFor="superadminPassword" className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+        <label htmlFor="superadminPassword" className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3">
           Süperadmin şifren * (re-auth)
         </label>
         <input
@@ -126,7 +126,7 @@ export function PlanOverrideForm() {
         >
           ✕ {state.error}
           {state.issues && state.issues.length > 0 && (
-            <ul className="mt-1 list-inside list-disc text-[11px] font-normal">
+            <ul className="mt-1 list-inside list-disc text-[12.5px] font-normal">
               {state.issues.map((i, idx) => (
                 <li key={idx}>{i}</li>
               ))}

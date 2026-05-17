@@ -63,7 +63,7 @@ export function EditForm({
         <Link href={'/admin/products' as never} className="text-xs text-ink-4 hover:text-cart">
           ← Ürünlere dön
         </Link>
-        <div className="mt-3 text-[11.5px] font-bold uppercase tracking-wider text-cat">
+        <div className="mt-3 text-[13px] font-bold uppercase tracking-wider text-cat">
           Admin · Ürün düzenle
         </div>
         <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
@@ -85,7 +85,7 @@ export function EditForm({
           <h2 className="text-lg font-bold text-cart">📦 Temel bilgiler</h2>
           <div className="mt-4 flex flex-col gap-4">
             <div>
-              <label className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3" htmlFor="name">
+              <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3" htmlFor="name">
                 Ürün adı *
               </label>
               <input
@@ -100,7 +100,7 @@ export function EditForm({
             </div>
 
             <div>
-              <label className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3" htmlFor="description">
+              <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3" htmlFor="description">
                 Açıklama
               </label>
               <textarea
@@ -115,7 +115,7 @@ export function EditForm({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3" htmlFor="categoryId">
+                <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3" htmlFor="categoryId">
                   Kategori
                 </label>
                 <select
@@ -135,7 +135,7 @@ export function EditForm({
               </div>
 
               <div>
-                <label className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3" htmlFor="brandId">
+                <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3" htmlFor="brandId">
                   Marka
                 </label>
                 <select
@@ -175,7 +175,7 @@ export function EditForm({
           <div className="mt-4 flex flex-col gap-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3" htmlFor="valueLabel">
+                <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3" htmlFor="valueLabel">
                   Boyut/ambalaj
                 </label>
                 <input
@@ -189,7 +189,7 @@ export function EditForm({
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3" htmlFor="sku">
+                <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3" htmlFor="sku">
                   SKU *
                 </label>
                 <input
@@ -205,7 +205,7 @@ export function EditForm({
             </div>
 
             <div>
-              <label className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3" htmlFor="barcode">
+              <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3" htmlFor="barcode">
                 Barkod
               </label>
               <input
@@ -221,7 +221,7 @@ export function EditForm({
 
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3" htmlFor="costPrice">
+                <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3" htmlFor="costPrice">
                   Alış (₺) *
                 </label>
                 <input
@@ -236,7 +236,7 @@ export function EditForm({
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3" htmlFor="salePrice">
+                <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3" htmlFor="salePrice">
                   Satış (₺) *
                 </label>
                 <input
@@ -251,7 +251,7 @@ export function EditForm({
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3" htmlFor="threshold">
+                <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3" htmlFor="threshold">
                   Eşik
                 </label>
                 <input

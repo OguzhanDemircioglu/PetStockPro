@@ -82,7 +82,7 @@ export function AccountForm({
           <form action={formAction} className="mt-5 flex flex-col gap-3">
             <div>
               <label
-                className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+                className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
                 htmlFor="newEmail"
               >
                 Yeni e-posta
@@ -100,7 +100,7 @@ export function AccountForm({
             </div>
             <div>
               <label
-                className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+                className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
                 htmlFor="currentPassword"
               >
                 Mevcut şifren (doğrulama)
@@ -117,7 +117,7 @@ export function AccountForm({
               />
             </div>
 
-            <div className="rounded-xl bg-paper px-4 py-3 text-[11.5px] text-ink-3">
+            <div className="rounded-xl bg-paper px-4 py-3 text-[13px] text-ink-3">
               💡 İki email doğrulanır:
               <ul className="ml-4 mt-1 list-disc">
                 <li>

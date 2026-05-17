@@ -31,7 +31,7 @@ export function ToggleActiveButton({ branchId, currentlyActive }: Props) {
   if (errMsg) {
     return (
       <span
-        className="rounded bg-danger-soft px-2 py-0.5 text-[10px] font-bold text-danger-7"
+        className="rounded bg-danger-soft px-2 py-0.5 text-[11.5px] font-bold text-danger-7"
         title={errMsg}
       >
         ✕ {errMsg}
@@ -45,7 +45,7 @@ export function ToggleActiveButton({ branchId, currentlyActive }: Props) {
       onClick={toggle}
       disabled={pending}
       data-testid={`toggle-active-${branchId}`}
-      className={`rounded px-2 py-1 text-[10px] font-bold transition-colors disabled:opacity-50 ${
+      className={`rounded px-2 py-1 text-[11.5px] font-bold transition-colors disabled:opacity-50 ${
         active
           ? 'bg-paper border border-line text-ink-3 hover:bg-line-soft'
           : 'bg-arrow text-white hover:bg-arrow-2'

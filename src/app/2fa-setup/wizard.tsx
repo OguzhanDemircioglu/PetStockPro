@@ -78,7 +78,7 @@ export function TwoFactorWizard({
         {/* STEP 1: QR */}
         {step === 1 && (
           <div>
-            <div className="mb-2 text-[11.5px] font-bold uppercase tracking-wider text-cat">
+            <div className="mb-2 text-[13px] font-bold uppercase tracking-wider text-cat">
               Adım 1 / 3
             </div>
             <h1 className="text-2xl font-bold leading-tight tracking-tight text-cart">
@@ -107,7 +107,7 @@ export function TwoFactorWizard({
               <div className="mt-3 break-all rounded-lg bg-white px-3 py-2 font-mono text-xs">
                 {secret}
               </div>
-              <div className="mt-2 text-[11px] text-ink-4">
+              <div className="mt-2 text-[12.5px] text-ink-4">
                 Account: <strong>{userEmail}</strong> · Issuer:{' '}
                 <strong>PetStockPro</strong> · Algorithm: SHA1 · Digits: 6 · Period: 30s
               </div>
@@ -135,7 +135,7 @@ export function TwoFactorWizard({
         {/* STEP 2: 6-digit verify */}
         {step === 2 && (
           <div>
-            <div className="mb-2 text-[11.5px] font-bold uppercase tracking-wider text-cat">
+            <div className="mb-2 text-[13px] font-bold uppercase tracking-wider text-cat">
               Adım 2 / 3
             </div>
             <h1 className="text-2xl font-bold leading-tight tracking-tight text-cart">
@@ -191,7 +191,7 @@ export function TwoFactorWizard({
         {/* STEP 3: Recovery codes */}
         {step === 3 && (
           <div>
-            <div className="mb-2 text-[11.5px] font-bold uppercase tracking-wider text-cat">
+            <div className="mb-2 text-[13px] font-bold uppercase tracking-wider text-cat">
               Adım 3 / 3
             </div>
             <h1 className="text-2xl font-bold leading-tight tracking-tight text-cart">

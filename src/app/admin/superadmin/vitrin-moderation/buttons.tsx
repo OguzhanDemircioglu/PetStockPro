@@ -19,7 +19,7 @@ export function FlagButton({ feedbackId }: { feedbackId: string }) {
   if (state?.ok && state.action === 'flagged') {
     return (
       <span
-        className="inline-flex rounded-lg bg-arrow-soft px-2 py-1 text-[10px] font-bold text-arrow-7"
+        className="inline-flex rounded-lg bg-arrow-soft px-2 py-1 text-[11.5px] font-bold text-arrow-7"
         data-flag-success
       >
         ✓ Flagged
@@ -33,7 +33,7 @@ export function FlagButton({ feedbackId }: { feedbackId: string }) {
         type="button"
         onClick={() => setOpen(true)}
         data-flag-trigger={feedbackId}
-        className="rounded-lg border border-danger/40 bg-paper px-2 py-1 text-[10.5px] font-bold text-danger-7 hover:bg-danger hover:text-white transition-colors"
+        className="rounded-lg border border-danger/40 bg-paper px-2 py-1 text-[12px] font-bold text-danger-7 hover:bg-danger hover:text-white transition-colors"
       >
         🚩 Flag
       </button>
@@ -54,14 +54,14 @@ export function FlagButton({ feedbackId }: { feedbackId: string }) {
         placeholder="Spam / küfür / yalan…"
         disabled={pending}
         data-flag-reason
-        className="w-48 rounded-lg border-[1.5px] border-line bg-paper px-2 py-1 text-[11px] focus:border-danger focus:outline-none focus:ring-2 focus:ring-danger/15"
+        className="w-48 rounded-lg border-[1.5px] border-line bg-paper px-2 py-1 text-[12.5px] focus:border-danger focus:outline-none focus:ring-2 focus:ring-danger/15"
       />
       <div className="flex gap-1">
         <button
           type="submit"
           disabled={pending || reason.trim().length < 3}
           data-flag-submit
-          className="rounded-lg bg-danger px-2 py-1 text-[10.5px] font-bold text-white disabled:opacity-40"
+          className="rounded-lg bg-danger px-2 py-1 text-[12px] font-bold text-white disabled:opacity-40"
         >
           {pending ? '...' : '🚩 Flag'}
         </button>
@@ -72,7 +72,7 @@ export function FlagButton({ feedbackId }: { feedbackId: string }) {
             setReason('');
           }}
           disabled={pending}
-          className="rounded-lg border border-line bg-paper px-2 py-1 text-[10.5px] font-bold text-ink-3"
+          className="rounded-lg border border-line bg-paper px-2 py-1 text-[12px] font-bold text-ink-3"
         >
           Vazgeç
         </button>
@@ -81,7 +81,7 @@ export function FlagButton({ feedbackId }: { feedbackId: string }) {
         <div
           role="alert"
           data-flag-error
-          className="text-[10px] font-bold text-danger-7"
+          className="text-[11.5px] font-bold text-danger-7"
         >
           ✕ {state.error}
         </div>
@@ -99,7 +99,7 @@ export function UnflagButton({ feedbackId }: { feedbackId: string }) {
   if (state?.ok && state.action === 'unflagged') {
     return (
       <span
-        className="inline-flex rounded-lg bg-arrow-soft px-2 py-1 text-[10px] font-bold text-arrow-7"
+        className="inline-flex rounded-lg bg-arrow-soft px-2 py-1 text-[11.5px] font-bold text-arrow-7"
         data-unflag-success
       >
         ✓ Temizlendi
@@ -121,14 +121,14 @@ export function UnflagButton({ feedbackId }: { feedbackId: string }) {
         type="submit"
         disabled={pending}
         data-unflag-trigger={feedbackId}
-        className="rounded-lg border border-arrow/40 bg-paper px-2 py-1 text-[10.5px] font-bold text-arrow-7 hover:bg-arrow hover:text-white transition-colors disabled:opacity-40"
+        className="rounded-lg border border-arrow/40 bg-paper px-2 py-1 text-[12px] font-bold text-arrow-7 hover:bg-arrow hover:text-white transition-colors disabled:opacity-40"
       >
         {pending ? '...' : '↶ Flag kaldır'}
       </button>
       {state?.error && (
         <div
           role="alert"
-          className="mt-1 text-[10px] font-bold text-danger-7"
+          className="mt-1 text-[11.5px] font-bold text-danger-7"
         >
           ✕ {state.error}
         </div>
@@ -152,7 +152,7 @@ export function ResolveReportButton({ reportId }: { reportId: string }) {
     return (
       <span
         data-resolve-success={state.action}
-        className="inline-flex rounded-lg bg-arrow-soft px-2 py-1 text-[10px] font-bold text-arrow-7"
+        className="inline-flex rounded-lg bg-arrow-soft px-2 py-1 text-[11.5px] font-bold text-arrow-7"
       >
         ✓ {state.action === 'report_resolved' ? 'Çözüldü' : 'Geçersiz'}
       </span>
@@ -165,7 +165,7 @@ export function ResolveReportButton({ reportId }: { reportId: string }) {
         type="button"
         onClick={() => setOpen(true)}
         data-resolve-trigger={reportId}
-        className="rounded-lg border border-cat/40 bg-paper px-2 py-1 text-[10.5px] font-bold text-cart hover:bg-cat hover:text-white transition-colors"
+        className="rounded-lg border border-cat/40 bg-paper px-2 py-1 text-[12px] font-bold text-cart hover:bg-cat hover:text-white transition-colors"
       >
         ⚖ Ele al
       </button>
@@ -187,7 +187,7 @@ export function ResolveReportButton({ reportId }: { reportId: string }) {
         }
         disabled={pending}
         data-resolve-resolution
-        className="w-32 rounded-lg border-[1.5px] border-line bg-paper px-2 py-1 text-[11px] focus:border-cat focus:outline-none"
+        className="w-32 rounded-lg border-[1.5px] border-line bg-paper px-2 py-1 text-[12.5px] focus:border-cat focus:outline-none"
       >
         <option value="resolved">✓ Çözüldü</option>
         <option value="dismissed">× Geçersiz</option>
@@ -201,14 +201,14 @@ export function ResolveReportButton({ reportId }: { reportId: string }) {
         placeholder="Not (opsiyonel)"
         disabled={pending}
         data-resolve-note
-        className="w-48 rounded-lg border-[1.5px] border-line bg-paper px-2 py-1 text-[11px] focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
+        className="w-48 rounded-lg border-[1.5px] border-line bg-paper px-2 py-1 text-[12.5px] focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
       />
       <div className="flex gap-1">
         <button
           type="submit"
           disabled={pending}
           data-resolve-submit
-          className="rounded-lg bg-cat px-2 py-1 text-[10.5px] font-bold text-white disabled:opacity-40"
+          className="rounded-lg bg-cat px-2 py-1 text-[12px] font-bold text-white disabled:opacity-40"
         >
           {pending ? '...' : '⚖ Uygula'}
         </button>
@@ -219,13 +219,13 @@ export function ResolveReportButton({ reportId }: { reportId: string }) {
             setNote('');
           }}
           disabled={pending}
-          className="rounded-lg border border-line bg-paper px-2 py-1 text-[10.5px] font-bold text-ink-3"
+          className="rounded-lg border border-line bg-paper px-2 py-1 text-[12px] font-bold text-ink-3"
         >
           Vazgeç
         </button>
       </div>
       {state?.error && (
-        <div role="alert" className="text-[10px] font-bold text-danger-7">
+        <div role="alert" className="text-[11.5px] font-bold text-danger-7">
           ✕ {state.error}
         </div>
       )}

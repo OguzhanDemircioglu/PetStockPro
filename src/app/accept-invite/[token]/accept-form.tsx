@@ -42,7 +42,7 @@ export function AcceptInviteForm({ token, email, companyName }: Props) {
         <form action={formAction} className="flex flex-col gap-4">
           <input type="hidden" name="token" value={token} />
           <div>
-            <label htmlFor="email" className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-ink-3">
+            <label htmlFor="email" className="mb-1 block text-[12.5px] font-bold uppercase tracking-wider text-ink-3">
               Email
             </label>
             <input
@@ -55,7 +55,7 @@ export function AcceptInviteForm({ token, email, companyName }: Props) {
             />
           </div>
           <div>
-            <label htmlFor="password" className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-ink-3">
+            <label htmlFor="password" className="mb-1 block text-[12.5px] font-bold uppercase tracking-wider text-ink-3">
               Şifre
             </label>
             <input
@@ -73,7 +73,7 @@ export function AcceptInviteForm({ token, email, companyName }: Props) {
             />
           </div>
           <div>
-            <label htmlFor="passwordRepeat" className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-ink-3">
+            <label htmlFor="passwordRepeat" className="mb-1 block text-[12.5px] font-bold uppercase tracking-wider text-ink-3">
               Şifre (tekrar)
             </label>
             <input
@@ -95,7 +95,7 @@ export function AcceptInviteForm({ token, email, companyName }: Props) {
             <div role="alert" className="rounded-xl border border-danger/30 bg-danger-soft px-3 py-2 text-sm font-bold text-danger-7">
               ✕ {state.error}
               {state.issues && state.issues.length > 0 && (
-                <ul className="mt-1 list-inside list-disc text-[11px] font-normal">
+                <ul className="mt-1 list-inside list-disc text-[12.5px] font-normal">
                   {state.issues.map((i, idx) => (
                     <li key={idx}>{i}</li>
                   ))}
@@ -114,7 +114,7 @@ export function AcceptInviteForm({ token, email, companyName }: Props) {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-[10.5px] text-ink-4">
+        <p className="mt-6 text-center text-[12px] text-ink-4">
           Şifre min 8 karakter — HaveIBeenPwned k-anonymity check + güvenlik kuralları aktif.
           Onaylama sonrası <Link href={'/login' as never} className="text-cart font-bold">giriş</Link>{' '}
           ekranına yönlendirileceksin.

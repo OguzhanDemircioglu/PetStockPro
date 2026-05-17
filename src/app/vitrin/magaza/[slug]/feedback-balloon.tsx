@@ -165,10 +165,10 @@ export function FeedbackBalloon({
         <>
           <header className="flex items-start justify-between gap-2">
             <div>
-              <h3 className="text-[13px] font-bold text-cart">
+              <h3 className="text-[14.5px] font-bold text-cart">
                 Pet shop sana ulaştı mı?
               </h3>
-              <p className="mt-0.5 text-[11px] text-ink-3">
+              <p className="mt-0.5 text-[12.5px] text-ink-3">
                 Tek tıklamayla geri bildirim — sayfada kalıcı.
               </p>
             </div>
@@ -200,7 +200,7 @@ export function FeedbackBalloon({
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-[10px] text-ink-4 text-center">
+          <p className="mt-2 text-[11.5px] text-ink-4 text-center">
             ⓘ Anonim — IP&apos;ler bir yönlü hash&apos;lenir (KVKK uyumlu).
           </p>
         </>

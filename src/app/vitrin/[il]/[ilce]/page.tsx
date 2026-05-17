@@ -121,7 +121,7 @@ export default async function VitrinDistrictPage({
       {/* Breadcrumb */}
       <nav
         aria-label="Breadcrumb"
-        className="text-[11.5px] text-ink-3"
+        className="text-[13px] text-ink-3"
         data-testid="vitrin-breadcrumb"
       >
         <Link href={'/vitrin' as never} className="hover:text-cat">
@@ -156,7 +156,7 @@ export default async function VitrinDistrictPage({
           <div className="flex-1 min-w-[220px]">
             <label
               htmlFor="q"
-              className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+              className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3"
             >
               Arama
             </label>
@@ -172,7 +172,7 @@ export default async function VitrinDistrictPage({
           <div className="min-w-[180px]">
             <label
               htmlFor="sort"
-              className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+              className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3"
             >
               Sıralama
             </label>
@@ -222,7 +222,7 @@ export default async function VitrinDistrictPage({
           </h2>
           {(filters.q || sort !== 'name_asc') && (
             <span
-              className="text-[11.5px] text-ink-3"
+              className="text-[13px] text-ink-3"
               data-testid="vitrin-filter-summary"
             >
               {filters.q && (
@@ -300,17 +300,17 @@ export default async function VitrinDistrictPage({
                     <h3 className="truncate text-base font-bold text-cart">
                       {s.name}
                     </h3>
-                    <p className="mt-0.5 text-[11.5px] text-ink-3">
+                    <p className="mt-0.5 text-[13px] text-ink-3">
                       📍{' '}
                       {[s.districtName, s.cityName].filter(Boolean).join(', ') ||
                         'Konum belirtilmemiş'}
                     </p>
                     {s.aboutShort && (
-                      <p className="mt-2 line-clamp-3 text-[12px] text-ink-2">
+                      <p className="mt-2 line-clamp-3 text-[13.5px] text-ink-2">
                         {s.aboutShort}
                       </p>
                     )}
-                    <p className="mt-3 flex gap-3 text-[11px] text-ink-3">
+                    <p className="mt-3 flex gap-3 text-[12.5px] text-ink-3">
                       <span>
                         🐾{' '}
                         <strong className="text-cat">{s.productCount}</strong>{' '}

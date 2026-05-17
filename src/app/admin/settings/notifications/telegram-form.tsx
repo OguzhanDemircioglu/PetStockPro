@@ -39,7 +39,7 @@ export function TelegramForm({
         <div>
           <label
             htmlFor="botToken"
-            className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+            className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3"
           >
             Bot token *
           </label>
@@ -55,7 +55,7 @@ export function TelegramForm({
             required
             className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2.5 font-mono text-xs text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
-          <p className="mt-1 text-[10.5px] text-ink-4">
+          <p className="mt-1 text-[12px] text-ink-4">
             BotFather&apos;dan alınan token. <code>1234567890:hash</code> formatında.
           </p>
         </div>
@@ -63,7 +63,7 @@ export function TelegramForm({
         <div>
           <label
             htmlFor="chatId"
-            className="mb-1 block text-[10.5px] font-bold uppercase tracking-wider text-ink-3"
+            className="mb-1 block text-[12px] font-bold uppercase tracking-wider text-ink-3"
           >
             Chat ID *
           </label>
@@ -79,7 +79,7 @@ export function TelegramForm({
             required
             className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2.5 font-mono text-xs text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
-          <p className="mt-1 text-[10.5px] text-ink-4">
+          <p className="mt-1 text-[12px] text-ink-4">
             Bireysel: <code>@userinfobot</code>&apos;a /start at, ID&apos;ni öğren. Grup: bot&apos;u
             ekle, <code>/start</code> at, getUpdates ile chat.id&apos;yi gör (grup ID negatif).
           </p>
@@ -97,7 +97,7 @@ export function TelegramForm({
           >
             <div className="font-bold">{saveState.message}</div>
             {saveState.issues && saveState.issues.length > 0 && (
-              <ul className="mt-1 ml-4 list-disc text-[12px]">
+              <ul className="mt-1 ml-4 list-disc text-[13.5px]">
                 {saveState.issues.map((iss) => (
                   <li key={iss}>{iss}</li>
                 ))}
@@ -121,7 +121,7 @@ export function TelegramForm({
       <hr className="border-line" />
 
       <form action={testAction} className="flex flex-col gap-3">
-        <p className="text-[12px] text-ink-3">
+        <p className="text-[13.5px] text-ink-3">
           Yukarıdaki form alanlarındaki token + chat ID ile test mesajı gönderir
           (kaydedilmemiş olsa bile). Aktif etmeden önce her zaman test et.
         </p>
@@ -146,7 +146,7 @@ export function TelegramForm({
             type="submit"
             disabled={testPending || !initialBotToken || !initialChatId}
             data-testid="test-btn"
-            className="rounded-xl border border-cat bg-paper px-4 py-2 text-[12.5px] font-bold text-cart disabled:opacity-60"
+            className="rounded-xl border border-cat bg-paper px-4 py-2 text-[14px] font-bold text-cart disabled:opacity-60"
           >
             {testPending ? 'Gönderiliyor…' : '🚀 Test mesajı gönder'}
           </button>

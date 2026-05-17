@@ -45,7 +45,7 @@ export function ListRowToggle({ productId, initialPublished }: Props) {
     return (
       <span
         title={issuesMsg}
-        className="inline-flex items-center gap-1 rounded bg-danger-soft px-2 py-0.5 text-[10px] font-bold text-danger-7"
+        className="inline-flex items-center gap-1 rounded bg-danger-soft px-2 py-0.5 text-[11.5px] font-bold text-danger-7"
       >
         ⚠ {issuesMsg}
       </span>
@@ -58,7 +58,7 @@ export function ListRowToggle({ productId, initialPublished }: Props) {
       onClick={toggle}
       disabled={pending}
       title={published ? 'Satışa Kapat' : 'Satışa Aç (Doğrula kontrol eder)'}
-      className={`inline-flex cursor-pointer items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold transition-colors ${
+      className={`inline-flex cursor-pointer items-center gap-1 rounded px-2 py-0.5 text-[11.5px] font-bold transition-colors ${
         published
           ? 'bg-arrow-soft text-arrow-7 hover:bg-arrow/30'
           : 'bg-line-soft text-ink-4 hover:bg-cat-soft hover:text-cart'

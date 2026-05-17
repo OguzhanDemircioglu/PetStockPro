@@ -10,7 +10,7 @@ export default async function NegativeStockBypassPage() {
         <Link href={'/admin/stock-movements' as never} className="text-xs text-ink-4 hover:text-cart">
           ← Stok hareketleri
         </Link>
-        <div className="mt-3 text-[11.5px] font-bold uppercase tracking-wider text-cat">
+        <div className="mt-3 text-[13px] font-bold uppercase tracking-wider text-cat">
           🛡 Süperadmin · Bypass
         </div>
         <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
@@ -32,7 +32,7 @@ export default async function NegativeStockBypassPage() {
 
       <NegativeStockForm />
 
-      <p className="text-center text-[11px] text-ink-4">
+      <p className="text-center text-[12.5px] text-ink-4">
         Audit log&apos;da bu aksiyon <code>superadmin.bypass.negative_stock</code> olarak görünür.
       </p>
     </main>

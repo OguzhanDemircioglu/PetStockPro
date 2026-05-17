@@ -41,7 +41,7 @@ export default async function BranchDetailPage({
     <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-12">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="text-[11.5px] font-bold uppercase tracking-wider text-cat">
+          <div className="text-[13px] font-bold uppercase tracking-wider text-cat">
             Admin · Şubeler · Detay
           </div>
           <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
@@ -51,7 +51,7 @@ export default async function BranchDetailPage({
             {branch.cityName ?? '—'}
             {branch.districtName ? ` · ${branch.districtName}` : ''}
             {!branch.isActive && (
-              <span className="ml-2 rounded-full bg-line-soft px-2 py-0.5 text-[10px] font-bold text-ink-3">
+              <span className="ml-2 rounded-full bg-line-soft px-2 py-0.5 text-[11.5px] font-bold text-ink-3">
                 Pasif
               </span>
             )}
@@ -102,10 +102,10 @@ export default async function BranchDetailPage({
                   className="flex items-center gap-3 py-2"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-[12.5px] font-bold text-ink">
+                    <div className="truncate text-[14px] font-bold text-ink">
                       {v.productName}
                     </div>
-                    <div className="text-[10.5px] text-ink-3">
+                    <div className="text-[12px] text-ink-3">
                       {v.variantLabel} · SKU {v.sku}
                     </div>
                   </div>
@@ -117,7 +117,7 @@ export default async function BranchDetailPage({
                     >
                       {v.stockQty}
                     </div>
-                    <div className="text-[10px] text-ink-4">/ {v.threshold} eşik</div>
+                    <div className="text-[11.5px] text-ink-4">/ {v.threshold} eşik</div>
                   </div>
                 </li>
               ))}
@@ -135,7 +135,7 @@ export default async function BranchDetailPage({
             </h2>
             <Link
               href={`/admin/stock-movements?branch=${branch.id}` as never}
-              className="text-[11px] font-bold text-cat hover:underline"
+              className="text-[12.5px] font-bold text-cat hover:underline"
             >
               Tümü →
             </Link>
@@ -158,13 +158,13 @@ export default async function BranchDetailPage({
                     className="flex items-center gap-2 py-2"
                   >
                     <span
-                      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${badge.cls}`}
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-[11.5px] font-bold ${badge.cls}`}
                     >
                       {badge.label}
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-bold text-ink">{m.productName}</div>
-                      <div className="text-[10px] text-ink-3">
+                      <div className="text-[11.5px] text-ink-3">
                         {m.variantLabel} ·{' '}
                         {new Date(m.createdAt).toLocaleString('tr-TR', {
                           day: '2-digit',
@@ -183,7 +183,7 @@ export default async function BranchDetailPage({
                         {m.quantity > 0 ? '+' : ''}
                         {m.quantity}
                       </div>
-                      <div className="text-[9px] text-ink-4">
+                      <div className="text-[10.5px] text-ink-4">
                         {m.beforeQty} → {m.afterQty}
                       </div>
                     </div>
@@ -227,7 +227,7 @@ function KPI({
       data-kpi={title}
     >
       <div className="flex items-center justify-between">
-        <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+        <span className="text-[12px] font-bold uppercase tracking-wider text-ink-3">
           {title}
         </span>
         <span className="text-xl">{emoji}</span>

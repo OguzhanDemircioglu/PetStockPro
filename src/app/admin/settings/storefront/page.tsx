@@ -54,7 +54,7 @@ export default async function StorefrontSettingsPage() {
             <h2 className="text-base font-bold text-cart">
               📊 Vitrin metrikleri (son 30 gün)
             </h2>
-            <p className="text-[12px] text-ink-3">
+            <p className="text-[13.5px] text-ink-3">
               Müşterilerin WhatsApp&apos;tan sana ulaştıktan sonra verdikleri
               geri bildirim. Tek tıklama emoji anketi.
             </p>
@@ -111,7 +111,7 @@ export default async function StorefrontSettingsPage() {
 
           {feedback.totalSubmitted > 0 && (
             <div className="mt-5">
-              <h3 className="mb-2 text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+              <h3 className="mb-2 text-[12px] font-bold uppercase tracking-wider text-ink-3">
                 Puan dağılımı
               </h3>
               <ul className="flex flex-col gap-1.5">
@@ -125,7 +125,7 @@ export default async function StorefrontSettingsPage() {
                     <li
                       key={key}
                       data-rating={key}
-                      className="grid grid-cols-[100px_1fr_60px] items-center gap-3 text-[12px]"
+                      className="grid grid-cols-[100px_1fr_60px] items-center gap-3 text-[13.5px]"
                     >
                       <span className="font-bold text-ink-2">
                         <span aria-hidden>{info.emoji}</span> {info.label}
@@ -147,7 +147,7 @@ export default async function StorefrontSettingsPage() {
           )}
 
           {totalActivity === 0 && (
-            <p className="rounded-xl bg-line-soft px-3 py-4 text-center text-[12px] text-ink-3">
+            <p className="rounded-xl bg-line-soft px-3 py-4 text-center text-[13.5px] text-ink-3">
               Henüz vitrin geri bildirimi yok. Müşterilerin WhatsApp&apos;tan
               ulaştıktan sonraki balon anketinden veri toplanır.
             </p>
@@ -180,11 +180,11 @@ function SummaryCard({
       className={`flex flex-col gap-1.5 rounded-2xl border p-4 ${toneCls[tone]}`}
       data-summary-card={label}
     >
-      <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+      <span className="text-[12px] font-bold uppercase tracking-wider text-ink-3">
         {label}
       </span>
       <span className="font-mono text-2xl font-bold text-cart">{value}</span>
-      <span className="text-[10.5px] text-ink-3">{hint}</span>
+      <span className="text-[12px] text-ink-3">{hint}</span>
     </article>
   );
 }

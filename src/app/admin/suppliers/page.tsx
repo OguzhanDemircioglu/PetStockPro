@@ -28,7 +28,7 @@ export default async function SuppliersPage({
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-12">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="text-[11.5px] font-bold uppercase tracking-wider text-cat">
+          <div className="text-[13px] font-bold uppercase tracking-wider text-cat">
             Admin · Tedarikçiler
           </div>
           <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
@@ -79,7 +79,7 @@ export default async function SuppliersPage({
         <div className="overflow-hidden rounded-2xl border border-line bg-paper">
           <table className="w-full text-sm">
             <thead className="bg-paper">
-              <tr className="text-left text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+              <tr className="text-left text-[12px] font-bold uppercase tracking-wider text-ink-3">
                 <th className="px-4 py-3">Ad</th>
                 <th className="px-4 py-3">VKN</th>
                 <th className="px-4 py-3">İletişim</th>
@@ -104,12 +104,12 @@ export default async function SuppliersPage({
                       {s.name}
                     </Link>
                     {!s.isActive && (
-                      <span className="ml-2 rounded bg-line-soft px-1.5 py-0.5 text-[10px] font-bold text-ink-4">
+                      <span className="ml-2 rounded bg-line-soft px-1.5 py-0.5 text-[11.5px] font-bold text-ink-4">
                         Pasif
                       </span>
                     )}
                     {s.contactName && (
-                      <div className="text-[11px] text-ink-3">{s.contactName}</div>
+                      <div className="text-[12.5px] text-ink-3">{s.contactName}</div>
                     )}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-ink-2">

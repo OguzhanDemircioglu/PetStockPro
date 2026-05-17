@@ -168,7 +168,7 @@ export function BranchForm({
           placeholder="+905XXXXXXXXX veya 05XXXXXXXXX"
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
-        <p className="mt-1 text-[11px] text-ink-4">
+        <p className="mt-1 text-[12.5px] text-ink-4">
           Vitrin müşterileri buraya WhatsApp mesajı atar.
         </p>
       </Field>
@@ -183,7 +183,7 @@ export function BranchForm({
         >
           <p>{state.ok ? '✓' : '✕'} {state.message}</p>
           {state.issues.length > 0 && (
-            <ul className="mt-1 list-inside list-disc text-[11px] font-normal">
+            <ul className="mt-1 list-inside list-disc text-[12.5px] font-normal">
               {state.issues.map((i, k) => (
                 <li key={k}>{i}</li>
               ))}
@@ -225,7 +225,7 @@ function Field({
     <div>
       <label
         htmlFor={htmlFor}
-        className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+        className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
       >
         {label}
       </label>

@@ -15,9 +15,9 @@ export function ReverseExpiredForm() {
       <div className="rounded-2xl border border-arrow/40 bg-arrow-soft p-6">
         <h2 className="text-xl font-bold text-arrow-7">✓ Hareket geri alındı</h2>
         <p className="mt-2 text-sm leading-relaxed text-ink-2">
-          Orijinal: <code className="font-mono text-[11px]">{state.movementId?.slice(0, 8)}…</code>
+          Orijinal: <code className="font-mono text-[12.5px]">{state.movementId?.slice(0, 8)}…</code>
           <br />
-          Reversal: <code className="font-mono text-[11px]">{state.reversalMovementId?.slice(0, 8)}…</code>
+          Reversal: <code className="font-mono text-[12.5px]">{state.reversalMovementId?.slice(0, 8)}…</code>
         </p>
         <div className="mt-4 flex gap-2">
           <Link
@@ -42,7 +42,7 @@ export function ReverseExpiredForm() {
       <div>
         <label
           htmlFor="movementId"
-          className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+          className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
         >
           Hareket UUID *
         </label>
@@ -56,7 +56,7 @@ export function ReverseExpiredForm() {
           data-testid="movement-id"
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-2.5 font-mono text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
-        <p className="mt-1 text-[10.5px] text-ink-4">
+        <p className="mt-1 text-[12px] text-ink-4">
           Stok hareketleri ledger&apos;daki hareketin UUID&apos;sini kopyala.
         </p>
       </div>
@@ -64,7 +64,7 @@ export function ReverseExpiredForm() {
       <div>
         <label
           htmlFor="reason"
-          className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+          className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
         >
           Zorunlu sebep * (min 10 karakter)
         </label>
@@ -85,7 +85,7 @@ export function ReverseExpiredForm() {
       <div>
         <label
           htmlFor="superadminPassword"
-          className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+          className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
         >
           Süperadmin şifren * (re-auth)
         </label>
@@ -109,7 +109,7 @@ export function ReverseExpiredForm() {
         >
           ✕ {state.error}
           {state.issues && state.issues.length > 0 && (
-            <ul className="mt-1 list-inside list-disc text-[11px] font-normal">
+            <ul className="mt-1 list-inside list-disc text-[12.5px] font-normal">
               {state.issues.map((i, idx) => (
                 <li key={idx}>{i}</li>
               ))}

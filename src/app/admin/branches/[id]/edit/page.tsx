@@ -41,7 +41,7 @@ export default async function EditBranchPage({
         <Link href={'/admin/branches' as never} className="text-xs text-ink-4 hover:text-cart">
           ← Şubelere dön
         </Link>
-        <div className="mt-3 text-[11.5px] font-bold uppercase tracking-wider text-cat">
+        <div className="mt-3 text-[13px] font-bold uppercase tracking-wider text-cat">
           Admin · Şube düzenle
         </div>
         <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">

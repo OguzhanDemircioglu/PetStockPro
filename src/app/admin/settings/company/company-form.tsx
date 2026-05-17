@@ -117,7 +117,7 @@ export function CompanyForm({ initial, cities, initialDistricts }: Props) {
             data-testid="company-vat-no"
             className={`${fieldClasses} font-mono`}
           />
-          <p className="mt-1 text-[11px] text-ink-4">
+          <p className="mt-1 text-[12.5px] text-ink-4">
             Vitrin&apos;de ürün yayınlamak için zorunlu.
           </p>
         </Field>
@@ -134,7 +134,7 @@ export function CompanyForm({ initial, cities, initialDistricts }: Props) {
             placeholder="+90... veya 0..."
             className={`${fieldClasses} font-mono`}
           />
-          <p className="mt-1 text-[11px] text-ink-4">
+          <p className="mt-1 text-[12.5px] text-ink-4">
             Vitrin müşterileri bu numaraya mesaj atar.
           </p>
         </Field>
@@ -183,19 +183,19 @@ export function CompanyForm({ initial, cities, initialDistricts }: Props) {
 
         <div className="mt-1 rounded-xl border border-line bg-line-soft/40 p-3">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+            <span className="text-[13px] font-bold uppercase tracking-wider text-ink-3">
               📍 Konum (yakındakiler için)
             </span>
             <button
               type="button"
               onClick={detectLocation}
               data-testid="detect-location-btn"
-              className="rounded-lg border border-cat/40 bg-paper px-2.5 py-1 text-[10.5px] font-bold text-cart hover:bg-cat hover:text-white"
+              className="rounded-lg border border-cat/40 bg-paper px-2.5 py-1 text-[12px] font-bold text-cart hover:bg-cat hover:text-white"
             >
               Konumumu kullan
             </button>
           </div>
-          <p className="mt-1 text-[10.5px] text-ink-4">
+          <p className="mt-1 text-[12px] text-ink-4">
             Müşteriler vitrin&apos;de &quot;Yakındakileri göster&quot; tıkladığında bu
             koordinata göre sıralanır. Google Maps&apos;ten kopyalayabilir veya yukarıdaki
             tuşla otomatik alabilirsin.
@@ -231,7 +231,7 @@ export function CompanyForm({ initial, cities, initialDistricts }: Props) {
           {geoStatus && (
             <p
               data-testid="geo-status"
-              className={`mt-1.5 text-[11px] ${geoStatus.startsWith('✓') ? 'text-arrow-7' : geoStatus.startsWith('✕') ? 'text-danger-7' : 'text-ink-3'}`}
+              className={`mt-1.5 text-[12.5px] ${geoStatus.startsWith('✓') ? 'text-arrow-7' : geoStatus.startsWith('✕') ? 'text-danger-7' : 'text-ink-3'}`}
             >
               {geoStatus}
             </p>
@@ -249,7 +249,7 @@ export function CompanyForm({ initial, cities, initialDistricts }: Props) {
         >
           <p>{state.ok ? '✓' : '✕'} {state.message}</p>
           {state.issues.length > 0 && (
-            <ul className="mt-1 list-inside list-disc text-[11px] font-normal">
+            <ul className="mt-1 list-inside list-disc text-[12.5px] font-normal">
               {state.issues.map((i, k) => (
                 <li key={k}>{i}</li>
               ))}
@@ -286,7 +286,7 @@ function Field({
     <div>
       <label
         htmlFor={htmlFor}
-        className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+        className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
       >
         {label}
       </label>

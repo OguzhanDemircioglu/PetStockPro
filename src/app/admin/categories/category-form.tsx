@@ -33,7 +33,7 @@ export function CategoryForm({ action, initial, submitLabel }: Props) {
         <div>
           <label
             htmlFor="emoji"
-            className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+            className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
           >
             Emoji
           </label>
@@ -50,7 +50,7 @@ export function CategoryForm({ action, initial, submitLabel }: Props) {
         <div>
           <label
             htmlFor="name"
-            className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+            className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
           >
             Kategori adı *
           </label>
@@ -73,7 +73,7 @@ export function CategoryForm({ action, initial, submitLabel }: Props) {
         <div>
           <label
             htmlFor="vatRate"
-            className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+            className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
           >
             KDV oranı
           </label>
@@ -93,7 +93,7 @@ export function CategoryForm({ action, initial, submitLabel }: Props) {
         <div>
           <label
             htmlFor="displayOrder"
-            className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider text-ink-3"
+            className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
           >
             Sıralama
           </label>
@@ -132,7 +132,7 @@ export function CategoryForm({ action, initial, submitLabel }: Props) {
         >
           <p>{state.ok ? '✓' : '✕'} {state.message}</p>
           {state.issues.length > 0 && (
-            <ul className="mt-1 list-inside list-disc text-[11px] font-normal">
+            <ul className="mt-1 list-inside list-disc text-[12.5px] font-normal">
               {state.issues.map((i, k) => (
                 <li key={k}>{i}</li>
               ))}
