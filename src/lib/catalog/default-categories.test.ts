@@ -86,6 +86,22 @@ describe('DEFAULT_CATEGORIES', () => {
     }
   });
 
+  it("Bütün 49 emoji benzersiz", () => {
+    const emojis = DEFAULT_CATEGORIES.map((c) => c.emoji);
+    const seen = new Map<string, string[]>();
+    for (const c of DEFAULT_CATEGORIES) {
+      const list = seen.get(c.emoji) ?? [];
+      list.push(c.slug);
+      seen.set(c.emoji, list);
+    }
+    const duplicates = Array.from(seen.entries()).filter(([, ss]) => ss.length > 1);
+    expect(
+      duplicates,
+      `Çift emoji bulundu: ${duplicates.map(([e, ss]) => `${e}=[${ss.join(', ')}]`).join('; ')}`,
+    ).toEqual([]);
+    expect(new Set(emojis).size).toBe(emojis.length);
+  });
+
   it('Root displayOrder 1..6 sıralı', () => {
     const roots = DEFAULT_CATEGORIES.filter((c) => !c.parentSlug).sort(
       (a, b) => a.displayOrder - b.displayOrder,

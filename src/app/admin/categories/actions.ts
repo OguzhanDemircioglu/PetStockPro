@@ -53,6 +53,7 @@ function parseFormInput(formData: FormData): CategoryInput | null {
 const REASON_MSG: Record<string, string> = {
   invalid_input: 'Geçersiz alan',
   slug_taken: 'Bu kategori adı zaten kullanılıyor',
+  emoji_taken: 'Bu emoji başka bir kategoride zaten kullanılıyor — farklı bir emoji seç',
   not_found: 'Kategori bulunamadı',
   unknown: 'Kaydedilemedi, tekrar dene',
 };

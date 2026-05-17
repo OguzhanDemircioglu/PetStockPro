@@ -125,7 +125,7 @@ export type AddCategoryResult =
   | { ok: true; categoryId: string }
   | {
       ok: false;
-      reason: 'invalid_input' | 'slug_taken' | 'unknown';
+      reason: 'invalid_input' | 'slug_taken' | 'emoji_taken' | 'unknown';
       issues?: string[];
     };
 
@@ -163,6 +163,23 @@ export async function addCategory(
     return { ok: false, reason: 'slug_taken' };
   }
 
+  // Emoji benzersizlik kontrolü — tenant başına. Emoji null/boş ise atlanır.
+  if (data.emoji && data.emoji.length > 0) {
+    const emojiClash = await db
+      .select({ id: categories.id })
+      .from(categories)
+      .where(
+        and(
+          eq(categories.companyId, companyId),
+          eq(categories.emoji, data.emoji),
+        ),
+      )
+      .limit(1);
+    if (emojiClash.length > 0) {
+      return { ok: false, reason: 'emoji_taken' };
+    }
+  }
+
   try {
     const [row] = await db
       .insert(categories)
@@ -191,7 +208,12 @@ export type UpdateCategoryResult =
   | { ok: true }
   | {
       ok: false;
-      reason: 'invalid_input' | 'not_found' | 'slug_taken' | 'unknown';
+      reason:
+        | 'invalid_input'
+        | 'not_found'
+        | 'slug_taken'
+        | 'emoji_taken'
+        | 'unknown';
       issues?: string[];
     };
 
@@ -241,6 +263,25 @@ export async function updateCategory(
     )
     .limit(1);
   if (slugConflict.length > 0) return { ok: false, reason: 'slug_taken' };
+
+  // Emoji benzersizlik — başka kategoride aynı emoji varsa reject (kendisi
+  // hariç). Emoji null/boş ise atlanır.
+  if (data.emoji && data.emoji.length > 0) {
+    const emojiClash = await db
+      .select({ id: categories.id })
+      .from(categories)
+      .where(
+        and(
+          eq(categories.companyId, companyId),
+          eq(categories.emoji, data.emoji),
+          sql`${categories.id} != ${categoryId}`,
+        ),
+      )
+      .limit(1);
+    if (emojiClash.length > 0) {
+      return { ok: false, reason: 'emoji_taken' };
+    }
+  }
 
   try {
     await db
