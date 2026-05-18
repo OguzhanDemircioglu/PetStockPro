@@ -12,6 +12,8 @@
 
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { moderateFields } from '@/lib/moderation/check';
+import type { ModerationFlagsResult } from '@/lib/moderation/redirect-suffix';
 import type { DbClient } from '@/lib/db/client';
 import {
   branches,
@@ -102,7 +104,7 @@ export const branchSchema = z.object({
 export type BranchInput = z.input<typeof branchSchema>;
 
 export type AddBranchResult =
-  | { ok: true; branchId: string }
+  | { ok: true; branchId: string; moderationFlags?: ModerationFlagsResult }
   | {
       ok: false;
       reason: 'invalid_input' | 'city_not_found' | 'district_mismatch' | 'unknown';
@@ -153,7 +155,23 @@ export async function addBranch(
         isActive: true,
       })
       .returning({ id: branches.id });
-    return { ok: true, branchId: row.id };
+    const moderation = await moderateFields({
+      'Şube adı': data.name,
+      ...(data.address ? { 'Şube adresi': data.address } : {}),
+    });
+    return {
+      ok: true,
+      branchId: row.id,
+      ...(moderation.flagged
+        ? {
+            moderationFlags: {
+              flagged: true,
+              fieldsFlagged: moderation.fieldsFlagged,
+              reasons: moderation.reasons,
+            },
+          }
+        : {}),
+    };
   } catch {
     return { ok: false, reason: 'unknown' };
   }
@@ -164,7 +182,7 @@ export async function addBranch(
 // ─────────────────────────────────────────────────────────────────
 
 export type UpdateBranchResult =
-  | { ok: true }
+  | { ok: true; moderationFlags?: ModerationFlagsResult }
   | {
       ok: false;
       reason:
@@ -226,7 +244,22 @@ export async function updateBranch(
         whatsappPhone: data.whatsappPhone ?? null,
       })
       .where(eq(branches.id, branchId));
-    return { ok: true };
+    const moderation = await moderateFields({
+      'Şube adı': data.name,
+      ...(data.address ? { 'Şube adresi': data.address } : {}),
+    });
+    return {
+      ok: true,
+      ...(moderation.flagged
+        ? {
+            moderationFlags: {
+              flagged: true,
+              fieldsFlagged: moderation.fieldsFlagged,
+              reasons: moderation.reasons,
+            },
+          }
+        : {}),
+    };
   } catch {
     return { ok: false, reason: 'unknown' };
   }

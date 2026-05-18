@@ -9,6 +9,8 @@
 
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { moderateFields } from '@/lib/moderation/check';
+import type { ModerationFlagsResult } from '@/lib/moderation/redirect-suffix';
 import type { DbClient } from '@/lib/db/client';
 import { companies, storefrontSettings } from '@/db/schema';
 
@@ -110,7 +112,7 @@ export async function getStorefrontSettings(
 }
 
 export type UpsertResult =
-  | { ok: true }
+  | { ok: true; moderationFlags?: ModerationFlagsResult }
   | { ok: false; reason: 'invalid_input'; issues: string[] }
   | { ok: false; reason: 'unknown' };
 
@@ -180,11 +182,25 @@ export async function upsertStorefrontSettings(
       .where(eq(companies.id, companyId))
       .limit(1);
 
+    const moderation = await moderateFields({
+      ...(data.aboutContent ? { 'Hakkımızda metni': data.aboutContent } : {}),
+      ...(data.metaDescription ? { 'Vitrin açıklaması (meta)': data.metaDescription } : {}),
+    });
+    const moderationFlags = moderation.flagged
+      ? {
+          moderationFlags: {
+            flagged: true as const,
+            fieldsFlagged: moderation.fieldsFlagged,
+            reasons: moderation.reasons,
+          },
+        }
+      : {};
+
     const status = currentStatus[0]?.status;
     if (status === 'rejected' || status === 'auto_suspended') {
       // Manuel onay bekleyen / askıya alınmış — kullanıcı toggle etse de
       // status değişmesin. UI banner'ı gösterilebilir (Faz 2).
-      return { ok: true };
+      return { ok: true, ...moderationFlags };
     }
     await db
       .update(companies)
@@ -193,7 +209,7 @@ export async function upsertStorefrontSettings(
         updatedAt: now,
       })
       .where(eq(companies.id, companyId));
-    return { ok: true };
+    return { ok: true, ...moderationFlags };
   } catch {
     return { ok: false, reason: 'unknown' };
   }

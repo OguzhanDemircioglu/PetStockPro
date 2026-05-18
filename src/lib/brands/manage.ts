@@ -13,6 +13,8 @@
  */
 
 import { and, asc, eq, sql } from 'drizzle-orm';
+import { moderateFields } from '@/lib/moderation/check';
+import type { ModerationFlagsResult } from '@/lib/moderation/redirect-suffix';
 import { z } from 'zod';
 import { makeSlug } from '@/lib/utils/slug';
 import type { DbClient } from '@/lib/db/client';
@@ -79,7 +81,7 @@ export type BrandInput = z.input<typeof brandSchema>;
 // ─────────────────────────────────────────────────────────────────
 
 export type AddBrandResult =
-  | { ok: true; brandId: string }
+  | { ok: true; brandId: string; moderationFlags?: ModerationFlagsResult }
   | {
       ok: false;
       reason: 'invalid_input' | 'slug_taken' | 'unknown';
@@ -129,7 +131,20 @@ export async function addBrand(
         logoUrl: data.logoUrl ?? null,
       })
       .returning({ id: brands.id });
-    return { ok: true, brandId: row.id };
+    const moderation = await moderateFields({ 'Marka adı': data.name });
+    return {
+      ok: true,
+      brandId: row.id,
+      ...(moderation.flagged
+        ? {
+            moderationFlags: {
+              flagged: true,
+              fieldsFlagged: moderation.fieldsFlagged,
+              reasons: moderation.reasons,
+            },
+          }
+        : {}),
+    };
   } catch {
     return { ok: false, reason: 'unknown' };
   }
@@ -140,7 +155,7 @@ export async function addBrand(
 // ─────────────────────────────────────────────────────────────────
 
 export type UpdateBrandResult =
-  | { ok: true }
+  | { ok: true; moderationFlags?: ModerationFlagsResult }
   | {
       ok: false;
       reason: 'invalid_input' | 'not_found' | 'slug_taken' | 'unknown';
@@ -202,7 +217,19 @@ export async function updateBrand(
         logoUrl: data.logoUrl ?? null,
       })
       .where(eq(brands.id, brandId));
-    return { ok: true };
+    const moderation = await moderateFields({ 'Marka adı': data.name });
+    return {
+      ok: true,
+      ...(moderation.flagged
+        ? {
+            moderationFlags: {
+              flagged: true,
+              fieldsFlagged: moderation.fieldsFlagged,
+              reasons: moderation.reasons,
+            },
+          }
+        : {}),
+    };
   } catch {
     return { ok: false, reason: 'unknown' };
   }

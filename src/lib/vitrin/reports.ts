@@ -13,6 +13,8 @@
 import { createHash } from 'node:crypto';
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { moderateFields } from '@/lib/moderation/check';
+import type { ModerationFlagsResult } from '@/lib/moderation/redirect-suffix';
 import type { DbClient } from '@/lib/db/client';
 import { companies, products, users, vitrinReports } from '@/db/schema';
 import { sendTelegramAlert } from '@/lib/telegram/client';
@@ -107,7 +109,7 @@ export async function submitReport(
   now: Date = new Date(),
   deps: { rateLimitStore?: RateLimitStore } = {},
 ): Promise<
-  | { ok: true; id: string; remainingInWindow: number }
+  | { ok: true; id: string; remainingInWindow: number; moderationFlags?: ModerationFlagsResult }
   | { ok: false; reason: 'invalid_input' | 'unknown' }
   | {
       ok: false;
@@ -219,7 +221,25 @@ export async function submitReport(
       RATE_LIMIT_MAX_PER_WINDOW - (currentCount + 1),
     );
 
-    return { ok: true, id: rows[0].id, remainingInWindow };
+    // Moderation: müşterinin yazdığı şikayet notu — uyar
+    const moderation = parsed.data.note
+      ? await moderateFields({ 'Şikayet notu': parsed.data.note })
+      : { flagged: false, fieldsFlagged: [], reasons: [] };
+
+    return {
+      ok: true,
+      id: rows[0].id,
+      remainingInWindow,
+      ...(moderation.flagged
+        ? {
+            moderationFlags: {
+              flagged: true,
+              fieldsFlagged: moderation.fieldsFlagged,
+              reasons: moderation.reasons,
+            },
+          }
+        : {}),
+    };
   } catch {
     return { ok: false, reason: 'unknown' };
   }

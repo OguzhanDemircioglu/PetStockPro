@@ -12,6 +12,8 @@
 
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { moderateFields } from '@/lib/moderation/check';
+import type { ModerationFlagsResult } from '@/lib/moderation/redirect-suffix';
 import type { DbClient } from '@/lib/db/client';
 import { suppliers, stockMovements } from '@/db/schema';
 
@@ -127,7 +129,7 @@ export type SupplierInput = z.input<typeof supplierSchema>;
 // ─────────────────────────────────────────────────────────────────
 
 export type AddSupplierResult =
-  | { ok: true; supplierId: string }
+  | { ok: true; supplierId: string; moderationFlags?: ModerationFlagsResult }
   | { ok: false; reason: 'invalid_input' | 'unknown'; issues?: string[] };
 
 export async function addSupplier(
@@ -165,7 +167,24 @@ export async function addSupplier(
         isActive: true,
       })
       .returning({ id: suppliers.id });
-    return { ok: true, supplierId: row.id };
+    const moderation = await moderateFields({
+      'Tedarikçi adı': data.name,
+      ...(data.contactName ? { 'İletişim kişisi': data.contactName } : {}),
+      ...(data.note ? { 'Tedarikçi notu': data.note } : {}),
+    });
+    return {
+      ok: true,
+      supplierId: row.id,
+      ...(moderation.flagged
+        ? {
+            moderationFlags: {
+              flagged: true,
+              fieldsFlagged: moderation.fieldsFlagged,
+              reasons: moderation.reasons,
+            },
+          }
+        : {}),
+    };
   } catch {
     return { ok: false, reason: 'unknown' };
   }
@@ -176,7 +195,7 @@ export async function addSupplier(
 // ─────────────────────────────────────────────────────────────────
 
 export type UpdateSupplierResult =
-  | { ok: true }
+  | { ok: true; moderationFlags?: ModerationFlagsResult }
   | {
       ok: false;
       reason: 'invalid_input' | 'not_found' | 'unknown';
@@ -226,7 +245,23 @@ export async function updateSupplier(
         note: data.note ?? null,
       })
       .where(eq(suppliers.id, supplierId));
-    return { ok: true };
+    const moderation = await moderateFields({
+      'Tedarikçi adı': data.name,
+      ...(data.contactName ? { 'İletişim kişisi': data.contactName } : {}),
+      ...(data.note ? { 'Tedarikçi notu': data.note } : {}),
+    });
+    return {
+      ok: true,
+      ...(moderation.flagged
+        ? {
+            moderationFlags: {
+              flagged: true,
+              fieldsFlagged: moderation.fieldsFlagged,
+              reasons: moderation.reasons,
+            },
+          }
+        : {}),
+    };
   } catch {
     return { ok: false, reason: 'unknown' };
   }

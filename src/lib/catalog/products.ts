@@ -10,6 +10,7 @@
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { makeSlug } from '@/lib/utils/slug';
+import { moderateFields, type ModerationReason } from '@/lib/moderation/check';
 import type { DbClient } from '@/lib/db/client';
 import {
   products,
@@ -17,6 +18,12 @@ import {
   categories,
   brands,
 } from '@/db/schema';
+
+export interface ModerationFlagsResult {
+  flagged: boolean;
+  fieldsFlagged: string[];
+  reasons: ModerationReason[];
+}
 
 // ─────────────────────────────────────────────────────────────────
 // CREATE
@@ -41,7 +48,13 @@ export const createProductSchema = z.object({
 export type CreateProductInput = z.input<typeof createProductSchema>;
 
 export type CreateProductResult =
-  | { ok: true; productId: string; variantId: string; slug: string }
+  | {
+      ok: true;
+      productId: string;
+      variantId: string;
+      slug: string;
+      moderationFlags?: ModerationFlagsResult;
+    }
   | { ok: false; reason: 'invalid_input' | 'sku_taken' | 'slug_taken' | 'unknown'; issues?: string[] };
 
 export async function createProduct(
@@ -124,7 +137,25 @@ export async function createProduct(
       return { productId: product.id, variantId: variant.id };
     });
 
-    return { ok: true, productId: result.productId, variantId: result.variantId, slug: finalSlug };
+    const moderation = await moderateFields({
+      'Ürün adı': data.name,
+      ...(data.description ? { 'Ürün açıklaması': data.description } : {}),
+    });
+    return {
+      ok: true,
+      productId: result.productId,
+      variantId: result.variantId,
+      slug: finalSlug,
+      ...(moderation.flagged
+        ? {
+            moderationFlags: {
+              flagged: true,
+              fieldsFlagged: moderation.fieldsFlagged,
+              reasons: moderation.reasons,
+            },
+          }
+        : {}),
+    };
   } catch {
     return { ok: false, reason: 'unknown' };
   }
@@ -338,7 +369,7 @@ export const updateProductSchema = z.object({
 export type UpdateProductInput = z.input<typeof updateProductSchema>;
 
 export type UpdateProductResult =
-  | { ok: true }
+  | { ok: true; moderationFlags?: ModerationFlagsResult }
   | { ok: false; reason: 'invalid_input' | 'not_found' | 'sku_taken' | 'unknown'; issues?: string[] };
 
 export async function updateProduct(
@@ -414,7 +445,22 @@ export async function updateProduct(
         })
         .where(eq(productVariants.id, variantId));
     });
-    return { ok: true };
+    const moderation = await moderateFields({
+      'Ürün adı': data.name,
+      ...(data.description ? { 'Ürün açıklaması': data.description } : {}),
+    });
+    return {
+      ok: true,
+      ...(moderation.flagged
+        ? {
+            moderationFlags: {
+              flagged: true,
+              fieldsFlagged: moderation.fieldsFlagged,
+              reasons: moderation.reasons,
+            },
+          }
+        : {}),
+    };
   } catch {
     return { ok: false, reason: 'unknown' };
   }

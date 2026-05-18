@@ -22,6 +22,8 @@
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { makeSlug } from '@/lib/utils/slug';
+import { moderateFields } from '@/lib/moderation/check';
+import type { ModerationFlagsResult } from '@/lib/moderation/redirect-suffix';
 import type { DbClient } from '@/lib/db/client';
 import { categories, products } from '@/db/schema';
 
@@ -104,7 +106,7 @@ export type CategoryInput = z.input<typeof categorySchema>;
 // ─────────────────────────────────────────────────────────────────
 
 export type AddCategoryResult =
-  | { ok: true; categoryId: string }
+  | { ok: true; categoryId: string; moderationFlags?: ModerationFlagsResult }
   | {
       ok: false;
       reason: 'invalid_input' | 'slug_taken' | 'emoji_taken' | 'unknown';
@@ -175,7 +177,20 @@ export async function addCategory(
         parentId: data.parentId ?? null,
       })
       .returning({ id: categories.id });
-    return { ok: true, categoryId: row.id };
+    const moderation = await moderateFields({ 'Kategori adı': data.name });
+    return {
+      ok: true,
+      categoryId: row.id,
+      ...(moderation.flagged
+        ? {
+            moderationFlags: {
+              flagged: true,
+              fieldsFlagged: moderation.fieldsFlagged,
+              reasons: moderation.reasons,
+            },
+          }
+        : {}),
+    };
   } catch {
     return { ok: false, reason: 'unknown' };
   }
@@ -186,7 +201,7 @@ export async function addCategory(
 // ─────────────────────────────────────────────────────────────────
 
 export type UpdateCategoryResult =
-  | { ok: true }
+  | { ok: true; moderationFlags?: ModerationFlagsResult }
   | {
       ok: false;
       reason:
@@ -276,7 +291,19 @@ export async function updateCategory(
         parentId: data.parentId ?? null,
       })
       .where(eq(categories.id, categoryId));
-    return { ok: true };
+    const moderation = await moderateFields({ 'Kategori adı': data.name });
+    return {
+      ok: true,
+      ...(moderation.flagged
+        ? {
+            moderationFlags: {
+              flagged: true,
+              fieldsFlagged: moderation.fieldsFlagged,
+              reasons: moderation.reasons,
+            },
+          }
+        : {}),
+    };
   } catch {
     return { ok: false, reason: 'unknown' };
   }

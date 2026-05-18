@@ -23,6 +23,8 @@ import { sendBrevoEmail } from '@/lib/brevo/client';
 import { buildVerifyEmailTemplate } from '@/lib/brevo/templates';
 import { makeSlug } from '@/lib/utils/slug';
 import { seedDefaultCategoriesForCompany } from '@/lib/catalog/default-categories';
+import { moderateFields, type ModerationReason } from '@/lib/moderation/check';
+import { logModerationFlag } from '@/lib/moderation/audit';
 import type { DbClient } from '@/lib/db/client';
 import { companies, users } from '@/db/schema';
 
@@ -41,6 +43,11 @@ export interface RegisterResult {
   userId?: string;
   companyId?: string;
   issues?: string[];
+  moderationFlags?: {
+    flagged: boolean;
+    fieldsFlagged: string[];
+    reasons: ModerationReason[];
+  };
 }
 
 // makeSlug → @/lib/utils/slug (shared with seed script)
@@ -179,7 +186,36 @@ export async function registerNewTenant(
       console.warn(`[register] Brevo gönderim hatası user=${result.userId}:`, emailErr);
     }
 
-    return { ok: true, userId: result.userId, companyId: result.companyId };
+    // Moderation: pet shop adı uygunsuz mu? (uyar — kayıt yine de yapıldı)
+    const moderation = await moderateFields({ 'Pet shop adı': parsed.data.shopName });
+    if (moderation.flagged) {
+      logModerationFlag(
+        {
+          companyId: result.companyId,
+          userId: result.userId,
+          entityType: 'company',
+          entityId: result.companyId,
+          action: 'moderation.flagged',
+          result: moderation,
+        },
+        db,
+      );
+    }
+
+    return {
+      ok: true,
+      userId: result.userId,
+      companyId: result.companyId,
+      ...(moderation.flagged
+        ? {
+            moderationFlags: {
+              flagged: true,
+              fieldsFlagged: moderation.fieldsFlagged,
+              reasons: moderation.reasons,
+            },
+          }
+        : {}),
+    };
   } catch {
     // DB constraint violation (email unique race condition, vs.) — generic mesaj
     return {

@@ -6,6 +6,7 @@ import { db } from '@/lib/db/client';
 import { createProduct } from '@/lib/catalog/products';
 import { transferSeedImageToProduct } from '@/lib/catalog/seed-image-transfer';
 import { writeAuditLogAsync } from '@/lib/audit/log';
+import { logModerationFlag } from '@/lib/moderation/audit';
 
 export interface CreateProductState {
   ok: boolean;
@@ -106,6 +107,23 @@ export async function createProductAction(
     db,
   );
 
+  // Moderation flag varsa audit log + redirect query param ile UI bildirimi
+  if (result.moderationFlags?.flagged) {
+    logModerationFlag(
+      {
+        companyId: session.user.companyId,
+        userId: session.user.id,
+        entityType: 'product',
+        entityId: result.productId,
+        result: result.moderationFlags,
+      },
+      db,
+    );
+  }
+  const moderationSuffix = result.moderationFlags?.flagged
+    ? `&moderation=flagged&fields=${encodeURIComponent(result.moderationFlags.fieldsFlagged.join(','))}`
+    : '';
+
   // Seed katalog görselini transfer et (autocomplete'ten seçilen ürünün imagePath'i)
   const seedImagePath = formData.get('seedImagePath');
   let imageTransferSuffix = '';
@@ -135,5 +153,5 @@ export async function createProductAction(
     }
   }
 
-  redirect(`/admin/products?created=success${imageTransferSuffix}` as never);
+  redirect(`/admin/products?created=success${imageTransferSuffix}${moderationSuffix}` as never);
 }

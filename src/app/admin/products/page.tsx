@@ -23,6 +23,8 @@ export default async function ProductsPage({
     deleted?: string;
     seed_image?: 'ok' | 'fail';
     reason?: string;
+    moderation?: 'flagged';
+    fields?: string;
     q?: string;
     category?: string;
     brand?: string;
@@ -101,6 +103,26 @@ export default async function ProductsPage({
             <span className="ml-1 font-normal text-bars-7">
               ⚠ Seed katalog görseli yüklenemedi ({params.reason ?? 'unknown'}) — ürün detaydan manuel yükleyebilirsin.
             </span>
+          )}
+        </div>
+      )}
+      {params.moderation === 'flagged' && (
+        <div
+          role="alert"
+          data-testid="moderation-warning"
+          className="rounded-xl border border-bars/40 bg-bars-soft/60 px-4 py-3 text-sm text-bars-7"
+        >
+          <div className="font-bold">⚠ Uygunsuz olabilecek ifade tespit edildi</div>
+          <p className="mt-1 text-[12.5px] leading-relaxed">
+            Ürün kaydedildi ama içeriğini düzeltmeni öneririz — vitrin&apos;e açtığında müşteriler görür. Süperadmin&apos;e otomatik bildirildi.
+          </p>
+          {params.fields && (
+            <p className="mt-1.5 text-[12.5px]">
+              <strong>İlgili alan:</strong>{' '}
+              <span className="rounded bg-paper/80 px-1.5 py-0.5 font-mono text-[11.5px]">
+                {params.fields}
+              </span>
+            </p>
           )}
         </div>
       )}

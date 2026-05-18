@@ -10,6 +10,8 @@
 
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { moderateFields } from '@/lib/moderation/check';
+import type { ModerationFlagsResult } from '@/lib/moderation/redirect-suffix';
 import type { DbClient } from '@/lib/db/client';
 import { companies } from '@/db/schema';
 
@@ -118,7 +120,7 @@ export const companyProfileSchema = z.object({
 export type CompanyProfileInput = z.input<typeof companyProfileSchema>;
 
 export type UpdateCompanyResult =
-  | { ok: true }
+  | { ok: true; moderationFlags?: ModerationFlagsResult }
   | { ok: false; reason: 'invalid_input' | 'not_found' | 'unknown'; issues?: string[] };
 
 export async function updateCompanyProfile(
@@ -165,7 +167,19 @@ export async function updateCompanyProfile(
         updatedAt: now,
       })
       .where(eq(companies.id, companyId));
-    return { ok: true };
+    const moderation = await moderateFields({ 'Pet shop adı': data.name });
+    return {
+      ok: true,
+      ...(moderation.flagged
+        ? {
+            moderationFlags: {
+              flagged: true,
+              fieldsFlagged: moderation.fieldsFlagged,
+              reasons: moderation.reasons,
+            },
+          }
+        : {}),
+    };
   } catch {
     return { ok: false, reason: 'unknown' };
   }
