@@ -47,7 +47,7 @@ export async function VitrinAdminReturnLink() {
     <Link
       href={'/admin' as never}
       data-testid="vitrin-admin-return-link"
-      className="inline-flex items-center gap-1.5 rounded-xl border border-cat/40 bg-cat-soft px-3 py-1.5 text-[13px] font-bold text-cart transition-colors hover:border-cat hover:bg-cat hover:text-white"
+      className="inline-flex items-center gap-1.5 rounded-xl border border-cat/40 bg-cat-soft px-3 py-1.5 text-[13.5px] font-bold text-cart transition-colors hover:border-cat hover:bg-cat hover:text-white"
     >
       <span aria-hidden>←</span> Admin paneli
     </Link>

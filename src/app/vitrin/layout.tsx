@@ -1,6 +1,8 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { VitrinAdminReturnLink } from './admin-return-link';
 import { VitrinCategoryBar } from '@/components/vitrin/category-bar';
+import { CookieBanner } from './cookie-banner';
 
 /**
  * /vitrin/* public layout — auth yok, üst bar + footer.
@@ -28,15 +30,20 @@ export default function VitrinLayout({
               className="flex items-center gap-2 text-cart"
               data-testid="vitrin-logo"
             >
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-cat text-lg text-white shadow-sm">
-                🐾
-              </span>
-              <span className="text-base font-bold leading-tight">
+              <Image
+                src="/logo.webp"
+                alt="PetStockPro"
+                width={44}
+                height={44}
+                className="h-11 w-11 object-contain"
+                priority
+              />
+              <span className="text-[17px] font-bold leading-tight">
                 PetStockPro <span className="text-cat">Vitrin</span>
               </span>
             </Link>
           </div>
-          <nav className="flex flex-wrap items-center gap-2 text-[14px]">
+          <nav className="flex flex-wrap items-center gap-2 text-[13.5px]">
             <Link
               href={'/vitrin' as never}
               className="rounded-xl border border-line bg-paper px-3 py-1.5 font-bold text-cart hover:bg-cat-soft"
@@ -58,23 +65,157 @@ export default function VitrinLayout({
 
       {children}
 
-      <footer className="border-t border-line bg-paper py-6">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 text-[13px] text-ink-3">
-          <span>
-            © {new Date().getFullYear()} PetStockPro — Pet shop merkezi vitrin
-            dizini.
-          </span>
-          <nav className="flex gap-3">
-            <Link href={'/login' as never} className="hover:text-cart">
-              Pet shop ekle
-            </Link>
-            <span aria-hidden>·</span>
-            <span className="text-ink-4">
-              KVKK uyumlu — IP&apos;ler anonim hash&apos;lenir
+      <footer
+        data-testid="vitrin-footer"
+        className="mt-16 border-t border-line bg-paper"
+      >
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 lg:grid-cols-[2fr_1fr_1fr_1fr]">
+          {/* Brand kolonu */}
+          <div>
+            <div className="flex items-center gap-2">
+              <Image
+                src="/logo.webp"
+                alt="PetStockPro"
+                width={36}
+                height={36}
+                className="h-9 w-9 object-contain"
+              />
+              <div>
+                <div className="text-[15px] font-bold leading-tight text-cart">
+                  PetStockPro
+                </div>
+                <div className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-ink-3">
+                  Vitrin
+                </div>
+              </div>
+            </div>
+            <p className="mt-3 max-w-xs text-[13px] leading-snug text-ink-3">
+              Türkiye&apos;nin pet shop&apos;larını tek vitrin&apos;de
+              buluşturuyoruz. Yakınındakini bul, WhatsApp&apos;tan yaz, gel al.
+            </p>
+            <p className="mt-3 text-[11.5px] text-ink-4">
+              🔒 IP&apos;ler anonim hash&apos;lenir · KVKK uyumlu
+            </p>
+          </div>
+
+          {/* Vitrin kolonu */}
+          <div>
+            <h4 className="mb-2.5 text-[12px] font-bold uppercase tracking-[0.12em] text-cart">
+              Vitrin
+            </h4>
+            <ul className="flex flex-col gap-1.5 text-[13px] text-ink-2">
+              <li>
+                <Link href={'/vitrin' as never} className="hover:text-cat">
+                  Tüm Pet Shop&apos;lar
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href={'/vitrin#vitrin-category-chips' as never}
+                  className="hover:text-cat"
+                >
+                  Kategoriler
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href={'/vitrin#vitrin-city-grid' as never}
+                  className="hover:text-cat"
+                >
+                  Şehirler
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href={'/vitrin#vitrin-popular-products' as never}
+                  className="hover:text-cat"
+                >
+                  Popüler Ürünler
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Pet shop'lar için kolonu */}
+          <div>
+            <h4 className="mb-2.5 text-[12px] font-bold uppercase tracking-[0.12em] text-cart">
+              Pet Shop&apos;lar İçin
+            </h4>
+            <ul className="flex flex-col gap-1.5 text-[13px] text-ink-2">
+              <li>
+                <Link href={'/register' as never} className="hover:text-cat">
+                  Ücretsiz Başla
+                </Link>
+              </li>
+              <li>
+                <Link href={'/login' as never} className="hover:text-cat">
+                  Giriş Yap
+                </Link>
+              </li>
+              <li>
+                <span className="text-ink-4">Vitrin Rehberi (yakında)</span>
+              </li>
+              <li>
+                <span className="text-ink-4">Yardım Merkezi (yakında)</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Hakkımızda kolonu */}
+          <div>
+            <h4 className="mb-2.5 text-[12px] font-bold uppercase tracking-[0.12em] text-cart">
+              Hakkımızda
+            </h4>
+            <ul className="flex flex-col gap-1.5 text-[13px] text-ink-2">
+              <li>
+                <span className="text-ink-4">Biz Kimiz (yakında)</span>
+              </li>
+              <li>
+                <span className="text-ink-4">İletişim (yakında)</span>
+              </li>
+              <li>
+                <Link href={'/kvkk' as never} className="hover:text-cat">
+                  KVKK
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href={'/kullanim-kosullari' as never}
+                  className="hover:text-cat"
+                >
+                  Kullanım Koşulları
+                </Link>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Footer bottom */}
+        <div className="border-t border-line">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 text-[12px] text-ink-3">
+            <span>
+              © {new Date().getFullYear()} PetStockPro · Tüm hakları saklıdır
             </span>
-          </nav>
+            <nav className="flex gap-3">
+              <Link href={'/kvkk' as never} className="hover:text-cart">
+                KVKK
+              </Link>
+              <span aria-hidden className="text-ink-4">
+                ·
+              </span>
+              <span className="text-ink-4">Çerezler</span>
+              <span aria-hidden className="text-ink-4">
+                ·
+              </span>
+              <Link href={'/kvkk' as never} className="hover:text-cart">
+                Gizlilik
+              </Link>
+            </nav>
+          </div>
         </div>
       </footer>
+
+      <CookieBanner />
     </div>
   );
 }
