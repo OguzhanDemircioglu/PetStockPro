@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -31,6 +31,14 @@ export interface NearbyStorefrontMapPoint {
 interface Props {
   storefronts: NearbyStorefrontMapPoint[];
   userLocation?: { lat: number; lng: number } | null;
+  /**
+   * Mobile/desktop'ta navigator.geolocation.watchPosition ile kullanıcının
+   * hareketine göre marker'ı sticky update et. Permission API zaten 'granted'
+   * ise otomatik aktif; 'denied' veya 'prompt' ise yapılmaz (kullanıcı önce
+   * NearbyToggle ile izin vermeli). URL değişmez — sadece harita marker'ı.
+   * Default: true.
+   */
+  enableLiveTracking?: boolean;
 }
 
 // Leaflet default marker icon path bug — webpack/Next.js'te asset path bozulur, manuel set.
@@ -89,7 +97,11 @@ function buildWhatsappLink(phone: string | null, shopName: string): string | nul
   return `https://wa.me/${e164}?text=${msg}`;
 }
 
-export default function NearbyMap({ storefronts, userLocation }: Props) {
+export default function NearbyMap({
+  storefronts,
+  userLocation,
+  enableLiveTracking = true,
+}: Props) {
   const validPoints = useMemo(
     () =>
       storefronts.filter(
@@ -98,6 +110,63 @@ export default function NearbyMap({ storefronts, userLocation }: Props) {
       ),
     [storefronts],
   );
+
+  // Canlı konum takibi: initial prop'tan başla, watchPosition ile güncelle.
+  const [liveLocation, setLiveLocation] = useState<{ lat: number; lng: number } | null>(
+    userLocation ?? null,
+  );
+
+  useEffect(() => {
+    if (!enableLiveTracking) return;
+    if (typeof navigator === 'undefined') return;
+    if (!('geolocation' in navigator)) return;
+
+    let watchId: number | null = null;
+    let cancelled = false;
+
+    const startWatch = () => {
+      if (cancelled) return;
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          setLiveLocation({
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+          });
+        },
+        () => {
+          // Hata sessizce yutulur — kullanıcı NearbyToggle'da görüyor zaten
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 },
+      );
+    };
+
+    const perms = (navigator as Navigator).permissions;
+    if (perms && typeof perms.query === 'function') {
+      perms
+        .query({ name: 'geolocation' as PermissionName })
+        .then((res) => {
+          if (res.state === 'granted') startWatch();
+          // 'prompt' veya 'denied' → watch başlatma; kullanıcı önce NearbyToggle'a tıklamalı
+        })
+        .catch(() => {
+          // Permissions API yok → watch başlatma (eski browser fallback)
+        });
+    }
+
+    return () => {
+      cancelled = true;
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+    };
+  }, [enableLiveTracking]);
+
+  // Prop user location değişirse (URL'den lat/lng push edilince) liveLocation reset
+  useEffect(() => {
+    if (userLocation) {
+      setLiveLocation(userLocation);
+    }
+  }, [userLocation?.lat, userLocation?.lng]);
+
+  const effectiveUserLocation = liveLocation ?? userLocation ?? null;
 
   if (validPoints.length === 0) {
     return (
@@ -135,10 +204,18 @@ export default function NearbyMap({ storefronts, userLocation }: Props) {
           maxZoom={19}
         />
 
-        {userLocation && (
-          <Marker position={[userLocation.lat, userLocation.lng]} icon={USER_ICON}>
+        {effectiveUserLocation && (
+          <Marker
+            position={[effectiveUserLocation.lat, effectiveUserLocation.lng]}
+            icon={USER_ICON}
+          >
             <Popup>
               <strong>Senin konumun</strong>
+              {enableLiveTracking && liveLocation && (
+                <div style={{ fontSize: 11, marginTop: 4, color: '#666' }}>
+                  🛰 Canlı takip aktif
+                </div>
+              )}
             </Popup>
           </Marker>
         )}
@@ -209,7 +286,7 @@ export default function NearbyMap({ storefronts, userLocation }: Props) {
           );
         })}
 
-        <FitBoundsToMarkers points={validPoints} userLocation={userLocation} />
+        <FitBoundsToMarkers points={validPoints} userLocation={effectiveUserLocation} />
       </MapContainer>
     </div>
   );
