@@ -6,9 +6,11 @@ import { brands, categories } from '@/db/schema';
 import { getProductDetail } from '@/lib/catalog/products';
 import { listVariants, listBranchOptions } from '@/lib/catalog/variants';
 import { validateForStorefront } from '@/lib/catalog/storefront';
+import { listProductImages } from '@/lib/catalog/product-images';
 import { EditForm } from './form';
 import { VariantsSection } from './variants-section';
 import { StorefrontSection } from './storefront-section';
+import { ImagesSection } from './images-section';
 
 export default async function EditProductPage({
   params,
@@ -26,7 +28,7 @@ export default async function EditProductPage({
     notFound();
   }
 
-  const [categoryList, brandList, variants, branchOptions, validation] =
+  const [categoryList, brandList, variants, branchOptions, validation, images] =
     await Promise.all([
       db
         .select({ id: categories.id, name: categories.name, emoji: categories.emoji })
@@ -40,10 +42,11 @@ export default async function EditProductPage({
         .orderBy(brands.name),
       listVariants(session.user.companyId, id, db),
       listBranchOptions(session.user.companyId, db),
-      // NOT: requireImage false — Sprint 3.3 image upload aktif olunca true yapılır
+      // Sprint 3.3 aktif — requireImage=true ile vitrin'e açmak için en az 1 görsel zorunlu
       validateForStorefront(session.user.companyId, id, db, {
-        requireImage: false,
+        requireImage: true,
       }),
+      listProductImages(session.user.companyId, id, db),
     ]);
 
   return (
@@ -70,6 +73,8 @@ export default async function EditProductPage({
         publishedAt={product.vitrinPublishedAt}
         unpublishedReason={product.vitrinAutoUnpublishedReason}
       />
+
+      <ImagesSection productId={product.id} images={images} />
 
       <VariantsSection
         productId={product.id}
