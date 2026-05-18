@@ -49,12 +49,35 @@ const PET_SHOP_ICON = L.divIcon({
   iconAnchor: [14, 14],
 });
 
-const USER_ICON = L.divIcon({
-  className: 'pp-user-marker',
-  html: '<div style="background:#22c55e;border:2px solid #fff;border-radius:50%;width:24px;height:24px;display:grid;place-items:center;color:#fff;font-weight:700;box-shadow:0 4px 10px rgba(0,0,0,.25);font-family:sans-serif;font-size:14px;">📍</div>',
-  iconSize: [24, 24],
-  iconAnchor: [12, 12],
-});
+/**
+ * User marker — heading verilirse 36x36 (pusula okuyla), yoksa 24x24 (sade 📍).
+ * Heading 0-360° (kuzeyden saat yönünde derece). CSS rotate'i de aynı semantikte.
+ */
+function buildUserIcon(heading: number | null): L.DivIcon {
+  if (heading == null || !Number.isFinite(heading)) {
+    return L.divIcon({
+      className: 'pp-user-marker',
+      html: '<div style="background:#22c55e;border:2px solid #fff;border-radius:50%;width:24px;height:24px;display:grid;place-items:center;color:#fff;font-weight:700;box-shadow:0 4px 10px rgba(0,0,0,.25);font-family:sans-serif;font-size:14px;">📍</div>',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
+    });
+  }
+  // Heading varsa: yeşil daire + dönen ok (Apple Maps benzeri)
+  const html = `
+    <div style="position:relative;width:36px;height:36px;">
+      <div style="position:absolute;inset:6px;background:#22c55e;border:2px solid #fff;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700;box-shadow:0 4px 10px rgba(0,0,0,.25);font-family:sans-serif;">📍</div>
+      <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36" style="position:absolute;inset:0;transform:rotate(${heading}deg);transform-origin:center;pointer-events:none;">
+        <path d="M18 1.5 L21.5 8 L18 6.2 L14.5 8 Z" fill="#22c55e" stroke="#fff" stroke-width="1.2" stroke-linejoin="round" />
+      </svg>
+    </div>
+  `;
+  return L.divIcon({
+    className: 'pp-user-marker',
+    html,
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
+  });
+}
 
 function FitBoundsToMarkers({
   points,
@@ -116,6 +139,9 @@ export default function NearbyMap({
     userLocation ?? null,
   );
 
+  // Compass heading (deviceorientation): 0-360° kuzeyden saat yönü
+  const [heading, setHeading] = useState<number | null>(null);
+
   useEffect(() => {
     if (!enableLiveTracking) return;
     if (typeof navigator === 'undefined') return;
@@ -166,7 +192,42 @@ export default function NearbyMap({
     }
   }, [userLocation?.lat, userLocation?.lng]);
 
+  // DeviceOrientation — mobile'da pusulayı dinle (kuzey 0°)
+  useEffect(() => {
+    if (!enableLiveTracking) return;
+    if (typeof window === 'undefined') return;
+
+    let throttleTimer: number | null = null;
+    const handleOrientation = (event: DeviceOrientationEvent) => {
+      // iOS Safari: webkitCompassHeading (0=kuzey, saat yönü)
+      // Standart: alpha (z-axis 0-360, 0 = device "Y axis" north — saatin tersine);
+      // alpha'yı kuzey-saat yönü pusulaya çevir: 360 - alpha
+      const iosHeading = (event as DeviceOrientationEvent & { webkitCompassHeading?: number })
+        .webkitCompassHeading;
+      let h: number | null = null;
+      if (typeof iosHeading === 'number' && Number.isFinite(iosHeading)) {
+        h = iosHeading;
+      } else if (typeof event.alpha === 'number' && Number.isFinite(event.alpha)) {
+        h = (360 - event.alpha) % 360;
+      }
+      if (h == null) return;
+      // 100ms throttle — divIcon her render'da Marker re-mount ediyor
+      if (throttleTimer != null) return;
+      throttleTimer = window.setTimeout(() => {
+        throttleTimer = null;
+      }, 100);
+      setHeading(h);
+    };
+
+    window.addEventListener('deviceorientation', handleOrientation, true);
+    return () => {
+      window.removeEventListener('deviceorientation', handleOrientation, true);
+      if (throttleTimer != null) window.clearTimeout(throttleTimer);
+    };
+  }, [enableLiveTracking]);
+
   const effectiveUserLocation = liveLocation ?? userLocation ?? null;
+  const userIcon = useMemo(() => buildUserIcon(heading), [heading]);
 
   if (validPoints.length === 0) {
     return (
@@ -207,13 +268,18 @@ export default function NearbyMap({
         {effectiveUserLocation && (
           <Marker
             position={[effectiveUserLocation.lat, effectiveUserLocation.lng]}
-            icon={USER_ICON}
+            icon={userIcon}
           >
             <Popup>
               <strong>Senin konumun</strong>
               {enableLiveTracking && liveLocation && (
                 <div style={{ fontSize: 11, marginTop: 4, color: '#666' }}>
                   🛰 Canlı takip aktif
+                </div>
+              )}
+              {heading != null && (
+                <div style={{ fontSize: 11, marginTop: 4, color: '#666' }}>
+                  🧭 Bakış yönü: {Math.round(heading)}°
                 </div>
               )}
             </Popup>
