@@ -22,7 +22,7 @@ const FAKE_PNG = Buffer.from(
 
 // Mock Supabase admin client
 const mockStorage = {
-  uploadCalls: [] as Array<{ path: string; contentType: string }>,
+  uploadCalls: [] as Array<{ path: string; contentType: string; cacheControl?: string }>,
   removeCalls: [] as string[][],
   shouldFailUpload: false,
   uploadErrorMessage: 'storage write denied',
@@ -32,8 +32,17 @@ vi.mock('@/lib/supabase/admin', () => ({
   getSupabaseAdminClient: () => ({
     storage: {
       from: (bucket: string) => ({
-        upload: vi.fn().mockImplementation(async (path: string, _data, opts: { contentType: string }) => {
-          mockStorage.uploadCalls.push({ path, contentType: opts.contentType });
+        upload: vi.fn().mockImplementation(
+          async (
+            path: string,
+            _data,
+            opts: { contentType: string; cacheControl?: string },
+          ) => {
+            mockStorage.uploadCalls.push({
+              path,
+              contentType: opts.contentType,
+              cacheControl: opts.cacheControl,
+            });
           if (mockStorage.shouldFailUpload) {
             return { data: null, error: { message: mockStorage.uploadErrorMessage } };
           }
@@ -306,6 +315,8 @@ describe('uploadProductImage', () => {
     }
     expect(mockStorage.uploadCalls).toHaveLength(1);
     expect(mockStorage.uploadCalls[0].contentType).toBe('image/png');
+    // CDN cache-control: 1 yıl (UUID path immutable)
+    expect(mockStorage.uploadCalls[0].cacheControl).toBe('31536000');
   });
 
   it('ikinci+ görsel — displayOrder existing+1, isPrimary=false', async () => {

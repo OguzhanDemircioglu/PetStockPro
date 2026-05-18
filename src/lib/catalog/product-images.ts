@@ -157,11 +157,17 @@ export async function uploadProductImage(
   const storagePath = `${data.companyId}/${data.productId}/${uuid}.${ext}`;
 
   // 5. Storage upload
+  //
+  // cacheControl: 1 yıl (31536000 sn). Path UUID-based + immutable — aynı URL'den
+  // hiç farklı bytes gelmez (silinince DB satırı da silinir, kullanılmayan
+  // URL kalmaz). Bu sayede CDN (Supabase Storage CDN + Cloudflare cache)
+  // public-immutable cache, hot path'te tek byte servisten DB'ye gitmez.
   const supabase = getSupabaseAdminClient();
   const { error: uploadError } = await supabase.storage
     .from(BUCKET_NAME)
     .upload(storagePath, fileBuffer, {
       contentType: data.contentType,
+      cacheControl: '31536000',
       upsert: false,
     });
   if (uploadError) {
