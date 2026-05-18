@@ -34,16 +34,22 @@ describe('buildVitrinPageMetadata', () => {
     });
   });
 
-  it('default OG image — /logo.webp absolute URL', () => {
+  it('default OG image — /og-image.png absolute URL (1200×630)', () => {
     const m = buildVitrinPageMetadata({
       title: 'X',
       description: 'Y',
       path: '/vitrin/x',
     });
-    const ogImages = m.openGraph?.images as Array<{ url: string }>;
-    expect(ogImages?.[0]?.url).toBe('https://petstockpro.com/logo.webp');
+    const ogImages = m.openGraph?.images as Array<{
+      url: string;
+      width: number;
+      height: number;
+    }>;
+    expect(ogImages?.[0]?.url).toBe('https://petstockpro.com/og-image.png');
+    expect(ogImages?.[0]?.width).toBe(1200);
+    expect(ogImages?.[0]?.height).toBe(630);
     const twImages = m.twitter?.images as string[];
-    expect(twImages?.[0]).toBe('https://petstockpro.com/logo.webp');
+    expect(twImages?.[0]).toBe('https://petstockpro.com/og-image.png');
   });
 
   it('custom imageUrl — OG + Twitter\'a aynısı set edilir', () => {

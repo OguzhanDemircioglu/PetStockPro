@@ -43,7 +43,14 @@ export interface VitrinPageMetadataInput {
   index?: boolean;
 }
 
-const DEFAULT_OG_IMAGE_PATH = '/logo.webp';
+/**
+ * Sosyal paylaşım için optimize edilmiş 1200×630 PNG (PetStockPro brand
+ * mark, cream arka plan). `next/og-image-generator` ile manuel üretildi.
+ * Logo.webp 256×258 sosyal preview için küçük — OG image standartı 1.91:1.
+ */
+const DEFAULT_OG_IMAGE_PATH = '/og-image.png';
+const DEFAULT_OG_IMAGE_WIDTH = 1200;
+const DEFAULT_OG_IMAGE_HEIGHT = 630;
 
 /**
  * Vitrin sayfaları için Metadata objesi üretir.
@@ -84,8 +91,8 @@ export function buildVitrinPageMetadata(
       images: [
         {
           url: imageUrl,
-          width: 256,
-          height: 258,
+          width: DEFAULT_OG_IMAGE_WIDTH,
+          height: DEFAULT_OG_IMAGE_HEIGHT,
           alt: 'PetStockPro',
         },
       ],
