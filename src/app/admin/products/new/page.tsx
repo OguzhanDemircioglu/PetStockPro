@@ -23,7 +23,12 @@ export default async function NewProductPage() {
 
   const [categoryList, brandList] = await Promise.all([
     db
-      .select({ id: categories.id, name: categories.name, emoji: categories.emoji })
+      .select({
+        id: categories.id,
+        name: categories.name,
+        emoji: categories.emoji,
+        slug: categories.slug,
+      })
       .from(categories)
       .where(eq(categories.companyId, session.user.companyId))
       .orderBy(categories.displayOrder),

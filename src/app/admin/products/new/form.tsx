@@ -1,13 +1,16 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { SeedCatalogAutocomplete } from '@/components/products/seed-catalog-autocomplete';
+import type { SearchResult } from '@/lib/catalog/seed-catalog';
 import { createProductAction, type CreateProductState } from './actions';
 
 interface CategoryOption {
   id: string;
   name: string;
   emoji: string | null;
+  slug: string;
 }
 
 interface BrandOption {
@@ -21,15 +24,90 @@ interface ProductFormProps {
 }
 
 /**
- * Yeni Ürün Form — Sprint 3.0 minimal
- *
- * 8-bölüm full form Sprint 3.1+. Şu an: temel + variant + opsiyonel.
+ * SKU önerisi üret — `<BRAND>-<NAME>-<WEIGHT>` format'ında, max 24 char.
+ * Marka 1-4 harfli kısaltma (kelime başlarından), name ilk anlamlı kelime (3-4 harf),
+ * weight cleanup (boşluksuz, büyük harf).
+ */
+function suggestSku(brand: string, name: string, weight: string): string {
+  const brandAbbr =
+    brand
+      .split(/\s+/)
+      .map((w) => w[0])
+      .filter((c) => /[a-zA-Z]/.test(c ?? ''))
+      .join('')
+      .toUpperCase()
+      .slice(0, 4) || 'GEN';
+
+  const brandLower = brand.toLowerCase();
+  const nameTokens = name
+    .split(/\s+/)
+    .map((w) => w.replace(/[^a-zA-Z0-9çğıöşüÇĞİÖŞÜ]/g, ''))
+    .filter((w) => w.length >= 3 && !brandLower.split(/\s+/).includes(w.toLowerCase()));
+  const namePart = (nameTokens[0] ?? 'STD').toUpperCase().slice(0, 4);
+
+  const weightAbbr = weight.replace(/\s+/g, '').toUpperCase().slice(0, 4) || 'STD';
+
+  return `${brandAbbr}-${namePart}-${weightAbbr}`;
+}
+
+/**
+ * Yeni Ürün Form — Sprint 3.0 minimal + Sprint E seed katalog autocomplete.
  */
 export function ProductForm({ categories, brands }: ProductFormProps) {
   const [state, formAction, pending] = useActionState<CreateProductState | null, FormData>(
     createProductAction,
     null,
   );
+
+  // Controlled state — autocomplete prefill için
+  const [name, setName] = useState(state?.formValues.name ?? '');
+  const [description, setDescription] = useState('');
+  const [categoryId, setCategoryId] = useState<string>(state?.formValues.categoryId ?? '');
+  const [brandId, setBrandId] = useState<string>('');
+  const [valueLabel, setValueLabel] = useState('Standart');
+  const [sku, setSku] = useState<string>(state?.formValues.sku ?? '');
+  const [barcode, setBarcode] = useState('');
+  const [salePrice, setSalePrice] = useState(state?.formValues.salePrice ?? '');
+  const [missingBrandHint, setMissingBrandHint] = useState<string | null>(null);
+
+  // Marka / kategori case-insensitive eşleşmesi için preset
+  const brandByName = useMemo(() => {
+    const m = new Map<string, BrandOption>();
+    for (const b of brands) m.set(b.name.toLowerCase(), b);
+    return m;
+  }, [brands]);
+
+  const categoryBySlug = useMemo(() => {
+    const m = new Map<string, CategoryOption>();
+    for (const c of categories) m.set(c.slug, c);
+    return m;
+  }, [categories]);
+
+  const handleSelectSeedProduct = (product: SearchResult) => {
+    setName(product.name);
+    setValueLabel(product.weight || 'Standart');
+    if (product.barcode) setBarcode(product.barcode);
+    if (product.description) setDescription(product.description);
+
+    // Marka match
+    const brandMatch = brandByName.get(product.brand.toLowerCase());
+    if (brandMatch) {
+      setBrandId(brandMatch.id);
+      setMissingBrandHint(null);
+    } else {
+      setBrandId('');
+      setMissingBrandHint(product.brand);
+    }
+
+    // Kategori match
+    const catMatch = categoryBySlug.get(product.categorySlug);
+    if (catMatch) setCategoryId(catMatch.id);
+
+    // SKU önerisi (kullanıcı boşsa override etme)
+    if (!sku.trim()) {
+      setSku(suggestSku(product.brand, product.name, product.weight));
+    }
+  };
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-12">
@@ -61,6 +139,32 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
         </div>
       )}
 
+      {/* Seed catalog autocomplete (form üstünde, opsiyonel) */}
+      <section className="rounded-2xl border border-cat/30 bg-cat-soft/30 p-5">
+        <SeedCatalogAutocomplete onSelect={handleSelectSeedProduct} disabled={pending} />
+        <p className="mt-2 text-[11.5px] leading-relaxed text-ink-3">
+          Seçtiğin ürünün adı, ağırlığı, barkodu, açıklaması ve SKU önerisi forma
+          dolar. Marka tenant&apos;ında varsa otomatik seçilir; yoksa önce marka
+          olarak eklemen önerilir.
+        </p>
+        {missingBrandHint && (
+          <div
+            role="alert"
+            data-testid="missing-brand-hint"
+            className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-bars/30 bg-bars-soft px-3 py-2 text-[12.5px] font-bold text-bars-7"
+          >
+            <span>⚠ &quot;{missingBrandHint}&quot; markası tenant&apos;ında yok.</span>
+            <Link
+              href={'/admin/brands/new' as never}
+              target="_blank"
+              className="rounded-lg border border-bars/40 bg-paper px-2 py-1 text-[11px] hover:bg-bars hover:text-white"
+            >
+              + Marka ekle
+            </Link>
+          </div>
+        )}
+      </section>
+
       <form action={formAction} className="flex flex-col gap-6">
         {/* TEMEL BİLGİLER */}
         <section className="rounded-2xl border border-line bg-paper p-6">
@@ -81,7 +185,8 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
                 placeholder="Royal Canin Adult Kedi Maması"
                 required
                 disabled={pending}
-                defaultValue={state?.formValues.name ?? ''}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
               />
             </div>
@@ -99,6 +204,8 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
                 rows={3}
                 placeholder="Ürün hakkında kısa bilgi (vitrin'de gösterilir, opsiyonel)"
                 disabled={pending}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
                 className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
               />
             </div>
@@ -115,7 +222,8 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
                   id="categoryId"
                   name="categoryId"
                   disabled={pending}
-                  defaultValue={state?.formValues.categoryId ?? ''}
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
                   className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 >
                   <option value="">— Seç (opsiyonel) —</option>
@@ -139,6 +247,8 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
                   id="brandId"
                   name="brandId"
                   disabled={pending || brands.length === 0}
+                  value={brandId}
+                  onChange={(e) => setBrandId(e.target.value)}
                   className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 >
                   <option value="">
@@ -178,7 +288,8 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
                   type="text"
                   placeholder="2kg / Standart / Büyük boy"
                   disabled={pending}
-                  defaultValue="Standart"
+                  value={valueLabel}
+                  onChange={(e) => setValueLabel(e.target.value)}
                   className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
               </div>
@@ -197,7 +308,8 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
                   placeholder="RC-AD-KEDI-2KG"
                   required
                   disabled={pending}
-                  defaultValue={state?.formValues.sku ?? ''}
+                  value={sku}
+                  onChange={(e) => setSku(e.target.value)}
                   className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
               </div>
@@ -217,6 +329,8 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
                 placeholder="3033xxxxxxxxx (EAN-13)"
                 disabled={pending}
                 maxLength={13}
+                value={barcode}
+                onChange={(e) => setBarcode(e.target.value)}
                 className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
               />
             </div>
@@ -255,7 +369,8 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
                   placeholder="180"
                   required
                   disabled={pending}
-                  defaultValue={state?.formValues.salePrice ?? ''}
+                  value={salePrice}
+                  onChange={(e) => setSalePrice(e.target.value)}
                   className="w-full rounded-xl border-[1.5px] border-cat bg-paper px-4 py-3 font-mono text-sm font-bold text-cart focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
               </div>
