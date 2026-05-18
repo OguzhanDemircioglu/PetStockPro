@@ -217,6 +217,22 @@ export async function collectSitemapEntries(
     });
   }
 
+  // Cross-tenant marka aggregate sayfaları — `/vitrin/marka/[brand]`. Tek query
+  // ile brand isimlerini al, makeBrandSlug ile slug üret. brand isimleri small
+  // set (~60-100), DB-side slug regenerate yerine JS-side mapping yeterli.
+  const { brands } = await import('@/db/schema');
+  const { listBrandsWithStorefrontProducts, makeBrandSlug } = await import('./brand-listings');
+  // listBrandsWithStorefrontProducts zaten visibility filter'lı; ekstra query yok.
+  void brands; // sadece type ensure (lint clean)
+  const brandRows = await listBrandsWithStorefrontProducts(db);
+  for (const b of brandRows) {
+    entries.push({
+      loc: `${baseUrl}/vitrin/marka/${makeBrandSlug(b.name)}`,
+      changeFrequency: 'weekly',
+      priority: 0.7,
+    });
+  }
+
   // Cross-tenant ürün aggregate sayfaları — `/vitrin/urun/[slug]` fiyat
   // kıyaslama. Sadece 2+ tenant'ta aynı slug'la satılan ürünler (tek
   // tenant'ta ise `/vitrin/magaza/[slug]/urun/[productSlug]` zaten

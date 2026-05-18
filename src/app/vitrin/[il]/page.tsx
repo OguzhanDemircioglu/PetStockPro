@@ -19,7 +19,7 @@ import { buildVitrinPageMetadata } from '@/lib/vitrin/page-metadata';
 import { buildBreadcrumbLd } from '@/lib/vitrin/schema-org';
 import { getPublicBaseUrl } from '@/lib/vitrin/sitemap-data';
 import { listCategoriesInCity } from '@/lib/vitrin/category-listings';
-import { listBrandsInCity } from '@/lib/vitrin/brand-listings';
+import { listBrandsInCity, makeBrandSlug } from '@/lib/vitrin/brand-listings';
 
 export const dynamic = 'force-dynamic';
 
@@ -278,7 +278,7 @@ export default async function VitrinCityPage({
             {activeBrands.slice(0, 24).map((brand) => (
               <li key={brand.name}>
                 <Link
-                  href={`/vitrin/ara?q=${encodeURIComponent(brand.name)}` as never}
+                  href={`/vitrin/marka/${makeBrandSlug(brand.name)}?il=${city!.slug}` as never}
                   data-brand-name={brand.name}
                   className="inline-flex items-center gap-1.5 rounded-full border border-bars/30 bg-bars-soft/40 px-3 py-1.5 text-[13px] font-bold text-bars-7 hover:border-bars hover:bg-bars-soft transition-colors"
                 >
