@@ -65,16 +65,31 @@ function makeMockDb(opts: MockOptions): DbClient {
     }),
   }));
 
-  // Transaction insert mock
+  // Transaction insert mock — sıra: 1. companies.returning, 2. users.returning,
+  // 3. categories ROOT.returning (slug+id map için, seed 2-fazlı), 4. categories
+  // CHILD insert.values (returning yok, awaitable Promise gibi davranmalı).
   const txReturning = vi.fn()
     .mockResolvedValueOnce([{ id: opts.insertCompanyId ?? 'comp_1' }])
-    .mockResolvedValueOnce([{ id: opts.insertUserId ?? 'user_1' }]);
+    .mockResolvedValueOnce([{ id: opts.insertUserId ?? 'user_1' }])
+    .mockResolvedValueOnce([
+      { id: 'root-kedi', slug: 'kedi' },
+      { id: 'root-kopek', slug: 'kopek' },
+      { id: 'root-kus', slug: 'kus' },
+      { id: 'root-akvaryum', slug: 'akvaryum' },
+      { id: 'root-kemirgen', slug: 'kemirgen' },
+      { id: 'root-surungenler', slug: 'surungenler' },
+    ]);
 
-  const txInsertChain = {
-    insert: vi.fn().mockReturnThis(),
-    values: vi.fn().mockReturnThis(),
+  // values() awaitable PromiseLike — children insert returning'siz await ediliyor.
+  // returning() de aynı obje üzerinde mevcut → root insert chain'i `.returning`
+  // çağırınca devam eder, child insert chain'i `await db.insert().values()` ile
+  // resolved Promise gibi davranır.
+  const txInsertChain: Record<string, unknown> = {};
+  txInsertChain.insert = vi.fn().mockReturnValue(txInsertChain);
+  txInsertChain.values = vi.fn().mockImplementation(() => ({
     returning: txReturning,
-  };
+    then: (resolve: (v: unknown) => unknown) => Promise.resolve(undefined).then(resolve),
+  }));
 
   const transaction = vi.fn().mockImplementation(async (cb: (tx: unknown) => Promise<unknown>) => {
     if (opts.transactionThrows) {

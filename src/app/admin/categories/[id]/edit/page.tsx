@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { getCategoryDetail, listCategories } from '@/lib/categories/manage';
+import { isSuperadmin } from '@/lib/superadmin/access';
 import { CategoryForm, type ParentOption } from '../../category-form';
 import { updateCategoryAction } from '../../actions';
 
@@ -14,6 +15,7 @@ export default async function EditCategoryPage({
   const { id } = await params;
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
+  if (!isSuperadmin(session)) redirect('/admin/categories' as never);
 
   const [cat, allCategories] = await Promise.all([
     getCategoryDetail(session.user.companyId, id, db),

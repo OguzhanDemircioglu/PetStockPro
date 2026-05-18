@@ -9,18 +9,15 @@
  *   - Üst kategoriler (6 root): Kedi, Köpek, Kuş, Akvaryum, Kemirgen, Sürüngen.
  *   - Alt kategoriler (43): her üst kategoriye bağlı, `parentSlug` ile referans.
  *
- * KDV oranları (TR 2024 sonrası — `lib/constants/vat-rates.ts` ile uyum):
- *   - Pet mama / gıda: %10 (TR Maliye Bakanlığı tebliği)
- *   - Aksesuar / oyuncak / kafes / vitamin: %20 (genel oran)
- *
  * SKT (son kullanma tarihi) zorunlu: mama + yem + vitamin + ilaç.
+ * KDV oranı kategori şemasından kaldırıldı (2026-05-18) — ürün-bazlı ya da
+ * sistem-geneli hesaplama yapılır.
  */
 
 export interface DefaultCategorySeed {
   name: string;
   slug: string;
   emoji: string;
-  vatRate: string; // decimal string ("10.00" / "20.00")
   sktRequired: boolean;
   displayOrder: number;
   /** undefined → root kategori. Var ise: parent kategorinin slug'ı. */
@@ -29,67 +26,67 @@ export interface DefaultCategorySeed {
 
 export const DEFAULT_CATEGORIES: DefaultCategorySeed[] = [
   // ====== Üst kategoriler (root) ======
-  { name: 'Kedi',     slug: 'kedi',         emoji: '🐱', vatRate: '20.00', sktRequired: false, displayOrder: 1 },
-  { name: 'Köpek',    slug: 'kopek',        emoji: '🐶', vatRate: '20.00', sktRequired: false, displayOrder: 2 },
-  { name: 'Kuş',      slug: 'kus',          emoji: '🐦', vatRate: '20.00', sktRequired: false, displayOrder: 3 },
-  { name: 'Akvaryum', slug: 'akvaryum',     emoji: '🐟', vatRate: '20.00', sktRequired: false, displayOrder: 4 },
-  { name: 'Kemirgen', slug: 'kemirgen',     emoji: '🐹', vatRate: '20.00', sktRequired: false, displayOrder: 5 },
-  { name: 'Sürüngen', slug: 'surungenler',  emoji: '🦎', vatRate: '20.00', sktRequired: false, displayOrder: 6 },
+  { name: 'Kedi',     slug: 'kedi',         emoji: '🐱', sktRequired: false, displayOrder: 1 },
+  { name: 'Köpek',    slug: 'kopek',        emoji: '🐶', sktRequired: false, displayOrder: 2 },
+  { name: 'Kuş',      slug: 'kus',          emoji: '🐦', sktRequired: false, displayOrder: 3 },
+  { name: 'Akvaryum', slug: 'akvaryum',     emoji: '🐟', sktRequired: false, displayOrder: 4 },
+  { name: 'Kemirgen', slug: 'kemirgen',     emoji: '🐹', sktRequired: false, displayOrder: 5 },
+  { name: 'Sürüngen', slug: 'surungenler',  emoji: '🦎', sktRequired: false, displayOrder: 6 },
 
   // ====== Kedi alt kategorileri ======
-  { name: 'Kuru Mamalar',         slug: 'kedi-kuru-mamalar',         emoji: '🥩', vatRate: '10.00', sktRequired: true,  displayOrder: 1,  parentSlug: 'kedi' },
-  { name: 'Yaş Mamalar',          slug: 'kedi-yas-mamalar',          emoji: '🥫', vatRate: '10.00', sktRequired: true,  displayOrder: 2,  parentSlug: 'kedi' },
-  { name: 'Ödüller',              slug: 'kedi-oduller',              emoji: '🍬', vatRate: '10.00', sktRequired: true,  displayOrder: 3,  parentSlug: 'kedi' },
-  { name: 'Mama ve Su Kapları',   slug: 'kedi-mama-ve-su-kaplari',   emoji: '🍽️', vatRate: '20.00', sktRequired: false, displayOrder: 4,  parentSlug: 'kedi' },
-  { name: 'Kumlar',               slug: 'kedi-kumlar',               emoji: '🪣', vatRate: '20.00', sktRequired: false, displayOrder: 5,  parentSlug: 'kedi' },
-  { name: 'Oyuncaklar',           slug: 'kedi-oyuncaklar',           emoji: '🎾', vatRate: '20.00', sktRequired: false, displayOrder: 6,  parentSlug: 'kedi' },
-  { name: 'Tasmalar',             slug: 'kedi-tasmalar',             emoji: '📿', vatRate: '20.00', sktRequired: false, displayOrder: 7,  parentSlug: 'kedi' },
-  { name: 'Yatak ve Yuvalar',     slug: 'kedi-yatak-ve-yuvalar',     emoji: '🛏️', vatRate: '20.00', sktRequired: false, displayOrder: 8,  parentSlug: 'kedi' },
-  { name: 'Bakım Ürünleri',       slug: 'kedi-bakim-urunleri',       emoji: '🚿', vatRate: '20.00', sktRequired: false, displayOrder: 9,  parentSlug: 'kedi' },
-  { name: 'Vitamin ve Katkıları', slug: 'kedi-vitamin-ve-katkilari', emoji: '💊', vatRate: '20.00', sktRequired: true,  displayOrder: 10, parentSlug: 'kedi' },
+  { name: 'Kuru Mamalar',         slug: 'kedi-kuru-mamalar',         emoji: '🥩', sktRequired: true,  displayOrder: 1,  parentSlug: 'kedi' },
+  { name: 'Yaş Mamalar',          slug: 'kedi-yas-mamalar',          emoji: '🥫', sktRequired: true,  displayOrder: 2,  parentSlug: 'kedi' },
+  { name: 'Ödüller',              slug: 'kedi-oduller',              emoji: '🍬', sktRequired: true,  displayOrder: 3,  parentSlug: 'kedi' },
+  { name: 'Mama ve Su Kapları',   slug: 'kedi-mama-ve-su-kaplari',   emoji: '🍽️', sktRequired: false, displayOrder: 4,  parentSlug: 'kedi' },
+  { name: 'Kumlar',               slug: 'kedi-kumlar',               emoji: '🪣', sktRequired: false, displayOrder: 5,  parentSlug: 'kedi' },
+  { name: 'Oyuncaklar',           slug: 'kedi-oyuncaklar',           emoji: '🎾', sktRequired: false, displayOrder: 6,  parentSlug: 'kedi' },
+  { name: 'Tasmalar',             slug: 'kedi-tasmalar',             emoji: '📿', sktRequired: false, displayOrder: 7,  parentSlug: 'kedi' },
+  { name: 'Yatak ve Yuvalar',     slug: 'kedi-yatak-ve-yuvalar',     emoji: '🛏️', sktRequired: false, displayOrder: 8,  parentSlug: 'kedi' },
+  { name: 'Bakım Ürünleri',       slug: 'kedi-bakim-urunleri',       emoji: '🚿', sktRequired: false, displayOrder: 9,  parentSlug: 'kedi' },
+  { name: 'Vitamin ve Katkıları', slug: 'kedi-vitamin-ve-katkilari', emoji: '💊', sktRequired: true,  displayOrder: 10, parentSlug: 'kedi' },
 
   // ====== Köpek alt kategorileri ======
-  { name: 'Kuru Mamalar',       slug: 'kopek-kuru-mamalar',       emoji: '🥓', vatRate: '10.00', sktRequired: true,  displayOrder: 1,  parentSlug: 'kopek' },
-  { name: 'Yaş Mamalar',        slug: 'kopek-yas-mamalar',        emoji: '🍖', vatRate: '10.00', sktRequired: true,  displayOrder: 2,  parentSlug: 'kopek' },
-  { name: 'Ödüller',            slug: 'kopek-oduller',            emoji: '🍪', vatRate: '10.00', sktRequired: true,  displayOrder: 3,  parentSlug: 'kopek' },
-  { name: 'Mama ve Su Kapları', slug: 'kopek-mama-ve-su-kaplari', emoji: '🥣', vatRate: '20.00', sktRequired: false, displayOrder: 4,  parentSlug: 'kopek' },
-  { name: 'Oyuncaklar',         slug: 'kopek-oyuncaklar',         emoji: '🦴', vatRate: '20.00', sktRequired: false, displayOrder: 5,  parentSlug: 'kopek' },
-  { name: 'Tasmalar',           slug: 'kopek-tasmalar',           emoji: '🦮', vatRate: '20.00', sktRequired: false, displayOrder: 6,  parentSlug: 'kopek' },
-  { name: 'Gezdirme Ürünleri',  slug: 'kopek-gezdirme-urunleri',  emoji: '🚶', vatRate: '20.00', sktRequired: false, displayOrder: 7,  parentSlug: 'kopek' },
-  { name: 'Yataklar',           slug: 'kopek-yataklar',           emoji: '🛌', vatRate: '20.00', sktRequired: false, displayOrder: 8,  parentSlug: 'kopek' },
-  { name: 'Aksesuarlar',        slug: 'kopek-aksesuarlar',        emoji: '🎒', vatRate: '20.00', sktRequired: false, displayOrder: 9,  parentSlug: 'kopek' },
-  { name: 'Vitaminler',         slug: 'kopek-vitaminler',         emoji: '💉', vatRate: '20.00', sktRequired: true,  displayOrder: 10, parentSlug: 'kopek' },
-  { name: 'Bakım Ürünleri',     slug: 'kopek-bakim-urunleri',     emoji: '🧼', vatRate: '20.00', sktRequired: false, displayOrder: 11, parentSlug: 'kopek' },
+  { name: 'Kuru Mamalar',       slug: 'kopek-kuru-mamalar',       emoji: '🥓', sktRequired: true,  displayOrder: 1,  parentSlug: 'kopek' },
+  { name: 'Yaş Mamalar',        slug: 'kopek-yas-mamalar',        emoji: '🍖', sktRequired: true,  displayOrder: 2,  parentSlug: 'kopek' },
+  { name: 'Ödüller',            slug: 'kopek-oduller',            emoji: '🍪', sktRequired: true,  displayOrder: 3,  parentSlug: 'kopek' },
+  { name: 'Mama ve Su Kapları', slug: 'kopek-mama-ve-su-kaplari', emoji: '🥣', sktRequired: false, displayOrder: 4,  parentSlug: 'kopek' },
+  { name: 'Oyuncaklar',         slug: 'kopek-oyuncaklar',         emoji: '🦴', sktRequired: false, displayOrder: 5,  parentSlug: 'kopek' },
+  { name: 'Tasmalar',           slug: 'kopek-tasmalar',           emoji: '🦮', sktRequired: false, displayOrder: 6,  parentSlug: 'kopek' },
+  { name: 'Gezdirme Ürünleri',  slug: 'kopek-gezdirme-urunleri',  emoji: '🚶', sktRequired: false, displayOrder: 7,  parentSlug: 'kopek' },
+  { name: 'Yataklar',           slug: 'kopek-yataklar',           emoji: '🛌', sktRequired: false, displayOrder: 8,  parentSlug: 'kopek' },
+  { name: 'Aksesuarlar',        slug: 'kopek-aksesuarlar',        emoji: '🎒', sktRequired: false, displayOrder: 9,  parentSlug: 'kopek' },
+  { name: 'Vitaminler',         slug: 'kopek-vitaminler',         emoji: '💉', sktRequired: true,  displayOrder: 10, parentSlug: 'kopek' },
+  { name: 'Bakım Ürünleri',     slug: 'kopek-bakim-urunleri',     emoji: '🧼', sktRequired: false, displayOrder: 11, parentSlug: 'kopek' },
 
   // ====== Kuş alt kategorileri ======
-  { name: 'Yemler',     slug: 'kus-yemler',     emoji: '🌾', vatRate: '10.00', sktRequired: true,  displayOrder: 1, parentSlug: 'kus' },
-  { name: 'Krakerler',  slug: 'kus-krakerler',  emoji: '🍘', vatRate: '10.00', sktRequired: true,  displayOrder: 2, parentSlug: 'kus' },
-  { name: 'Kumlar',     slug: 'kus-kumlar',     emoji: '🏝️', vatRate: '20.00', sktRequired: false, displayOrder: 3, parentSlug: 'kus' },
-  { name: 'Kafesler',   slug: 'kus-kafesler',   emoji: '🏠', vatRate: '20.00', sktRequired: false, displayOrder: 4, parentSlug: 'kus' },
-  { name: 'Oyuncaklar', slug: 'kus-oyuncaklar', emoji: '🪀', vatRate: '20.00', sktRequired: false, displayOrder: 5, parentSlug: 'kus' },
-  { name: 'Aksesuarlar',slug: 'kus-aksesuarlar',emoji: '🪶', vatRate: '20.00', sktRequired: false, displayOrder: 6, parentSlug: 'kus' },
+  { name: 'Yemler',     slug: 'kus-yemler',     emoji: '🌾', sktRequired: true,  displayOrder: 1, parentSlug: 'kus' },
+  { name: 'Krakerler',  slug: 'kus-krakerler',  emoji: '🍘', sktRequired: true,  displayOrder: 2, parentSlug: 'kus' },
+  { name: 'Kumlar',     slug: 'kus-kumlar',     emoji: '🏝️', sktRequired: false, displayOrder: 3, parentSlug: 'kus' },
+  { name: 'Kafesler',   slug: 'kus-kafesler',   emoji: '🏠', sktRequired: false, displayOrder: 4, parentSlug: 'kus' },
+  { name: 'Oyuncaklar', slug: 'kus-oyuncaklar', emoji: '🪀', sktRequired: false, displayOrder: 5, parentSlug: 'kus' },
+  { name: 'Aksesuarlar',slug: 'kus-aksesuarlar',emoji: '🪶', sktRequired: false, displayOrder: 6, parentSlug: 'kus' },
 
   // ====== Akvaryum alt kategorileri ======
-  { name: 'Balık Yemi',              slug: 'akvaryum-balik-yemi',            emoji: '🍱', vatRate: '10.00', sktRequired: true,  displayOrder: 1, parentSlug: 'akvaryum' },
-  { name: 'Balık Vitamin & Mineral', slug: 'akvaryum-balik-vitamin-mineral', emoji: '🧴', vatRate: '20.00', sktRequired: true,  displayOrder: 2, parentSlug: 'akvaryum' },
-  { name: 'Akvaryum ve Fanus',       slug: 'akvaryum-ve-fanus',              emoji: '🏺', vatRate: '20.00', sktRequired: false, displayOrder: 3, parentSlug: 'akvaryum' },
-  { name: 'Su Düzenleyiciler',       slug: 'akvaryum-su-duzenleyiciler',     emoji: '🧪', vatRate: '20.00', sktRequired: false, displayOrder: 4, parentSlug: 'akvaryum' },
-  { name: 'Bakım & Temizlik',        slug: 'akvaryum-bakim-temizlik',        emoji: '🧹', vatRate: '20.00', sktRequired: false, displayOrder: 5, parentSlug: 'akvaryum' },
-  { name: 'Aydınlatma',              slug: 'akvaryum-aydinlatma',            emoji: '💡', vatRate: '20.00', sktRequired: false, displayOrder: 6, parentSlug: 'akvaryum' },
-  { name: 'Ekipman & Aksesuarlar',   slug: 'akvaryum-ekipman-aksesuarlar',   emoji: '⚙️', vatRate: '20.00', sktRequired: false, displayOrder: 7, parentSlug: 'akvaryum' },
-  { name: 'Filtreler',               slug: 'akvaryum-filtreler',             emoji: '🔄', vatRate: '20.00', sktRequired: false, displayOrder: 8, parentSlug: 'akvaryum' },
-  { name: 'Isıtma & Soğutma',        slug: 'akvaryum-isitma-sogutma',        emoji: '🌡️', vatRate: '20.00', sktRequired: false, displayOrder: 9, parentSlug: 'akvaryum' },
+  { name: 'Balık Yemi',              slug: 'akvaryum-balik-yemi',            emoji: '🍱', sktRequired: true,  displayOrder: 1, parentSlug: 'akvaryum' },
+  { name: 'Balık Vitamin & Mineral', slug: 'akvaryum-balik-vitamin-mineral', emoji: '🧴', sktRequired: true,  displayOrder: 2, parentSlug: 'akvaryum' },
+  { name: 'Akvaryum ve Fanus',       slug: 'akvaryum-ve-fanus',              emoji: '🏺', sktRequired: false, displayOrder: 3, parentSlug: 'akvaryum' },
+  { name: 'Su Düzenleyiciler',       slug: 'akvaryum-su-duzenleyiciler',     emoji: '🧪', sktRequired: false, displayOrder: 4, parentSlug: 'akvaryum' },
+  { name: 'Bakım & Temizlik',        slug: 'akvaryum-bakim-temizlik',        emoji: '🧹', sktRequired: false, displayOrder: 5, parentSlug: 'akvaryum' },
+  { name: 'Aydınlatma',              slug: 'akvaryum-aydinlatma',            emoji: '💡', sktRequired: false, displayOrder: 6, parentSlug: 'akvaryum' },
+  { name: 'Ekipman & Aksesuarlar',   slug: 'akvaryum-ekipman-aksesuarlar',   emoji: '⚙️', sktRequired: false, displayOrder: 7, parentSlug: 'akvaryum' },
+  { name: 'Filtreler',               slug: 'akvaryum-filtreler',             emoji: '🔄', sktRequired: false, displayOrder: 8, parentSlug: 'akvaryum' },
+  { name: 'Isıtma & Soğutma',        slug: 'akvaryum-isitma-sogutma',        emoji: '🌡️', sktRequired: false, displayOrder: 9, parentSlug: 'akvaryum' },
 
   // ====== Kemirgen alt kategorileri ======
-  { name: 'Yemler',         slug: 'kemirgen-yemler',       emoji: '🥜', vatRate: '10.00', sktRequired: true,  displayOrder: 1, parentSlug: 'kemirgen' },
-  { name: 'Kafesler',       slug: 'kemirgen-kafesler',     emoji: '🏡', vatRate: '20.00', sktRequired: false, displayOrder: 2, parentSlug: 'kemirgen' },
-  { name: 'Oyuncaklar',     slug: 'kemirgen-oyuncaklar',   emoji: '🪅', vatRate: '20.00', sktRequired: false, displayOrder: 3, parentSlug: 'kemirgen' },
-  { name: 'Bakım & Sağlık', slug: 'kemirgen-bakim-saglik', emoji: '🧽', vatRate: '20.00', sktRequired: false, displayOrder: 4, parentSlug: 'kemirgen' },
+  { name: 'Yemler',         slug: 'kemirgen-yemler',       emoji: '🥜', sktRequired: true,  displayOrder: 1, parentSlug: 'kemirgen' },
+  { name: 'Kafesler',       slug: 'kemirgen-kafesler',     emoji: '🏡', sktRequired: false, displayOrder: 2, parentSlug: 'kemirgen' },
+  { name: 'Oyuncaklar',     slug: 'kemirgen-oyuncaklar',   emoji: '🪅', sktRequired: false, displayOrder: 3, parentSlug: 'kemirgen' },
+  { name: 'Bakım & Sağlık', slug: 'kemirgen-bakim-saglik', emoji: '🧽', sktRequired: false, displayOrder: 4, parentSlug: 'kemirgen' },
 
   // ====== Sürüngen alt kategorileri ======
-  { name: 'Sürüngen Yemi',     slug: 'surungenler-yemi',              emoji: '🍃', vatRate: '10.00', sktRequired: true,  displayOrder: 1, parentSlug: 'surungenler' },
-  { name: 'Aksesuarlar',       slug: 'surungenler-aksesuarlar',       emoji: '👜', vatRate: '20.00', sktRequired: false, displayOrder: 2, parentSlug: 'surungenler' },
-  { name: 'Taban Malzemeleri', slug: 'surungenler-taban-malzemeleri', emoji: '🪵', vatRate: '20.00', sktRequired: false, displayOrder: 3, parentSlug: 'surungenler' },
+  { name: 'Sürüngen Yemi',     slug: 'surungenler-yemi',              emoji: '🍃', sktRequired: true,  displayOrder: 1, parentSlug: 'surungenler' },
+  { name: 'Aksesuarlar',       slug: 'surungenler-aksesuarlar',       emoji: '👜', sktRequired: false, displayOrder: 2, parentSlug: 'surungenler' },
+  { name: 'Taban Malzemeleri', slug: 'surungenler-taban-malzemeleri', emoji: '🪵', sktRequired: false, displayOrder: 3, parentSlug: 'surungenler' },
 ];
 
 import type { DbClient } from '@/lib/db/client';
@@ -118,7 +115,6 @@ export async function seedDefaultCategoriesForCompany(
     name: c.name,
     slug: c.slug,
     emoji: c.emoji,
-    vatRate: c.vatRate,
     sktRequired: c.sktRequired,
     displayOrder: c.displayOrder,
   }));
@@ -144,7 +140,6 @@ export async function seedDefaultCategoriesForCompany(
       name: c.name,
       slug: c.slug,
       emoji: c.emoji,
-      vatRate: c.vatRate,
       sktRequired: c.sktRequired,
       displayOrder: c.displayOrder,
     };

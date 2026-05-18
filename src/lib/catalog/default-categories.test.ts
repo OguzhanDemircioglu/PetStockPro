@@ -25,12 +25,6 @@ describe('DEFAULT_CATEGORIES', () => {
     }
   });
 
-  it('vatRate sadece 10.00 veya 20.00', () => {
-    for (const c of DEFAULT_CATEGORIES) {
-      expect(['10.00', '20.00']).toContain(c.vatRate);
-    }
-  });
-
   it('Her child.parentSlug bir root slug eşler', () => {
     const rootSlugs = new Set(
       DEFAULT_CATEGORIES.filter((c) => !c.parentSlug).map((c) => c.slug),
@@ -54,25 +48,6 @@ describe('DEFAULT_CATEGORIES', () => {
         'surungenler',
       ].sort(),
     );
-  });
-
-  it("Mama (kedi/köpek kuru/yaş mamalar, ödüller) %10 KDV — TR gıda oranı", () => {
-    const foodSlugs = [
-      'kedi-kuru-mamalar',
-      'kedi-yas-mamalar',
-      'kedi-oduller',
-      'kopek-kuru-mamalar',
-      'kopek-yas-mamalar',
-      'kopek-oduller',
-      'kus-yemler',
-      'akvaryum-balik-yemi',
-      'kemirgen-yemler',
-      'surungenler-yemi',
-    ];
-    for (const slug of foodSlugs) {
-      const c = DEFAULT_CATEGORIES.find((x) => x.slug === slug);
-      expect(c?.vatRate, `${slug} %10 olmalı`).toBe('10.00');
-    }
   });
 
   it('Mama + yem + vitamin kategorileri SKT required', () => {

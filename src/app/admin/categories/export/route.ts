@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { listCategories } from '@/lib/categories/manage';
+import { isSuperadmin } from '@/lib/superadmin/access';
 import { csvResponseBody } from '@/lib/utils/csv';
 
 export async function GET() {
@@ -8,16 +9,17 @@ export async function GET() {
   if (!session?.user?.companyId) {
     return new Response('Unauthorized', { status: 401 });
   }
+  if (!isSuperadmin(session)) {
+    return new Response('Forbidden — SUPERADMIN only', { status: 403 });
+  }
 
   const items = await listCategories(session.user.companyId, db);
 
   const body = csvResponseBody(
-    ['Emoji', 'Kategori', 'Slug', 'KDV (%)', 'SKT Zorunlu', 'Sıra', 'Ürün Sayısı'],
+    ['Emoji', 'Kategori', 'SKT Zorunlu', 'Sıra', 'Ürün Sayısı'],
     items.map((c) => [
       c.emoji ?? '',
       c.name,
-      c.slug,
-      c.vatRate ?? '',
       c.sktRequired ? 'Evet' : '',
       c.displayOrder,
       c.productCount,

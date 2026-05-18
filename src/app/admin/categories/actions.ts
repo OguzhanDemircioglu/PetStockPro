@@ -11,6 +11,7 @@ import {
   type CategoryInput,
 } from '@/lib/categories/manage';
 import { writeAuditLogAsync } from '@/lib/audit/log';
+import { isSuperadmin } from '@/lib/superadmin/access';
 
 export interface CategoryActionState {
   ok: boolean;
@@ -35,15 +36,12 @@ function parseFormInput(formData: FormData): CategoryInput | null {
   if (!name) return null;
   const dispRaw = asStr(formData.get('displayOrder'));
   const displayOrder = dispRaw ? parseInt(dispRaw, 10) : 100;
-  // parentId: 'Üst kategori ekle' moduunda boş ('root') gelir → null
   const parentRaw = asStr(formData.get('parentId'));
   const parentId = parentRaw === 'root' ? null : parentRaw;
 
   return {
     name,
     emoji: asStr(formData.get('emoji')) ?? undefined,
-    // KDV form'dan kaldırıldı (2026-05-17). vatRate null default.
-    vatRate: null,
     sktRequired: formData.get('sktRequired') === 'on',
     displayOrder: Number.isFinite(displayOrder) ? displayOrder : 100,
     parentId,
@@ -64,6 +62,9 @@ export async function addCategoryAction(
 ): Promise<CategoryActionState> {
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+  if (!isSuperadmin(session)) {
+    return { ...EMPTY, message: 'Bu işlem için yetkin yok (sadece SUPERADMIN).' };
+  }
 
   const input = parseFormInput(formData);
   if (!input) return { ...EMPTY, message: 'Kategori adı zorunlu' };
@@ -84,7 +85,7 @@ export async function addCategoryAction(
       action: 'category.created',
       entityType: 'category',
       entityId: result.categoryId,
-      afterState: { name: input.name, vatRate: input.vatRate, sktRequired: input.sktRequired },
+      afterState: { name: input.name, sktRequired: input.sktRequired },
     },
     db,
   );
@@ -101,6 +102,13 @@ export async function updateCategoryAction(
 ): Promise<CategoryActionState> {
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+  if (!isSuperadmin(session)) {
+    return {
+      ...EMPTY,
+      categoryId,
+      message: 'Bu işlem için yetkin yok (sadece SUPERADMIN).',
+    };
+  }
 
   const input = parseFormInput(formData);
   if (!input) return { ...EMPTY, categoryId, message: 'Kategori adı zorunlu' };
@@ -127,7 +135,7 @@ export async function updateCategoryAction(
       action: 'category.updated',
       entityType: 'category',
       entityId: categoryId,
-      afterState: { name: input.name, vatRate: input.vatRate },
+      afterState: { name: input.name },
     },
     db,
   );
@@ -142,6 +150,13 @@ export async function deleteCategoryAction(
 ): Promise<CategoryActionState> {
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+  if (!isSuperadmin(session)) {
+    return {
+      ...EMPTY,
+      categoryId,
+      message: 'Bu işlem için yetkin yok (sadece SUPERADMIN).',
+    };
+  }
 
   const result = await deleteCategory(session.user.companyId, categoryId, db);
   if (!result.ok) {

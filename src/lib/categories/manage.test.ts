@@ -44,22 +44,6 @@ describe('categorySchema', () => {
     }
   });
 
-  it('vatRate enum %10 OK', () => {
-    const r = categorySchema.safeParse({ name: 'X', vatRate: '10.00' });
-    expect(r.success).toBe(true);
-  });
-
-  it('vatRate %15 reddedilir', () => {
-    const r = categorySchema.safeParse({ name: 'X', vatRate: '15.00' });
-    expect(r.success).toBe(false);
-  });
-
-  it('vatRate boş → null', () => {
-    const r = categorySchema.safeParse({ name: 'X', vatRate: '' });
-    expect(r.success).toBe(true);
-    if (r.success) expect(r.data.vatRate).toBeNull();
-  });
-
   it('emoji boş → null', () => {
     const r = categorySchema.safeParse({ name: 'X', emoji: '' });
     expect(r.success).toBe(true);
@@ -82,7 +66,7 @@ describe('addCategory', () => {
 
     const result = await addCategory(
       COMPANY,
-      { name: 'Kedi Maması', emoji: '🐱', vatRate: '10.00', sktRequired: true },
+      { name: 'Kedi Maması', emoji: '🐱', sktRequired: true },
       db,
     );
     expect(result).toEqual({ ok: true, categoryId: 'new-cat' });
@@ -119,7 +103,7 @@ describe('updateCategory', () => {
     const result = await updateCategory(
       COMPANY,
       CAT,
-      { name: 'Premium Kedi', vatRate: '20.00' },
+      { name: 'Premium Kedi' },
       db,
     );
     expect(result).toEqual({ ok: true });

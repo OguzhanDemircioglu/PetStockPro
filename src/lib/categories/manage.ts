@@ -3,17 +3,18 @@
  *
  * listCategories + addCategory + updateCategory + deleteCategory.
  *
- * Register'da 16 default kategori auto-insert ediliyor (default-categories.ts).
+ * Register'da 49 default kategori auto-insert ediliyor (default-categories.ts).
  * Bu helper kullanıcının kendi kategorisini eklemesini sağlar.
  *
  * Schema:
  * - name (varchar 100, zorunlu)
- * - slug (kebab-case, tenant başına unique)
- * - emoji (varchar 10, opsiyonel)
+ * - slug (kebab-case, tenant başına unique — server-side `makeSlug(name)` ile
+ *   otomatik üretilir; UI kullanıcısına gösterilmez ama vitrin route URL'leri
+ *   `/vitrin/kategori/[slug]` için kullanılır.)
+ * - emoji (varchar 10, opsiyonel, tenant başına unique)
  * - displayOrder (int, default 0 — kullanıcının eklediğinde 100+ atayalım)
- * - vatRate (decimal 5,2 — 1.00/8.00/10.00/20.00 nullable)
  * - sktRequired (boolean, default false)
- * - parentId (self-ref, opsiyonel — Faz 2 tree desteklenecek)
+ * - parentId (self-ref, opsiyonel — 2-seviyeli hiyerarşi: root → child)
  *
  * FK ON DELETE SET NULL: ürünler kategorisiz kalır, silinmez.
  */
@@ -34,7 +35,6 @@ export interface CategoryListItem {
   slug: string;
   emoji: string | null;
   displayOrder: number;
-  vatRate: string | null;
   sktRequired: boolean;
   parentId: string | null;
   productCount: number;
@@ -52,7 +52,6 @@ export async function listCategories(
       slug: categories.slug,
       emoji: categories.emoji,
       displayOrder: categories.displayOrder,
-      vatRate: categories.vatRate,
       sktRequired: categories.sktRequired,
       parentId: categories.parentId,
       createdAt: categories.createdAt,
@@ -85,23 +84,6 @@ export const categorySchema = z.object({
   emoji: z
     .string()
     .max(10)
-    .optional()
-    .transform((v) => (v === '' || v === undefined ? null : v)),
-  /**
-   * KDV oranı kategori formundan kaldırıldı (2026-05-17). Default seed kategoriler
-   * hardcoded değerlerini korur; kullanıcı eklediği kategoriler null kalır,
-   * ürün eklenirken kullanıcı kendisi belirler. Field nullable bırakıldı (existing
-   * tenant data uyumluluğu).
-   */
-  vatRate: z
-    .union([
-      z.literal('1.00'),
-      z.literal('8.00'),
-      z.literal('10.00'),
-      z.literal('20.00'),
-      z.literal(''),
-    ])
-    .nullable()
     .optional()
     .transform((v) => (v === '' || v === undefined ? null : v)),
   sktRequired: z.boolean().default(false),
@@ -188,7 +170,6 @@ export async function addCategory(
         name: data.name,
         slug: baseSlug,
         emoji: data.emoji ?? null,
-        vatRate: data.vatRate ?? null,
         sktRequired: data.sktRequired,
         displayOrder: data.displayOrder,
         parentId: data.parentId ?? null,
@@ -290,7 +271,6 @@ export async function updateCategory(
         name: data.name,
         slug: newSlug,
         emoji: data.emoji ?? null,
-        vatRate: data.vatRate ?? null,
         sktRequired: data.sktRequired,
         displayOrder: data.displayOrder,
         parentId: data.parentId ?? null,

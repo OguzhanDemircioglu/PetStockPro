@@ -225,8 +225,6 @@ export default async function SystemSettingsPage() {
                   <thead>
                     <tr>
                       <th className="border-b border-line bg-paper px-3 py-1.5 text-left font-bold text-ink-3">Alt kategori</th>
-                      <th className="border-b border-line bg-paper px-3 py-1.5 text-left font-bold text-ink-3">Slug</th>
-                      <th className="border-b border-line bg-paper px-3 py-1.5 text-left font-bold text-ink-3">KDV</th>
                       <th className="border-b border-line bg-paper px-3 py-1.5 text-left font-bold text-ink-3">SKT</th>
                       <th className="border-b border-line bg-paper px-3 py-1.5 text-left font-bold text-ink-3">Sıra</th>
                     </tr>
@@ -237,8 +235,6 @@ export default async function SystemSettingsPage() {
                         <td className="px-3 py-1.5 font-bold text-ink">
                           {c.emoji} {c.name}
                         </td>
-                        <td className="px-3 py-1.5 font-mono text-ink-3">{c.slug}</td>
-                        <td className="px-3 py-1.5 font-mono text-cart">%{c.vatRate}</td>
                         <td className="px-3 py-1.5 text-ink-2">{c.sktRequired ? '✓' : '—'}</td>
                         <td className="px-3 py-1.5 text-ink-3">{c.displayOrder}</td>
                       </tr>

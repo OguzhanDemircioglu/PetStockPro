@@ -457,7 +457,6 @@ export const auditLogs = petstockproSchema.table('audit_logs', {
  * CATEGORIES — Ürün kategorileri (tenant başına)
  *
  * Hierarchical: parentId nullable self-reference. MVP'de 1-2 derinlik kullanılır.
- * vatRate: %1 (özel) / %10 (gıda - pet mama) / %20 (genel). lib/constants/vat-rates.ts ile uyum.
  * sktRequired: true ise stok_movements'da expiryDate zorunlu (Sprint 4 trigger).
  *
  * RLS: tenant SELECT/INSERT/UPDATE/DELETE kendi categories'lerini, super_admin all access.
@@ -470,7 +469,6 @@ export const categories = petstockproSchema.table('categories', {
   slug: varchar('slug', { length: 100 }).notNull(),
   emoji: varchar('emoji', { length: 10 }),
   displayOrder: integer('display_order').notNull().default(0),
-  vatRate: decimal('vat_rate', { precision: 5, scale: 2 }), // 1.00 / 10.00 / 20.00
   sktRequired: boolean('skt_required').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [

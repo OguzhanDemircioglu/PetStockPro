@@ -3,12 +3,14 @@ import Link from 'next/link';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { listCategories } from '@/lib/categories/manage';
+import { isSuperadmin } from '@/lib/superadmin/access';
 import { CategoryForm, type ParentOption } from '../category-form';
 import { addCategoryAction } from '../actions';
 
 export default async function NewCategoryPage() {
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
+  if (!isSuperadmin(session)) redirect('/admin/categories' as never);
 
   // Mevcut kategorileri çek: parent options + max(displayOrder) hesapla.
   const allCategories = await listCategories(session.user.companyId, db);

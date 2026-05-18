@@ -222,6 +222,7 @@ export async function listCategoryNavTree(
         slug: c.slug,
         name: c.name,
         emoji: c.emoji,
+        isDefault: true,
         productCount: countBySlug.get(c.slug) ?? 0,
       }))
       .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
@@ -231,6 +232,7 @@ export async function listCategoryNavTree(
       slug: root.slug,
       name: root.name,
       emoji: root.emoji,
+      isDefault: true,
       totalProductCount: rootDirect + childrenTotal,
       children,
     };
