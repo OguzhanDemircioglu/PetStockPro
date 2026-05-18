@@ -19,6 +19,7 @@ import { buildVitrinPageMetadata } from '@/lib/vitrin/page-metadata';
 import { buildBreadcrumbLd } from '@/lib/vitrin/schema-org';
 import { getPublicBaseUrl } from '@/lib/vitrin/sitemap-data';
 import { listCategoriesInCity } from '@/lib/vitrin/category-listings';
+import { listBrandsInCity } from '@/lib/vitrin/brand-listings';
 
 export const dynamic = 'force-dynamic';
 
@@ -80,12 +81,14 @@ export default async function VitrinCityPage({
   filters.limit = PAGE_SIZE;
   filters.offset = (page - 1) * PAGE_SIZE;
 
-  const [storefronts, totalCount, activeDistricts, activeCategories] = await Promise.all([
-    listPublicStorefronts(db, filters),
-    countPublicStorefronts(db, { cityId: city.id, q: filters.q }),
-    listDistrictsWithStorefronts(city.id, db),
-    listCategoriesInCity(city.id, db),
-  ]);
+  const [storefronts, totalCount, activeDistricts, activeCategories, activeBrands] =
+    await Promise.all([
+      listPublicStorefronts(db, filters),
+      countPublicStorefronts(db, { cityId: city.id, q: filters.q }),
+      listDistrictsWithStorefronts(city.id, db),
+      listCategoriesInCity(city.id, db),
+      listBrandsInCity(city.id, db),
+    ]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const isFirstPage = page <= 1;
@@ -257,6 +260,31 @@ export default async function VitrinCityPage({
                   {cat.name}
                   <span className="rounded bg-paper/80 px-1.5 py-0.5 text-[11px] font-bold text-cat">
                     {cat.productCount}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Marka chip listesi — bu ilde satışta olan markalar (cross-tenant) */}
+      {activeBrands.length > 0 && (
+        <section data-testid="vitrin-city-brand-chips">
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
+            🏷 {city!.name}&apos;de satışta olan markalar ({activeBrands.length})
+          </h2>
+          <ul className="flex flex-wrap gap-2">
+            {activeBrands.slice(0, 24).map((brand) => (
+              <li key={brand.name}>
+                <Link
+                  href={`/vitrin/ara?q=${encodeURIComponent(brand.name)}` as never}
+                  data-brand-name={brand.name}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-bars/30 bg-bars-soft/40 px-3 py-1.5 text-[13px] font-bold text-bars-7 hover:border-bars hover:bg-bars-soft transition-colors"
+                >
+                  {brand.name}
+                  <span className="rounded bg-paper/80 px-1.5 py-0.5 text-[11px] font-bold text-bars">
+                    {brand.productCount}
                   </span>
                 </Link>
               </li>
