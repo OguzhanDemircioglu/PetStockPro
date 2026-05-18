@@ -67,7 +67,7 @@ export default async function BranchDetailPage({
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KPI title="Toplam stok" value={totalStock} emoji="📦" />
-        <KPI title="Variant sayısı" value={variantStock.length} emoji="🐾" />
+        <KPI title="Variant sayısı" value={variantStock.length} emoji="🏷" />
         <KPI
           title="Düşük stok"
           value={lowVariants}
@@ -85,7 +85,7 @@ export default async function BranchDetailPage({
       <section className="grid gap-4 lg:grid-cols-2">
         <article className="rounded-2xl border border-line bg-paper p-5" data-testid="branch-variant-list">
           <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
-            🐾 Variant stoğu
+            Variant stoğu
           </h2>
           {variantStock.length === 0 ? (
             <p className="rounded-lg bg-line-soft px-3 py-4 text-center text-xs text-ink-3">

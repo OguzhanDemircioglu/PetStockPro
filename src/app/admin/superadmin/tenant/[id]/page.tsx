@@ -69,7 +69,7 @@ export default async function TenantDetailSuperadminPage({
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <KPI title="Kullanıcı" value={tenant.userCount} emoji="👥" />
-        <KPI title="Ürün" value={tenant.productCount} emoji="🐾" />
+        <KPI title="Ürün" value={tenant.productCount} emoji="📦" />
         <KPI title="Şube" value={tenant.branchCount} emoji="🏪" />
         <KPI title="Toplam stok" value={tenant.totalStockQty} emoji="📦" />
         <KPI

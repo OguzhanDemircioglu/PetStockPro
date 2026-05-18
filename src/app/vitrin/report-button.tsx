@@ -89,7 +89,7 @@ export function ReportButton({
         data-testid="report-success"
         className="rounded-xl border border-arrow/30 bg-arrow-soft/50 px-4 py-3 text-center text-sm text-arrow-7"
       >
-        ✓ Bildiri alındı — incelemeye gönderildi. Teşekkürler 🐾
+        ✓ Bildiri alındı — incelemeye gönderildi. Teşekkürler 
         {remaining !== null && (
           <div
             data-testid="report-remaining"

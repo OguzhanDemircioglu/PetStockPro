@@ -153,7 +153,7 @@ export default async function VitrinCityPage({
 
       <section className="rounded-3xl bg-gradient-to-br from-cat-soft/40 via-arrow-soft/30 to-paper p-6 lg:p-10">
         <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-cart">
-          {`🐾 ${city!.name} Pet Shop'lar`}
+          {`${city!.name} Pet Shop'lar`}
         </h1>
         <p className="mt-2 max-w-xl text-sm text-ink-2">
           {`${city!.name} ve ilçelerindeki pet shop'lar tek dizinde. WhatsApp'tan direkt mağaza ile iletişim kur.`}
@@ -384,7 +384,7 @@ export default async function VitrinCityPage({
                     )}
                     <p className="mt-3 flex gap-3 text-[12.5px] text-ink-3">
                       <span>
-                        🐾{' '}
+                        📦{' '}
                         <strong className="text-cat">{s.productCount}</strong>{' '}
                         ürün
                       </span>

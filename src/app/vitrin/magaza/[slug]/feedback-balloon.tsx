@@ -159,7 +159,7 @@ export function FeedbackBalloon({
           data-testid="feedback-thanks"
         >
           <span className="text-4xl">✓</span>
-          <p className="text-sm font-bold text-arrow-7">Teşekkürler 🐾</p>
+          <p className="text-sm font-bold text-arrow-7">Teşekkürler</p>
         </div>
       ) : (
         <>

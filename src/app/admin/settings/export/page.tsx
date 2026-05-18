@@ -18,7 +18,7 @@ export default async function ExportHubPage() {
   const datasets: ExportCardProps[] = [
     {
       href: '/admin/products/export',
-      emoji: '🐾',
+      emoji: '',
       title: 'Ürün kataloğu',
       desc: 'Tüm ürünler — ad / kategori / marka / variant / stok / fiyat / vitrin durumu',
       filename: 'urunler-<tarih>.csv',

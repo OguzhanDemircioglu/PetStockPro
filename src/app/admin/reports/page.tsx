@@ -676,7 +676,7 @@ const ACTION_LABEL: Record<string, string> = {
   'storefront.published': '🌐 Vitrin açıldı',
   'storefront.unpublished': '🔒 Vitrin kapatıldı',
   'storefront.settings_updated': '🌐 Vitrin profili güncellendi',
-  'product.created': '🐾 Ürün eklendi',
+  'product.created': 'Ürün eklendi',
   'product.updated': '✎ Ürün güncellendi',
   'product.deleted': '🗑 Ürün silindi',
   'brand.created': '🏷 Marka eklendi',

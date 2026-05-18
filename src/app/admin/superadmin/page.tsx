@@ -92,7 +92,7 @@ export default async function SuperadminTenantsPage() {
           accent="arrow"
         />
         <KPI title="Toplam kullanıcı" value={stats.totalUsers} emoji="👥" />
-        <KPI title="Toplam ürün" value={stats.totalProducts} emoji="🐾" />
+        <KPI title="Toplam ürün" value={stats.totalProducts} emoji="" />
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

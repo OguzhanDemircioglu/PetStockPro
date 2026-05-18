@@ -127,7 +127,7 @@ export default async function AdminDashboardPage() {
 
         <div className="relative z-10 min-w-0 pt-4">
           <div className="text-[12.5px] font-bold uppercase tracking-wider opacity-85">
-            🐾 Bugün · {company?.name ?? 'Pet shop'}
+            Bugün · {company?.name ?? 'Pet shop'}
           </div>
 
           <h1
@@ -135,7 +135,7 @@ export default async function AdminDashboardPage() {
             data-testid="hero-title"
           >
             {isWelcomeState
-              ? `🐾 Hoş geldin, ${company?.name ?? 'pet shop'}!`
+              ? `Hoş geldin, ${company?.name ?? 'pet shop'}!`
               : todayQtyDisplay > 0
                 ? `${todayQtyDisplay} satış · ${Number(todayRevenueDisplay).toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺ ciro`
                 : 'Bugün hareket bekliyor'}
@@ -177,7 +177,7 @@ export default async function AdminDashboardPage() {
                   data-testid="hero-add-product"
                   className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-[14px] font-bold text-cart shadow-md hover:-translate-y-0.5 transition-transform"
                 >
-                  🐾 İlk ürünü ekle
+                  İlk ürünü ekle
                 </Link>
                 <Link
                   href={'/admin/settings/storefront' as never}
@@ -212,7 +212,7 @@ export default async function AdminDashboardPage() {
               stok
             </span>
             <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1 font-bold opacity-90">
-              🐾 {stats.totalProducts} ürün ({planLimitLabel})
+              {stats.totalProducts} ürün ({planLimitLabel})
             </span>
           </div>
         </div>

@@ -8,7 +8,7 @@ import { SettingsShell } from '@/components/settings-shell';
 const PAGE_SIZE = 50;
 
 const ACTION_LABELS: Record<string, { label: string; cls: string }> = {
-  'product.created': { label: '🐾 Ürün eklendi', cls: 'bg-arrow-soft text-arrow-7' },
+  'product.created': { label: 'Ürün eklendi', cls: 'bg-arrow-soft text-arrow-7' },
   'product.updated': { label: '✎ Ürün güncellendi', cls: 'bg-line-soft text-ink-2' },
   'product.deleted': { label: '🗑 Ürün silindi', cls: 'bg-danger-soft text-danger-7' },
   'stock.in': { label: '📥 Stok girişi', cls: 'bg-arrow-soft text-arrow-7' },
@@ -42,7 +42,7 @@ const ACTION_LABELS: Record<string, { label: string; cls: string }> = {
 
 const ACTION_GROUPS: { value: string; label: string }[] = [
   { value: '', label: 'Tüm aksiyonlar' },
-  { value: 'product.created', label: '🐾 Ürün eklendi' },
+  { value: 'product.created', label: 'Ürün eklendi' },
   { value: 'product.updated', label: '✎ Ürün güncellendi' },
   { value: 'product.deleted', label: '🗑 Ürün silindi' },
   { value: 'stock.in', label: '📥 Stok girişi' },

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { db } from '@/lib/db/client';
 import {
@@ -186,7 +187,13 @@ export default async function VitrinBrandPage({
           className="rounded-2xl border border-line bg-paper p-8 text-center"
           data-testid="empty-no-result"
         >
-          <div className="text-3xl">🐾</div>
+          <Image
+            src="/logo.webp"
+            alt="PetStockPro"
+            width={56}
+            height={56}
+            className="mx-auto h-14 w-14 object-contain"
+          />
           <p className="mt-3 text-[15px] font-bold text-cart">
             {cityFilter
               ? `${brand!.name} · ${cityFilter.name} için ürün yok.`

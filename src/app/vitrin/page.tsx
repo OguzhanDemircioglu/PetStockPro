@@ -346,7 +346,7 @@ export default async function VitrinHomePage({
                   data-tenant-slug={sf.slug}
                 >
                   <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-cat-soft text-2xl">
-                    🐾
+                    
                   </span>
                   <div className="min-w-0 flex-1">
                     <Link
@@ -384,7 +384,13 @@ export default async function VitrinHomePage({
           </ul>
         ) : (
           <div className="mt-4 rounded-2xl border-2 border-dashed border-line bg-paper py-12 text-center">
-            <div className="text-4xl">🐾</div>
+            <Image
+              src="/logo.webp"
+              alt="PetStockPro"
+              width={64}
+              height={64}
+              className="mx-auto h-16 w-16 object-contain"
+            />
             <p className="mt-2 text-[13px] text-ink-3">
               Bu kriterlerde pet shop bulunamadı.
             </p>
@@ -460,7 +466,7 @@ export default async function VitrinHomePage({
                         />
                       ) : (
                         <div className="grid h-full place-items-center text-5xl">
-                          🐾
+                          
                         </div>
                       )}
                       <span className="absolute right-2 top-2 rounded-full bg-paper/95 px-2 py-0.5 text-[10.5px] font-bold text-cat shadow-sm">
@@ -540,7 +546,7 @@ export default async function VitrinHomePage({
                         />
                       ) : (
                         <div className="grid h-full place-items-center text-5xl">
-                          🐾
+                          
                         </div>
                       )}
                       <span className="absolute right-2 top-2 rounded-full bg-arrow/90 px-2 py-0.5 text-[10.5px] font-bold text-white shadow-sm">

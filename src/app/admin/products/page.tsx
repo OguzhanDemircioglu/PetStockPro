@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { eq, asc } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
@@ -153,7 +154,13 @@ export default async function ProductsPage({
 
       {items.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-line bg-paper py-16 text-center">
-          <div className="text-6xl">🐾</div>
+          <Image
+            src="/logo.webp"
+            alt="PetStockPro"
+            width={96}
+            height={96}
+            className="mx-auto h-24 w-24 object-contain"
+          />
           <h2 className="mt-4 text-xl font-bold text-cart">
             {hasActiveFilter ? 'Filtreye uyan ürün yok' : 'Henüz ürün yok'}
           </h2>

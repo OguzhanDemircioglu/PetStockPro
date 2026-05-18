@@ -164,7 +164,7 @@ export default async function CrossTenantProductPage({
       >
         <header className="border-b border-line-soft px-5 py-3">
           <h2 className="text-[13px] font-bold uppercase tracking-wider text-ink-3">
-            🐾 Hangi pet shop&apos;tan? ({offers.length})
+            Hangi pet shop&apos;tan? ({offers.length})
           </h2>
           <p className="mt-1 text-[12.5px] text-ink-3">
             En düşük fiyatlı pet shop&apos;tan başlanır. Stok bilgisi sayım

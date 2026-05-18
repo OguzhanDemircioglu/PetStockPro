@@ -46,7 +46,7 @@ export default async function ProductDetailPage({
             Admin · Ürünler · Detay
           </div>
           <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
-            🐾 {product.name}
+            {product.name}
           </h1>
           <p className="mt-1 text-sm text-ink-3">
             <span className="font-mono">{product.slug}</span>
@@ -64,7 +64,7 @@ export default async function ProductDetailPage({
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KPI title="Toplam stok" value={product.totalStockQty} emoji="📦" />
-        <KPI title="Variant sayısı" value={matrix.variants.length} emoji="🐾" />
+        <KPI title="Variant sayısı" value={matrix.variants.length} emoji="🏷" />
         <KPI
           title="Durum"
           value={product.isActive ? 'Aktif' : 'Pasif'}

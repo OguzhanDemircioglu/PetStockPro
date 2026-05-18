@@ -19,7 +19,7 @@ import { makeSlug } from '@/lib/utils/slug';
 import { TURKEY_DISTRICTS } from './turkey-locations';
 
 async function main() {
-  console.log('🐾 PetStockPro seed — Sprint 2.6 (cities + districts)');
+  console.log('PetStockPro seed — Sprint 2.6 (cities + districts)');
 
   if (!process.env.DATABASE_URL) {
     throw new Error('DATABASE_URL not set');

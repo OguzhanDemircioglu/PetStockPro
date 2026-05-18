@@ -165,7 +165,7 @@ export async function sendTelegramTestMessage(
     { botToken, chatId },
     {
       text: [
-        '<b>🐾 PetStockPro test mesajı</b>',
+        '<b>PetStockPro test mesajı</b>',
         '',
         'Telegram bağlantın çalışıyor. Düşük stok, sayım tamamlandı,',
         'vitrin auto-unpublish gibi olaylarda buraya bildirim göndereceğim.',

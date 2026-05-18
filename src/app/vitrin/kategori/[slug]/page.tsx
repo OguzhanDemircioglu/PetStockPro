@@ -138,7 +138,7 @@ export default async function VitrinCategoryPage({
         data-testid="category-hero"
       >
         <p className="text-[13px] font-bold uppercase tracking-wider text-cat">
-          🐾 Kategori sayfası
+          Kategori sayfası
         </p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-cart">
           {info.emoji} {info.name}
@@ -247,7 +247,7 @@ export default async function VitrinCategoryPage({
                     href={`/vitrin/magaza/${p.companySlug}` as never}
                     className="font-bold text-ink-2 hover:text-cart hover:underline"
                   >
-                    🐾 {p.companyName}
+                    {p.companyName}
                   </Link>
                   {(p.districtName || p.cityName) && (
                     <span className="block text-[11.5px] text-ink-4">

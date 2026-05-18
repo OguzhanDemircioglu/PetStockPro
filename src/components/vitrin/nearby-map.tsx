@@ -116,7 +116,7 @@ function buildWhatsappLink(phone: string | null, shopName: string): string | nul
   const digits = phone.replace(/\D/g, '');
   if (digits.length < 10) return null;
   const e164 = digits.startsWith('90') ? digits : `90${digits.replace(/^0/, '')}`;
-  const msg = encodeURIComponent(`Merhaba, ${shopName} vitrini üzerinden ulaşıyorum. 🐾`);
+  const msg = encodeURIComponent(`Merhaba, ${shopName} vitrini üzerinden ulaşıyorum. `);
   return `https://wa.me/${e164}?text=${msg}`;
 }
 

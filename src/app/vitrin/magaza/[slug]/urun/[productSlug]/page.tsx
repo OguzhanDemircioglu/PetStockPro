@@ -167,7 +167,7 @@ export default async function VitrinProductDetailPage({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <p className="text-[13px] font-bold uppercase tracking-wider text-cat">
-              🐾 {product.companyName}
+              {product.companyName}
             </p>
             <h1
               className="mt-1 text-3xl font-bold tracking-tight text-cart"

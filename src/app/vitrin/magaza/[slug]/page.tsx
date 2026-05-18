@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import type { Metadata } from 'next';
@@ -213,7 +214,13 @@ export default async function StorefrontProfilePage({
         </h2>
         {products.length === 0 ? (
           <div className="rounded-2xl border-2 border-dashed border-line bg-paper py-12 text-center">
-            <div className="text-5xl">🐾</div>
+            <Image
+              src="/logo.webp"
+              alt="PetStockPro"
+              width={80}
+              height={80}
+              className="mx-auto h-20 w-20 object-contain"
+            />
             <p className="mt-4 text-sm text-ink-3">
               Bu pet shop henüz vitrin&apos;e ürün eklemedi.
             </p>
@@ -240,7 +247,7 @@ export default async function StorefrontProfilePage({
                         data-brand-anchor={g.brandSlug ?? 'diger'}
                         className="inline-flex items-center gap-1.5 rounded-full border border-line bg-paper px-2.5 py-1 text-[12px] font-bold text-cart hover:border-cat hover:bg-cat-soft"
                       >
-                        {g.brandId ? '🏷' : '🐾'} {g.brandName}
+                        {g.brandId ? '🏷 ' : ''}{g.brandName}
                         <span className="rounded-full bg-cat-soft px-1.5 py-0.5 text-[10.5px] text-cart">
                           {g.productCount}
                         </span>
@@ -258,7 +265,7 @@ export default async function StorefrontProfilePage({
                   >
                     <header className="mb-2 flex items-baseline justify-between gap-2 border-b border-line-soft pb-1.5">
                       <h3 className="text-[14px] font-bold uppercase tracking-wider text-cart">
-                        {g.brandId ? '🏷' : '🐾'} {g.brandName}
+                        {g.brandId ? '🏷 ' : ''}{g.brandName}
                       </h3>
                       <span className="text-[12.5px] text-ink-3">
                         {g.productCount} ürün
