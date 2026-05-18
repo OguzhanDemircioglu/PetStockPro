@@ -57,15 +57,7 @@
 
 ### ⚠ Pending / bekleyen
 
-- 🟡 **C için browser tam doğrulama:** Sprint 3 Products Test tenant'ının `city_id` NULL — /vitrin/izmir'de kategori chip render olması için aşağıdaki SQL kullanıcı tarafından çalıştırılmalı:
-  ```sql
-  UPDATE petstockpro.companies
-  SET city_id = 35,
-      district_id = (SELECT id FROM petstockpro.districts WHERE city_id = 35 AND slug = 'konak' LIMIT 1),
-      updated_at = NOW()
-  WHERE id = 'c6e4ebf6-af0b-426f-aa22-775af2871579'
-  RETURNING name, city_id, district_id;
-  ```
+- ✅ **C/H için browser tam doğrulama tamamlandı:** Sprint 3 Products Test tenant'ına `city_id=35 (İzmir)` + `district=konak` atandı (UPDATE DML), 2 ürünün `category_id` set edildi (kopek-kuru-mamalar + kedi-mama-ve-su-kaplari). /vitrin/izmir → "İzmir'de satışta olan kategoriler (2)" chip section + "Pet shop'u olan ilçeler (1) Konak" + Sprint 3 Products Test kartı "Satıcıya sor" butonu — hepsi screenshot ile görsel doğrulandı.
 - 🟡 **Test rollback (LANSMAN ÖNCESI):** magicui@petshop.test + oguzhanturgut611@gmail.com → BAYI_SAHIBI (lansman bloker, şimdilik gerek yok)
 - ⛔ **Şirket kuruluş + VKN + IBAN** → Sprint 13/14 iyzico/Nilvera production (2-4 hafta)
 - ⛔ **Production env secret'lar** → IYZICO_WEBHOOK_SECRET + BREVO_API_KEY + CRON_SECRET
