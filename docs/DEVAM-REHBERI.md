@@ -58,6 +58,53 @@
 
 ## 🆕 Önceki tur (2026-05-18, gece) — I/J/K/L 4 commit polish
 
+## 🆕 Yeni tur (2026-05-18, gece — R + Q + M/N/O/P) — Moderation + Brand SEO + UI iyileştirmeler
+
+### R serisi — İçerik moderasyonu (yeni)
+
+| # | İş | Commit |
+|---|---|---|
+| R | Hybrid moderation: blacklist (TR-aware) + OpenAI Moderation API + ModerationWarning component + 9 helper'a entegre (register/products/branches/brands/categories/suppliers/company/storefront/vitrin-reports) + UI demo (/admin/products) | `0bf50de` |
+
+**Strategy:**
+- **Sync blacklist** (~1ms, key gerektirmez) — TR-aware normalize (lowercase TR locale, leetspeak, in-word punctuation strip, single-letter token merge, repeated char fold) + 50 kelimelik kategori liste (profanity/insult/sexual/scam)
+- **Async OpenAI Moderation** (omni-moderation-latest, ~200ms, fail-open) — TR/EN destekli, ücretsiz, 13 kategori
+- **Uyar pattern**: block etmez, sadece kullanıcıya banner gösterir + audit log'a yazar (süperadmin takip)
+
+**Helper entegrasyonu:**
+- `register.ts` → Pet shop adı
+- `catalog/products.ts` → Ürün adı + açıklaması
+- `branches/manage.ts` → Şube adı + adresi
+- `brands/manage.ts` → Marka adı
+- `categories/manage.ts` → Kategori adı
+- `suppliers/manage.ts` → Tedarikçi adı + iletişim kişisi + notu
+- `company/settings.ts` → Pet shop adı
+- `storefront/settings.ts` → Hakkımızda metni + meta açıklaması
+- `vitrin/reports.ts` → Şikayet notu
+
+**UI banner:**
+- `/admin/products` redirect query `?moderation=flagged&fields=...` → sarı warning banner
+- Diğer admin sayfalarına aynı pattern (R-12 ileride, mekanik)
+
+**Test:** 1327 → **1358** (+31: blacklist 20 + check 11)
+
+### Q — Login + register paw pattern → logo watermark
+
+| # | İş | Commit |
+|---|---|---|
+| Q | Eski mor pati pattern + beyaz mascot SVG kaldırıldı, sağ-alt köşeye subtle logo watermark (opacity 0.08, rotate -8deg, 288×288). 🐾 emoji'ler korundu (27+ sayfa, inline text-flow). | `e564896` |
+
+### M/N/O/P mini-tur — Brand SEO + Vitrin polish
+
+| # | İş | Commit |
+|---|---|---|
+| M | /vitrin/marka/[brand] SEO landing — cross-tenant marka detay + breadcrumb + sitemap (+13 unit test) | `b7f7335` |
+| N | /vitrin/ara?kategori=<slug> filter — searchParams kategori + form select + chip + temizle | `6645017` |
+| O | Leaflet compass heading — deviceorientation API + marker rotation + popup "Bakış yönü" | `01d5d1f` |
+| P | Storage CDN cache-control — uploadProductImage'a `cacheControl: '31536000'` + assertion | `4d9c7ed` |
+
+---
+
 ## 🆕 Bu mini-tur (2026-05-18, gece) — I/J/K/L 4 commit polish
 
 | # | İş | Commit |
