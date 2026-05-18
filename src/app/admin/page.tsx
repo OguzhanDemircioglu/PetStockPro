@@ -228,7 +228,7 @@ export default async function AdminDashboardPage() {
             style={{ transform: 'rotate(-6deg)' }}
           />
           <Image
-            src="/logo.png"
+            src="/logo.webp"
             alt="PetStockPro logosu"
             width={158}
             height={158}

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { AnimatedShinyText } from './magicui/animated-shiny-text';
 
 interface SidebarLink {
   label: string;
@@ -36,6 +37,12 @@ export function AdminSidebar({
   isSuperadmin,
 }: Props) {
   const pathname = usePathname();
+
+  // Tenant adından "Pet Shop"/"Petshop" suffix'i her zaman strip edilir (case insensitive,
+  // boşluklu/boşluksuz). Alt satırda "Pet Shop" sabit etiket — kullanıcı ister yazmış
+  // ister yazmamış olsun her tenant'ta görünür.
+  const petShopMatch = tenantName.match(/^(.+?)\s*(pet\s*shop|petshop)\s*$/i);
+  const displayName = petShopMatch ? petShopMatch[1].trim() : tenantName;
 
   const planLabel: Record<typeof plan, string> = {
     FREE: 'FREE',
@@ -113,28 +120,45 @@ export function AdminSidebar({
   return (
     <aside
       data-testid="admin-sidebar"
-      className="sticky top-0 hidden h-screen w-[220px] shrink-0 flex-col overflow-y-auto border-r border-line bg-paper/75 px-3 py-5 backdrop-blur-xl md:flex"
+      className="sticky top-0 hidden h-screen w-[220px] shrink-0 flex-col overflow-y-auto border-r border-line bg-paper/75 px-3 pb-5 backdrop-blur-xl md:flex"
     >
-      {/* Brand */}
+      {/* Brand — Pano başlığı hizasında shiny header + altında icon + tenant adı */}
       <Link
         href={'/admin' as never}
-        className="mb-5 flex items-center gap-3 rounded-xl px-1 py-1 hover:bg-line-soft"
+        className="-mx-3 mb-4 block"
         data-testid="sidebar-brand"
       >
-        <span className="grid h-10 w-10 place-items-center overflow-hidden rounded-xl bg-cat-soft">
-          <Image
-            src="/logo.png"
-            alt="PetStockPro"
-            width={36}
-            height={36}
-            className="object-contain"
-          />
-        </span>
-        <div className="min-w-0">
-          <div className="text-[12.5px] font-bold uppercase tracking-wider text-cart">
-            PetStockPro
+        {/* Üst: PetStockPro shiny — 66px header içinde dikey ortada */}
+        <div className="flex h-[66px] items-center justify-center border-b border-line px-3 transition-colors hover:bg-line-soft/50">
+          <div
+            data-testid="sidebar-brand-title"
+            className="text-[22px] font-bold leading-none tracking-tight text-cart"
+          >
+            <AnimatedShinyText>PetStockPro</AnimatedShinyText>
           </div>
-          <div className="truncate text-[12px] text-ink-3">{tenantName}</div>
+        </div>
+        {/* Alt: icon + tenant adı dikey istif */}
+        <div className="flex flex-col items-center gap-3 px-2 py-4 text-center transition-colors hover:bg-line-soft/50">
+          <Image
+            src="/logo.webp"
+            alt="PetStockPro"
+            width={180}
+            height={180}
+            className="h-44 w-44 object-contain"
+            priority
+          />
+          <div
+            data-testid="sidebar-tenant-name"
+            className="flex w-full flex-col items-center gap-0.5"
+            title={tenantName}
+          >
+            <div className="w-full break-words text-[18px] font-bold leading-tight tracking-tight text-cart">
+              <AnimatedShinyText>{displayName}</AnimatedShinyText>
+            </div>
+            <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-3">
+              <AnimatedShinyText>Pet Shop</AnimatedShinyText>
+            </div>
+          </div>
         </div>
       </Link>
 
