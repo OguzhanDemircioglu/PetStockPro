@@ -162,7 +162,7 @@ export function TwoFactorWizard({
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                placeholder="123456"
+                placeholder="- - - - - -"
                 autoComplete="one-time-code"
                 required
                 disabled={verifyPending}

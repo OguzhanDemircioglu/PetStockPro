@@ -294,7 +294,7 @@ export default function LoginPage() {
                   name="totp"
                   type="text"
                   inputMode="text"
-                  placeholder="123456 veya ABCD-EFGH"
+                  placeholder="- - - - - -"
                   autoComplete="one-time-code"
                   required
                   autoFocus

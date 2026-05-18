@@ -147,7 +147,7 @@ export function SecurityForms({
                 name="totp"
                 type="text"
                 inputMode="numeric"
-                placeholder="6 haneli kod"
+                placeholder="- - - - - -"
                 autoComplete="one-time-code"
                 required
                 disabled={disablePending}
@@ -224,7 +224,7 @@ export function SecurityForms({
                 name="totp"
                 type="text"
                 inputMode="numeric"
-                placeholder="6 haneli kod"
+                placeholder="- - - - - -"
                 autoComplete="one-time-code"
                 required
                 disabled={regenPending}
