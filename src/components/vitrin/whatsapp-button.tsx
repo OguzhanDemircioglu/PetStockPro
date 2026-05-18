@@ -14,7 +14,7 @@ import type { AnchorHTMLAttributes } from 'react';
 interface Props
   extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'children' | 'href'> {
   href: string;
-  /** Buton üstündeki yazı. Default: "WhatsApp" */
+  /** Buton üstündeki yazı. Default: "Satıcıya sor" (WhatsApp ikonu + bu yazı). */
   label?: string;
   /** Boyut: 'md' default kart için, 'lg' hero/CTA için, 'sm' compact için */
   size?: 'sm' | 'md' | 'lg';
@@ -36,7 +36,7 @@ const ICON_SIZE: Record<NonNullable<Props['size']>, number> = {
 
 export function WhatsappButton({
   href,
-  label = 'WhatsApp',
+  label = 'Satıcıya sor',
   size = 'md',
   width = 'auto',
   className,

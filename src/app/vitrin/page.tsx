@@ -365,7 +365,7 @@ export default async function VitrinHomePage({
                       href={`/vitrin/magaza/${sf.slug}` as never}
                       className="mt-2 inline-flex items-center gap-1 text-[12.5px] font-bold text-cat hover:underline"
                     >
-                      Detay & WhatsApp →
+                      Detay & Satıcıya sor →
                     </Link>
                   </div>
                   {distanceLabel && (

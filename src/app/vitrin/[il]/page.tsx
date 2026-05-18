@@ -18,6 +18,7 @@ import { WhatsappButton } from '@/components/vitrin/whatsapp-button';
 import { buildVitrinPageMetadata } from '@/lib/vitrin/page-metadata';
 import { buildBreadcrumbLd } from '@/lib/vitrin/schema-org';
 import { getPublicBaseUrl } from '@/lib/vitrin/sitemap-data';
+import { listCategoriesInCity } from '@/lib/vitrin/category-listings';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,10 +80,11 @@ export default async function VitrinCityPage({
   filters.limit = PAGE_SIZE;
   filters.offset = (page - 1) * PAGE_SIZE;
 
-  const [storefronts, totalCount, activeDistricts] = await Promise.all([
+  const [storefronts, totalCount, activeDistricts, activeCategories] = await Promise.all([
     listPublicStorefronts(db, filters),
     countPublicStorefronts(db, { cityId: city.id, q: filters.q }),
     listDistrictsWithStorefronts(city.id, db),
+    listCategoriesInCity(city.id, db),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
@@ -230,6 +232,32 @@ export default async function VitrinCityPage({
                   className="inline-flex items-center rounded-full border border-line bg-paper px-3 py-1.5 text-[13px] font-bold text-cart hover:border-cat hover:bg-cat-soft transition-colors"
                 >
                   {d.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Kategori chip listesi — bu ilde satışta olan kategoriler (cross-tenant) */}
+      {activeCategories.length > 0 && (
+        <section data-testid="vitrin-city-category-chips">
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
+            🛍 {city!.name}&apos;de satışta olan kategoriler ({activeCategories.length})
+          </h2>
+          <ul className="flex flex-wrap gap-2">
+            {activeCategories.slice(0, 18).map((cat) => (
+              <li key={cat.slug}>
+                <Link
+                  href={`/vitrin/kategori/${cat.slug}?il=${city!.slug}` as never}
+                  data-category-slug={cat.slug}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-cat/30 bg-cat-soft/40 px-3 py-1.5 text-[13px] font-bold text-cart hover:border-cat hover:bg-cat-soft transition-colors"
+                >
+                  <span aria-hidden>{cat.emoji}</span>
+                  {cat.name}
+                  <span className="rounded bg-paper/80 px-1.5 py-0.5 text-[11px] font-bold text-cat">
+                    {cat.productCount}
+                  </span>
                 </Link>
               </li>
             ))}

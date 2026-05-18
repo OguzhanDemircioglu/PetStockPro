@@ -268,3 +268,42 @@ export async function listCategoriesWithStorefrontProducts(
     })
     .sort((a, b) => b.productCount - a.productCount);
 }
+
+/**
+ * Belirli bir ildeki tenant'larda satışta olan kategorileri listele
+ * (cross-tenant aggregate). İl sayfası chip section için.
+ *
+ * Aynı slug birden çok tenant'ta çıksa bile DISTINCT product.id ile
+ * çift saymayı önler.
+ */
+export async function listCategoriesInCity(
+  cityId: number,
+  db: DbClient,
+): Promise<CategoryWithCount[]> {
+  const rows = await db
+    .select({
+      slug: categories.slug,
+      productCount: sql<number>`COUNT(DISTINCT ${products.id})::int`,
+    })
+    .from(categories)
+    .innerJoin(products, eq(products.categoryId, categories.id))
+    .innerJoin(companies, eq(companies.id, products.companyId))
+    .innerJoin(storefrontSettings, eq(storefrontSettings.companyId, companies.id))
+    .where(
+      and(
+        eq(companies.cityId, cityId),
+        eq(products.vitrinPublished, true),
+        sql`${products.deletedAt} IS NULL`,
+        eq(companies.storefrontStatus, 'approved'),
+        eq(storefrontSettings.isEnabled, true),
+      ),
+    )
+    .groupBy(categories.slug);
+
+  return rows
+    .map((r) => {
+      const info = getCategoryInfoBySlug(r.slug);
+      return { ...info, productCount: r.productCount };
+    })
+    .sort((a, b) => b.productCount - a.productCount);
+}
