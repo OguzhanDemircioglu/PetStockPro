@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { logoutAction } from '@/app/login/actions';
 import { NotificationBell } from './notification-bell';
 import { ThemeToggle } from './theme/theme-toggle';
 import { AnimatedShinyText } from './magicui/animated-shiny-text';
@@ -128,6 +129,22 @@ export function AdminTopbar({ userEmail, unreadCount, isSuperadmin }: Props) {
       >
         {initials(userEmail)}
       </Link>
+
+      <form action={logoutAction}>
+        <button
+          type="submit"
+          data-testid="topbar-logout"
+          title="Çıkış yap"
+          aria-label="Çıkış yap"
+          className="grid h-9 w-9 place-items-center rounded-xl border border-line bg-paper text-ink-3 hover:border-danger/40 hover:bg-danger-soft hover:text-danger-7 transition-colors"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+        </button>
+      </form>
     </header>
   );
 }
