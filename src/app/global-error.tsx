@@ -38,9 +38,14 @@ export default function GlobalError({ error, reset }: Props) {
         }}
       >
         <div style={{ maxWidth: '420px', textAlign: 'center' }}>
-          <div style={{ fontSize: '72px' }} aria-hidden>
-            🐾
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.webp"
+            alt="PetStockPro"
+            width={96}
+            height={96}
+            style={{ width: '96px', height: '96px', objectFit: 'contain', margin: '0 auto' }}
+          />
           <h1
             style={{
               marginTop: '24px',

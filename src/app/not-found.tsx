@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
@@ -11,16 +12,21 @@ export const metadata: Metadata = {
  * Global 404 sayfası — eşleşmeyen tüm route'lar buraya düşer.
  * Next.js varsayılan İngilizce sayfası yerine TR + marka uyumlu UI.
  *
- * Tasarım: minimal, paw mascot + tek CTA. SaaS landing yokken /admin (auth gate)
+ * Tasarım: minimal, brand logo + tek CTA. SaaS landing yokken /admin (auth gate)
  * veya /vitrin (public) en güvenli yönlendirme.
  */
 export default function NotFound() {
   return (
     <main className="grid min-h-[70vh] place-items-center px-6 py-16">
       <div className="max-w-md text-center">
-        <div className="text-7xl" aria-hidden>
-          🐾
-        </div>
+        <Image
+          src="/logo.webp"
+          alt="PetStockPro"
+          width={96}
+          height={96}
+          priority
+          className="mx-auto h-24 w-24 object-contain"
+        />
         <h1 className="mt-6 text-3xl font-bold tracking-tight text-cart">
           Sayfa bulunamadı
         </h1>
