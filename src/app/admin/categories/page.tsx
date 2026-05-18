@@ -121,7 +121,7 @@ export default async function CategoriesPage({
             <span aria-hidden className="text-base">⚠</span>
             <p className="flex-1 text-[12.5px] text-cart">
               Mevcut kategorilerin <strong>eski tek-seviyeli yapıda</strong>.
-              Yeni 49 hiyerarşik default'a sıfırlamak istersen:
+              Yeni 49 hiyerarşik default&apos;a sıfırlamak istersen:
             </p>
             <ResetMyCategoriesButton />
           </div>

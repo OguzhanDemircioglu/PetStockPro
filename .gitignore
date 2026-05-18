@@ -89,3 +89,11 @@ worker.js
 # ============================================================
 .claude/settings.local.json
 .claude/.cache/
+
+# ============================================================
+# Seed data (pet products catalog) — şimdilik repo dışı
+# Yeni session'da Firecrawl ile yeniden toplanıp eklenecek.
+# seed-catalog.ts bu klasör olmadan da çalışır (graceful fallback).
+# ============================================================
+scripts/data/
+scripts/enrich-product-images.ts

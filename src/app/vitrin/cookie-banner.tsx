@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 
 const STORAGE_KEY = 'vitrin-cookie-banner-dismissed-at';
@@ -20,24 +20,28 @@ const DISMISS_TTL_MS = 6 * 30 * 24 * 60 * 60 * 1000;
  * SSR-safe: ilk render'da null döner (hydration mismatch önlemi), useEffect
  * sonrası karar verir.
  */
-export function CookieBanner() {
-  const [show, setShow] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const ts = parseInt(raw, 10);
-        if (Number.isFinite(ts) && Date.now() - ts < DISMISS_TTL_MS) {
-          setShow(false);
-          return;
-        }
+/** Mount sırasında localStorage'tan dismiss durumunu oku — eslint set-state-in-effect uyumlu */
+function readInitialShow(): boolean | null {
+  // SSR'da localStorage yok → null (ilk paint'te ban görüntülenmez)
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const ts = parseInt(raw, 10);
+      if (Number.isFinite(ts) && Date.now() - ts < DISMISS_TTL_MS) {
+        return false;
       }
-    } catch {
-      // Private mode / quota → sessizce göster
     }
-    setShow(true);
-  }, []);
+  } catch {
+    // Private mode / quota → sessizce göster
+  }
+  return true;
+}
+
+export function CookieBanner() {
+  // useState lazy initializer ile mount sırasında bir kez okur (SSR'da null →
+  // ilk paint banner-less, client hydrate olunca localStorage check + render).
+  const [show, setShow] = useState<boolean | null>(() => readInitialShow());
 
   const dismiss = () => {
     try {

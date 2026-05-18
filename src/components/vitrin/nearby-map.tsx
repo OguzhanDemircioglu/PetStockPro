@@ -185,9 +185,13 @@ export default function NearbyMap({
     };
   }, [enableLiveTracking]);
 
-  // Prop user location değişirse (URL'den lat/lng push edilince) liveLocation reset
+  // Prop user location değişirse liveLocation reset.
+  // useEffect içinde setState — React/Next 19 'set-state-in-effect' kuralı genellikle
+  // derive-state-from-props anti-pattern'i için. Burada watchPosition akışı ile prop
+  // akışını birleştiriyoruz (gerçek senkronizasyon) — false positive, disable.
   useEffect(() => {
     if (userLocation) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLiveLocation(userLocation);
     }
   }, [userLocation?.lat, userLocation?.lng]);

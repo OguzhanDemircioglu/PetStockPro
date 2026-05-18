@@ -1,16 +1,19 @@
 /**
  * Seed Catalog — Curated TR pet ürünleri katalog araması.
  *
- * Veri: `scripts/data/pet-products-catalog.json` (~328 ürün, 167KB).
- * Kullanım: `/admin/products/new` formu autocomplete'i için.
+ * **2026-05-18 itibarıyla pasif** — `scripts/data/pet-products-catalog.json`
+ * `.gitignore`'da, repo dışı tutuluyor. Yeni session'da Firecrawl MCP ile
+ * Türkiye'deki tüm pet shop ürünleri (resimler dahil) yeniden toplanacak,
+ * sonra burada aktif hale getirilecek. Şu anda boş katalog dönüyor — UI
+ * autocomplete'i "Eşleşen yok" empty state gösterir, akış sade çalışır.
+ *
+ * Kullanım (aktif olduğunda): `/admin/products/new` formu autocomplete'i.
  *
  * Strateji:
- * - Tek seferlik `require()` ile module-level cache (bundle dahil; route-scoped).
- * - Pure `searchSeedCatalog(q, limit)` fn — score-based ranking, ad/marka/barkod arama.
- * - Edge runtime'da çalışabilir (saf JS, fs erişimi yok — JSON import bundle'a dahil).
+ * - Dynamic require JSON yoksa graceful fallback (boş products array)
+ * - Pure `searchSeedCatalog(q, limit)` fn — score-based ranking, ad/marka/barkod arama
+ * - Edge runtime'da çalışır (JSON varsa bundle dahil, yoksa hiç yok)
  */
-
-import rawCatalog from '../../../scripts/data/pet-products-catalog.json';
 
 export type SeedAnimalType =
   | 'cat'
@@ -41,7 +44,26 @@ interface CatalogFile {
   products: SeedProduct[];
 }
 
-const CATALOG = rawCatalog as unknown as CatalogFile;
+/**
+ * Catalog yükle — JSON dosyası yoksa boş katalog (graceful fallback).
+ * `scripts/data/pet-products-catalog.json` `.gitignore`'da olduğu için
+ * production/CI build'lerinde yok. Lokalde varsa otomatik yüklenir.
+ */
+function loadCatalog(): CatalogFile {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const raw = require('../../../scripts/data/pet-products-catalog.json');
+    return raw as CatalogFile;
+  } catch {
+    return {
+      version: '0.0.0-empty',
+      generatedAt: new Date().toISOString(),
+      products: [],
+    };
+  }
+}
+
+const CATALOG: CatalogFile = loadCatalog();
 
 export interface SearchResult extends SeedProduct {
   score: number;

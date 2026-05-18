@@ -158,7 +158,7 @@ export async function registerNewTenant(
       // (Kedi/Köpek/Kuş/Akvaryum/Kemirgen/Sürüngen) + 43 alt kategori. Helper 2-fazlı
       // insert yapar (root → children) ve parent_id'leri otomatik resolve eder.
       // Tenant sonradan düzenleyebilir/silebilir.
-      await seedDefaultCategoriesForCompany(company.id, tx as DbClient);
+      await seedDefaultCategoriesForCompany(company.id, tx as unknown as DbClient);
 
       return { companyId: company.id, userId: user.id };
     });
