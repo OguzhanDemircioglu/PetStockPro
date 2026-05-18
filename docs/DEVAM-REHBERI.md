@@ -1,11 +1,62 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-18 (gece — **I/J/K/L 4 commit polish: brand chip + ara il filter + seed image transfer + Leaflet live tracking**)
-**Mevcut Branch:** `cray61` — origin'in **168 commit** ileri (push edilmedi)
-**Son commit:** `518039d` feat(vitrin): NearbyMap canlı kullanıcı konum takibi
-**Test:** **1314 passed** (önceki 1297 → +17: seed-image-transfer)
+**Tarih:** 2026-05-18 (gece-geç — **M/N/O/P 4 commit polish: brand SEO landing + ara kategori filter + Leaflet compass + Storage cache-control**)
+**Mevcut Branch:** `cray61` — origin'in **174 commit** ileri (push edilmedi)
+**Son commit:** `4d9c7ed` feat(storage): product image upload'da cacheControl=31536000 (1 yıl)
+**Test:** **1340 passed** (önceki 1314 → +13 brand-listings + 30 product-images +cacheControl assertion = +13 net)
 **Lint+typecheck:** 0 error (pre-existing register.ts $client cast hariç)
 **Migration:** 17 (değişmedi)
+
+## 🆕 Bu mini-tur (2026-05-18, gece-geç) — M/N/O/P 4 commit polish
+
+| # | İş | Commit |
+|---|---|---|
+| M | /vitrin/marka/[brand] SEO landing — cross-tenant brand detay + listing + il filter + breadcrumb + sitemap; makeBrandSlug + getBrandByNameSlug + listProductsByBrandSlug + countProductsByBrandSlug helpers (+13 unit) | `b7f7335` |
+| N | /vitrin/ara?kategori=<slug> kategori filter — search.ts SearchOpts.categorySlug + categories LEFT JOIN dinamik + form select + chip + temizleme | `6645017` |
+| O | NearbyMap compass heading — deviceorientation event + heading state + dynamic divIcon (dönen SVG ok) + popup "🧭 Bakış yönü: N°" + iOS/Android cross-compatibility | `01d5d1f` |
+| P | uploadProductImage cacheControl: '31536000' (1 yıl) — UUID path immutable, CDN public cache güvenli; mock + assertion test | `4d9c7ed` |
+
+### 📊 Mini-tur rakamları
+
+| Metric | Değer |
+|---|---|
+| Yeni commit | **4** |
+| Yeni test | **+13** (1327 → 1340) — brand-listings (cacheControl assertion mevcut test'e eklendi) |
+| Yeni helper | makeBrandSlug + getBrandByNameSlug + listProductsByBrandSlug + countProductsByBrandSlug |
+| Yeni page | /vitrin/marka/[brand] |
+| Branch ahead | 169 → **174 commit** |
+
+### 🔑 Bu mini-turda netleşen konular
+
+1. **Brand slug mapping deterministik:** `makeSlug` shared util'i brand isimlerine uygulanır. SQL-side TR-aware slug regenerate yapılamadığı için JS-side `listBrandsWithStorefrontProducts → find` mapping (brand sayısı ~100, N+1 değil).
+
+2. **/vitrin/ara facet zinciri:** q + il + kategori birlikte filter — pagination URL'lerinde tüm param'lar korunur. Bilinmeyen kategori slug `Diğer` fallback yerine filter no-op (whitelist DEFAULT_CATEGORIES).
+
+3. **Compass heading semantik:** iOS Safari `webkitCompassHeading` (zaten kuzey-saat yönü) ile Android `alpha` (saat tersi) farklı semantik — `360 - alpha` ile pusula'ya çevriliyor.
+
+4. **divIcon dynamic update:** useMemo([heading]) ile Marker icon prop'u re-render — react-leaflet 5 marker position değişmediği sürece re-mount yapmaz, sadece icon swap.
+
+5. **CacheControl Supabase Free tier davranışı:** Kod doğru (param geçti, unit test verifies); ama Free tier'da `Cache-Control: no-cache` override geliyor. Production'da Pro tier veya Cloudflare proxy ile max-age=31536000 honor edilir.
+
+### ⚠ Pending / bekleyen
+
+- 🟡 **Test rollback (LANSMAN ÖNCESI):** magicui@petshop.test + oguzhanturgut611@gmail.com → BAYI_SAHIBI (lansman bloker, şimdilik gerek yok)
+- ⛔ **Şirket kuruluş + VKN + IBAN** → Sprint 13/14 iyzico/Nilvera production (2-4 hafta)
+- ⛔ **Production env secret'lar** → IYZICO_WEBHOOK_SECRET + BREVO_API_KEY + CRON_SECRET
+- 🟡 **Supabase Storage tier upgrade** → CDN cache-control honor için (Pro $25/ay)
+
+### 🟢 Sıradaki olası işler
+
+- **Push to origin:** `git push -u origin cray61` (174 commit ileri, kullanıcı kararı)
+- /vitrin/marka listing sayfası (Türkiye'deki tüm markalar, listBrandsWithStorefrontProducts)
+- iOS compass permission button ("🧭 Pusula aktive et") — DeviceOrientationEvent.requestPermission gesture
+- Brand grouping pet shop profilinde aktive olsun (zaten H polish'te eklendi, brand chip Anchor nav)
+- /vitrin/ara'ya brand filter chip (q + il + kategori + marka 4 facet)
+- Cross-tenant brand sayfasına location-aware sort (haversine)
+
+---
+
+## 🆕 Önceki tur (2026-05-18, gece) — I/J/K/L 4 commit polish
 
 ## 🆕 Bu mini-tur (2026-05-18, gece) — I/J/K/L 4 commit polish
 
