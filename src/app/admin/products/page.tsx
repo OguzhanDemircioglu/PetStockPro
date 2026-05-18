@@ -21,6 +21,8 @@ export default async function ProductsPage({
     created?: string;
     updated?: string;
     deleted?: string;
+    seed_image?: 'ok' | 'fail';
+    reason?: string;
     q?: string;
     category?: string;
     brand?: string;
@@ -92,6 +94,14 @@ export default async function ProductsPage({
       {justCreated && (
         <div className="rounded-xl border border-arrow/40 bg-arrow-soft px-4 py-3 text-sm font-bold text-arrow-7">
           ✅ Ürün kataloğuna eklendi.
+          {params.seed_image === 'ok' && (
+            <span className="ml-1 font-normal">📷 Seed katalog görseli de otomatik yüklendi.</span>
+          )}
+          {params.seed_image === 'fail' && (
+            <span className="ml-1 font-normal text-bars-7">
+              ⚠ Seed katalog görseli yüklenemedi ({params.reason ?? 'unknown'}) — ürün detaydan manuel yükleyebilirsin.
+            </span>
+          )}
         </div>
       )}
 

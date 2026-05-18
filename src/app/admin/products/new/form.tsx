@@ -69,6 +69,8 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
   const [barcode, setBarcode] = useState('');
   const [salePrice, setSalePrice] = useState(state?.formValues.salePrice ?? '');
   const [missingBrandHint, setMissingBrandHint] = useState<string | null>(null);
+  const [seedImagePath, setSeedImagePath] = useState<string>('');
+  const [seedImagePreviewName, setSeedImagePreviewName] = useState<string | null>(null);
 
   // Marka / kategori case-insensitive eşleşmesi için preset
   const brandByName = useMemo(() => {
@@ -106,6 +108,15 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
     // SKU önerisi (kullanıcı boşsa override etme)
     if (!sku.trim()) {
       setSku(suggestSku(product.brand, product.name, product.weight));
+    }
+
+    // Seed katalog görseli — submit'te transfer edilmek üzere hidden input'a yaz
+    if (product.imagePath) {
+      setSeedImagePath(product.imagePath);
+      setSeedImagePreviewName(`${product.brand} ${product.name}`.slice(0, 60));
+    } else {
+      setSeedImagePath('');
+      setSeedImagePreviewName(null);
     }
   };
 
@@ -163,9 +174,24 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
             </Link>
           </div>
         )}
+
+        {seedImagePreviewName && (
+          <div
+            data-testid="seed-image-hint"
+            className="mt-2 rounded-xl border border-arrow/30 bg-arrow-soft/40 px-3 py-2 text-[12.5px] font-bold text-arrow-7"
+          >
+            📷 Seçili ürünün görseli kayıt sırasında otomatik yüklenecek
+            <span className="ml-1 font-normal opacity-75">
+              ({seedImagePreviewName})
+            </span>
+          </div>
+        )}
       </section>
 
       <form action={formAction} className="flex flex-col gap-6">
+        {/* Seed katalog imagePath — autocomplete onSelect ile set edilir, server'da transfer */}
+        <input type="hidden" name="seedImagePath" value={seedImagePath} />
+
         {/* TEMEL BİLGİLER */}
         <section className="rounded-2xl border border-line bg-paper p-6">
           <h2 className="text-lg font-bold text-cart">📦 Temel bilgiler</h2>

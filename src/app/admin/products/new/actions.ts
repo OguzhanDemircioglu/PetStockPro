@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { createProduct } from '@/lib/catalog/products';
+import { transferSeedImageToProduct } from '@/lib/catalog/seed-image-transfer';
 import { writeAuditLogAsync } from '@/lib/audit/log';
 
 export interface CreateProductState {
@@ -105,5 +106,34 @@ export async function createProductAction(
     db,
   );
 
-  redirect('/admin/products?created=success' as never);
+  // Seed katalog görselini transfer et (autocomplete'ten seçilen ürünün imagePath'i)
+  const seedImagePath = formData.get('seedImagePath');
+  let imageTransferSuffix = '';
+  if (typeof seedImagePath === 'string' && seedImagePath.length > 0) {
+    const transfer = await transferSeedImageToProduct(
+      session.user.companyId,
+      result.productId,
+      seedImagePath,
+      db,
+    );
+    if (transfer.ok) {
+      writeAuditLogAsync(
+        {
+          companyId: session.user.companyId,
+          userId: session.user.id,
+          action: 'product.image_seed_transfer',
+          entityType: 'product',
+          entityId: result.productId,
+          afterState: { seedImagePath, imageId: transfer.imageId },
+        },
+        db,
+      );
+      imageTransferSuffix = '&seed_image=ok';
+    } else {
+      // Transfer fail olsa bile ürün oluşturuldu — sadece banner mesajıyla kullanıcıya bildir
+      imageTransferSuffix = `&seed_image=fail&reason=${encodeURIComponent(transfer.reason ?? 'unknown')}`;
+    }
+  }
+
+  redirect(`/admin/products?created=success${imageTransferSuffix}` as never);
 }
