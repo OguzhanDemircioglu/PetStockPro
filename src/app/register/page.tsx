@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import Image from 'next/image';
 import { registerAction, type RegisterState } from './actions';
 
 /**
@@ -49,8 +50,15 @@ export default function RegisterPage() {
         <span className="pointer-events-none absolute bottom-0 left-0 right-0 z-[2] h-1.5 bg-gradient-to-r from-cart via-bars via-arrow to-cat-7" />
 
         <div className="relative z-10 flex items-center gap-5">
-          <div className="grid h-[104px] w-[104px] flex-shrink-0 -rotate-3 place-items-center rounded-3xl bg-white/95 p-2.5 shadow-2xl ring-1 ring-white/60 transition-transform duration-300 hover:rotate-0 hover:scale-105">
-            <span className="text-6xl font-bold leading-none tracking-tighter text-cat">P</span>
+          <div className="grid h-[104px] w-[104px] flex-shrink-0 -rotate-3 place-items-center overflow-hidden rounded-3xl bg-white/95 p-2.5 shadow-2xl ring-1 ring-white/60 transition-transform duration-300 hover:rotate-0 hover:scale-105">
+            <Image
+              src="/logo.webp"
+              alt="PetStockPro"
+              width={88}
+              height={88}
+              className="h-[88px] w-[88px] object-contain"
+              priority
+            />
           </div>
           <div className="leading-tight">
             <div className="text-[27.5px] font-bold tracking-tight leading-none">PetStockPro</div>
