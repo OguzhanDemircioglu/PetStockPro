@@ -1,11 +1,59 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-18 (akşam — **B/C/E/F/G/H — 10 commit ek polish turu: süperadmin redirect + topbar çıkış + login göz + 2FA TXT indir/yükle + ürün autocomplete + vitrin ara + Leaflet harita + 'Satıcıya sor'**)
-**Mevcut Branch:** `cray61` — origin'in **164 commit** ileri (push edilmedi)
-**Son commit:** `22d37e8` feat(vitrin): H polish — il kategori chip + 'Satıcıya sor' label
-**Test:** **1297 passed** (önceki 1242 → +55: recovery-codes 25 + seed-catalog 22 + parseSearchQuery 8)
+**Tarih:** 2026-05-18 (gece — **I/J/K/L 4 commit polish: brand chip + ara il filter + seed image transfer + Leaflet live tracking**)
+**Mevcut Branch:** `cray61` — origin'in **168 commit** ileri (push edilmedi)
+**Son commit:** `518039d` feat(vitrin): NearbyMap canlı kullanıcı konum takibi
+**Test:** **1314 passed** (önceki 1297 → +17: seed-image-transfer)
 **Lint+typecheck:** 0 error (pre-existing register.ts $client cast hariç)
 **Migration:** 17 (değişmedi)
+
+## 🆕 Bu mini-tur (2026-05-18, gece) — I/J/K/L 4 commit polish
+
+| # | İş | Commit |
+|---|---|---|
+| I | /vitrin/[il] cross-tenant brand chip section (listBrandsInCity helper, productCount badge'leri, mavi/bars tonu) | `9b8e6f3` |
+| J | /vitrin/ara?il=<slug> şehir filter (getCityBySlug + listCitiesWithStorefronts + form select + chip + temizle link) | `b0c7f65` |
+| K | Seed katalog autocomplete sonrası görsel otomatik Storage transfer (DI-friendly helper + 17 unit + DB doğrulandı) | `4c75fe9` |
+| L | NearbyMap canlı kullanıcı konum takibi (watchPosition + Permissions API 'granted' state-aware) | `518039d` |
+
+### 📊 Mini-tur rakamları
+
+| Metric | Değer |
+|---|---|
+| Yeni commit | **4** |
+| Yeni test | **+17** (1297 → 1314) — seed-image-transfer |
+| Yeni helper | brand-listings + seed-image-transfer + listCategoriesInCity + listBrandsInCity |
+| Branch ahead | 164 → **168 commit** |
+
+### 🔑 Bu mini-turda netleşen konular
+
+1. **SQL kuralı revize:** DML (SELECT/INSERT/UPDATE/DELETE) ben çalıştırırım; DDL (CREATE/ALTER/DROP/TRUNCATE) kullanıcıya iletilir. Memory: `feedback_sql_user_runs.md` (revize).
+
+2. **Brand grouping mantığı:** brands tablosu tenant-scope (aynı isim farklı tenant'larda farklı UUID). Cross-tenant aggregate `brands.name` üzerinden yapılır (DISTINCT product.id ile çift saymayı önler). brands tablosunda `is_active` kolonu YOK (sadece products'ta soft-delete var).
+
+3. **Seed image transfer güvenliği:** Path whitelist regex (`^scripts/data/images/[a-zA-Z0-9_-]+\.(jpe?g|png|webp)$`) + `path.resolve` ile traversal koruması + DI-friendly helper (test'te mock fn, production'da fs.promises). Mevcut `uploadProductImage` zincirine bağlanır (tenant ownership + auto-primary).
+
+4. **Leaflet canlı takip prensibi:** URL'i değiştirme (sayfa reload yok); sadece client-side React state update. Permissions API 'granted' ise sessiz başla, 'prompt'/'denied' ise NearbyToggle'ı bekle. watchPosition options: highAccuracy + 15s timeout + 5s maxAge.
+
+5. **/vitrin/ara il filter:** Slug bilinmeyen ise filter no-op (404 değil). cityFilter chip + "× Şehir filtresini kaldır" link sadece q kalır. Pagination URL'lerinde il param'ı korunur.
+
+### ⚠ Pending / bekleyen
+
+- 🟡 **Test rollback (LANSMAN ÖNCESI):** magicui@petshop.test + oguzhanturgut611@gmail.com → BAYI_SAHIBI (lansman bloker, şimdilik gerek yok)
+- ⛔ **Şirket kuruluş + VKN + IBAN** → Sprint 13/14 iyzico/Nilvera production (2-4 hafta)
+- ⛔ **Production env secret'lar** → IYZICO_WEBHOOK_SECRET + BREVO_API_KEY + CRON_SECRET
+
+### 🟢 Sıradaki olası işler
+
+- **Push to origin:** `git push -u origin cray61` (168 commit ileri, kullanıcı kararı)
+- /vitrin/marka/[brand] SEO landing (`listBrandsWithStorefrontProducts` zaten hazır)
+- /vitrin/ara'ya kategori filter (mevcut categoryListings + cityId pattern aynı)
+- Leaflet kullanıcı yönü göstergesi (compass heading)
+- Seed image transfer için Supabase Storage CDN cache-control header
+
+---
+
+## 🆕 Önceki tur (2026-05-18, akşam) — B/C/E/F/G/H 10 commit polish + UX
 
 ## 🆕 Bu tur (2026-05-18, akşam) — B/C/E/F/G/H 10 commit polish + UX
 
