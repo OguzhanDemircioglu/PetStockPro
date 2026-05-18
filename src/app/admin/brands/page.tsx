@@ -3,12 +3,19 @@ import Link from 'next/link';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { listBrands } from '@/lib/brands/manage';
+import { ModerationQueryBanner } from '@/components/moderation/moderation-query-banner';
 import { DeleteBrandButton } from './delete-brand-button';
 
 export default async function BrandsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ created?: string; updated?: string; q?: string }>;
+  searchParams: Promise<{
+    created?: string;
+    updated?: string;
+    q?: string;
+    moderation?: 'flagged';
+    fields?: string;
+  }>;
 }) {
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
@@ -68,6 +75,11 @@ export default async function BrandsPage({
           ✅ Marka güncellendi.
         </div>
       )}
+      <ModerationQueryBanner
+        moderation={params.moderation}
+        fields={params.fields}
+        entityLabel="Marka"
+      />
 
       {allItems.length > 5 && (
         <form className="flex gap-2" action="/admin/brands" method="get">

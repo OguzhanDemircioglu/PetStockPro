@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
+import { ModerationWarning } from '@/components/moderation/moderation-warning';
 import { updateCompanyAction, type CompanyActionState } from './actions';
 
 interface CityOption {
@@ -239,6 +240,9 @@ export function CompanyForm({ initial, cities, initialDistricts }: Props) {
         </div>
       </Section>
 
+      {state?.moderationFlags?.flagged && (
+        <ModerationWarning result={state.moderationFlags} />
+      )}
       {state?.message && (
         <div
           role="alert"

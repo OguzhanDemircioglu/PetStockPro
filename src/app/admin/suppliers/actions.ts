@@ -11,6 +11,8 @@ import {
   type SupplierInput,
 } from '@/lib/suppliers/manage';
 import { writeAuditLogAsync } from '@/lib/audit/log';
+import { logModerationFlag } from '@/lib/moderation/audit';
+import { moderationRedirectSuffix } from '@/lib/moderation/redirect-suffix';
 
 export interface SupplierActionState {
   ok: boolean;
@@ -97,8 +99,21 @@ export async function addSupplierAction(
     db,
   );
 
+  if (result.moderationFlags?.flagged) {
+    logModerationFlag(
+      {
+        companyId: session.user.companyId,
+        userId: session.user.id,
+        entityType: 'supplier',
+        entityId: result.supplierId,
+        result: result.moderationFlags,
+      },
+      db,
+    );
+  }
+
   revalidatePath('/admin/suppliers');
-  redirect('/admin/suppliers?created=success' as never);
+  redirect(`/admin/suppliers?created=success${moderationRedirectSuffix(result.moderationFlags)}` as never);
 }
 
 export async function updateSupplierAction(
@@ -141,8 +156,21 @@ export async function updateSupplierAction(
     db,
   );
 
+  if (result.moderationFlags?.flagged) {
+    logModerationFlag(
+      {
+        companyId: session.user.companyId,
+        userId: session.user.id,
+        entityType: 'supplier',
+        entityId: supplierId,
+        result: result.moderationFlags,
+      },
+      db,
+    );
+  }
+
   revalidatePath('/admin/suppliers');
-  redirect('/admin/suppliers?updated=success' as never);
+  redirect(`/admin/suppliers?updated=success${moderationRedirectSuffix(result.moderationFlags)}` as never);
 }
 
 export async function toggleSupplierActiveAction(

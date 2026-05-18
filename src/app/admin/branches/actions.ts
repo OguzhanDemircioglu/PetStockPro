@@ -11,6 +11,8 @@ import {
   type BranchInput,
 } from '@/lib/branches/manage';
 import { writeAuditLogAsync } from '@/lib/audit/log';
+import { logModerationFlag } from '@/lib/moderation/audit';
+import { moderationRedirectSuffix } from '@/lib/moderation/redirect-suffix';
 
 export interface BranchActionState {
   ok: boolean;
@@ -88,8 +90,21 @@ export async function addBranchAction(
     db,
   );
 
+  if (result.moderationFlags?.flagged) {
+    logModerationFlag(
+      {
+        companyId: session.user.companyId,
+        userId: session.user.id,
+        entityType: 'branch',
+        entityId: result.branchId,
+        result: result.moderationFlags,
+      },
+      db,
+    );
+  }
+
   revalidatePath('/admin/branches');
-  redirect('/admin/branches?created=success' as never);
+  redirect(`/admin/branches?created=success${moderationRedirectSuffix(result.moderationFlags)}` as never);
 }
 
 export async function updateBranchAction(
@@ -131,8 +146,21 @@ export async function updateBranchAction(
     db,
   );
 
+  if (result.moderationFlags?.flagged) {
+    logModerationFlag(
+      {
+        companyId: session.user.companyId,
+        userId: session.user.id,
+        entityType: 'branch',
+        entityId: branchId,
+        result: result.moderationFlags,
+      },
+      db,
+    );
+  }
+
   revalidatePath('/admin/branches');
-  redirect('/admin/branches?updated=success' as never);
+  redirect(`/admin/branches?updated=success${moderationRedirectSuffix(result.moderationFlags)}` as never);
 }
 
 export async function toggleBranchActiveAction(

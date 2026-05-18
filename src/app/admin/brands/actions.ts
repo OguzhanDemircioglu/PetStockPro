@@ -11,6 +11,8 @@ import {
   type BrandInput,
 } from '@/lib/brands/manage';
 import { writeAuditLogAsync } from '@/lib/audit/log';
+import { logModerationFlag } from '@/lib/moderation/audit';
+import { moderationRedirectSuffix } from '@/lib/moderation/redirect-suffix';
 
 export interface BrandActionState {
   ok: boolean;
@@ -77,9 +79,22 @@ export async function addBrandAction(
     db,
   );
 
+  if (result.moderationFlags?.flagged) {
+    logModerationFlag(
+      {
+        companyId: session.user.companyId,
+        userId: session.user.id,
+        entityType: 'brand',
+        entityId: result.brandId,
+        result: result.moderationFlags,
+      },
+      db,
+    );
+  }
+
   revalidatePath('/admin/brands');
   revalidatePath('/admin/products');
-  redirect('/admin/brands?created=success' as never);
+  redirect(`/admin/brands?created=success${moderationRedirectSuffix(result.moderationFlags)}` as never);
 }
 
 export async function updateBrandAction(
@@ -115,9 +130,22 @@ export async function updateBrandAction(
     db,
   );
 
+  if (result.moderationFlags?.flagged) {
+    logModerationFlag(
+      {
+        companyId: session.user.companyId,
+        userId: session.user.id,
+        entityType: 'brand',
+        entityId: brandId,
+        result: result.moderationFlags,
+      },
+      db,
+    );
+  }
+
   revalidatePath('/admin/brands');
   revalidatePath('/admin/products');
-  redirect('/admin/brands?updated=success' as never);
+  redirect(`/admin/brands?updated=success${moderationRedirectSuffix(result.moderationFlags)}` as never);
 }
 
 export async function deleteBrandAction(brandId: string): Promise<BrandActionState> {

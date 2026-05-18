@@ -9,11 +9,14 @@ import {
   type CompanyProfileInput,
 } from '@/lib/company/settings';
 import { writeAuditLogAsync } from '@/lib/audit/log';
+import { logModerationFlag } from '@/lib/moderation/audit';
+import type { ModerationFlagsResult } from '@/lib/moderation/redirect-suffix';
 
 export interface CompanyActionState {
   ok: boolean;
   message: string | null;
   issues: string[];
+  moderationFlags?: ModerationFlagsResult;
 }
 
 const EMPTY: CompanyActionState = {
@@ -79,11 +82,25 @@ export async function updateCompanyAction(
     db,
   );
 
+  if (result.moderationFlags?.flagged) {
+    logModerationFlag(
+      {
+        companyId: session.user.companyId,
+        userId: session.user.id,
+        entityType: 'company',
+        entityId: session.user.companyId,
+        result: result.moderationFlags,
+      },
+      db,
+    );
+  }
+
   revalidatePath('/admin/settings/company');
   revalidatePath('/admin/products');
   return {
     ok: true,
     message: 'Firma bilgileri güncellendi',
     issues: [],
+    ...(result.moderationFlags?.flagged ? { moderationFlags: result.moderationFlags } : {}),
   };
 }

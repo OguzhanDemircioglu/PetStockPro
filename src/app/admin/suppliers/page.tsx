@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { listSuppliers } from '@/lib/suppliers/manage';
+import { ModerationQueryBanner } from '@/components/moderation/moderation-query-banner';
 import { ToggleSupplierActive } from './toggle-supplier-active';
 
 const PAYMENT_LABEL: Record<string, string> = {
@@ -15,7 +16,12 @@ const PAYMENT_LABEL: Record<string, string> = {
 export default async function SuppliersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ created?: string; updated?: string }>;
+  searchParams: Promise<{
+    created?: string;
+    updated?: string;
+    moderation?: 'flagged';
+    fields?: string;
+  }>;
 }) {
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
@@ -61,6 +67,11 @@ export default async function SuppliersPage({
           ✅ Tedarikçi eklendi.
         </div>
       )}
+      <ModerationQueryBanner
+        moderation={params.moderation}
+        fields={params.fields}
+        entityLabel="Tedarikçi"
+      />
       {params.updated === 'success' && (
         <div className="rounded-xl border border-arrow/40 bg-arrow-soft px-4 py-3 text-sm font-bold text-arrow-7">
           ✅ Tedarikçi güncellendi.

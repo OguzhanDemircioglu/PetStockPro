@@ -6,11 +6,14 @@ import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { upsertStorefrontSettings } from '@/lib/storefront/settings';
 import { writeAuditLogAsync } from '@/lib/audit/log';
+import { logModerationFlag } from '@/lib/moderation/audit';
+import type { ModerationFlagsResult } from '@/lib/moderation/redirect-suffix';
 
 export interface StorefrontFormState {
   ok?: boolean;
   error?: string;
   issues?: string[];
+  moderationFlags?: ModerationFlagsResult;
 }
 
 const asStr = (v: FormDataEntryValue | null): string | null => {
@@ -65,7 +68,24 @@ export async function saveStorefrontAction(
     db,
   );
 
+  if (result.moderationFlags?.flagged) {
+    logModerationFlag(
+      {
+        companyId: session.user.companyId,
+        userId: session.user.id,
+        entityType: 'company',
+        entityId: session.user.companyId,
+        action: 'moderation.flagged.storefront',
+        result: result.moderationFlags,
+      },
+      db,
+    );
+  }
+
   revalidatePath('/admin/settings/storefront');
   revalidatePath('/admin/settings');
-  return { ok: true };
+  return {
+    ok: true,
+    ...(result.moderationFlags?.flagged ? { moderationFlags: result.moderationFlags } : {}),
+  };
 }

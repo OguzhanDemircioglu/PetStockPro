@@ -3,12 +3,18 @@ import Link from 'next/link';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { listBranches } from '@/lib/branches/manage';
+import { ModerationQueryBanner } from '@/components/moderation/moderation-query-banner';
 import { ToggleActiveButton } from './toggle-active-button';
 
 export default async function BranchesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ created?: string; updated?: string }>;
+  searchParams: Promise<{
+    created?: string;
+    updated?: string;
+    moderation?: 'flagged';
+    fields?: string;
+  }>;
 }) {
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
@@ -59,6 +65,11 @@ export default async function BranchesPage({
           ✅ Şube güncellendi.
         </div>
       )}
+      <ModerationQueryBanner
+        moderation={params.moderation}
+        fields={params.fields}
+        entityLabel="Şube"
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((b) => (

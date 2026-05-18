@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import type { StorefrontSettingsRow } from '@/lib/storefront/settings';
+import { ModerationWarning } from '@/components/moderation/moderation-warning';
 import { saveStorefrontAction, type StorefrontFormState } from './actions';
 
 interface Props {
@@ -31,6 +32,9 @@ export function StorefrontForm({ initial }: Props) {
         >
           {state.error}
         </div>
+      )}
+      {state?.moderationFlags?.flagged && (
+        <ModerationWarning result={state.moderationFlags} />
       )}
 
       <section className="rounded-2xl border border-line bg-paper p-5">

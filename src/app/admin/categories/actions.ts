@@ -12,6 +12,8 @@ import {
 } from '@/lib/categories/manage';
 import { writeAuditLogAsync } from '@/lib/audit/log';
 import { isSuperadmin } from '@/lib/superadmin/access';
+import { logModerationFlag } from '@/lib/moderation/audit';
+import { moderationRedirectSuffix } from '@/lib/moderation/redirect-suffix';
 
 export interface CategoryActionState {
   ok: boolean;
@@ -90,9 +92,22 @@ export async function addCategoryAction(
     db,
   );
 
+  if (result.moderationFlags?.flagged) {
+    logModerationFlag(
+      {
+        companyId: session.user.companyId,
+        userId: session.user.id,
+        entityType: 'category',
+        entityId: result.categoryId,
+        result: result.moderationFlags,
+      },
+      db,
+    );
+  }
+
   revalidatePath('/admin/categories');
   revalidatePath('/admin/products');
-  redirect('/admin/categories?created=success' as never);
+  redirect(`/admin/categories?created=success${moderationRedirectSuffix(result.moderationFlags)}` as never);
 }
 
 export async function updateCategoryAction(
@@ -140,9 +155,22 @@ export async function updateCategoryAction(
     db,
   );
 
+  if (result.moderationFlags?.flagged) {
+    logModerationFlag(
+      {
+        companyId: session.user.companyId,
+        userId: session.user.id,
+        entityType: 'category',
+        entityId: categoryId,
+        result: result.moderationFlags,
+      },
+      db,
+    );
+  }
+
   revalidatePath('/admin/categories');
   revalidatePath('/admin/products');
-  redirect('/admin/categories?updated=success' as never);
+  redirect(`/admin/categories?updated=success${moderationRedirectSuffix(result.moderationFlags)}` as never);
 }
 
 export async function deleteCategoryAction(

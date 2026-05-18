@@ -4,13 +4,20 @@ import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { listCategories, type CategoryListItem } from '@/lib/categories/manage';
 import { isSuperadmin } from '@/lib/superadmin/access';
+import { ModerationQueryBanner } from '@/components/moderation/moderation-query-banner';
 import { DeleteCategoryButton } from './delete-category-button';
 import { ResetMyCategoriesButton } from './reset-categories-button';
 
 export default async function CategoriesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ created?: string; updated?: string; q?: string }>;
+  searchParams: Promise<{
+    created?: string;
+    updated?: string;
+    q?: string;
+    moderation?: 'flagged';
+    fields?: string;
+  }>;
 }) {
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
@@ -87,6 +94,11 @@ export default async function CategoriesPage({
           ✅ Kategori eklendi.
         </div>
       )}
+      <ModerationQueryBanner
+        moderation={params.moderation}
+        fields={params.fields}
+        entityLabel="Kategori"
+      />
       {params.updated === 'success' && (
         <div className="rounded-xl border border-arrow/40 bg-arrow-soft px-4 py-3 text-sm font-bold text-arrow-7">
           ✅ Kategori güncellendi.
