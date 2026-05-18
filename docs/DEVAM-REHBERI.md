@@ -1,13 +1,82 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-18 (yukarıdaki + Faz 2 + Pano v3 mockup + Magic UI altyapısı + Light/Dark theme + bg-paper migration + Süperadmin metrik dashboard + **vitrin dark + cookie theme + tenant impersonation + middleware guard + WhatsApp button + tipografi büyütme + 2-seviyeli kategori + benzersiz emoji + kategori bar + admin/superadmin kategori reset**)
-**Mevcut Branch:** `cray61` — origin'in **145 commit** ileri (push edilmedi)
-**Son commit:** `1c3af65` refactor(admin/categories): AdminCategoryGrid → AdminCategoryBar (Pet CategoryBar yapısı)
-**Test:** 1192+ passed (kategori benzersiz emoji + 49 hiyerarşik testleri eklendi)
-**Lint+typecheck:** 0 error
-**Migration:** 15 (değişmedi)
+**Tarih:** 2026-05-18 (öğleden sonra — **categories SUPERADMIN-only + 49 hiyerarşik reseed + branding (logo.webp + sidebar shiny + login/register logo + favicon + OG image) + vitrin SEO (sitemap priority + canonical + OG + Twitter + Breadcrumb LD) + vitrin ana sayfa ürün-merkezli yenileme + Sprint 3.3 image upload + cookie banner sade + harita + popüler/çok satanlar gerçek görsel**)
+**Mevcut Branch:** `cray61` — origin'in **154 commit** ileri (push edilmedi)
+**Son commit:** `4a9e426` feat(branding): brand favicon + 1200×630 OpenGraph image
+**Test:** 1242+ passed (admin client 5 + product-images 30 + stats 13 + page-metadata 8 + breadcrumb LD 4 + integration script 28 assert)
+**Lint+typecheck:** 0 error (pre-existing register.ts $client cast hariç)
+**Migration:** 17 (0016 drop vat_rate + 0017 legacy flat → 49 hiyerarşik reseed)
 
-## 🆕 Son tur (2026-05-18, sabah) — Vitrin dark + Impersonation + Tipografi + Hiyerarşik kategori + Pet CategoryBar
+## 🆕 Bu tur (2026-05-18, öğleden sonra) — Categories SUPERADMIN gate + Branding + Vitrin SEO + Ürün-merkezli yenileme + Sprint 3.3 image upload
+
+9 yeni commit (bu turda):
+
+| # | İş | Commit |
+|---|---|---|
+| 1 | Categories: SUPERADMIN-only CRUD + Slug/KDV temizleme + migration 0016/0017 (legacy flat → 49 hiyerarşik reseed) + AdminCategoryBar silindi + sistem ayarları kategori tablosu güncel | `e25a70b` |
+| 2 | Branding: logo.png (1.5MB) → logo.webp (78KB) + sidebar PetStockPro shiny (22px text-cart) + tenant "Pet Shop" suffix logic + login sayfası "P" placeholder → logo | `383b5fd` |
+| 3 | Vitrin SEO: sitemap priority (cross-tenant ürün 0.9 / kategori 0.8 / şehir 0.8 / ürün 0.7 / profil 0.6 / root 0.5 / brand homepage 0.4) + page-metadata helper (canonical + OG + Twitter + robots) + 7 route metadata + buildBreadcrumbLd 5 sayfada inject | `932db08` |
+| 4 | Vitrin ana sayfa ürün-merkezli rewrite: stats.ts (getPlatformStats + listPopularProducts7d + listBestSellers) + page.tsx 9 section (Hero + Trust strip + Yakındakiler + 🔥 Popüler 7g view + 🏆 Çok satanlar 30g sales + statik SVG harita + Şehir grid + Kategori chip + Owner CTA) + NearbyToggle permission-aware (granted→"Konumu yenile" yeşil) | `0c4d8f0` |
+| 5 | Vitrin layout polish: header buton kompakt (16px→13.5px, "çok büyük"), 4-kolon footer (Brand / Vitrin / Pet Shop'lar İçin / Hakkımızda), sade cookie banner ("Çerezlere izin ver" tek buton, 6 ay TTL) | `a59ed12` |
+| 6 | Sprint 3.3 image upload: admin client (singleton) + product-images CRUD (Zod + 4 helper + path traversal koruma + auto-primary + auto-promote) + server actions (3 + role gate + audit) + ImagesSection UI + requireImage=true aktive. **30 unit + 28 integration test** (gerçek DB+Storage) | `a13d4f5` |
+| 7 | Vitrin popüler/çok satanlar kartlarında **gerçek primary image** (LEFT JOIN product_images isPrimary=true + img loading=lazy fallback emoji) | `e094b92` |
+| 8 | Register sayfası sol hero "P" → logo.webp | `0d604d8` |
+| 9 | Branding: brand favicon (logo.webp → 256 PNG, Next.js convention app/icon.png) + OpenGraph 1200×630 PNG (Sharp composite) + page-metadata default OG image güncel | `4a9e426` |
+
+### 📊 Bu turun rakamları
+
+| Metric | Değer |
+|---|---|
+| Yeni unit test | **+40** (1202 → 1242) — admin client 5 + product-images 30 + page-metadata 8 + breadcrumb 4 + stats 5 - sitemap 1 düzeltme |
+| Integration test (gerçek DB+Storage) | **28 assert** PASS |
+| Yeni migration | 2 (0016 drop vat_rate + 0017 reseed) |
+| Yeni helper | stats.ts + page-metadata.ts + product-images.ts + admin.ts |
+| Yeni component | NearbyToggle permission-aware + ImagesSection + CookieBanner + 2 reset-categories |
+| Branding | 4 yer (sidebar / pano / login / register) + favicon + OG image |
+| Vitrin section sayısı | 4 (eski) → 9 (yeni) |
+| Branch ahead | 145 → **154 commit** |
+
+### 🔑 Bu turda netleşen önemli konular
+
+1. **Vitrin felsefesi:** Brand homepage (paylaşılabilir) + ürün arayan kullanıcı (Google'dan) için iki yönlü değer. SEO landing'ler kategori/ürün/şehir alt sayfalarında, brand homepage düşük priority. **Login olmuş kullanıcı vitrin'i normalde görmez** (admin paneli yeterli, "← Admin paneli" chip dön yolu).
+
+2. **Sprint 3.3 BLOKER kalktı** — `SUPABASE_SERVICE_ROLE_KEY` env eklendi (anon JWT yanlış kopyalanmıştı, doğrusu eklendi). Tam lifecycle production-ready:
+   - Storage upload (image/jpeg|png|webp, ≤5MB, tenant-scoped path)
+   - DB insert (auto-primary + displayOrder)
+   - Public URL (Supabase Storage public bucket)
+   - Delete (DB + Storage cleanup + auto-promote)
+   - setPrimary (atomik transaction)
+   - Cross-tenant guard (product_not_found)
+   - **`requireImage=true` aktive** (vitrin'e açmak için en az 1 görsel zorunlu)
+
+3. **Kategori sistemi tek otorite:** SUPERADMIN. Sadece o ekle/sil/düzenle/sıfırla/CSV. BAYI_SAHIBI bile yapamaz — DB'deki kategori datasını sabit tutmak için sıkı kural.
+
+4. **Permission API state-aware NearbyToggle:** Browser geolocation `granted` ise "Konum izni ver" butonu yerine "✓ Konumu yenile" (yeşil) — kullanıcı zaten izin vermiş, tekrar prompt yapmamak için.
+
+### ⚠ Kullanıcı blokerleri (devam ediyor)
+
+- ⛔ Şirket kuruluş + VKN + IBAN → Sprint 13/14 iyzico/Nilvera production (2-4 hafta)
+- ⛔ `IYZICO_WEBHOOK_SECRET` + `BREVO_API_KEY` + `CRON_SECRET` → production env
+
+### 🟡 Yapılmadan kalan opsiyonel polish (önemsiz)
+
+- Sprint 3 Products Test tenant 49 hiyerarşik kategoriye sıfırla (kullanıcı süperadmin UI'dan yapabilir, 2 ürünün kategorisi NULL olacak)
+- Diğer auth sayfalarına logo (forgot-password / verify-email / 2fa-setup emoji placeholder mantıklı — semantic mesaj 🔑📬🛡)
+- Vitrin hero search → gerçek ürün arama route `/vitrin/ara?q=...` (Faz 2)
+- Leaflet gerçek harita (Faz 2 — şu an SVG statik mockup)
+
+### 🧪 Test rollback gerek
+
+Bu turda MagicUI test hesabı geçici SUPERADMIN yapıldı (`magicui@petshop.test`).
+Test bitince geri al:
+```sql
+UPDATE petstockpro.users SET role = 'BAYI_SAHIBI', updated_at = NOW()
+WHERE email = 'magicui@petshop.test';
+```
+
+---
+
+## 🆕 Önceki tur (2026-05-18, sabah) — Vitrin dark + Impersonation + Tipografi + Hiyerarşik kategori + Pet CategoryBar
 
 23 yeni commit (en son `995642f` Magic UI altyapısından bu yana — bir önceki turun devamı):
 
