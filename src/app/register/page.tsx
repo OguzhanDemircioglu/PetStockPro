@@ -30,23 +30,17 @@ export default function RegisterPage() {
     <div className="grid h-screen w-screen grid-cols-1 overflow-hidden md:grid-cols-2">
       {/* ============ SOL HERO PANEL ============ */}
       <aside className="relative flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#d44a14] via-[#ed6a2c] to-[#c25510] px-14 py-14 text-white">
-        <span
-          className="pointer-events-none absolute inset-[-20%] z-0 animate-[paw-rotate_90s_linear_infinite]"
-          style={{
-            backgroundImage:
-              "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'><g fill='%23ffffff' fill-opacity='0.06'><ellipse cx='44' cy='62' rx='11' ry='14'/><ellipse cx='70' cy='46' rx='8' ry='11'/><ellipse cx='20' cy='46' rx='8' ry='11'/><ellipse cx='30' cy='24' rx='7' ry='9'/><ellipse cx='60' cy='24' rx='7' ry='9'/></g></svg>\")",
-            backgroundSize: '320px 320px',
-          }}
-        />
-        <span
-          className="pointer-events-none absolute -bottom-8 -right-12 z-0 h-80 w-80 rotate-[-8deg] opacity-10"
-          style={{
-            backgroundImage:
-              "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 200'><ellipse cx='80' cy='130' rx='52' ry='56' fill='%23fff'/><circle cx='66' cy='124' r='5' fill='%23d44a14'/><circle cx='94' cy='124' r='5' fill='%23d44a14'/><ellipse cx='170' cy='135' rx='52' ry='52' fill='%23fff'/><circle cx='156' cy='130' r='5' fill='%23d44a14'/><circle cx='184' cy='130' r='5' fill='%23d44a14'/></svg>\")",
-            backgroundSize: 'contain',
-            backgroundRepeat: 'no-repeat',
-          }}
-        />
+        {/* Logo watermark — sağ-alt (eski paw pattern + mascot SVG yerine) */}
+        <div className="pointer-events-none absolute -bottom-12 -right-12 z-0 h-72 w-72 rotate-[-8deg] opacity-[0.08]">
+          <Image
+            src="/logo.webp"
+            alt=""
+            aria-hidden="true"
+            width={288}
+            height={288}
+            className="h-full w-full object-contain"
+          />
+        </div>
         <span className="pointer-events-none absolute bottom-0 left-0 right-0 z-[2] h-1.5 bg-gradient-to-r from-cart via-bars via-arrow to-cat-7" />
 
         <div className="relative z-10 flex items-center gap-5">
@@ -245,17 +239,6 @@ export default function RegisterPage() {
           </div>
         </div>
       </section>
-
-      <style jsx>{`
-        @keyframes paw-rotate {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
     </div>
   );
 }
