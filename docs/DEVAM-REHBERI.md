@@ -7,6 +7,45 @@
 **Lint+typecheck:** 0 error (pre-existing register.ts $client cast hariç)
 **Migration:** 17 (0016 drop vat_rate + 0017 legacy flat → 49 hiyerarşik reseed)
 
+---
+
+## 📋 Sıradaki Tur Çalışma Planı (2026-05-18 → bir sonraki commit'lere)
+
+> **Kullanıcı netleştirmesi:** "Hiçbir açık bırakmadan, her senaryoyu test ederek, UI testlerini tarayıcıdan yaparak ilerleyelim."
+> **Test rollback** (`magicui@petshop.test` → BAYI_SAHIBI) **canlıya çıkarken** yapılacak — bu turda atla.
+> **`scripts/data/`** untracked klasör şimdilik dursun — E adımında commit'lenecek.
+
+### Sıralı iş listesi
+
+| # | İş | Tahmin | Test stratejisi | Commit | Durum |
+|---|---|---|---|---|---|
+| **B** | **Süperadmin tour** (kullanıcı manuel) — logout/login → 5 sekme sayfa sayfa: Tenant'lar / Vitrin moderasyon / DB Inspector / Sistem ayarları / 6 bypass | 15 dk | Kullanıcı tarafından, ben sadece hazırlık (logout) yaparım | — (bug bulunursa ayrı fix commit) | ⏳ |
+| **C** | **Sprint 3 tenant kategori reset** — Süperadmin UI'dan "🔄 Default kategorilere sıfırla" aksiyonu | 5 dk | Browser: süperadmin → tenant detay → button → confirm → audit log + tenant'ın /admin/categories'inde 49 hiyerarşik | (sadece data, commit yok) | ⏳ |
+| **E** | **Ürün otomatik tamamlama UX** — `scripts/data/pet-products-catalog.json` ile barkod/marka/ad autocomplete `/admin/products/new` formunda | 1-2 saat | Unit (lookup helper) + browser E2E (tip → öneri görünür → tıkla → form doluyor → SKU kontrol) | tek commit + scripts/ dahil | ⏳ |
+| **F** | **Vitrin ürün arama route** `/vitrin/ara?q=` — Google'dan gelen kullanıcı için landing | 1-2 saat | Unit (search helper) + browser E2E (q=mama → sonuç + boş q → empty + filter combo) + sitemap entry | tek commit | ⏳ |
+| **G** | **Leaflet gerçek harita** — Yakındakiler statik SVG → interaktif Leaflet | 1 saat | Browser E2E (vitrin ana → harita render + marker'lar + popup → tenant link) + CSP recheck | tek commit | ⏳ |
+| **H** | **Vitrin polish** — Brand grouping `/vitrin/[il]` sayfasında + kategori chip + diğer küçük iyileştirmeler | 1-2 saat | Browser E2E (`/vitrin/[il]` → brand gruplar + kategori chip → tıkla → filtreli liste) | tek commit | ⏳ |
+
+**Toplam tahmin:** ~4.5-6.5 saat (B kullanıcı manuel; C+E+F+G+H ben)
+
+### 🧪 Her iş için test disiplini (uyulacak kurallar)
+
+1. **Helper varsa unit test önce** (test-first memory)
+2. **Lint + typecheck temiz** olmalı her commit öncesi
+3. **Browser E2E = preview_screenshot ile gerçek görsel** (DOM eval/fetch yetersiz — memory kuralı)
+4. **Her tamamlanan iş için ayrı commit** (batch yok, onay isteme — memory kuralı)
+5. Her commit sonrası bu plan tablosunda işi ✅ işaretle (Durum kolonu)
+6. Session sonunda DEVAM-REHBERI taze tut
+
+### ▶ Sıralı akış
+
+- **Şu an:** B'ye hazırlık → logout yapıp kullanıcıya teslim
+- **B bitince** → C → E → F → G → H sırasıyla
+- Kullanıcı herhangi bir noktada "dur" derse plan o adımda kesilebilir
+- Açık bırakılan senaryo varsa bir sonraki adıma geçilmez
+
+---
+
 ## 🆕 Bu tur (2026-05-18, öğleden sonra) — Categories SUPERADMIN gate + Branding + Vitrin SEO + Ürün-merkezli yenileme + Sprint 3.3 image upload
 
 9 yeni commit (bu turda):
@@ -65,13 +104,17 @@
 - Vitrin hero search → gerçek ürün arama route `/vitrin/ara?q=...` (Faz 2)
 - Leaflet gerçek harita (Faz 2 — şu an SVG statik mockup)
 
-### 🧪 Test rollback gerek
+### 🧪 Test rollback gerek (LANSMAN ÖNCESİ — test sürecinde gerek YOK)
 
-Bu turda MagicUI test hesabı geçici SUPERADMIN yapıldı (`magicui@petshop.test`).
-Test bitince geri al:
+İki test hesabı geçici SUPERADMIN'e yükseltildi:
+- `magicui@petshop.test` (2026-05-17 turunda — browser test için)
+- `oguzhanturgut611@gmail.com` (2026-05-18 turunda — süperadmin tour için, kullanıcı kararı)
+
+Test sürecinde tour + bug fix akışı için gerekli, **şimdilik geri almaya gerek yok**. Canlıya çıkarken birlikte rollback:
 ```sql
+-- LANSMAN ÖNCESI ÇALIŞTIR (test sürecinde değil)
 UPDATE petstockpro.users SET role = 'BAYI_SAHIBI', updated_at = NOW()
-WHERE email = 'magicui@petshop.test';
+WHERE email IN ('magicui@petshop.test', 'oguzhanturgut611@gmail.com');
 ```
 
 ---
