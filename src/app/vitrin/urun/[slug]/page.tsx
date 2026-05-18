@@ -5,6 +5,9 @@ import { db } from '@/lib/db/client';
 import { getCrossTenantProduct } from '@/lib/vitrin/cross-tenant-product';
 import { buildWhatsappLink } from '@/lib/vitrin/public';
 import { WhatsappButton } from '@/components/vitrin/whatsapp-button';
+import { buildVitrinPageMetadata } from '@/lib/vitrin/page-metadata';
+import { buildBreadcrumbLd } from '@/lib/vitrin/schema-org';
+import { getPublicBaseUrl } from '@/lib/vitrin/sitemap-data';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,20 +19,26 @@ export async function generateMetadata({
   const { slug } = await params;
   const data = await getCrossTenantProduct(slug, db);
   if (!data) {
-    return { title: 'Ürün bulunamadı — PetStockPro Vitrin' };
+    return buildVitrinPageMetadata({
+      title: 'Ürün bulunamadı — PetStockPro Vitrin',
+      description: 'Aradığın ürün vitrin\'de yok veya kaldırılmış.',
+      path: `/vitrin/urun/${slug}`,
+      index: false, // 404 sayfası index'lenmesin
+    });
   }
   const prices = data.offers
     .map((o) => (o.minSalePrice ? Number(o.minSalePrice) : null))
     .filter((p): p is number => p !== null && p > 0);
   const lowPrice = prices.length > 0 ? Math.min(...prices) : null;
-  return {
+  return buildVitrinPageMetadata({
     title: `${data.meta.productName} — Fiyat kıyasla | PetStockPro Vitrin`,
     description:
       data.meta.description?.slice(0, 160) ??
       `${data.meta.productName}${
         lowPrice ? ` (${data.offers.length} pet shop'tan ${lowPrice}₺'den)` : ''
       } — fiyat karşılaştır, WhatsApp ile direkt iletişim.`,
-  };
+    path: `/vitrin/urun/${slug}`,
+  });
 }
 
 export default async function CrossTenantProductPage({
@@ -49,11 +58,31 @@ export default async function CrossTenantProductPage({
   const lowest = validPrices.length > 0 ? Math.min(...validPrices) : null;
   const highest = validPrices.length > 0 ? Math.max(...validPrices) : null;
 
+  const breadcrumbLd = buildBreadcrumbLd(
+    [
+      { name: 'Vitrin', url: '/vitrin' },
+      ...(meta.categorySlug && meta.categoryName
+        ? [
+            {
+              name: meta.categoryName,
+              url: `/vitrin/kategori/${meta.categorySlug}`,
+            },
+          ]
+        : []),
+      { name: meta.productName, url: `/vitrin/urun/${slug}` },
+    ],
+    getPublicBaseUrl(),
+  );
+
   return (
     <main
       className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8"
       data-testid="cross-tenant-product-page"
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+      />
       <nav
         aria-label="breadcrumb"
         className="flex flex-wrap gap-2 text-[13px] text-ink-3"

@@ -14,6 +14,9 @@ import {
 } from '@/lib/vitrin/public';
 import { trackVitrinEventAsync } from '@/lib/vitrin/track';
 import { WhatsappButton } from '@/components/vitrin/whatsapp-button';
+import { buildVitrinPageMetadata } from '@/lib/vitrin/page-metadata';
+import { buildBreadcrumbLd } from '@/lib/vitrin/schema-org';
+import { getPublicBaseUrl } from '@/lib/vitrin/sitemap-data';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,12 +41,18 @@ export async function generateMetadata({
   const { il, ilce } = await params;
   const found = await getDistrictBySlug(il, ilce, db);
   if (!found) {
-    return { title: 'Sayfa bulunamadı — PetStockPro' };
+    return buildVitrinPageMetadata({
+      title: 'Sayfa bulunamadı — PetStockPro',
+      description: 'Aradığın ilçe vitrin dizininde yok.',
+      path: `/vitrin/${il}/${ilce}`,
+      index: false,
+    });
   }
-  return {
+  return buildVitrinPageMetadata({
     title: `${found.district.name}, ${found.city.name} Pet Shop'lar — PetStockPro`,
     description: `${found.district.name} ilçesindeki pet shop'lar. WhatsApp ile direkt iletişim kur.`,
-  };
+    path: `/vitrin/${il}/${ilce}`,
+  });
 }
 
 export default async function VitrinDistrictPage({
@@ -117,8 +126,22 @@ export default async function VitrinDistrictPage({
       : `/vitrin/${city.slug}/${district.slug}`;
   }
 
+  const breadcrumbLd = buildBreadcrumbLd(
+    [
+      { name: 'Vitrin', url: '/vitrin' },
+      { name: city.name, url: `/vitrin/${city.slug}` },
+      { name: district.name, url: `/vitrin/${city.slug}/${district.slug}` },
+    ],
+    getPublicBaseUrl(),
+  );
+
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-8">
+      <script
+        type="application/ld+json"
+        data-testid="ld-breadcrumb"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+      />
       {/* Breadcrumb */}
       <nav
         aria-label="Breadcrumb"

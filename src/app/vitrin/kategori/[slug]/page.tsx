@@ -9,6 +9,9 @@ import {
 } from '@/lib/vitrin/category-listings';
 import { getCityBySlug } from '@/lib/vitrin/public';
 import { DEFAULT_CATEGORIES } from '@/lib/catalog/default-categories';
+import { buildVitrinPageMetadata } from '@/lib/vitrin/page-metadata';
+import { buildBreadcrumbLd } from '@/lib/vitrin/schema-org';
+import { getPublicBaseUrl } from '@/lib/vitrin/sitemap-data';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,10 +29,11 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const info = getCategoryInfoBySlug(slug);
-  return {
+  return buildVitrinPageMetadata({
     title: `${info.name} — Pet Shop'larda | PetStockPro Vitrin`,
     description: `${info.name} kategorisindeki ürünler — Türkiye geneli pet shop'lar tek dizinde. WhatsApp ile direkt fiyat sor.`,
-  };
+    path: `/vitrin/kategori/${slug}`,
+  });
 }
 
 const KNOWN_SLUGS = new Set(DEFAULT_CATEGORIES.map((c) => c.slug));
@@ -83,11 +87,28 @@ export default async function VitrinCategoryPage({
     return `/vitrin/kategori/${slug}${q ? `?${q}` : ''}`;
   };
 
+  // Schema.org breadcrumb JSON-LD — Google SERP'de breadcrumb yolu görünür hale getirir
+  const breadcrumbLd = buildBreadcrumbLd(
+    [
+      { name: 'Vitrin', url: '/vitrin' },
+      { name: info.name, url: `/vitrin/kategori/${slug}` },
+      ...(cityFilter
+        ? [{ name: cityFilter.name, url: `/vitrin/${cityFilter.slug}` }]
+        : []),
+    ],
+    getPublicBaseUrl(),
+  );
+
   return (
     <main
       className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8"
       data-testid="vitrin-category-page"
     >
+      <script
+        type="application/ld+json"
+        // Breadcrumb JSON-LD — Google rich result için statik veri, XSS riski yok
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+      />
       <nav
         aria-label="breadcrumb"
         className="flex flex-wrap gap-2 text-[13px] text-ink-3"

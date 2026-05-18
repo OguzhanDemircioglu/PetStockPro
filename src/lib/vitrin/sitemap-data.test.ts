@@ -69,13 +69,13 @@ describe('collectSitemapEntries', () => {
     expect(result).toHaveLength(2);
     expect(result[0]).toEqual({
       loc: 'https://petstockpro.com/',
-      changeFrequency: 'weekly',
-      priority: 1.0,
+      changeFrequency: 'monthly',
+      priority: 0.5,
     });
     expect(result[1]).toEqual({
       loc: 'https://petstockpro.com/vitrin',
-      changeFrequency: 'daily',
-      priority: 0.9,
+      changeFrequency: 'weekly',
+      priority: 0.4,
     });
   });
 
@@ -116,7 +116,7 @@ describe('collectSitemapEntries', () => {
     );
     expect(tenantEntry).toBeDefined();
     expect(tenantEntry?.lastModified).toEqual(NOW);
-    expect(tenantEntry?.priority).toBe(0.7);
+    expect(tenantEntry?.priority).toBe(0.6);
   });
 
   it('vitrin ürün → /vitrin/magaza/[slug]/urun/[productSlug]', async () => {
@@ -136,7 +136,7 @@ describe('collectSitemapEntries', () => {
     expect(productEntry?.loc).toBe(
       'https://petstockpro.com/vitrin/magaza/sprint3-pet-shop/urun/catit-pixi-mama-otomati',
     );
-    expect(productEntry?.priority).toBe(0.6);
+    expect(productEntry?.priority).toBe(0.7);
   });
 
   it('full tree — static + city + district + tenant + product + category = 7 entry', async () => {
@@ -167,20 +167,20 @@ describe('collectSitemapEntries', () => {
     ]);
   });
 
-  it('kategori — priority 0.7 + changeFreq weekly', async () => {
+  it('kategori — priority 0.8 + changeFreq weekly (SEO landing)', async () => {
     const { db } = makeMockDb({
       categories: [{ slug: 'oyuncak' }, { slug: 'kedi-kumu' }],
     });
     const result = await collectSitemapEntries('https://petstockpro.com', db);
     const catEntries = result.filter((e) => e.loc.includes('/vitrin/kategori/'));
     expect(catEntries).toHaveLength(2);
-    expect(catEntries[0].priority).toBe(0.7);
+    expect(catEntries[0].priority).toBe(0.8);
     expect(catEntries[0].changeFrequency).toBe('weekly');
     expect(catEntries[0].loc).toBe('https://petstockpro.com/vitrin/kategori/oyuncak');
     expect(catEntries[1].loc).toBe('https://petstockpro.com/vitrin/kategori/kedi-kumu');
   });
 
-  it('cross-tenant ürün — priority 0.65 + sadece 2+ tenant\'lılar', async () => {
+  it('cross-tenant ürün — priority 0.9 (en yüksek SEO değeri) + sadece 2+ tenant\'lılar', async () => {
     const { db } = makeMockDb({
       crossProducts: [
         { slug: 'royal-canin-adult-kedi', tenantCount: 3 },
@@ -192,7 +192,7 @@ describe('collectSitemapEntries', () => {
       e.loc.includes('/vitrin/urun/'),
     );
     expect(crossEntries).toHaveLength(2);
-    expect(crossEntries[0].priority).toBe(0.65);
+    expect(crossEntries[0].priority).toBe(0.9);
     expect(crossEntries[0].changeFrequency).toBe('weekly');
     expect(crossEntries[0].loc).toBe(
       'https://petstockpro.com/vitrin/urun/royal-canin-adult-kedi',

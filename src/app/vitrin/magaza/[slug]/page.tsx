@@ -10,12 +10,16 @@ import {
   groupStorefrontProductsByBrand,
 } from '@/lib/vitrin/public';
 import { trackVitrinEventAsync } from '@/lib/vitrin/track';
-import { buildLocalBusinessLd } from '@/lib/vitrin/schema-org';
+import {
+  buildLocalBusinessLd,
+  buildBreadcrumbLd,
+} from '@/lib/vitrin/schema-org';
 import { getPublicBaseUrl } from '@/lib/vitrin/sitemap-data';
 import { FeedbackBalloon } from './feedback-balloon';
 import { WhatsappLinkScript } from './whatsapp-link-script';
 import { ReportButton } from '@/app/vitrin/report-button';
 import { WhatsappButton } from '@/components/vitrin/whatsapp-button';
+import { buildVitrinPageMetadata } from '@/lib/vitrin/page-metadata';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,14 +30,23 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const sf = await getStorefrontBySlug(slug, db);
-  if (!sf) return { title: 'Pet shop bulunamadı — PetStockPro Vitrin' };
-  return {
+  if (!sf) {
+    return buildVitrinPageMetadata({
+      title: 'Pet shop bulunamadı — PetStockPro Vitrin',
+      description: 'Aradığın pet shop vitrin\'de yok veya kaldırılmış.',
+      path: `/vitrin/magaza/${slug}`,
+      index: false,
+    });
+  }
+  return buildVitrinPageMetadata({
     title: `${sf.name} — ${sf.cityName ?? 'Türkiye'} | PetStockPro Vitrin`,
     description:
       sf.metaDescription ??
       sf.aboutContent?.slice(0, 160) ??
       `${sf.name} pet shop'unun PetStockPro vitrin profili. WhatsApp ile direkt iletişim.`,
-  };
+    path: `/vitrin/magaza/${slug}`,
+    ogType: 'profile',
+  });
 }
 
 export default async function StorefrontProfilePage({
@@ -71,7 +84,15 @@ export default async function StorefrontProfilePage({
     `Merhaba ${sf.name}, vitrin'den size yazıyorum.`,
   );
 
-  const localBusinessLd = buildLocalBusinessLd(sf, getPublicBaseUrl());
+  const baseUrl = getPublicBaseUrl();
+  const localBusinessLd = buildLocalBusinessLd(sf, baseUrl);
+  const breadcrumbLd = buildBreadcrumbLd(
+    [
+      { name: 'Vitrin', url: '/vitrin' },
+      { name: sf.name, url: `/vitrin/magaza/${sf.slug}` },
+    ],
+    baseUrl,
+  );
 
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8">
@@ -80,6 +101,13 @@ export default async function StorefrontProfilePage({
         data-testid="ld-local-business"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(localBusinessLd),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        data-testid="ld-breadcrumb"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbLd),
         }}
       />
       <Link

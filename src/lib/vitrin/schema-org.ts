@@ -192,3 +192,54 @@ function normalizeSocialUrl(
       return `https://tiktok.com/@${clean}`;
   }
 }
+
+// ─────────────────────────────────────────────────────────────────
+// BreadcrumbList — Google SERP'de breadcrumb yolu görünür hale getirir
+// https://schema.org/BreadcrumbList
+// ─────────────────────────────────────────────────────────────────
+
+export interface BreadcrumbItem {
+  name: string;
+  /** Relative path (e.g. '/vitrin/kategori/kuru-mama') veya absolute URL. */
+  url: string;
+}
+
+export interface BreadcrumbLd {
+  '@context': 'https://schema.org';
+  '@type': 'BreadcrumbList';
+  itemListElement: Array<{
+    '@type': 'ListItem';
+    position: number;
+    name: string;
+    item: string;
+  }>;
+}
+
+/**
+ * Breadcrumb JSON-LD üretir. Items sırası: [home, kategori, alt-sayfa, ...].
+ * Her item için absolute URL gerekli (baseUrl ile prepend yapılır eğer
+ * item.url '/' ile başlıyorsa).
+ *
+ * @example
+ * buildBreadcrumbLd([
+ *   { name: 'Ana sayfa', url: '/' },
+ *   { name: 'Vitrin', url: '/vitrin' },
+ *   { name: 'Kuru Mama', url: '/vitrin/kategori/kuru-mama' },
+ * ], 'https://petstockpro.com')
+ */
+export function buildBreadcrumbLd(
+  items: BreadcrumbItem[],
+  baseUrl: string,
+): BreadcrumbLd {
+  const trimmedBase = baseUrl.replace(/\/+$/, '');
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, idx) => ({
+      '@type': 'ListItem',
+      position: idx + 1,
+      name: item.name,
+      item: item.url.startsWith('/') ? `${trimmedBase}${item.url}` : item.url,
+    })),
+  };
+}

@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { buildLocalBusinessLd, buildProductLd } from './schema-org';
+import {
+  buildLocalBusinessLd,
+  buildProductLd,
+  buildBreadcrumbLd,
+} from './schema-org';
 import type { StorefrontDetail, StorefrontProductDetail } from './public';
 
 const BASE = 'https://petstockpro.com';
@@ -236,5 +240,54 @@ describe('buildProductLd', () => {
     );
     expect(ld.brand).toBeUndefined();
     expect(ld.category).toBeUndefined();
+  });
+});
+
+describe('buildBreadcrumbLd', () => {
+  it('3 item — pozisyon 1/2/3 ile sıralı, absolute URL', () => {
+    const ld = buildBreadcrumbLd(
+      [
+        { name: 'Ana sayfa', url: '/' },
+        { name: 'Vitrin', url: '/vitrin' },
+        { name: 'Kuru Mama', url: '/vitrin/kategori/kuru-mama' },
+      ],
+      BASE,
+    );
+    expect(ld['@context']).toBe('https://schema.org');
+    expect(ld['@type']).toBe('BreadcrumbList');
+    expect(ld.itemListElement).toHaveLength(3);
+    expect(ld.itemListElement[0]).toEqual({
+      '@type': 'ListItem',
+      position: 1,
+      name: 'Ana sayfa',
+      item: 'https://petstockpro.com/',
+    });
+    expect(ld.itemListElement[2]).toEqual({
+      '@type': 'ListItem',
+      position: 3,
+      name: 'Kuru Mama',
+      item: 'https://petstockpro.com/vitrin/kategori/kuru-mama',
+    });
+  });
+
+  it('absolute URL — olduğu gibi bırakılır', () => {
+    const ld = buildBreadcrumbLd(
+      [{ name: 'External', url: 'https://other.com/x' }],
+      BASE,
+    );
+    expect(ld.itemListElement[0].item).toBe('https://other.com/x');
+  });
+
+  it('baseUrl sonundaki slash trim edilir', () => {
+    const ld = buildBreadcrumbLd(
+      [{ name: 'X', url: '/x' }],
+      'https://petstockpro.com///',
+    );
+    expect(ld.itemListElement[0].item).toBe('https://petstockpro.com/x');
+  });
+
+  it('boş array → 0 item', () => {
+    const ld = buildBreadcrumbLd([], BASE);
+    expect(ld.itemListElement).toEqual([]);
   });
 });

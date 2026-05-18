@@ -50,16 +50,20 @@ export async function collectSitemapEntries(
 ): Promise<SitemapEntry[]> {
   const entries: SitemapEntry[] = [];
 
-  // Static — anasayfa + vitrin dizin
+  // Static — anasayfa + vitrin dizin.
+  //
+  // SEO stratejisi: Vitrin alt sayfaları (ürün/kategori/şehir) organik trafiğin
+  // ana kaynağı. Root ve /vitrin brand homepage sadece marka/dizin görevi
+  // yapar — Google crawl bütçesi alt sayfalara odaklansın diye düşük priority.
   entries.push({
     loc: `${baseUrl}/`,
-    changeFrequency: 'weekly',
-    priority: 1.0,
+    changeFrequency: 'monthly',
+    priority: 0.5,
   });
   entries.push({
     loc: `${baseUrl}/vitrin`,
-    changeFrequency: 'daily',
-    priority: 0.9,
+    changeFrequency: 'weekly',
+    priority: 0.4,
   });
 
   // Active cities — pet shop'u olan iller
@@ -144,7 +148,7 @@ export async function collectSitemapEntries(
       loc: `${baseUrl}/vitrin/magaza/${t.slug}`,
       lastModified: t.lastModified,
       changeFrequency: 'weekly',
-      priority: 0.7,
+      priority: 0.6,
     });
   }
 
@@ -180,7 +184,7 @@ export async function collectSitemapEntries(
       loc: `${baseUrl}/vitrin/magaza/${p.companySlug}/urun/${p.productSlug}`,
       lastModified: p.lastModified,
       changeFrequency: 'weekly',
-      priority: 0.6,
+      priority: 0.7,
     });
   }
 
@@ -209,7 +213,7 @@ export async function collectSitemapEntries(
     entries.push({
       loc: `${baseUrl}/vitrin/kategori/${c.slug}`,
       changeFrequency: 'weekly',
-      priority: 0.7,
+      priority: 0.8,
     });
   }
 
@@ -244,7 +248,7 @@ export async function collectSitemapEntries(
     entries.push({
       loc: `${baseUrl}/vitrin/urun/${cp.slug}`,
       changeFrequency: 'weekly',
-      priority: 0.65,
+      priority: 0.9, // En değerli sayfa tipi — cross-tenant fiyat kıyaslama (SEO landing)
     });
   }
 

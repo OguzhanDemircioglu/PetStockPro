@@ -9,12 +9,17 @@ import {
   getStorefrontProductDetail,
 } from '@/lib/vitrin/public';
 import { trackVitrinEventAsync } from '@/lib/vitrin/track';
-import { buildProductLd, buildLocalBusinessLd } from '@/lib/vitrin/schema-org';
+import {
+  buildProductLd,
+  buildLocalBusinessLd,
+  buildBreadcrumbLd,
+} from '@/lib/vitrin/schema-org';
 import { getPublicBaseUrl } from '@/lib/vitrin/sitemap-data';
 import { FeedbackBalloon } from '../../feedback-balloon';
 import { WhatsappLinkScript } from '../../whatsapp-link-script';
 import { ReportButton } from '@/app/vitrin/report-button';
 import { WhatsappButton } from '@/components/vitrin/whatsapp-button';
+import { buildVitrinPageMetadata } from '@/lib/vitrin/page-metadata';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,18 +31,24 @@ export async function generateMetadata({
   const { slug, productSlug } = await params;
   const product = await getStorefrontProductDetail(slug, productSlug, db);
   if (!product) {
-    return { title: 'Ürün bulunamadı — PetStockPro Vitrin' };
+    return buildVitrinPageMetadata({
+      title: 'Ürün bulunamadı — PetStockPro Vitrin',
+      description: 'Aradığın ürün vitrin\'de yok veya kaldırılmış.',
+      path: `/vitrin/magaza/${slug}/urun/${productSlug}`,
+      index: false,
+    });
   }
   const priceList = product.variants
     .map((v) => Number(v.salePrice))
     .filter((p) => p > 0);
   const minPrice = priceList.length > 0 ? Math.min(...priceList) : null;
-  return {
+  return buildVitrinPageMetadata({
     title: `${product.productName} — ${product.companyName} | PetStockPro Vitrin`,
     description:
       product.description?.slice(0, 160) ??
       `${product.productName}${minPrice ? ` (${minPrice}₺ - ${product.companyName})` : ''}`,
-  };
+    path: `/vitrin/magaza/${slug}/urun/${productSlug}`,
+  });
 }
 
 export default async function VitrinProductDetailPage({
@@ -88,6 +99,17 @@ export default async function VitrinProductDetailPage({
   const baseUrl = getPublicBaseUrl();
   const productLd = buildProductLd(product, baseUrl);
   const sellerLd = buildLocalBusinessLd(storefront, baseUrl);
+  const breadcrumbLd = buildBreadcrumbLd(
+    [
+      { name: 'Vitrin', url: '/vitrin' },
+      { name: storefront.name, url: `/vitrin/magaza/${storefront.slug}` },
+      {
+        name: product.productName,
+        url: `/vitrin/magaza/${storefront.slug}/urun/${product.slug}`,
+      },
+    ],
+    baseUrl,
+  );
 
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-8">
@@ -103,6 +125,13 @@ export default async function VitrinProductDetailPage({
         data-testid="ld-seller"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(sellerLd),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        data-testid="ld-breadcrumb"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbLd),
         }}
       />
       <nav
