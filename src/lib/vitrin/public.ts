@@ -44,6 +44,9 @@ export interface StorefrontListItem {
   branchCount: number;
   /** Yakınlık filtresi aktif ise km cinsinden mesafe, aksi null. */
   distanceKm: number | null;
+  /** Harita marker'ları için — DB'de set edilmiş ise. */
+  locationLat: number | null;
+  locationLng: number | null;
 }
 
 export type StorefrontSort = 'name_asc' | 'recent' | 'products_desc';
@@ -230,6 +233,8 @@ export async function listPublicStorefronts(
       districtName: districts.name,
       whatsappPhone: companies.whatsappPhone,
       aboutContent: storefrontSettings.aboutContent,
+      locationLat: companies.locationLat,
+      locationLng: companies.locationLng,
       productCount: productCountExpr,
       branchCount: sql<number>`
         COALESCE((
@@ -309,6 +314,8 @@ export async function listPublicStorefronts(
     productCount: r.productCount,
     branchCount: r.branchCount,
     distanceKm: r.distanceKm == null ? null : Number(r.distanceKm),
+    locationLat: r.locationLat == null ? null : Number(r.locationLat),
+    locationLng: r.locationLng == null ? null : Number(r.locationLng),
   }));
 }
 

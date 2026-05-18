@@ -16,6 +16,7 @@ import {
 } from '@/lib/vitrin/stats';
 import { buildVitrinPageMetadata } from '@/lib/vitrin/page-metadata';
 import { NearbyToggle } from './nearby-toggle';
+import { NearbyMapWrapper } from '@/components/vitrin/nearby-map-wrapper';
 import { cities as citiesTable, companies, storefrontSettings } from '@/db/schema';
 import { and, eq, sql } from 'drizzle-orm';
 
@@ -390,102 +391,35 @@ export default async function VitrinHomePage({
           </div>
         )}
 
-        {/* Harita (statik SVG mockup — gerçek Leaflet Faz 2) */}
+        {/* Leaflet interaktif harita — OpenStreetMap tile */}
         {nearbyStorefronts.length > 0 && (
-          <div
-            data-testid="vitrin-nearby-map"
-            className="relative mt-4 h-[300px] overflow-hidden rounded-2xl border border-line bg-gradient-to-br from-cat-soft/30 to-arrow-soft/30 shadow-sm"
-            aria-label="Yakındaki pet shop'lar haritası (yer tutucu)"
-          >
-            <svg
-              viewBox="0 0 800 300"
-              preserveAspectRatio="xMidYMid slice"
-              className="absolute inset-0 h-full w-full"
-              aria-hidden
-            >
-              {/* Su + park silüetleri */}
-              <path
-                d="M0,120 Q160,140 320,100 T640,120 L800,100 L800,180 Q600,210 400,170 T0,180 Z"
-                fill="#cad8db"
-                opacity=".55"
-              />
-              <path
-                d="M80,30 Q240,20 360,70 Q320,130 200,140 Q120,120 80,70 Z"
-                fill="#c8d9c4"
-                opacity=".4"
-              />
-              <path
-                d="M520,210 Q680,200 760,260 Q720,290 560,290 Q480,270 520,210 Z"
-                fill="#c8d9c4"
-                opacity=".4"
-              />
-              {/* Yollar */}
-              <path
-                d="M0,180 L800,180 M0,240 L800,240 M240,0 L240,300 M520,0 L520,300"
-                stroke="#fff"
-                strokeWidth="3"
-                opacity=".65"
-              />
-              <path
-                d="M0,90 L800,90 M120,0 L120,300 M680,0 L680,300"
-                stroke="#fff"
-                strokeWidth="2"
-                opacity=".4"
-              />
-            </svg>
-
-            {/* Pin'ler — nearbyStorefronts'tan dağınık konumlar */}
-            <div className="absolute inset-0">
-              {/* Kullanıcı konumu (eğer location var) */}
-              {location && (
-                <div
-                  className="absolute"
-                  style={{ left: '48%', top: '52%' }}
-                  aria-label="Senin konumun"
-                >
-                  <span className="relative grid h-7 w-7 place-items-center">
-                    <span className="absolute inset-0 animate-ping rounded-full bg-cat/50" />
-                    <span className="relative grid h-7 w-7 place-items-center rounded-full bg-cat text-[12px] text-white shadow-md">
-                      📍
-                    </span>
-                  </span>
-                </div>
-              )}
-              {nearbyStorefronts.slice(0, 8).map((sf, idx) => {
-                const positions = [
-                  { left: '20%', top: '28%' },
-                  { left: '36%', top: '64%' },
-                  { left: '62%', top: '38%' },
-                  { left: '76%', top: '70%' },
-                  { left: '28%', top: '78%' },
-                  { left: '82%', top: '22%' },
-                  { left: '14%', top: '50%' },
-                  { left: '90%', top: '48%' },
-                ];
-                const pos = positions[idx % positions.length];
-                return (
-                  <Link
-                    key={sf.companyId}
-                    href={`/vitrin/magaza/${sf.slug}` as never}
-                    title={sf.name}
-                    className="absolute grid h-8 w-8 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-paper text-[12px] font-bold text-cart shadow-[0_4px_10px_rgba(0,0,0,.25)] ring-2 ring-cat hover:scale-110 transition-transform"
-                    style={pos}
-                  >
-                    {idx + 1}
-                  </Link>
-                );
-              })}
-            </div>
-
-            <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-paper/95 px-3 py-1 text-[12px] font-bold text-cart shadow-sm">
-              <span className="h-2 w-2 rounded-full bg-cat" aria-hidden />
-              {nearbyStorefronts.length} pet shop bu bölgede
-            </div>
-            <div className="absolute bottom-3 right-3 text-[10.5px] uppercase tracking-wider text-ink-4">
-              Yer tutucu harita
-            </div>
+          <div data-testid="vitrin-nearby-map" className="mt-4">
+            <NearbyMapWrapper
+              storefronts={nearbyStorefronts
+                .filter(
+                  (sf) =>
+                    sf.locationLat != null &&
+                    sf.locationLng != null &&
+                    Number.isFinite(sf.locationLat) &&
+                    Number.isFinite(sf.locationLng),
+                )
+                .slice(0, 30)
+                .map((sf) => ({
+                  companyId: sf.companyId,
+                  slug: sf.slug,
+                  name: sf.name,
+                  cityName: sf.cityName,
+                  districtName: sf.districtName,
+                  whatsappPhone: sf.whatsappPhone,
+                  locationLat: sf.locationLat as number,
+                  locationLng: sf.locationLng as number,
+                  distanceKm: sf.distanceKm,
+                }))}
+              userLocation={location ? { lat: location.lat, lng: location.lng } : null}
+            />
           </div>
         )}
+
       </section>
 
       {/* ============ POPÜLER ÜRÜNLER ============ */}

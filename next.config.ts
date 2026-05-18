@@ -42,7 +42,7 @@ function buildCsp(): string {
     "default-src 'self'",
     `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://challenges.cloudflare.com`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: https://*.supabase.co https://*.r2.cloudflarestorage.com https://imagedelivery.net",
+    "img-src 'self' data: blob: https://*.supabase.co https://*.r2.cloudflarestorage.com https://imagedelivery.net https://*.tile.openstreetmap.org https://tile.openstreetmap.org",
     "font-src 'self' data:",
     [
       "connect-src 'self'",
