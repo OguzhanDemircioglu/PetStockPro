@@ -1,7 +1,8 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState, useRef, useState } from 'react';
 import Image from 'next/image';
+import { extractRecoveryCodesFromText } from '@/lib/auth/recovery-codes';
 import { loginAction, type LoginState } from './actions';
 
 /**
@@ -27,6 +28,39 @@ export default function LoginPage() {
     null,
   );
   const [showPassword, setShowPassword] = useState(false);
+  const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const totpInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleRecoveryFile = async (file: File | null | undefined) => {
+    setUploadError(null);
+    if (!file) return;
+    if (file.size > 64 * 1024) {
+      setUploadError('Dosya çok büyük (max 64 KB). Doğru yedek kod dosyasını seç.');
+      return;
+    }
+    try {
+      const text = await file.text();
+      const found = extractRecoveryCodesFromText(text);
+      if (found.length === 0) {
+        setUploadError('Dosyada geçerli yedek kod bulunamadı (ABCD-EFGH formatı).');
+        return;
+      }
+      setRecoveryCodes(found);
+    } catch {
+      setUploadError('Dosya okunamadı. Tekrar dene.');
+    }
+  };
+
+  const selectRecoveryCode = (code: string) => {
+    if (totpInputRef.current) {
+      totpInputRef.current.value = code;
+      totpInputRef.current.focus();
+    }
+    setRecoveryCodes(null);
+    setUploadError(null);
+  };
 
   return (
     <div className="grid h-screen w-screen grid-cols-1 overflow-hidden md:grid-cols-2">
@@ -265,6 +299,7 @@ export default function LoginPage() {
                 </label>
                 <input
                   id="totp"
+                  ref={totpInputRef}
                   name="totp"
                   type="text"
                   inputMode="text"
@@ -279,6 +314,74 @@ export default function LoginPage() {
                 <p className="mt-1.5 text-[12.5px] text-ink-4">
                   Authenticator app&apos;teki 6 haneli kod ya da yedek kod (ABCD-EFGH).
                 </p>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".txt,text/plain"
+                  className="sr-only"
+                  data-testid="recovery-upload-input"
+                  onChange={(e) => handleRecoveryFile(e.target.files?.[0])}
+                />
+
+                {!recoveryCodes && (
+                  <button
+                    type="button"
+                    data-testid="recovery-upload-trigger"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={pending}
+                    className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-cat/40 bg-cat-soft/40 px-3 py-1.5 text-[12.5px] font-bold text-cart hover:bg-cat-soft disabled:opacity-50"
+                  >
+                    📎 Yedek kod dosyası yükle (.txt)
+                  </button>
+                )}
+
+                {uploadError && (
+                  <div
+                    role="alert"
+                    data-testid="recovery-upload-error"
+                    className="mt-2 rounded-lg border border-danger/30 bg-danger-soft px-3 py-2 text-[12.5px] font-bold text-danger-7"
+                  >
+                    {uploadError}
+                  </div>
+                )}
+
+                {recoveryCodes && recoveryCodes.length > 0 && (
+                  <div
+                    data-testid="recovery-picker"
+                    className="mt-3 rounded-xl border border-cat/30 bg-cat-soft/30 p-3"
+                  >
+                    <div className="mb-2 flex items-center justify-between">
+                      <div className="text-[12.5px] font-bold text-cart">
+                        {recoveryCodes.length} kod bulundu — birini seç:
+                      </div>
+                      <button
+                        type="button"
+                        data-testid="recovery-picker-cancel"
+                        onClick={() => setRecoveryCodes(null)}
+                        className="text-[12px] text-ink-4 hover:text-cart"
+                      >
+                        İptal
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {recoveryCodes.map((code) => (
+                        <button
+                          type="button"
+                          key={code}
+                          data-testid="recovery-picker-option"
+                          onClick={() => selectRecoveryCode(code)}
+                          className="rounded-lg border border-line bg-white px-2 py-1.5 text-center font-mono text-[12.5px] text-ink-2 transition-colors hover:border-cat hover:bg-cat-soft hover:text-cart"
+                        >
+                          {code}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-2 text-[11.5px] text-ink-4">
+                      ⚠ Her kod tek kullanımlık — kullandığını dosyandan sil veya işaretle.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
