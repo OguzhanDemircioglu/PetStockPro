@@ -49,6 +49,8 @@ export interface SearchOpts {
   limit?: number;
   offset?: number;
   cityId?: number;
+  /** Kategori slug filter (default kategori slug'larından). */
+  categorySlug?: string;
 }
 
 export interface ParsedSearchQuery {
@@ -97,6 +99,9 @@ export async function searchPublicProducts(
   if (opts.cityId) {
     filters.push(eq(companies.cityId, opts.cityId));
   }
+  if (opts.categorySlug) {
+    filters.push(eq(categories.slug, opts.categorySlug));
+  }
 
   return db
     .select({
@@ -138,7 +143,7 @@ export async function searchPublicProducts(
 export async function countSearchResults(
   query: string,
   db: DbClient,
-  opts: { cityId?: number } = {},
+  opts: { cityId?: number; categorySlug?: string } = {},
 ): Promise<number> {
   const parsed = parseSearchQuery(query);
   if (!parsed.valid) return 0;
@@ -153,14 +158,23 @@ export async function countSearchResults(
   if (opts.cityId) {
     filters.push(eq(companies.cityId, opts.cityId));
   }
+  if (opts.categorySlug) {
+    filters.push(eq(categories.slug, opts.categorySlug));
+  }
 
-  const rows = await db
+  const baseQuery = db
     .select({ count: sql<number>`COUNT(*)::int` })
     .from(products)
     .innerJoin(companies, eq(companies.id, products.companyId))
     .innerJoin(storefrontSettings, eq(storefrontSettings.companyId, companies.id))
-    .leftJoin(brands, eq(brands.id, products.brandId))
-    .where(and(...filters));
+    .leftJoin(brands, eq(brands.id, products.brandId));
+
+  // Kategori filter aktifse join eklenmeli
+  const rows = opts.categorySlug
+    ? await baseQuery
+        .leftJoin(categories, eq(categories.id, products.categoryId))
+        .where(and(...filters))
+    : await baseQuery.where(and(...filters));
 
   return rows[0]?.count ?? 0;
 }

@@ -9,6 +9,10 @@ import { buildVitrinPageMetadata } from '@/lib/vitrin/page-metadata';
 import { buildBreadcrumbLd } from '@/lib/vitrin/schema-org';
 import { getPublicBaseUrl } from '@/lib/vitrin/sitemap-data';
 import { getCityBySlug, listCitiesWithStorefronts } from '@/lib/vitrin/public';
+import {
+  getCategoryInfoBySlug,
+  listCategoriesWithStorefrontProducts,
+} from '@/lib/vitrin/category-listings';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +20,7 @@ interface SearchParams {
   q?: string;
   page?: string;
   il?: string;
+  kategori?: string;
 }
 
 const PAGE_SIZE = 24;
@@ -66,13 +71,20 @@ export default async function VitrinSearchPage({
   const cityFilter = ilSlug ? await getCityBySlug(ilSlug, db) : null;
   const cityId = cityFilter?.id;
 
+  // Kategori filtresi — slug verildiyse info lookup; bilinmeyen slug "Diğer" döner
+  // ama filter no-op olsun istiyoruz — slug DEFAULT_CATEGORIES'te yoksa atla
+  const categorySlugRaw = (params.kategori ?? '').trim().toLowerCase();
+  const categoryInfo = categorySlugRaw ? getCategoryInfoBySlug(categorySlugRaw) : null;
+  const categorySlug = categoryInfo?.isDefault ? categoryInfo.slug : undefined;
+  const activeCategories = await listCategoriesWithStorefrontProducts(db);
+
   // City select için pet shop'u olan tüm şehirler
   const activeCities = await listCitiesWithStorefronts(db);
 
   const [results, totalCount] = parsed.valid
     ? await Promise.all([
-        searchPublicProducts(parsed.raw, db, { limit: PAGE_SIZE, offset, cityId }),
-        countSearchResults(parsed.raw, db, { cityId }),
+        searchPublicProducts(parsed.raw, db, { limit: PAGE_SIZE, offset, cityId, categorySlug }),
+        countSearchResults(parsed.raw, db, { cityId, categorySlug }),
       ])
     : [[], 0];
 
@@ -93,6 +105,7 @@ export default async function VitrinSearchPage({
     const sp = new URLSearchParams();
     if (parsed.raw) sp.set('q', parsed.raw);
     if (cityFilter) sp.set('il', cityFilter.slug);
+    if (categorySlug) sp.set('kategori', categorySlug);
     if (newPage > 1) sp.set('page', String(newPage));
     const qs = sp.toString();
     return `/vitrin/ara${qs ? `?${qs}` : ''}`;
@@ -164,6 +177,20 @@ export default async function VitrinSearchPage({
               </option>
             ))}
           </select>
+          <select
+            name="kategori"
+            defaultValue={categorySlug ?? ''}
+            data-testid="vitrin-search-category"
+            aria-label="Kategori filtresi"
+            className="min-w-[150px] rounded-xl border-l border-line bg-paper px-3 py-2.5 text-[14px] text-ink focus:outline-none"
+          >
+            <option value="">Tüm kategoriler</option>
+            {activeCategories.map((c) => (
+              <option key={c.slug} value={c.slug}>
+                {c.emoji} {c.name}
+              </option>
+            ))}
+          </select>
           <button
             type="submit"
             className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-br from-cat to-cat-2 px-5 py-2.5 text-[14px] font-bold text-white shadow-sm hover:-translate-y-px transition-transform"
@@ -176,23 +203,53 @@ export default async function VitrinSearchPage({
           </button>
         </form>
 
-        {/* Aktif il filter chip + temizleme */}
-        {cityFilter && (
+        {/* Aktif filter chip'leri + temizleme */}
+        {(cityFilter || categorySlug) && (
           <div className="mt-3 flex flex-wrap items-center gap-2 text-[13px]">
-            <span className="rounded-full bg-paper/20 px-3 py-1 font-bold text-white backdrop-blur-sm">
-              📍 {cityFilter.name}
-            </span>
-            <Link
-              href={
-                (parsed.raw
-                  ? `/vitrin/ara?q=${encodeURIComponent(parsed.raw)}`
-                  : '/vitrin/ara') as never
-              }
-              className="rounded-full bg-paper/10 px-3 py-1 font-bold text-white opacity-80 hover:bg-paper/20 hover:opacity-100"
-              data-testid="vitrin-search-clear-city"
-            >
-              × Şehir filtresini kaldır
-            </Link>
+            {cityFilter && (
+              <>
+                <span className="rounded-full bg-paper/20 px-3 py-1 font-bold text-white backdrop-blur-sm">
+                  📍 {cityFilter.name}
+                </span>
+                <Link
+                  href={
+                    (() => {
+                      const sp = new URLSearchParams();
+                      if (parsed.raw) sp.set('q', parsed.raw);
+                      if (categorySlug) sp.set('kategori', categorySlug);
+                      const qs = sp.toString();
+                      return `/vitrin/ara${qs ? `?${qs}` : ''}` as never;
+                    })()
+                  }
+                  className="rounded-full bg-paper/10 px-3 py-1 font-bold text-white opacity-80 hover:bg-paper/20 hover:opacity-100"
+                  data-testid="vitrin-search-clear-city"
+                >
+                  × Şehri kaldır
+                </Link>
+              </>
+            )}
+            {categoryInfo && categorySlug && (
+              <>
+                <span className="rounded-full bg-paper/20 px-3 py-1 font-bold text-white backdrop-blur-sm">
+                  {categoryInfo.emoji} {categoryInfo.name}
+                </span>
+                <Link
+                  href={
+                    (() => {
+                      const sp = new URLSearchParams();
+                      if (parsed.raw) sp.set('q', parsed.raw);
+                      if (cityFilter) sp.set('il', cityFilter.slug);
+                      const qs = sp.toString();
+                      return `/vitrin/ara${qs ? `?${qs}` : ''}` as never;
+                    })()
+                  }
+                  className="rounded-full bg-paper/10 px-3 py-1 font-bold text-white opacity-80 hover:bg-paper/20 hover:opacity-100"
+                  data-testid="vitrin-search-clear-category"
+                >
+                  × Kategoriyi kaldır
+                </Link>
+              </>
+            )}
           </div>
         )}
       </header>
