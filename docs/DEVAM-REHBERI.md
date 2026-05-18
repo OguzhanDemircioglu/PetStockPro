@@ -1,11 +1,86 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-18 (öğleden sonra — **categories SUPERADMIN-only + 49 hiyerarşik reseed + branding (logo.webp + sidebar shiny + login/register logo + favicon + OG image) + vitrin SEO (sitemap priority + canonical + OG + Twitter + Breadcrumb LD) + vitrin ana sayfa ürün-merkezli yenileme + Sprint 3.3 image upload + cookie banner sade + harita + popüler/çok satanlar gerçek görsel**)
-**Mevcut Branch:** `cray61` — origin'in **154 commit** ileri (push edilmedi)
-**Son commit:** `4a9e426` feat(branding): brand favicon + 1200×630 OpenGraph image
-**Test:** 1242+ passed (admin client 5 + product-images 30 + stats 13 + page-metadata 8 + breadcrumb LD 4 + integration script 28 assert)
+**Tarih:** 2026-05-18 (akşam — **B/C/E/F/G/H — 10 commit ek polish turu: süperadmin redirect + topbar çıkış + login göz + 2FA TXT indir/yükle + ürün autocomplete + vitrin ara + Leaflet harita + 'Satıcıya sor'**)
+**Mevcut Branch:** `cray61` — origin'in **164 commit** ileri (push edilmedi)
+**Son commit:** `22d37e8` feat(vitrin): H polish — il kategori chip + 'Satıcıya sor' label
+**Test:** **1297 passed** (önceki 1242 → +55: recovery-codes 25 + seed-catalog 22 + parseSearchQuery 8)
 **Lint+typecheck:** 0 error (pre-existing register.ts $client cast hariç)
-**Migration:** 17 (0016 drop vat_rate + 0017 legacy flat → 49 hiyerarşik reseed)
+**Migration:** 17 (değişmedi)
+
+## 🆕 Bu tur (2026-05-18, akşam) — B/C/E/F/G/H 10 commit polish + UX
+
+| # | İş | Commit |
+|---|---|---|
+| B-1 | SUPERADMIN login sonrası /admin/superadmin redirect (Pano değil) | `cb4b9ca` |
+| B-2 | Topbar sağ üst köşesine açık çıkış butonu (form action logoutAction) | `a693394` |
+| B-3 | Login şifre input'una göz toggle (Lucide eye/eye-off, aria-pressed) | `984dbb3` |
+| B-4 | docs(devam-rehberi): tur planı + test rollback notu güncel | `ad7fcd0` |
+| B-5 | 2FA yedek kodlar — TXT indir + RecoveryCodesActions ortak panel (25 test) | `fd64f08` |
+| B-6 | Login 2FA step'inde yedek kod TXT yükle + picker (parse + 2-col grid) | `a47ae30` |
+| C | Sprint 3 tenant kategori reset (49 hiyerarşik, UI'dan) | data |
+| E | Seed katalog autocomplete /admin/products/new (328 ürün JSON + API + debounce + prefill) | `3c2b2ac` |
+| F | /vitrin/ara cross-tenant ürün arama route (ILIKE + pagination + breadcrumb) | `fed3c3b` |
+| G | Yakındakiler haritası statik SVG → Leaflet (OSM tile + popup + Detay/Satıcıya sor) | `2b4614c` |
+| H | Vitrin polish — /vitrin/[il] kategori chip + WhatsappButton default 'Satıcıya sor' | `22d37e8` |
+
+### 📊 Tur rakamları
+
+| Metric | Değer |
+|---|---|
+| Yeni commit | **10** |
+| Yeni test | **+55** (1242 → 1297) — recovery-codes 25 + seed-catalog 22 + parseSearchQuery 8 |
+| Yeni helper | recovery-codes + seed-catalog + vitrin/search + listCategoriesInCity |
+| Yeni component | RecoveryCodesActions + SeedCatalogAutocomplete + NearbyMap + NearbyMapWrapper |
+| Yeni API route | /api/catalog/search |
+| Yeni page | /vitrin/ara |
+| Yeni paket | leaflet + react-leaflet 5 + @types/leaflet |
+| CSP güncel | img-src += `https://*.tile.openstreetmap.org` |
+| Branch ahead | 154 → **164 commit** |
+
+### 🔑 Bu turda netleşen önemli konular
+
+1. **SQL kuralı (memory):** SELECT serbest, mutation/DDL/apply_migration için **chat üzerinden açık soru sor** — "yapayım mı / siz mi?" netleştir. Sadece kod blok yetersiz. Memory: `feedback_destructive_ask_via_chat.md`.
+
+2. **Test geçici SUPERADMIN:** İki test hesabı (magicui@petshop.test + oguzhanturgut611@gmail.com) geçici SUPERADMIN — canlıya çıkmadan rollback. Test sürecinde sürekli ileri-geri yapma.
+
+3. **Login redirect role-aware:** `/` üzerinden SUPERADMIN → /admin/superadmin, diğer roller → /admin (Pano). Onboarding gate'i SUPERADMIN için atlanır (operasyon hesabı kendi tenant'ı için ürün eklemesi gerekmiyor).
+
+4. **2FA recovery TXT lifecycle:** Kullanıcı /admin/security → Yenile → TOTP → 8 yeni kod → 📥 TXT indir; kullanılan TXT dosyasını /login 2FA step'te 📎 yükle → picker'dan kod seç → input doluyor. Helper: `formatRecoveryCodesAsText` + `extractRecoveryCodesFromText`.
+
+5. **Seed katalog autocomplete:** 328 curated TR ürün (`scripts/data/pet-products-catalog.json` 167KB). Score-based ranking (barkod 1000, ad prefix 400, marka 350 vb.). Tenant brand/category eşleşmesi case-insensitive — marka yoksa "+Marka ekle" hint banner.
+
+6. **Vitrin /vitrin/ara:** Cross-tenant ürün araması (product.name + brand.name ILIKE). Hero search form'u `/vitrin?q=` → `/vitrin/ara?q=` (geriye uyumlu eski URL korundu).
+
+7. **Leaflet OSM:** Dynamic import (ssr:false), 46KB gzipped sadece /vitrin'de. Tile fetch için CSP img-src güncel. fitBounds ile marker'lar kapsayacak şekilde otomatik zoom.
+
+8. **"Satıcıya sor" label:** WhatsappButton default + Leaflet popup + nearby card link metni — niyet net, brand WA yeşili + ikon korundu.
+
+### ⚠ Pending / bekleyen
+
+- 🟡 **C için browser tam doğrulama:** Sprint 3 Products Test tenant'ının `city_id` NULL — /vitrin/izmir'de kategori chip render olması için aşağıdaki SQL kullanıcı tarafından çalıştırılmalı:
+  ```sql
+  UPDATE petstockpro.companies
+  SET city_id = 35,
+      district_id = (SELECT id FROM petstockpro.districts WHERE city_id = 35 AND slug = 'konak' LIMIT 1),
+      updated_at = NOW()
+  WHERE id = 'c6e4ebf6-af0b-426f-aa22-775af2871579'
+  RETURNING name, city_id, district_id;
+  ```
+- 🟡 **Test rollback (LANSMAN ÖNCESI):** magicui@petshop.test + oguzhanturgut611@gmail.com → BAYI_SAHIBI (lansman bloker, şimdilik gerek yok)
+- ⛔ **Şirket kuruluş + VKN + IBAN** → Sprint 13/14 iyzico/Nilvera production (2-4 hafta)
+- ⛔ **Production env secret'lar** → IYZICO_WEBHOOK_SECRET + BREVO_API_KEY + CRON_SECRET
+
+### 🟢 Sıradaki olası işler (tükenmiş — kullanıcı yeni iş söylemeli)
+
+- Brand grouping `/vitrin/[il]` (bu tur kapsamına alınmadı — listBrandsInCity helper + brand chip section gerekir)
+- /vitrin/ara'ya il filter eklenebilir (cityId param)
+- /admin/products/new — image upload entegrasyonu seçilen seed product'in `imagePath`'inden (Storage transfer)
+- Leaflet user location marker'ı için real geolocation API + sticky position (mobile)
+- WhatsappButton label'ın çevirisi (next-intl entegrasyonu Faz 2)
+
+---
+
+## 🆕 Önceki tur (2026-05-18, öğleden sonra) — Categories SUPERADMIN gate + Branding + Vitrin SEO + Ürün-merkezli yenileme + Sprint 3.3 image upload
 
 ---
 
