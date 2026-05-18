@@ -1,10 +1,6 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 
-const ENV_KEYS = [
-  'SUPABASE_URL',
-  'NEXT_PUBLIC_SUPABASE_URL',
-  'SUPABASE_SERVICE_ROLE_KEY',
-];
+const ENV_KEYS = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
 
 describe('getSupabaseAdminClient', () => {
   const original: Record<string, string | undefined> = {};
@@ -32,17 +28,8 @@ describe('getSupabaseAdminClient', () => {
     expect(typeof client.storage).toBe('object');
   });
 
-  it('NEXT_PUBLIC_SUPABASE_URL fallback çalışır', async () => {
-    delete process.env.SUPABASE_URL;
-    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://public.supabase.co';
-    process.env.SUPABASE_SERVICE_ROLE_KEY = 'fake-key';
-    const { getSupabaseAdminClient } = await import('./admin');
-    expect(() => getSupabaseAdminClient()).not.toThrow();
-  });
-
   it('SUPABASE_URL yoksa açıklayıcı hata fırlatır', async () => {
     delete process.env.SUPABASE_URL;
-    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'fake-key';
     const { getSupabaseAdminClient } = await import('./admin');
     expect(() => getSupabaseAdminClient()).toThrow(/SUPABASE_URL/);
