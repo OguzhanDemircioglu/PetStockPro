@@ -8,12 +8,14 @@ import {
 import { buildVitrinPageMetadata } from '@/lib/vitrin/page-metadata';
 import { buildBreadcrumbLd } from '@/lib/vitrin/schema-org';
 import { getPublicBaseUrl } from '@/lib/vitrin/sitemap-data';
+import { getCityBySlug, listCitiesWithStorefronts } from '@/lib/vitrin/public';
 
 export const dynamic = 'force-dynamic';
 
 interface SearchParams {
   q?: string;
   page?: string;
+  il?: string;
 }
 
 const PAGE_SIZE = 24;
@@ -33,14 +35,17 @@ export async function generateMetadata({
 }) {
   const params = await searchParams;
   const q = (params.q ?? '').trim();
+  const ilSlug = (params.il ?? '').trim();
+  const cityLabel = ilSlug ? ` · ${ilSlug.charAt(0).toUpperCase()}${ilSlug.slice(1)}` : '';
+  const ilQs = ilSlug ? `&il=${encodeURIComponent(ilSlug)}` : '';
   return buildVitrinPageMetadata({
     title: q
-      ? `"${q}" için arama sonuçları — PetStockPro Vitrin`
-      : 'Vitrin arama — PetStockPro',
+      ? `"${q}"${cityLabel} için arama sonuçları — PetStockPro Vitrin`
+      : `Vitrin arama${cityLabel} — PetStockPro`,
     description: q
-      ? `${q} ile ilgili pet shop ürünleri. Yakınındaki pet shop'tan WhatsApp ile sor.`
+      ? `${q} ile ilgili pet shop ürünleri${cityLabel}. Yakınındaki pet shop'tan WhatsApp ile sor.`
       : 'Pet shop ürünleri ve markalar arasında ara. Yakınındaki pet shop\'tan al.',
-    path: q ? `/vitrin/ara?q=${encodeURIComponent(q)}` : '/vitrin/ara',
+    path: q ? `/vitrin/ara?q=${encodeURIComponent(q)}${ilQs}` : '/vitrin/ara',
   });
 }
 
@@ -56,10 +61,18 @@ export default async function VitrinSearchPage({
   const page = Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1;
   const offset = (page - 1) * PAGE_SIZE;
 
+  // İl filtresi — slug verildiyse city lookup; bilinmeyen slug atlanır (filter no-op)
+  const ilSlug = (params.il ?? '').trim().toLowerCase();
+  const cityFilter = ilSlug ? await getCityBySlug(ilSlug, db) : null;
+  const cityId = cityFilter?.id;
+
+  // City select için pet shop'u olan tüm şehirler
+  const activeCities = await listCitiesWithStorefronts(db);
+
   const [results, totalCount] = parsed.valid
     ? await Promise.all([
-        searchPublicProducts(parsed.raw, db, { limit: PAGE_SIZE, offset }),
-        countSearchResults(parsed.raw, db),
+        searchPublicProducts(parsed.raw, db, { limit: PAGE_SIZE, offset, cityId }),
+        countSearchResults(parsed.raw, db, { cityId }),
       ])
     : [[], 0];
 
@@ -79,6 +92,7 @@ export default async function VitrinSearchPage({
   const buildPageUrl = (newPage: number) => {
     const sp = new URLSearchParams();
     if (parsed.raw) sp.set('q', parsed.raw);
+    if (cityFilter) sp.set('il', cityFilter.slug);
     if (newPage > 1) sp.set('page', String(newPage));
     const qs = sp.toString();
     return `/vitrin/ara${qs ? `?${qs}` : ''}`;
@@ -102,10 +116,18 @@ export default async function VitrinSearchPage({
         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
           {parsed.valid ? (
             <>
-              &quot;{parsed.raw}&quot; için <span className="opacity-80">{TR_NUMBER.format(totalCount)} sonuç</span>
+              &quot;{parsed.raw}&quot;
+              {cityFilter && (
+                <span className="opacity-90"> · {cityFilter.name}</span>
+              )}{' '}
+              için{' '}
+              <span className="opacity-80">{TR_NUMBER.format(totalCount)} sonuç</span>
             </>
           ) : (
-            'Pet shop ürünlerinde ara'
+            <>
+              Pet shop ürünlerinde ara
+              {cityFilter && <span className="opacity-90"> · {cityFilter.name}</span>}
+            </>
           )}
         </h1>
         <p className="mt-1.5 text-[14px] opacity-85">
@@ -128,6 +150,20 @@ export default async function VitrinSearchPage({
             data-testid="vitrin-search-input"
             className="min-w-[180px] flex-1 rounded-xl bg-transparent px-3 py-2.5 text-[15px] text-ink placeholder:text-ink-4 focus:outline-none"
           />
+          <select
+            name="il"
+            defaultValue={cityFilter?.slug ?? ''}
+            data-testid="vitrin-search-city"
+            aria-label="Şehir filtresi"
+            className="min-w-[140px] rounded-xl border-l border-line bg-paper px-3 py-2.5 text-[14px] text-ink focus:outline-none"
+          >
+            <option value="">Tüm şehirler</option>
+            {activeCities.map((c) => (
+              <option key={c.id} value={c.slug}>
+                {c.name}
+              </option>
+            ))}
+          </select>
           <button
             type="submit"
             className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-br from-cat to-cat-2 px-5 py-2.5 text-[14px] font-bold text-white shadow-sm hover:-translate-y-px transition-transform"
@@ -139,6 +175,26 @@ export default async function VitrinSearchPage({
             Ara
           </button>
         </form>
+
+        {/* Aktif il filter chip + temizleme */}
+        {cityFilter && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-[13px]">
+            <span className="rounded-full bg-paper/20 px-3 py-1 font-bold text-white backdrop-blur-sm">
+              📍 {cityFilter.name}
+            </span>
+            <Link
+              href={
+                (parsed.raw
+                  ? `/vitrin/ara?q=${encodeURIComponent(parsed.raw)}`
+                  : '/vitrin/ara') as never
+              }
+              className="rounded-full bg-paper/10 px-3 py-1 font-bold text-white opacity-80 hover:bg-paper/20 hover:opacity-100"
+              data-testid="vitrin-search-clear-city"
+            >
+              × Şehir filtresini kaldır
+            </Link>
+          </div>
+        )}
       </header>
 
       {/* Empty state — query yok veya kısa */}
