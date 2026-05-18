@@ -21,6 +21,7 @@ import {
   cities,
   companies,
   districts,
+  productImages,
   productVariants,
   products,
   storefrontSettings,
@@ -108,6 +109,8 @@ export interface PopularProductRow {
   districtName: string | null;
   defaultSalePrice: string | null;
   defaultVariantLabel: string | null;
+  /** Ürünün primary product_images URL'i, yoksa null (UI emoji fallback yapar) */
+  primaryImageUrl: string | null;
   viewCount: number;
 }
 
@@ -146,6 +149,7 @@ export async function listPopularProducts7d(
       districtName: districts.name,
       defaultSalePrice: productVariants.salePrice,
       defaultVariantLabel: productVariants.valueLabel,
+      primaryImageUrl: productImages.url,
       viewCount: sql<number>`COUNT(${vitrinEvents.id})::int`,
     })
     .from(vitrinEvents)
@@ -163,6 +167,13 @@ export async function listPopularProducts7d(
         eq(productVariants.productId, products.id),
         eq(productVariants.isDefault, true),
         eq(productVariants.isActive, true),
+      ),
+    )
+    .leftJoin(
+      productImages,
+      and(
+        eq(productImages.productId, products.id),
+        eq(productImages.isPrimary, true),
       ),
     )
     .where(
@@ -186,6 +197,7 @@ export async function listPopularProducts7d(
       districts.name,
       productVariants.salePrice,
       productVariants.valueLabel,
+      productImages.url,
     )
     .orderBy(desc(sql`COUNT(${vitrinEvents.id})`), asc(products.name))
     .limit(limit);
@@ -202,6 +214,8 @@ export interface BestSellerRow {
   districtName: string | null;
   defaultSalePrice: string | null;
   defaultVariantLabel: string | null;
+  /** Ürünün primary product_images URL'i, yoksa null (UI emoji fallback yapar) */
+  primaryImageUrl: string | null;
   /** Son N gün toplam satış adet (stock_out · sale, reversedById NULL) */
   totalSold: number;
 }
@@ -246,6 +260,7 @@ export async function listBestSellers(
       districtName: districts.name,
       defaultSalePrice: defaultVariant.salePrice,
       defaultVariantLabel: defaultVariant.valueLabel,
+      primaryImageUrl: productImages.url,
       totalSold: sql<number>`COALESCE(SUM(ABS(${stockMovements.quantity})), 0)::int`,
     })
     .from(stockMovements)
@@ -264,6 +279,13 @@ export async function listBestSellers(
         eq(defaultVariant.productId, products.id),
         eq(defaultVariant.isDefault, true),
         eq(defaultVariant.isActive, true),
+      ),
+    )
+    .leftJoin(
+      productImages,
+      and(
+        eq(productImages.productId, products.id),
+        eq(productImages.isPrimary, true),
       ),
     )
     .where(
@@ -289,6 +311,7 @@ export async function listBestSellers(
       districts.name,
       defaultVariant.salePrice,
       defaultVariant.valueLabel,
+      productImages.url,
     )
     .orderBy(
       desc(sql`COALESCE(SUM(ABS(${stockMovements.quantity})), 0)`),

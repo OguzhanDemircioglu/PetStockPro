@@ -92,6 +92,7 @@ describe('listPopularProducts7d', () => {
         districtName: 'Üsküdar',
         defaultSalePrice: '180.00',
         defaultVariantLabel: '2kg',
+        primaryImageUrl: 'https://xxx.supabase.co/storage/v1/object/public/product-images/c1/p1/img.png',
         viewCount: 142,
       },
     ];
@@ -198,6 +199,7 @@ describe('listBestSellers', () => {
         districtName: 'Üsküdar',
         defaultSalePrice: '180.00',
         defaultVariantLabel: '2kg',
+        primaryImageUrl: null,
         totalSold: 87,
       },
     ];

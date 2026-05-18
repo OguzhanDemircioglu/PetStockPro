@@ -516,8 +516,19 @@ export default async function VitrinHomePage({
                     }
                     className="block"
                   >
-                    <div className="relative grid h-32 place-items-center bg-gradient-to-br from-cat-soft/40 to-arrow-soft/40 text-5xl">
-                      🐾
+                    <div className="relative h-32 overflow-hidden bg-gradient-to-br from-cat-soft/40 to-arrow-soft/40">
+                      {p.primaryImageUrl ? (
+                        <img
+                          src={p.primaryImageUrl}
+                          alt={p.productName}
+                          loading="lazy"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="grid h-full place-items-center text-5xl">
+                          🐾
+                        </div>
+                      )}
                       <span className="absolute right-2 top-2 rounded-full bg-paper/95 px-2 py-0.5 text-[10.5px] font-bold text-cat shadow-sm">
                         🔥 {p.viewCount}
                       </span>
@@ -585,8 +596,19 @@ export default async function VitrinHomePage({
                     }
                     className="block"
                   >
-                    <div className="relative grid h-32 place-items-center bg-gradient-to-br from-arrow-soft/40 to-cat-soft/30 text-5xl">
-                      🐾
+                    <div className="relative h-32 overflow-hidden bg-gradient-to-br from-arrow-soft/40 to-cat-soft/30">
+                      {p.primaryImageUrl ? (
+                        <img
+                          src={p.primaryImageUrl}
+                          alt={p.productName}
+                          loading="lazy"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="grid h-full place-items-center text-5xl">
+                          🐾
+                        </div>
+                      )}
                       <span className="absolute right-2 top-2 rounded-full bg-arrow/90 px-2 py-0.5 text-[10.5px] font-bold text-white shadow-sm">
                         🏆 {TR_NUMBER.format(p.totalSold)} adet
                       </span>
