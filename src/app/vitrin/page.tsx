@@ -172,7 +172,7 @@ export default async function VitrinHomePage({
           {/* Hero search bar — sadece pet shop adı/ürün adı q filter (mevcut listPublicStorefronts) */}
           <form
             method="get"
-            action="/vitrin"
+            action="/vitrin/ara"
             className="mt-6 flex flex-wrap items-stretch gap-2 rounded-2xl bg-paper p-2 shadow-[var(--shadow-cat)]"
             data-testid="vitrin-hero-search"
           >
