@@ -9,9 +9,13 @@ export default async function Home() {
   const session = await auth();
 
   // Auth'lı user:
+  // - SUPERADMIN → /admin/superadmin (sistem operasyon ana sayfası, onboarding gate'ini atla)
   // - onboardingCompletedAt NULL → /onboarding redirect
   // - aksi halde /admin (Pano) redirect
   if (session?.user?.id) {
+    if (session.user.role === 'SUPERADMIN') {
+      redirect('/admin/superadmin' as never);
+    }
     const rows = await db
       .select({ onboardingCompletedAt: users.onboardingCompletedAt })
       .from(users)
