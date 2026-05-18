@@ -3,6 +3,7 @@
 import { useState, useActionState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { RecoveryCodesActions } from '@/components/auth/recovery-codes-actions';
 import {
   verifySetupAction,
   enableSetupAction,
@@ -210,23 +211,8 @@ export function TwoFactorWizard({
               ))}
             </div>
 
-            <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(recoveryCodes.join('\n'));
-                }}
-                className="flex-1 rounded-xl border border-line bg-white px-4 py-2.5 text-xs font-bold text-ink-2 hover:bg-line-soft"
-              >
-                📋 Tümünü kopyala
-              </button>
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="flex-1 rounded-xl border border-line bg-white px-4 py-2.5 text-xs font-bold text-ink-2 hover:bg-line-soft"
-              >
-                🖨 Yazdır
-              </button>
+            <div className="mt-4">
+              <RecoveryCodesActions codes={recoveryCodes} email={userEmail} />
             </div>
 
             <div className="mt-4 rounded-xl border border-cat/20 bg-cat-soft px-4 py-3 text-xs leading-relaxed text-cart">

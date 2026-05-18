@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from 'react';
 import Link from 'next/link';
+import { RecoveryCodesActions } from '@/components/auth/recovery-codes-actions';
 import {
   disable2faAction,
   regenerate2faRecoveryAction,
@@ -204,15 +205,7 @@ export function SecurityForms({
                   </div>
                 ))}
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(regenState.recoveryCodes.join('\n'));
-                }}
-                className="rounded-xl border border-line bg-paper px-4 py-2 text-xs font-bold text-ink-2 hover:bg-line-soft"
-              >
-                📋 Tümünü kopyala
-              </button>
+              <RecoveryCodesActions codes={regenState.recoveryCodes} email={email} />
               <div className="mt-3 rounded-xl border border-cat/20 bg-cat-soft px-4 py-3 text-xs text-cart">
                 ⚠ Bu kodlar bir daha gösterilmeyecek — güvenli yere kaydet.
               </div>
