@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useMemo, useState } from 'react';
+import { useActionState, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { SeedCatalogAutocomplete } from '@/components/products/seed-catalog-autocomplete';
 import type { SearchResult } from '@/lib/catalog/seed-catalog';
@@ -79,18 +79,25 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageName, setImageName] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [imageFromCatalog, setImageFromCatalog] = useState<boolean>(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
   const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+
+  // Object URL revoke — sadece blob: URL'ler için (R2 https URL'leri revoke etme)
+  const revokeIfBlob = (url: string | null) => {
+    if (url && url.startsWith('blob:')) URL.revokeObjectURL(url);
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setImageError(null);
     const file = e.target.files?.[0];
     if (!file) {
-      // Önceki preview'ı temizle (object URL revoke)
-      if (imagePreview) URL.revokeObjectURL(imagePreview);
+      revokeIfBlob(imagePreview);
       setImagePreview(null);
       setImageName(null);
+      setImageFromCatalog(false);
       return;
     }
     if (file.size > MAX_SIZE) {
@@ -103,10 +110,49 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
       e.target.value = '';
       return;
     }
-    // Önceki preview'ı temizle
-    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    revokeIfBlob(imagePreview);
     setImagePreview(URL.createObjectURL(file));
     setImageName(file.name);
+    // Manuel değişiklik — catalog override (yeni dosya manuel kabul edilir, seedImagePath ignore)
+    setImageFromCatalog(false);
+    setSeedImagePath(''); // server fallback'i de devre dışı bırak
+  };
+
+  /**
+   * Catalog'tan seçilen görseli UI'da "dosya seçilmiş" gibi göster.
+   *
+   * NOT: r2.dev public URL preflight CORS desteklemiyor, browser tarafında
+   * fetch fail eder. Bu yüzden gerçek File object inject yerine MOCK state:
+   * - preview thumb: R2 public URL (img src — CORS gerek yok)
+   * - imageName: catalog ürün adı
+   * - file input boş kalır
+   * Submit'te server seedImagePath'i okur + transferSeedImageToProduct ile
+   * R2'den R2'ye direkt server-side kopyalar (CORS yok, sunucu fetch).
+   * Kullanıcı dosya seçerse override (manuel yol öncelikli).
+   */
+  const showCatalogImageAsSelected = (
+    imagePath: string,
+    productNameForFileName: string,
+  ): void => {
+    if (!r2PublicUrl) return;
+    const url = `${r2PublicUrl}/${imagePath}`;
+    const ext = (imagePath.match(/\.(\w+)$/)?.[1] ?? 'webp').toLowerCase();
+    const safeName =
+      productNameForFileName
+        .replace(/[^a-zA-Z0-9çğıöşüÇĞİÖŞÜ\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .toLowerCase()
+        .slice(0, 60) || 'catalog';
+
+    // Önceki manuel preview'ı temizle
+    if (imagePreview && !imageFromCatalog) URL.revokeObjectURL(imagePreview);
+
+    setImagePreview(url); // R2 public URL — img src'e direkt verilir
+    setImageName(`${safeName}.${ext}`);
+    setImageFromCatalog(true);
+    setImageError(null);
+    // file input'u temizle (kullanıcı isterse seçer)
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   // Marka / kategori case-insensitive eşleşmesi için preset
@@ -149,13 +195,20 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
       setSku(suggestSku(product.brand, product.name, product.weight));
     }
 
-    // Seed katalog görseli — submit'te transfer edilmek üzere hidden input'a yaz
+    // Seed katalog görseli — UI'da "dosya seçilmiş" gibi göster, server seedImagePath'i kullanır
     if (product.imagePath) {
       setSeedImagePath(product.imagePath);
       setSeedImagePreviewName(`${product.brand} ${product.name}`.slice(0, 60));
+      showCatalogImageAsSelected(product.imagePath, `${product.brand}-${product.name}`);
     } else {
       setSeedImagePath('');
       setSeedImagePreviewName(null);
+      // Eğer önceki seçimden catalog görsel kalıntısı varsa temizle
+      if (imageFromCatalog) {
+        setImagePreview(null);
+        setImageName(null);
+        setImageFromCatalog(false);
+      }
     }
   };
 
@@ -456,41 +509,8 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
                 📷 Ürün görseli (opsiyonel)
               </label>
 
-              {/* Manuel görsel seçilmemiş ama catalog seçimi var → R2 katalog görselini göster */}
-              {!imagePreview && seedImagePath && (
-                <div
-                  data-testid="seed-image-hint"
-                  className="mb-3 flex items-center gap-3 rounded-xl border border-arrow/30 bg-arrow-soft/40 p-3"
-                >
-                  {r2PublicUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={`${r2PublicUrl}/${seedImagePath}`}
-                      alt={seedImagePreviewName ?? 'Catalog görseli'}
-                      className="h-20 w-20 rounded-lg object-cover ring-1 ring-arrow/30"
-                    />
-                  ) : (
-                    <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-arrow-soft text-2xl ring-1 ring-arrow/30">
-                      📷
-                    </div>
-                  )}
-                  <div className="flex-1 text-[12.5px]">
-                    <div className="font-bold text-arrow-7">
-                      📷 Katalog görseli — kayıtta tenant&apos;ınıza kopyalanacak
-                    </div>
-                    {seedImagePreviewName && (
-                      <div className="mt-0.5 text-xs font-normal text-ink-3">
-                        {seedImagePreviewName}
-                      </div>
-                    )}
-                    <div className="mt-1 text-[11px] text-ink-3">
-                      Değiştirmek için aşağıdan dosya seç →
-                    </div>
-                  </div>
-                </div>
-              )}
-
               <input
+                ref={fileInputRef}
                 id="productImage"
                 name="productImage"
                 type="file"
@@ -502,9 +522,12 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
               />
               <p className="mt-1.5 text-xs text-ink-3">
                 JPG / PNG / WebP — max 5 MB.
-                {seedImagePath && (
-                  <span className="ml-1 font-bold text-arrow-7">
-                    Dosya seçersen yukarıdaki katalog görselinin yerine bu kullanılır.
+                {imageFromCatalog && (
+                  <span
+                    data-testid="catalog-image-note"
+                    className="ml-1 font-bold text-arrow-7"
+                  >
+                    Katalogtan otomatik geldi — değiştirmek için yeni dosya seç.
                   </span>
                 )}
               </p>
