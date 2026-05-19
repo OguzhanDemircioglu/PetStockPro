@@ -64,7 +64,11 @@ export default async function SystemSettingsPage() {
     { key: 'IYZICO_API_KEY', desc: 'iyzico subscription', present: !!process.env.IYZICO_API_KEY },
     { key: 'IYZICO_WEBHOOK_SECRET', desc: 'iyzico HMAC signature verify', present: !!process.env.IYZICO_WEBHOOK_SECRET },
     { key: 'NILVERA_API_KEY', desc: 'Nilvera e-Arşiv (TR fatura)', present: !!process.env.NILVERA_API_KEY },
-    { key: 'SUPABASE_SERVICE_ROLE_KEY', desc: 'Storage upload (image upload bloker)', present: !!process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.SUPABASE_SERVICE_ROLE_KEY !== process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY },
+    { key: 'R2_ACCOUNT_ID', desc: 'Cloudflare R2 storage account', present: !!process.env.R2_ACCOUNT_ID },
+    { key: 'R2_ACCESS_KEY_ID', desc: 'R2 API access key (image upload)', present: !!process.env.R2_ACCESS_KEY_ID },
+    { key: 'R2_SECRET_ACCESS_KEY', desc: 'R2 API secret (image upload)', present: !!process.env.R2_SECRET_ACCESS_KEY },
+    { key: 'R2_BUCKET', desc: 'R2 bucket adı (örn. petstockpro-images)', present: !!process.env.R2_BUCKET },
+    { key: 'R2_PUBLIC_URL', desc: 'R2 public delivery URL (pub-xxx.r2.dev veya custom)', present: !!process.env.R2_PUBLIC_URL },
     { key: 'NEXT_PUBLIC_APP_URL', desc: 'Email link generation base URL', present: !!process.env.NEXT_PUBLIC_APP_URL },
   ];
 

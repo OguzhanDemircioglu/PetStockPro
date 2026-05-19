@@ -1,30 +1,41 @@
 /**
- * Product images CRUD — Sprint 3.3
+ * Product images CRUD — Sprint 3.3 + R2 migration (2026-05-19)
  *
- * Server-side helper. Supabase Storage bucket `product-images` + Postgres
- * `product_images` tablosu birlikte yönetir.
+ * Server-side helper. **Cloudflare R2** bucket (env: R2_BUCKET, varsayılan
+ * petstockpro-images) + Postgres `product_images` tablosu birlikte yönetir.
  *
  * Senaryolar:
- *   - upload(productId, file): Storage'a yükle + DB'ye satır insert. İlk
- *     görsel otomatik primary. displayOrder = max(existing)+1.
+ *   - upload(productId, file): R2'ye yükle + DB'ye satır insert. İlk görsel
+ *     otomatik primary. displayOrder = max(existing)+1.
  *   - list(productId): DB'den ürünün tüm görsellerini sıralı döner.
- *   - delete(imageId): DB'den sil + Storage'dan dosyayı remove.
+ *   - delete(imageId): DB'den sil + R2'den dosyayı remove.
  *   - setPrimary(imageId): Yeni primary atar, eski primary unset (transaction).
  *
  * Tüm operasyonlar **tenant-scoped**: companyId param zorunlu, başka tenant'ın
  * ürününe yazma reddedilir (not_found döner).
  *
- * File path: `{companyId}/{productId}/{uuid}.{ext}` — RLS değil, code-level
- * tenant izolasyonu. Path traversal koruması Zod regex ile.
+ * R2 object key: `tenants/{companyId}/{productId}/{uuid}.{ext}`
+ * (Catalog seed prefix `seed/`'den ayrı tutulur — namespace izolasyonu.)
+ *
+ * Path traversal koruması Zod regex ile.
  */
 
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { DbClient } from '@/lib/db/client';
 import { productImages, products } from '@/db/schema';
-import { getSupabaseAdminClient } from '@/lib/supabase/admin';
+import {
+  uploadToR2,
+  deleteFromR2,
+  getR2PublicUrl,
+  extractR2KeyFromUrl,
+} from '@/lib/storage/r2-client';
 
-export const BUCKET_NAME = 'product-images';
+/**
+ * R2 object key prefix — tenant ürün resimleri için.
+ * Catalog seed (`seed/`) ile ayrı namespace.
+ */
+export const TENANT_PREFIX = 'tenants/';
 export const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 export const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 export const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'] as const;
@@ -33,7 +44,7 @@ export interface ProductImageRow {
   id: string;
   productId: string;
   url: string;
-  /** Storage'daki path (`{companyId}/{productId}/{uuid}.{ext}`). Delete için kullanılır. */
+  /** R2 object key (`tenants/{companyId}/{productId}/{uuid}.{ext}`). Delete için kullanılır. */
   storagePath: string;
   isPrimary: boolean;
   displayOrder: number;
@@ -42,17 +53,27 @@ export interface ProductImageRow {
 }
 
 /**
- * URL'den storage path'i çıkar.
- * Public URL örneği:
- *   https://xxx.supabase.co/storage/v1/object/public/product-images/{companyId}/{productId}/{uuid}.png
- * Storage path:
- *   {companyId}/{productId}/{uuid}.png
+ * URL'den R2 object key'i çıkar.
+ * Public URL: `https://pub-xxxxx.r2.dev/tenants/{companyId}/{productId}/{uuid}.{ext}`
+ * Storage key: `tenants/{companyId}/{productId}/{uuid}.{ext}`
+ *
+ * Geriye uyumluluk: eski Supabase Storage URL'lerini de tanır
+ * (migration döneminde DB'de hala kalmış olabilir).
  */
 export function extractStoragePathFromUrl(url: string): string | null {
-  const marker = `/storage/v1/object/public/${BUCKET_NAME}/`;
-  const idx = url.indexOf(marker);
-  if (idx === -1) return null;
-  return url.slice(idx + marker.length);
+  // 1. Yeni R2 URL formatı
+  const r2Key = extractR2KeyFromUrl(url);
+  if (r2Key) return r2Key;
+
+  // 2. Legacy Supabase Storage URL — public/sign her ikisini de yakala
+  const legacyMarker = '/storage/v1/object/public/product-images/';
+  const legacyIdx = url.indexOf(legacyMarker);
+  if (legacyIdx !== -1) {
+    // Eski path → tenants/ prefix'i otomatik ekle (legacy migration için)
+    const legacyPath = url.slice(legacyIdx + legacyMarker.length);
+    return `${TENANT_PREFIX}${legacyPath}`;
+  }
+  return null;
 }
 
 export const uploadInputSchema = z.object({
@@ -151,37 +172,30 @@ export async function uploadProductImage(
     return { ok: false, reason: 'product_not_found' };
   }
 
-  // 4. Dosya path: {companyId}/{productId}/{uuid}.{ext}
+  // 4. R2 object key: tenants/{companyId}/{productId}/{uuid}.{ext}
   const ext = extensionFromContentType(data.contentType);
   const uuid = crypto.randomUUID();
-  const storagePath = `${data.companyId}/${data.productId}/${uuid}.${ext}`;
+  const storagePath = `${TENANT_PREFIX}${data.companyId}/${data.productId}/${uuid}.${ext}`;
 
-  // 5. Storage upload
+  // 5. R2 upload
   //
-  // cacheControl: 1 yıl (31536000 sn). Path UUID-based + immutable — aynı URL'den
-  // hiç farklı bytes gelmez (silinince DB satırı da silinir, kullanılmayan
-  // URL kalmaz). Bu sayede CDN (Supabase Storage CDN + Cloudflare cache)
-  // public-immutable cache, hot path'te tek byte servisten DB'ye gitmez.
-  const supabase = getSupabaseAdminClient();
-  const { error: uploadError } = await supabase.storage
-    .from(BUCKET_NAME)
-    .upload(storagePath, fileBuffer, {
+  // cacheControl: 1 yıl (31536000 sn). Key UUID-based + immutable — aynı URL'den
+  // hiç farklı bytes gelmez (silinince DB satırı da silinir, kullanılmayan URL
+  // kalmaz). Bu sayede Cloudflare edge cache public-immutable, hot path'te tek
+  // byte servisten DB'ye gitmez.
+  let publicUrl: string;
+  try {
+    publicUrl = await uploadToR2(storagePath, fileBuffer, {
       contentType: data.contentType,
-      cacheControl: '31536000',
-      upsert: false,
+      cacheControl: 'public, max-age=31536000, immutable',
     });
-  if (uploadError) {
+  } catch (err) {
     return {
       ok: false,
       reason: 'storage_error',
-      message: uploadError.message,
+      message: err instanceof Error ? err.message : 'R2 upload hatası',
     };
   }
-
-  const { data: publicData } = supabase.storage
-    .from(BUCKET_NAME)
-    .getPublicUrl(storagePath);
-  const publicUrl = publicData.publicUrl;
 
   // 6. DB insert — İlk görsel otomatik primary + displayOrder=max+1
   try {
@@ -213,11 +227,8 @@ export async function uploadProductImage(
       storagePath,
     };
   } catch (err) {
-    // DB insert fail → orphan storage cleanup (best-effort)
-    await supabase.storage
-      .from(BUCKET_NAME)
-      .remove([storagePath])
-      .catch(() => undefined);
+    // DB insert fail → orphan R2 object cleanup (best-effort)
+    await deleteFromR2(storagePath).catch(() => undefined);
     return {
       ok: false,
       reason: 'db_error',
@@ -278,7 +289,7 @@ export type DeleteResult =
   | { ok: false; reason: 'not_found' | 'storage_error' | 'db_error'; message?: string };
 
 /**
- * Görseli sil — DB + Storage cleanup. Primary silinince ikinci görsel auto-promote.
+ * Görseli sil — DB + R2 cleanup. Primary silinince ikinci görsel auto-promote.
  */
 export async function deleteProductImage(
   companyId: string,
@@ -314,15 +325,10 @@ export async function deleteProductImage(
     };
   }
 
-  // 3. Storage temizlik — best-effort. DB silindi, storage orphan kalsa bile
-  //    görsel artık görünmüyor (DB'den list edilmiyor). Periyodik cleanup
-  //    işi gelecekte.
+  // 3. R2 temizlik — best-effort. DB silindi, R2 orphan kalsa bile görsel
+  //    artık görünmüyor (DB'den list edilmiyor). Periyodik cleanup iş gelecekte.
   if (storagePath) {
-    const supabase = getSupabaseAdminClient();
-    await supabase.storage
-      .from(BUCKET_NAME)
-      .remove([storagePath])
-      .catch(() => undefined);
+    await deleteFromR2(storagePath).catch(() => undefined);
   }
 
   // 4. Primary silindiyse, kalan en düşük displayOrder'lı görsel primary olsun
@@ -403,4 +409,18 @@ export async function setPrimaryProductImage(
   });
 
   return { ok: true, previousPrimaryId };
+}
+
+/**
+ * @deprecated `TENANT_PREFIX` ve R2 ile değiştirildi.
+ * Geriye uyumluluk için tutulur, yeni kodda kullanma.
+ */
+export const BUCKET_NAME = 'product-images';
+
+/**
+ * Public URL'i R2 base'den compose et.
+ * Manuel kullanım gerekmediği sürece `uploadProductImage`'in döndürdüğü `url`'i kullan.
+ */
+export function getProductImageUrl(storageKey: string): string {
+  return getR2PublicUrl(storageKey);
 }

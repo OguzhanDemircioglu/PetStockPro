@@ -1,44 +1,45 @@
 /**
- * Seed katalog ürün görselini tenant ürününe transfer et.
+ * Seed katalog ürün görselini tenant ürününe transfer et (R2-based, 2026-05-19).
  *
  * /admin/products/new'da SeedCatalogAutocomplete üzerinden seçilen ürünün
- * `imagePath` field'ı (örn. `scripts/data/images/abc123.jpg`) varsa, dosyayı
- * lokalden okuyup Supabase Storage'a yükle ve product_images'a satır insert
- * et (mevcut uploadProductImage helper'ı).
+ * `imagePath` field'ı (R2 object key, örn. `seed/abc123.webp`) varsa, R2'den
+ * binary'yi indir + tenant'ın R2 prefix'ine yeniden upload et + product_images
+ * tablosuna satır insert et (mevcut uploadProductImage helper'ı kullanılır).
  *
  * Güvenlik:
- *   - imagePath whitelist regex: SADECE `scripts/data/images/[hex/ascii].(jpg|jpeg|png|webp)`
- *   - fs.readFile sadece proje root'undaki scripts/data/images/ altında
+ *   - imagePath whitelist regex: SADECE `seed/[hex/ascii].(jpg|jpeg|png|webp)`
+ *   - Path traversal koruması (../, /, \) reddedilir
  *   - Tenant ownership uploadProductImage helper'ı tarafından check edilir
+ *
+ * Eski (pre-R2) `scripts/data/images/...` lokal yol formatı artık desteklenmiyor.
+ * Catalog DB'sinde imagePath = `seed/{hash}.webp` formatında tutulur.
  */
 
-import { promises as fs } from 'node:fs';
-import path from 'node:path';
 import type { DbClient } from '@/lib/db/client';
+import { fetchFromR2 } from '@/lib/storage/r2-client';
 import {
   uploadProductImage,
   type UploadResult,
 } from './product-images';
 
-/** Test injection için — production'da fs.readFile, test'te mock fn. */
-export type ReadFileFn = (absolutePath: string) => Promise<Buffer>;
+/** Test injection için — production'da fetchFromR2, test'te mock fn. */
+export type FetchR2Fn = (key: string) => Promise<Buffer | null>;
 export type UploadFn = typeof uploadProductImage;
 
 interface TransferDeps {
-  readFile?: ReadFileFn;
+  fetchR2?: FetchR2Fn;
   upload?: UploadFn;
 }
 
 /**
- * imagePath whitelist — sadece scripts/data/images/ altındaki dosya adlarına izin ver.
+ * imagePath whitelist — sadece `seed/` prefix altındaki R2 object key'lere izin.
  *
- * Beklenen format: `scripts/data/images/[a-f0-9]{16}.(jpg|jpeg|png|webp)`
- * (16 hex hash = sha1(brand+name).slice(0,16) — enrich-product-images.ts pattern).
+ * Beklenen format: `seed/[a-zA-Z0-9_-]+\.(jpg|jpeg|png|webp)`
+ * (16 hex hash = sha1(brand+name).slice(0,16) — scraper pattern).
  *
- * Daha gevşek alfanümerik+dash kabul edilir ama path traversal (../, /, \) reddedilir.
+ * Path traversal (../, /, \) reddedilir — sadece dosya adı kısmı serbest.
  */
-const SEED_IMAGE_PATH_REGEX =
-  /^scripts\/data\/images\/[a-zA-Z0-9_-]+\.(jpe?g|png|webp)$/i;
+const SEED_KEY_REGEX = /^seed\/[a-zA-Z0-9_-]+\.(jpe?g|png|webp)$/i;
 
 const CONTENT_TYPE_BY_EXT: Record<string, 'image/jpeg' | 'image/png' | 'image/webp'> = {
   jpg: 'image/jpeg',
@@ -61,68 +62,53 @@ export interface TransferSeedImageResult {
 }
 
 /**
- * Seed imagePath → product_images insert + Supabase Storage upload.
+ * R2 seed key → product_images insert + tenant prefix'e R2 upload.
  *
  * @param companyId Tenant UUID
  * @param productId Az önce oluşturulmuş ürünün UUID'si
- * @param seedImagePath JSON'daki imagePath field'ı (relative, `scripts/data/images/...`)
+ * @param seedKey Catalog DB'sindeki imagePath alanı (R2 object key, `seed/...`)
  * @param db Drizzle client
  */
 export async function transferSeedImageToProduct(
   companyId: string,
   productId: string,
-  seedImagePath: string,
+  seedKey: string,
   db: DbClient,
   deps: TransferDeps = {},
 ): Promise<TransferSeedImageResult> {
-  const readFile = deps.readFile ?? fs.readFile;
+  const fetchR2 = deps.fetchR2 ?? fetchFromR2;
   const upload = deps.upload ?? uploadProductImage;
 
-  // 1. Whitelist regex kontrolü — path traversal koruması
-  if (!SEED_IMAGE_PATH_REGEX.test(seedImagePath)) {
+  // 1. Whitelist regex kontrolü — path traversal koruması + format
+  if (!SEED_KEY_REGEX.test(seedKey)) {
     return {
       ok: false,
       reason: 'invalid_path',
-      message: `Geçersiz imagePath: ${seedImagePath}`,
+      message: `Geçersiz seed key: ${seedKey}`,
     };
   }
 
-  // 2. Mutlak yol — proje root'undan
-  const projectRoot = process.cwd();
-  const absolutePath = path.resolve(projectRoot, seedImagePath);
-
-  // 3. Defansif: çözümlenmiş path hala scripts/data/images/ altında mı?
-  const expectedPrefix = path.resolve(projectRoot, 'scripts/data/images');
-  if (!absolutePath.startsWith(expectedPrefix + path.sep) && absolutePath !== expectedPrefix) {
-    return {
-      ok: false,
-      reason: 'invalid_path',
-      message: 'Path traversal denemesi reddedildi',
-    };
-  }
-
-  // 4. Dosyayı oku
-  let buffer: Buffer;
+  // 2. R2'den binary fetch
+  let buffer: Buffer | null;
   try {
-    buffer = await readFile(absolutePath);
+    buffer = await fetchR2(seedKey);
   } catch (err) {
-    const code = (err as NodeJS.ErrnoException)?.code;
-    if (code === 'ENOENT') {
-      return { ok: false, reason: 'file_not_found', message: `Seed görsel yok: ${seedImagePath}` };
-    }
     return {
       ok: false,
       reason: 'file_read_error',
-      message: (err as Error)?.message ?? 'Bilinmeyen dosya hatası',
+      message: (err as Error)?.message ?? 'R2 fetch hatası',
     };
   }
+  if (!buffer) {
+    return { ok: false, reason: 'file_not_found', message: `R2'de yok: ${seedKey}` };
+  }
 
-  // 5. Content-type belirle (extension'dan)
-  const ext = path.extname(seedImagePath).slice(1).toLowerCase();
+  // 3. Content-type belirle (extension'dan)
+  const ext = (seedKey.match(/\.([a-z]+)$/i)?.[1] ?? 'jpg').toLowerCase();
   const contentType = CONTENT_TYPE_BY_EXT[ext] ?? 'image/jpeg';
 
-  // 6. Storage upload
-  const fileName = path.basename(seedImagePath);
+  // 4. Tenant'ın kendi R2 prefix'ine yeniden upload (tenants/{companyId}/{productId}/...)
+  const fileName = seedKey.split('/').pop() ?? 'seed.webp';
   const result: UploadResult = await upload(
     companyId,
     {

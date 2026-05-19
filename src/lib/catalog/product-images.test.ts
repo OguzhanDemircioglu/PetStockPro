@@ -20,52 +20,52 @@ const FAKE_PNG = Buffer.from(
   'base64',
 );
 
-// Mock Supabase admin client
-const mockStorage = {
-  uploadCalls: [] as Array<{ path: string; contentType: string; cacheControl?: string }>,
-  removeCalls: [] as string[][],
+const R2_BASE = 'https://pub-test.r2.dev';
+
+// Mock R2 client
+const mockR2 = {
+  uploadCalls: [] as Array<{ key: string; contentType: string; cacheControl?: string }>,
+  removeCalls: [] as string[],
   shouldFailUpload: false,
-  uploadErrorMessage: 'storage write denied',
+  uploadErrorMessage: 'r2 write denied',
 };
 
-vi.mock('@/lib/supabase/admin', () => ({
-  getSupabaseAdminClient: () => ({
-    storage: {
-      from: (bucket: string) => ({
-        upload: vi.fn().mockImplementation(
-          async (
-            path: string,
-            _data,
-            opts: { contentType: string; cacheControl?: string },
-          ) => {
-            mockStorage.uploadCalls.push({
-              path,
-              contentType: opts.contentType,
-              cacheControl: opts.cacheControl,
-            });
-          if (mockStorage.shouldFailUpload) {
-            return { data: null, error: { message: mockStorage.uploadErrorMessage } };
-          }
-          return { data: { path }, error: null };
-        }),
-        remove: vi.fn().mockImplementation(async (paths: string[]) => {
-          mockStorage.removeCalls.push(paths);
-          return { data: null, error: null };
-        }),
-        getPublicUrl: vi.fn().mockImplementation((path: string) => ({
-          data: {
-            publicUrl: `https://xxx.supabase.co/storage/v1/object/public/${bucket}/${path}`,
-          },
-        })),
-      }),
-    },
+vi.mock('@/lib/storage/r2-client', () => ({
+  uploadToR2: vi
+    .fn()
+    .mockImplementation(
+      async (
+        key: string,
+        _body: unknown,
+        opts: { contentType: string; cacheControl?: string },
+      ) => {
+        mockR2.uploadCalls.push({
+          key,
+          contentType: opts.contentType,
+          cacheControl: opts.cacheControl,
+        });
+        if (mockR2.shouldFailUpload) {
+          throw new Error(mockR2.uploadErrorMessage);
+        }
+        return `${R2_BASE}/${key}`;
+      },
+    ),
+  deleteFromR2: vi.fn().mockImplementation(async (key: string) => {
+    mockR2.removeCalls.push(key);
   }),
+  getR2PublicUrl: (key: string) => `${R2_BASE}/${key.replace(/^\/+/, '')}`,
+  extractR2KeyFromUrl: (url: string) => {
+    if (!url.startsWith(R2_BASE)) return null;
+    return url.slice(R2_BASE.length).replace(/^\/+/, '');
+  },
+  fetchFromR2: vi.fn(),
+  existsInR2: vi.fn(),
 }));
 
 beforeEach(() => {
-  mockStorage.uploadCalls = [];
-  mockStorage.removeCalls = [];
-  mockStorage.shouldFailUpload = false;
+  mockR2.uploadCalls = [];
+  mockR2.removeCalls = [];
+  mockR2.shouldFailUpload = false;
 });
 
 // DB chain mock factory: select chain'ler kuyruğundan sırayla
@@ -141,22 +141,36 @@ function makeDb(opts: {
 }
 
 // ──────────────────────────────────────────────────────────────────
-// extractStoragePathFromUrl
+// extractStoragePathFromUrl — R2 + legacy Supabase URL pattern desteği
 // ──────────────────────────────────────────────────────────────────
 describe('extractStoragePathFromUrl', () => {
-  it('valid public URL → path', () => {
+  it('R2 URL → tenants/ prefix dahil key', () => {
+    expect(
+      extractStoragePathFromUrl(
+        'https://pub-test.r2.dev/tenants/abc/def/123.png',
+      ),
+    ).toBe('tenants/abc/def/123.png');
+  });
+
+  it('R2 seed prefix URL → seed/ key', () => {
+    expect(
+      extractStoragePathFromUrl('https://pub-test.r2.dev/seed/abc123.webp'),
+    ).toBe('seed/abc123.webp');
+  });
+
+  it('legacy Supabase public URL → tenants/ prefix eklenir (geriye uyumluluk)', () => {
     expect(
       extractStoragePathFromUrl(
         'https://xxx.supabase.co/storage/v1/object/public/product-images/abc/def/123.png',
       ),
-    ).toBe('abc/def/123.png');
+    ).toBe('tenants/abc/def/123.png');
   });
 
-  it('non-supabase URL → null', () => {
+  it('non-R2 non-Supabase URL → null', () => {
     expect(extractStoragePathFromUrl('https://other.com/img.png')).toBeNull();
   });
 
-  it('signed URL (Faz 2) → null çünkü public prefix yok', () => {
+  it('legacy signed URL (Faz 2) → null (sadece public match)', () => {
     expect(
       extractStoragePathFromUrl(
         'https://xxx.supabase.co/storage/v1/object/sign/product-images/abc.png?token=xxx',
@@ -177,58 +191,73 @@ describe('uploadInputSchema', () => {
     fileBytes: 1234,
   };
 
-  it('happy path', () => {
+  it('valid input geçer', () => {
     expect(uploadInputSchema.safeParse(valid).success).toBe(true);
   });
 
-  it('companyId UUID değil → reject', () => {
+  it('companyId UUID değil → fail', () => {
     expect(
       uploadInputSchema.safeParse({ ...valid, companyId: 'not-uuid' }).success,
     ).toBe(false);
   });
 
-  it('fileName path traversal → reject', () => {
+  it('productId UUID değil → fail', () => {
+    expect(
+      uploadInputSchema.safeParse({ ...valid, productId: 'not-uuid' }).success,
+    ).toBe(false);
+  });
+
+  it('fileName boş → fail', () => {
+    expect(uploadInputSchema.safeParse({ ...valid, fileName: '' }).success).toBe(
+      false,
+    );
+  });
+
+  it('fileName path traversal denemesi (../) → fail', () => {
     expect(
       uploadInputSchema.safeParse({ ...valid, fileName: '../etc/passwd' })
         .success,
     ).toBe(false);
+  });
+
+  it('fileName slash içeriyor → fail', () => {
     expect(
-      uploadInputSchema.safeParse({ ...valid, fileName: 'a/b.png' }).success,
-    ).toBe(false);
-    expect(
-      uploadInputSchema.safeParse({ ...valid, fileName: 'a\\b.png' }).success,
+      uploadInputSchema.safeParse({ ...valid, fileName: 'foo/bar.png' }).success,
     ).toBe(false);
   });
 
-  it('contentType image/gif → reject', () => {
+  it('fileName backslash içeriyor → fail', () => {
     expect(
-      uploadInputSchema.safeParse({ ...valid, contentType: 'image/gif' as never })
+      uploadInputSchema.safeParse({ ...valid, fileName: 'foo\\bar.png' })
         .success,
     ).toBe(false);
   });
 
-  it('contentType allowed listede 3 değer', () => {
-    expect(ALLOWED_MIME_TYPES).toEqual(['image/jpeg', 'image/png', 'image/webp']);
-  });
-
-  it('fileBytes 0 → reject', () => {
+  it('contentType yanlış MIME → fail', () => {
     expect(
-      uploadInputSchema.safeParse({ ...valid, fileBytes: 0 }).success,
+      uploadInputSchema.safeParse({
+        ...valid,
+        contentType: 'application/octet-stream' as never,
+      }).success,
     ).toBe(false);
   });
 
-  it('altText boş string → null normalize', () => {
-    const r = uploadInputSchema.safeParse({ ...valid, altText: '' });
-    expect(r.success).toBe(true);
-    if (r.success) expect(r.data.altText).toBeNull();
+  it('fileBytes 0 → fail', () => {
+    expect(uploadInputSchema.safeParse({ ...valid, fileBytes: 0 }).success).toBe(
+      false,
+    );
   });
 
-  it('altText 200 karakter üstü → reject', () => {
-    const r = uploadInputSchema.safeParse({
-      ...valid,
-      altText: 'a'.repeat(201),
-    });
-    expect(r.success).toBe(false);
+  it('altText boş string → null normalize', () => {
+    const parsed = uploadInputSchema.safeParse({ ...valid, altText: '' });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data.altText).toBeNull();
+  });
+
+  it('altText >200 char → fail', () => {
+    expect(
+      uploadInputSchema.safeParse({ ...valid, altText: 'x'.repeat(201) }).success,
+    ).toBe(false);
   });
 });
 
@@ -238,50 +267,46 @@ describe('uploadInputSchema', () => {
 describe('uploadProductImage', () => {
   const validInput = {
     productId: PRODUCT,
-    fileName: 'kedi.png',
-    contentType: 'image/png' as const,
-    altText: 'Kedi maması',
+    fileName: 'photo.png',
+    contentType: 'image/png' as (typeof ALLOWED_MIME_TYPES)[number],
+    altText: 'Test photo',
   };
 
-  it('dosya 5MB üstü → file_too_large reject', async () => {
-    const oversize = Buffer.alloc(MAX_FILE_SIZE_BYTES + 1);
+  it('dosya boyutu >5MB → file_too_large + storage hiç tetiklenmez', async () => {
+    const tooBig = Buffer.alloc(MAX_FILE_SIZE_BYTES + 1);
     const db = makeDb({});
-    const result = await uploadProductImage(COMPANY, validInput, oversize, db);
+    const result = await uploadProductImage(COMPANY, validInput, tooBig, db);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.reason).toBe('file_too_large');
       expect(result.message).toMatch(/5MB/);
     }
-    expect(mockStorage.uploadCalls).toHaveLength(0); // storage'a hiç gitmemeli
+    expect(mockR2.uploadCalls).toHaveLength(0);
   });
 
-  it('Zod fail (contentType invalid) → invalid_input + issue listesi', async () => {
+  it('companyId UUID değil → invalid_input', async () => {
     const db = makeDb({});
     const result = await uploadProductImage(
-      COMPANY,
-      { ...validInput, contentType: 'image/gif' as never },
+      'not-uuid',
+      validInput,
       FAKE_PNG,
       db,
     );
     expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.reason).toBe('invalid_input');
-      expect(result.issues?.length).toBeGreaterThan(0);
-    }
-    expect(mockStorage.uploadCalls).toHaveLength(0);
+    if (!result.ok) expect(result.reason).toBe('invalid_input');
   });
 
-  it('ürün başka tenant\'a ait → product_not_found', async () => {
-    const db = makeDb({ selects: [[]] }); // tenant ownership check boş
+  it('product başka tenant\'a ait → product_not_found', async () => {
+    const db = makeDb({ selects: [[]] }); // ownership query boş
     const result = await uploadProductImage(COMPANY, validInput, FAKE_PNG, db);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe('product_not_found');
-    expect(mockStorage.uploadCalls).toHaveLength(0);
+    expect(mockR2.uploadCalls).toHaveLength(0); // storage'a hiç gitmedi
   });
 
-  it('storage upload fail → storage_error + DB insert atlanır', async () => {
-    mockStorage.shouldFailUpload = true;
-    mockStorage.uploadErrorMessage = 'bucket policy violation';
+  it('R2 upload fail → storage_error + DB insert atlanır', async () => {
+    mockR2.shouldFailUpload = true;
+    mockR2.uploadErrorMessage = 'bucket policy violation';
     const db = makeDb({
       selects: [[{ id: PRODUCT }]], // ownership ok
     });
@@ -291,10 +316,10 @@ describe('uploadProductImage', () => {
       expect(result.reason).toBe('storage_error');
       expect(result.message).toContain('bucket policy');
     }
-    expect(mockStorage.uploadCalls).toHaveLength(1); // upload denendi
+    expect(mockR2.uploadCalls).toHaveLength(1); // upload denendi
   });
 
-  it('happy path — ilk yüklenen → isPrimary=true, displayOrder=0, public URL döner', async () => {
+  it('happy path — ilk yüklenen → isPrimary=true, displayOrder=0, R2 URL döner', async () => {
     const db = makeDb({
       selects: [
         [{ id: PRODUCT }], // ownership
@@ -307,16 +332,18 @@ describe('uploadProductImage', () => {
     if (result.ok) {
       expect(result.imageId).toBe(IMAGE);
       expect(result.url).toMatch(
-        new RegExp(`product-images/${COMPANY}/${PRODUCT}/.+\\.png$`),
+        new RegExp(`^https://pub-test.r2.dev/tenants/${COMPANY}/${PRODUCT}/.+\\.png$`),
       );
       expect(result.storagePath).toMatch(
-        new RegExp(`^${COMPANY}/${PRODUCT}/.+\\.png$`),
+        new RegExp(`^tenants/${COMPANY}/${PRODUCT}/.+\\.png$`),
       );
     }
-    expect(mockStorage.uploadCalls).toHaveLength(1);
-    expect(mockStorage.uploadCalls[0].contentType).toBe('image/png');
-    // CDN cache-control: 1 yıl (UUID path immutable)
-    expect(mockStorage.uploadCalls[0].cacheControl).toBe('31536000');
+    expect(mockR2.uploadCalls).toHaveLength(1);
+    expect(mockR2.uploadCalls[0].contentType).toBe('image/png');
+    // CDN cache-control: 1 yıl + immutable (UUID path için güvenli)
+    expect(mockR2.uploadCalls[0].cacheControl).toBe(
+      'public, max-age=31536000, immutable',
+    );
   });
 
   it('ikinci+ görsel — displayOrder existing+1, isPrimary=false', async () => {
@@ -334,7 +361,7 @@ describe('uploadProductImage', () => {
     // detay: DB integration test'te kontrol edilir
   });
 
-  it('DB insert fail → db_error + storage cleanup (best-effort)', async () => {
+  it('DB insert fail → db_error + R2 cleanup (best-effort)', async () => {
     const db = makeDb({
       selects: [[{ id: PRODUCT }], [{ count: 0, maxOrder: -1 }]],
       insertThrows: true,
@@ -345,8 +372,8 @@ describe('uploadProductImage', () => {
       expect(result.reason).toBe('db_error');
       expect(result.message).toMatch(/constraint/i);
     }
-    expect(mockStorage.uploadCalls).toHaveLength(1); // storage'a yazıldı
-    expect(mockStorage.removeCalls).toHaveLength(1); // orphan temizlendi
+    expect(mockR2.uploadCalls).toHaveLength(1); // R2'ye yazıldı
+    expect(mockR2.removeCalls).toHaveLength(1); // orphan temizlendi
   });
 
   it('webp uzantısı doğru atanır', async () => {
@@ -361,7 +388,8 @@ describe('uploadProductImage', () => {
       db,
     );
     expect(result.ok).toBe(true);
-    expect(mockStorage.uploadCalls[0].path).toMatch(/\.webp$/);
+    expect(mockR2.uploadCalls[0].key).toMatch(/\.webp$/);
+    expect(mockR2.uploadCalls[0].key).toMatch(/^tenants\//);
   });
 
   it('jpeg uzantısı .jpg olur', async () => {
@@ -376,7 +404,7 @@ describe('uploadProductImage', () => {
       db,
     );
     expect(result.ok).toBe(true);
-    expect(mockStorage.uploadCalls[0].path).toMatch(/\.jpg$/);
+    expect(mockR2.uploadCalls[0].key).toMatch(/\.jpg$/);
   });
 });
 
@@ -390,22 +418,22 @@ describe('listProductImages', () => {
     expect(result).toEqual([]);
   });
 
-  it('storagePath çıkarımı yapılır', async () => {
+  it('R2 URL den storagePath çıkarımı yapılır', async () => {
     const rawRows = [
       {
         id: IMAGE,
         productId: PRODUCT,
-        url: 'https://xxx.supabase.co/storage/v1/object/public/product-images/c/p/x.png',
+        url: 'https://pub-test.r2.dev/tenants/c/p/x.png',
         isPrimary: true,
         displayOrder: 0,
         altText: null,
-        createdAt: new Date('2026-05-18'),
+        createdAt: new Date('2026-05-19'),
       },
     ];
     const db = makeDb({ selects: [rawRows] });
     const result = await listProductImages(COMPANY, PRODUCT, db);
     expect(result).toHaveLength(1);
-    expect(result[0].storagePath).toBe('c/p/x.png');
+    expect(result[0].storagePath).toBe('tenants/c/p/x.png');
     expect(result[0].isPrimary).toBe(true);
   });
 });
@@ -421,14 +449,14 @@ describe('deleteProductImage', () => {
     if (!result.ok) expect(result.reason).toBe('not_found');
   });
 
-  it('happy path — non-primary sil + storage cleanup, newPrimaryId null', async () => {
+  it('happy path — non-primary sil + R2 cleanup, newPrimaryId null', async () => {
     const db = makeDb({
       selects: [
         [
           {
             id: IMAGE,
             productId: PRODUCT,
-            url: 'https://xxx.supabase.co/storage/v1/object/public/product-images/c/p/x.png',
+            url: 'https://pub-test.r2.dev/tenants/c/p/x.png',
             isPrimary: false,
           },
         ],
@@ -440,8 +468,8 @@ describe('deleteProductImage', () => {
       expect(result.wasPrimary).toBe(false);
       expect(result.newPrimaryId).toBeNull();
     }
-    expect(mockStorage.removeCalls).toHaveLength(1);
-    expect(mockStorage.removeCalls[0][0]).toBe('c/p/x.png');
+    expect(mockR2.removeCalls).toHaveLength(1);
+    expect(mockR2.removeCalls[0]).toBe('tenants/c/p/x.png');
   });
 
   it('primary sil → kalan ilk görsel auto-promote', async () => {
@@ -452,7 +480,7 @@ describe('deleteProductImage', () => {
           {
             id: IMAGE,
             productId: PRODUCT,
-            url: 'https://xxx.supabase.co/storage/v1/object/public/product-images/c/p/primary.png',
+            url: 'https://pub-test.r2.dev/tenants/c/p/primary.png',
             isPrimary: true,
           },
         ],
@@ -474,7 +502,7 @@ describe('deleteProductImage', () => {
           {
             id: IMAGE,
             productId: PRODUCT,
-            url: 'https://xxx.supabase.co/storage/v1/object/public/product-images/c/p/lone.png',
+            url: 'https://pub-test.r2.dev/tenants/c/p/lone.png',
             isPrimary: true,
           },
         ],
@@ -489,14 +517,14 @@ describe('deleteProductImage', () => {
     }
   });
 
-  it('DB delete fail → db_error, storage temizlenmez', async () => {
+  it('DB delete fail → db_error, R2 temizlenmez', async () => {
     const db = makeDb({
       selects: [
         [
           {
             id: IMAGE,
             productId: PRODUCT,
-            url: 'https://xxx.supabase.co/storage/v1/object/public/product-images/c/p/x.png',
+            url: 'https://pub-test.r2.dev/tenants/c/p/x.png',
             isPrimary: false,
           },
         ],
@@ -508,7 +536,7 @@ describe('deleteProductImage', () => {
     if (!result.ok) {
       expect(result.reason).toBe('db_error');
     }
-    expect(mockStorage.removeCalls).toHaveLength(0); // storage'a hiç dokunulmadı
+    expect(mockR2.removeCalls).toHaveLength(0); // R2'ye hiç dokunulmadı
   });
 });
 

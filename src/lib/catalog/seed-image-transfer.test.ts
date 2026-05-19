@@ -6,20 +6,20 @@ const COMPANY_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 const PRODUCT_ID = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
 
 interface TestDeps {
-  readFile: Mock;
+  fetchR2: Mock;
   upload: Mock;
 }
 
 function deps(overrides: Partial<TestDeps> = {}): TestDeps {
   return {
-    readFile: overrides.readFile ?? vi.fn().mockResolvedValue(Buffer.from([0xff])),
+    fetchR2: overrides.fetchR2 ?? vi.fn().mockResolvedValue(Buffer.from([0xff])),
     upload:
       overrides.upload ??
       vi.fn().mockResolvedValue({
         ok: true,
         imageId: 'img-1',
-        url: 'https://example.com/img-1',
-        storagePath: 'path',
+        url: 'https://pub-test.r2.dev/tenants/img-1',
+        storagePath: 'tenants/path',
       }),
   };
 }
@@ -28,19 +28,33 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe('transferSeedImageToProduct — path validation', () => {
-  it('boş/geçersiz path → invalid_path', async () => {
+describe('transferSeedImageToProduct — key validation', () => {
+  it('eski lokal path format → invalid_path (R2 key olmalı)', async () => {
     const d = deps();
     const r = await transferSeedImageToProduct(
       COMPANY_ID,
       PRODUCT_ID,
-      'foo/bar.jpg',
+      'scripts/data/images/abc.jpg',
       mockDb,
       d,
     );
     expect(r.ok).toBe(false);
     expect(r.reason).toBe('invalid_path');
-    expect(d.readFile).not.toHaveBeenCalled();
+    expect(d.fetchR2).not.toHaveBeenCalled();
+  });
+
+  it('seed prefix dışı key → invalid_path', async () => {
+    const d = deps();
+    const r = await transferSeedImageToProduct(
+      COMPANY_ID,
+      PRODUCT_ID,
+      'tenants/abc/def.jpg',
+      mockDb,
+      d,
+    );
+    expect(r.ok).toBe(false);
+    expect(r.reason).toBe('invalid_path');
+    expect(d.fetchR2).not.toHaveBeenCalled();
   });
 
   it('path traversal (..) → invalid_path', async () => {
@@ -48,12 +62,12 @@ describe('transferSeedImageToProduct — path validation', () => {
     const r = await transferSeedImageToProduct(
       COMPANY_ID,
       PRODUCT_ID,
-      'scripts/data/images/../../../etc/passwd',
+      'seed/../../../etc/passwd',
       mockDb,
       d,
     );
     expect(r.reason).toBe('invalid_path');
-    expect(d.readFile).not.toHaveBeenCalled();
+    expect(d.fetchR2).not.toHaveBeenCalled();
   });
 
   it('izin verilmeyen extension (.txt) → invalid_path', async () => {
@@ -61,7 +75,7 @@ describe('transferSeedImageToProduct — path validation', () => {
     const r = await transferSeedImageToProduct(
       COMPANY_ID,
       PRODUCT_ID,
-      'scripts/data/images/abc.txt',
+      'seed/abc.txt',
       mockDb,
       d,
     );
@@ -73,7 +87,7 @@ describe('transferSeedImageToProduct — path validation', () => {
     const r = await transferSeedImageToProduct(
       COMPANY_ID,
       PRODUCT_ID,
-      'scripts/data/images/sub/abc.jpg',
+      'seed/sub/abc.jpg',
       mockDb,
       d,
     );
@@ -81,37 +95,35 @@ describe('transferSeedImageToProduct — path validation', () => {
   });
 
   it.each([
-    'scripts/data/images/abc.jpg',
-    'scripts/data/images/abc.jpeg',
-    'scripts/data/images/abc.png',
-    'scripts/data/images/abc.webp',
-    'scripts/data/images/abc-123_XYZ.jpg',
-  ])('izin verilen pattern: %s', async (validPath) => {
+    'seed/abc.jpg',
+    'seed/abc.jpeg',
+    'seed/abc.png',
+    'seed/abc.webp',
+    'seed/abc-123_XYZ.jpg',
+  ])('izin verilen pattern: %s', async (validKey) => {
     const d = deps();
     const r = await transferSeedImageToProduct(
       COMPANY_ID,
       PRODUCT_ID,
-      validPath,
+      validKey,
       mockDb,
       d,
     );
     expect(r.ok).toBe(true);
-    expect(d.readFile).toHaveBeenCalledTimes(1);
+    expect(d.fetchR2).toHaveBeenCalledTimes(1);
     expect(d.upload).toHaveBeenCalledTimes(1);
   });
 });
 
-describe('transferSeedImageToProduct — file IO', () => {
-  it('dosya yok (ENOENT) → file_not_found', async () => {
+describe('transferSeedImageToProduct — R2 IO', () => {
+  it('R2 obje yok (null döner) → file_not_found', async () => {
     const d = deps({
-      readFile: vi
-        .fn()
-        .mockRejectedValue(Object.assign(new Error('ENOENT'), { code: 'ENOENT' })),
+      fetchR2: vi.fn().mockResolvedValue(null),
     });
     const r = await transferSeedImageToProduct(
       COMPANY_ID,
       PRODUCT_ID,
-      'scripts/data/images/missing.jpg',
+      'seed/missing.webp',
       mockDb,
       d,
     );
@@ -119,32 +131,31 @@ describe('transferSeedImageToProduct — file IO', () => {
     expect(r.reason).toBe('file_not_found');
   });
 
-  it('diğer hata (EACCES) → file_read_error', async () => {
+  it('R2 fetch hata throw → file_read_error', async () => {
     const d = deps({
-      readFile: vi
-        .fn()
-        .mockRejectedValue(Object.assign(new Error('EACCES'), { code: 'EACCES' })),
+      fetchR2: vi.fn().mockRejectedValue(new Error('network down')),
     });
     const r = await transferSeedImageToProduct(
       COMPANY_ID,
       PRODUCT_ID,
-      'scripts/data/images/locked.jpg',
+      'seed/locked.webp',
       mockDb,
       d,
     );
     expect(r.reason).toBe('file_read_error');
+    expect(r.message).toContain('network');
   });
 });
 
 describe('transferSeedImageToProduct — content-type detection', () => {
   it.each([
-    ['scripts/data/images/x.jpg', 'image/jpeg'],
-    ['scripts/data/images/x.jpeg', 'image/jpeg'],
-    ['scripts/data/images/x.png', 'image/png'],
-    ['scripts/data/images/x.webp', 'image/webp'],
-  ])('%s → contentType %s', async (validPath, expectedCt) => {
+    ['seed/x.jpg', 'image/jpeg'],
+    ['seed/x.jpeg', 'image/jpeg'],
+    ['seed/x.png', 'image/png'],
+    ['seed/x.webp', 'image/webp'],
+  ])('%s → contentType %s', async (validKey, expectedCt) => {
     const d = deps();
-    await transferSeedImageToProduct(COMPANY_ID, PRODUCT_ID, validPath, mockDb, d);
+    await transferSeedImageToProduct(COMPANY_ID, PRODUCT_ID, validKey, mockDb, d);
     expect(d.upload).toHaveBeenCalledWith(
       COMPANY_ID,
       expect.objectContaining({ contentType: expectedCt }),
@@ -160,18 +171,18 @@ describe('transferSeedImageToProduct — upload result mapping', () => {
       upload: vi.fn().mockResolvedValue({
         ok: false,
         reason: 'storage_error',
-        message: 'Storage 500',
+        message: 'R2 500',
       }),
     });
     const r = await transferSeedImageToProduct(
       COMPANY_ID,
       PRODUCT_ID,
-      'scripts/data/images/x.jpg',
+      'seed/x.webp',
       mockDb,
       d,
     );
     expect(r.reason).toBe('upload_failed');
-    expect(r.message).toContain('Storage 500');
+    expect(r.message).toContain('R2 500');
   });
 
   it('happy path → ok=true + imageId + url forward', async () => {
@@ -179,19 +190,19 @@ describe('transferSeedImageToProduct — upload result mapping', () => {
       upload: vi.fn().mockResolvedValue({
         ok: true,
         imageId: 'img-42',
-        url: 'https://x.supabase.co/img-42',
-        storagePath: 'path',
+        url: 'https://pub-test.r2.dev/tenants/aaa/bbb/img-42.webp',
+        storagePath: 'tenants/aaa/bbb/img-42.webp',
       }),
     });
     const r = await transferSeedImageToProduct(
       COMPANY_ID,
       PRODUCT_ID,
-      'scripts/data/images/abc.jpg',
+      'seed/abc.webp',
       mockDb,
       d,
     );
     expect(r.ok).toBe(true);
     expect(r.imageId).toBe('img-42');
-    expect(r.url).toBe('https://x.supabase.co/img-42');
+    expect(r.url).toContain('tenants/aaa/bbb/img-42.webp');
   });
 });
