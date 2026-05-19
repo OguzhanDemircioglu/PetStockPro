@@ -21,6 +21,8 @@ interface BrandOption {
 interface ProductFormProps {
   categories: CategoryOption[];
   brands: BrandOption[];
+  /** R2 public base URL — server'dan prop olarak gelir (NEXT_PUBLIC_ duplicate gerek yok). */
+  r2PublicUrl: string;
 }
 
 /**
@@ -53,7 +55,7 @@ function suggestSku(brand: string, name: string, weight: string): string {
 /**
  * Yeni Ürün Form — Sprint 3.0 minimal + Sprint E seed katalog autocomplete.
  */
-export function ProductForm({ categories, brands }: ProductFormProps) {
+export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProps) {
   const [state, formAction, pending] = useActionState<CreateProductState | null, FormData>(
     createProductAction,
     null,
@@ -72,8 +74,6 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
   const [catalogBrand, setCatalogBrand] = useState<string>(''); // auto-create için
   const [seedImagePath, setSeedImagePath] = useState<string>('');
   const [seedImagePreviewName, setSeedImagePreviewName] = useState<string | null>(null);
-
-  const r2PublicUrl = process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? '';
 
   // Manuel görsel upload — variant section'da file input
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -210,35 +210,6 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
           </div>
         )}
 
-        {seedImagePath && (
-          <div
-            data-testid="seed-image-hint"
-            className="mt-2 flex items-center gap-3 rounded-xl border border-arrow/30 bg-arrow-soft/40 p-3"
-          >
-            {r2PublicUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={`${r2PublicUrl}/${seedImagePath}`}
-                alt={seedImagePreviewName ?? 'Catalog görseli'}
-                className="h-20 w-20 rounded-lg object-cover ring-1 ring-arrow/30"
-              />
-            ) : (
-              <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-arrow-soft text-2xl ring-1 ring-arrow/30">
-                📷
-              </div>
-            )}
-            <div className="flex-1 text-[12.5px]">
-              <div className="font-bold text-arrow-7">
-                📷 Katalog görseli — kayıtta tenant&apos;ınıza kopyalanacak
-              </div>
-              {seedImagePreviewName && (
-                <div className="mt-0.5 text-xs font-normal text-ink-3">
-                  {seedImagePreviewName}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </section>
 
       <form action={formAction} className="flex flex-col gap-6">
@@ -484,6 +455,41 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
               >
                 📷 Ürün görseli (opsiyonel)
               </label>
+
+              {/* Manuel görsel seçilmemiş ama catalog seçimi var → R2 katalog görselini göster */}
+              {!imagePreview && seedImagePath && (
+                <div
+                  data-testid="seed-image-hint"
+                  className="mb-3 flex items-center gap-3 rounded-xl border border-arrow/30 bg-arrow-soft/40 p-3"
+                >
+                  {r2PublicUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`${r2PublicUrl}/${seedImagePath}`}
+                      alt={seedImagePreviewName ?? 'Catalog görseli'}
+                      className="h-20 w-20 rounded-lg object-cover ring-1 ring-arrow/30"
+                    />
+                  ) : (
+                    <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-arrow-soft text-2xl ring-1 ring-arrow/30">
+                      📷
+                    </div>
+                  )}
+                  <div className="flex-1 text-[12.5px]">
+                    <div className="font-bold text-arrow-7">
+                      📷 Katalog görseli — kayıtta tenant&apos;ınıza kopyalanacak
+                    </div>
+                    {seedImagePreviewName && (
+                      <div className="mt-0.5 text-xs font-normal text-ink-3">
+                        {seedImagePreviewName}
+                      </div>
+                    )}
+                    <div className="mt-1 text-[11px] text-ink-3">
+                      Değiştirmek için aşağıdan dosya seç →
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <input
                 id="productImage"
                 name="productImage"
@@ -495,10 +501,10 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
                 className="block w-full text-sm text-ink-3 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-cat-soft file:px-4 file:py-2 file:text-sm file:font-bold file:text-cat-7 hover:file:bg-cat/20 disabled:opacity-60"
               />
               <p className="mt-1.5 text-xs text-ink-3">
-                JPG / PNG / WebP — max 5 MB.{' '}
-                {seedImagePreviewName && (
-                  <span className="font-bold text-arrow-7">
-                    Görsel seçersen katalog görseli yerine bu kullanılır.
+                JPG / PNG / WebP — max 5 MB.
+                {seedImagePath && (
+                  <span className="ml-1 font-bold text-arrow-7">
+                    Dosya seçersen yukarıdaki katalog görselinin yerine bu kullanılır.
                   </span>
                 )}
               </p>

@@ -39,5 +39,15 @@ export default async function NewProductPage() {
       .orderBy(brands.name),
   ]);
 
-  return <ProductForm categories={categoryList} brands={brandList} />;
+  // R2 public URL'i server-side env'den oku → client component'e prop olarak geç.
+  // (NEXT_PUBLIC_ duplicate gerekmez, env tek tanım kalır.)
+  const r2PublicUrl = process.env.R2_PUBLIC_URL ?? '';
+
+  return (
+    <ProductForm
+      categories={categoryList}
+      brands={brandList}
+      r2PublicUrl={r2PublicUrl}
+    />
+  );
 }
