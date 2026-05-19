@@ -34,7 +34,7 @@ export async function GET(request: Request): Promise<Response> {
     return NextResponse.json({ results: [], meta: { count: 0, query: q } });
   }
 
-  const results = searchSeedCatalog(q, limit);
+  const results = await searchSeedCatalog(q, limit);
 
   return NextResponse.json(
     { results, meta: { count: results.length, query: q } },

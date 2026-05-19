@@ -17,6 +17,7 @@
     "test:a11y": "playwright test --grep @a11y",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
+    "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/db/seed/index.ts"
   },

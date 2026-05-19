@@ -14,5 +14,7 @@ export default {
   },
   schemaFilter: ['petstockpro'],
   verbose: true,
-  strict: true,
+  // strict: false → non-interactive (CI/CD friendly).
+  // Kritik schema değişikliği yapacaksan `db:generate` ile review et, sonra `db:migrate`.
+  strict: false,
 } satisfies Config;

@@ -999,6 +999,41 @@ export const vitrinReports = petstockproSchema.table('vitrin_reports', {
 ]);
 
 // ═══════════════════════════════════════════════════════════════
+// SPRINT E — Catalog Seed Products (autocomplete dataset, global ref tablo)
+// ═══════════════════════════════════════════════════════════════
+//
+// `/admin/products/new` formundaki autocomplete combobox'ın veri kaynağı.
+// 1.240 curated TR pet ürünü — marka + ad + ağırlık + kategori + R2 image_path.
+// Tenant'a bağlı DEĞİL (global referans), FK yok, çok hızlı LIKE search.
+//
+// Tasarım kararları (hız için):
+//   - id INTEGER (UUID değil — 4 byte vs 16 byte, PK btree daha kompakt)
+//   - animal_type VARCHAR(10) (ENUM kullanılmadı çünkü mevcut enum'da 'hamster' yok)
+//   - image_path VARCHAR(48) — R2 object key "seed/{hash}.webp", base URL env'den
+//   - Tek GIN trgm index: name (brand zaten name'in başında, ayrı brand index gereksiz)
+//   - UNIQUE (brand, name, weight): dedup invariant
+//   - RLS public read: tüm tenant'lar autocomplete'i çağırabilir
+//
+// Beklenen satır boyutu: ~135 byte avg. 1.240 satır × 135 = ~165 KB toplam.
+export const catalogSeedProducts = petstockproSchema.table(
+  'catalog_seed_products',
+  {
+    id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+    name: varchar('name', { length: 180 }).notNull(),
+    brand: varchar('brand', { length: 60 }).notNull(),
+    weight: varchar('weight', { length: 16 }).notNull(),
+    animalType: varchar('animal_type', { length: 10 }).notNull(),
+    categorySlug: varchar('category_slug', { length: 40 }).notNull(),
+    imagePath: varchar('image_path', { length: 48 }).notNull(),
+  },
+  (t) => [
+    uniqueIndex('catalog_seed_brand_name_weight_unique').on(t.brand, t.name, t.weight),
+    index('idx_catalog_seed_name_trgm')
+      .using('gin', sql`lower(${t.name}) gin_trgm_ops`),
+  ],
+);
+
+// ═══════════════════════════════════════════════════════════════
 // TODO Sprint 1B.3+ (sırayla eklenecek)
 // ═══════════════════════════════════════════════════════════════
 // telegram_bindings (Faz 2 binding flow), system_settings, system_broadcasts,

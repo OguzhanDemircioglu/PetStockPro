@@ -1,10 +1,12 @@
-import { describe, it, expect } from 'vitest';
-import {
-  scoreSeedProduct,
-  searchSeedCatalog,
-  getCatalogMeta,
-  type SeedProduct,
-} from './seed-catalog';
+import { describe, it, expect, vi } from 'vitest';
+
+// DB client'ı mock'la — seed-catalog.ts eager import ediyor, test env'inde
+// DATABASE_URL yok. scoreSeedProduct pure function, DB'siz çalışır.
+vi.mock('@/lib/db/client', () => ({
+  db: { execute: vi.fn().mockResolvedValue([]) },
+}));
+
+import { scoreSeedProduct, type SeedProduct } from './seed-catalog';
 
 const sampleProduct = (overrides: Partial<SeedProduct> = {}): SeedProduct => ({
   name: 'Royal Canin Persian 30 Kedi Maması 2 kg',
@@ -88,87 +90,7 @@ describe('scoreSeedProduct', () => {
   });
 });
 
-// JSON dosyası `.gitignore`'da → CI'da yok. Lokalde varsa integration testler
-// çalışır, yoksa atlanır. `getCatalogMeta().productCount > 0` ile koşullu.
-const HAS_CATALOG = getCatalogMeta().productCount > 0;
-
-describe.runIf(HAS_CATALOG)('searchSeedCatalog (integration with JSON file)', () => {
-  it('boş query → []', () => {
-    expect(searchSeedCatalog('')).toEqual([]);
-    expect(searchSeedCatalog('   ')).toEqual([]);
-  });
-
-  it('"royal canin" → en az 1 sonuç, hepsi Royal Canin markası', () => {
-    const results = searchSeedCatalog('royal canin', 10);
-    expect(results.length).toBeGreaterThan(0);
-    for (const r of results) {
-      expect(r.brand.toLowerCase()).toContain('royal canin');
-    }
-  });
-
-  it('limit default 8', () => {
-    const results = searchSeedCatalog('mama');
-    expect(results.length).toBeLessThanOrEqual(8);
-  });
-
-  it('limit clamp [1, 20]', () => {
-    expect(searchSeedCatalog('mama', 0).length).toBeLessThanOrEqual(1);
-    expect(searchSeedCatalog('mama', 100).length).toBeLessThanOrEqual(20);
-  });
-
-  it('barkod aramada exact match en üstte', () => {
-    // Kataloga göre 3182550702683 → Royal Canin Persian
-    const results = searchSeedCatalog('3182550702683');
-    expect(results.length).toBeGreaterThanOrEqual(1);
-    expect(results[0].barcode).toBe('3182550702683');
-  });
-
-  it('score DESC + name ASC sort', () => {
-    const results = searchSeedCatalog('royal', 20);
-    for (let i = 1; i < results.length; i++) {
-      const a = results[i - 1];
-      const b = results[i];
-      if (a.score === b.score) {
-        expect(a.name.localeCompare(b.name, 'tr')).toBeLessThanOrEqual(0);
-      } else {
-        expect(a.score).toBeGreaterThanOrEqual(b.score);
-      }
-    }
-  });
-
-  it('"persian" → Persian içeren ürünler', () => {
-    const results = searchSeedCatalog('persian', 5);
-    expect(results.length).toBeGreaterThan(0);
-    for (const r of results) {
-      expect(r.name.toLowerCase()).toContain('persian');
-    }
-  });
-
-  it('"xyzzz" → boş', () => {
-    expect(searchSeedCatalog('xyzzz-random-nothing-matches')).toEqual([]);
-  });
-
-  it('sonuçlar SeedProduct alanlarını içerir', () => {
-    const results = searchSeedCatalog('royal canin', 1);
-    expect(results.length).toBe(1);
-    const r = results[0];
-    expect(r).toHaveProperty('name');
-    expect(r).toHaveProperty('brand');
-    expect(r).toHaveProperty('categorySlug');
-    expect(r).toHaveProperty('animalType');
-    expect(r).toHaveProperty('weight');
-    expect(r).toHaveProperty('barcode');
-    expect(r).toHaveProperty('imageUrl');
-    // imagePath JSON'daki yarısında var (opsiyonel)
-    expect(r).toHaveProperty('description');
-    expect(r).toHaveProperty('score');
-  });
-});
-
-describe('getCatalogMeta', () => {
-  it('version + productCount döner (boş katalog 0.0.0-empty)', () => {
-    const meta = getCatalogMeta();
-    expect(meta.version).toMatch(/^\d+\.\d+\.\d+(-\w+)?$/);
-    expect(meta.productCount).toBeGreaterThanOrEqual(0);
-  });
-});
+// `searchSeedCatalog` ve `getCatalogMeta` 2026-05-19 itibarıyla DB-backed
+// (petstockpro.catalog_seed_products tablo). Eski JSON-memory integration test'leri
+// kaldırıldı — browser E2E ile /admin/products/new combobox üzerinden doğrulanır.
+// Pure function `scoreSeedProduct` testleri yukarıda korunur.

@@ -13,6 +13,9 @@ if (!process.env.DATABASE_URL) {
  * Connection pooling stratejisi:
  * - Cloudflare Workers'da Hyperdrive kullanılacak (production)
  * - Local dev'de direkt postgres-js
+ *
+ * NOT: LOCAL_DB_* env vars `.env`'de rezerve — production'a çıktıktan sonra
+ * local Aiven/Postgres'e geçiş için. Şu an aktif değil.
  */
 const queryClient = postgres(process.env.DATABASE_URL, {
   max: 10,

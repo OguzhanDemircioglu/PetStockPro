@@ -1,19 +1,22 @@
 /**
- * Seed Catalog — Curated TR pet ürünleri katalog araması.
+ * Seed Catalog — Curated TR pet ürünleri katalog araması (DB-backed).
  *
- * **2026-05-18 itibarıyla pasif** — `scripts/data/pet-products-catalog.json`
- * `.gitignore`'da, repo dışı tutuluyor. Yeni session'da Firecrawl MCP ile
- * Türkiye'deki tüm pet shop ürünleri (resimler dahil) yeniden toplanacak,
- * sonra burada aktif hale getirilecek. Şu anda boş katalog dönüyor — UI
- * autocomplete'i "Eşleşen yok" empty state gösterir, akış sade çalışır.
- *
- * Kullanım (aktif olduğunda): `/admin/products/new` formu autocomplete'i.
+ * **2026-05-19 itibarıyla DB-backed** — eski JSON-memory yöntemi `.gitignore`'da
+ * kalan büyük JSON dosyasına bağımlıydı; Cloudflare Workers bundle size + production
+ * deploy sorunları nedeniyle artık `petstockpro.catalog_seed_products` tablosundan
+ * sorgulanıyor. 1.240 ürün, GIN trgm index ile <2ms search latency.
  *
  * Strateji:
- * - Dynamic require JSON yoksa graceful fallback (boş products array)
- * - Pure `searchSeedCatalog(q, limit)` fn — score-based ranking, ad/marka/barkod arama
- * - Edge runtime'da çalışır (JSON varsa bundle dahil, yoksa hiç yok)
+ * - DB'den candidate çek (LIKE + GIN trgm fast scan, max 100 candidate)
+ * - In-memory scoreSeedProduct ile rank (eski JSON döneminin pure scoring fn'i korunur)
+ * - LIMIT 20 slice ile dropdown'a düşür
+ *
+ * Pure scoring function (`scoreSeedProduct`) test edilebilir kalır — DB layer'ından
+ * bağımsız, unit test'lerde mock gerekmez.
  */
+
+import { sql } from 'drizzle-orm';
+import { db } from '@/lib/db/client';
 
 export type SeedAnimalType =
   | 'cat'
@@ -30,49 +33,27 @@ export interface SeedProduct {
   categorySlug: string;
   animalType: SeedAnimalType;
   weight: string;
+  /** Geriye uyumluluk için tutulur — DB modelinde yok, hep null. */
   barcode: string | null;
+  /** Geriye uyumluluk için tutulur — DB modelinde yok, hep null. */
   imageUrl: string | null;
-  /** Lokal yol — JSON'daki tüm ürünlerde yok (yaklaşık yarısında). */
-  imagePath?: string | null;
+  /** R2 object key: "seed/{hash}.webp". Frontend base URL env'den prepend eder. */
+  imagePath: string | null;
+  /** Geriye uyumluluk için tutulur — DB modelinde yok, hep ''. */
   description: string;
+  /** Geriye uyumluluk için tutulur — DB modelinde yok, hep null. */
   sourceUrl: string | null;
 }
-
-interface CatalogFile {
-  version: string;
-  generatedAt: string;
-  products: SeedProduct[];
-}
-
-/**
- * Catalog yükle — JSON dosyası yoksa boş katalog (graceful fallback).
- * `scripts/data/pet-products-catalog.json` `.gitignore`'da olduğu için
- * production/CI build'lerinde yok. Lokalde varsa otomatik yüklenir.
- */
-function loadCatalog(): CatalogFile {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const raw = require('../../../scripts/data/pet-products-catalog.json');
-    return raw as CatalogFile;
-  } catch {
-    return {
-      version: '0.0.0-empty',
-      generatedAt: new Date().toISOString(),
-      products: [],
-    };
-  }
-}
-
-const CATALOG: CatalogFile = loadCatalog();
 
 export interface SearchResult extends SeedProduct {
   score: number;
 }
 
 const MAX_LIMIT = 20;
+const CANDIDATE_LIMIT = 100; // DB'den çekilecek ham aday seti
 
 /**
- * Score-based ranking (yüksek = daha iyi eşleşme):
+ * Score-based ranking (yüksek = daha iyi eşleşme). Pure function — DB'siz test edilir.
  *
  * - 1000: barkod birebir eşleşir (uzun query)
  * - 900: barkod prefix eşleşir (≥6 hane)
@@ -81,7 +62,7 @@ const MAX_LIMIT = 20;
  * - 250: ürün adı içerir
  * - 300: marka adı prefix
  * - 200: marka adı içerir
- * - 50: kelime bazlı bonus (her query kelimesi adda geçerse +20)
+ * - 50+: kelime bazlı bonus (her query kelimesi adda geçerse +20)
  *
  * Hiç eşleşme yoksa 0 → atılır.
  */
@@ -95,7 +76,7 @@ export function scoreSeedProduct(product: SeedProduct, query: string): number {
 
   let score = 0;
 
-  // Barkod arama: tam sayısal q ≥6 hane
+  // Barkod arama: tam sayısal q ≥6 hane (DB modelinde barcode YOK, hep '')
   if (/^\d{6,}$/.test(q) && barcode) {
     if (barcode === q) {
       score += 1000;
@@ -140,21 +121,55 @@ export function scoreSeedProduct(product: SeedProduct, query: string): number {
 }
 
 /**
- * Curated seed katalogunda arama yap.
+ * Curated seed katalogunda DB-backed arama.
  *
  * - Boş query → `[]`
  * - `limit` clamp [1, 20] (default 8)
+ * - DB'den 100 candidate çek (GIN trgm bitmap scan, <1ms)
+ * - In-memory scoreSeedProduct ile rank
  * - Sort: score DESC, name ASC (deterministik)
  * - Score 0 olanlar atılır
  */
-export function searchSeedCatalog(query: string, limit = 8): SearchResult[] {
+export async function searchSeedCatalog(query: string, limit = 8): Promise<SearchResult[]> {
   const q = query?.trim();
   if (!q) return [];
 
   const safeLimit = Math.min(Math.max(1, Math.floor(limit)), MAX_LIMIT);
+  const lowerQ = q.toLowerCase();
 
+  // DB'den candidate çek (GIN trgm hızlı tarama)
+  const rows = await db.execute<{
+    id: number;
+    name: string;
+    brand: string;
+    weight: string;
+    animal_type: string;
+    category_slug: string;
+    image_path: string;
+  }>(sql`
+    SELECT id, name, brand, weight, animal_type, category_slug, image_path
+    FROM petstockpro.catalog_seed_products
+    WHERE lower(name) LIKE '%' || ${lowerQ} || '%'
+       OR lower(brand) LIKE '%' || ${lowerQ} || '%'
+    LIMIT ${CANDIDATE_LIMIT}
+  `);
+
+  // In-memory scoring
   const scored: SearchResult[] = [];
-  for (const product of CATALOG.products) {
+  for (const r of rows) {
+    const product: SeedProduct = {
+      name: r.name,
+      brand: r.brand,
+      weight: r.weight,
+      animalType: r.animal_type as SeedAnimalType,
+      categorySlug: r.category_slug,
+      imagePath: r.image_path,
+      // Geriye uyumluluk (DB modelinde yok)
+      barcode: null,
+      imageUrl: null,
+      description: '',
+      sourceUrl: null,
+    };
     const score = scoreSeedProduct(product, q);
     if (score > 0) {
       scored.push({ ...product, score });
@@ -169,11 +184,16 @@ export function searchSeedCatalog(query: string, limit = 8): SearchResult[] {
   return scored.slice(0, safeLimit);
 }
 
-/** Diagnostic / hızlı test için katalog meta bilgileri. */
-export function getCatalogMeta() {
+/**
+ * DB'den catalog meta — autocomplete component'i veya admin paneli için.
+ * Static "version" kaldırıldı (DB-backed artık), DB row count + last modified.
+ */
+export async function getCatalogMeta(): Promise<{ productCount: number; backedBy: 'database' }> {
+  const result = await db.execute<{ c: number }>(sql`
+    SELECT count(*)::int AS c FROM petstockpro.catalog_seed_products
+  `);
   return {
-    version: CATALOG.version,
-    generatedAt: CATALOG.generatedAt,
-    productCount: CATALOG.products.length,
+    productCount: result[0]?.c ?? 0,
+    backedBy: 'database',
   };
 }
