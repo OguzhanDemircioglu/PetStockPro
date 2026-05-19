@@ -78,11 +78,12 @@ export async function createProductAction(
   if (!resolvedBrandId && typeof catalogBrand === 'string' && catalogBrand.trim().length > 0) {
     try {
       const resolved = await resolveTenantBrand(session.user.companyId, catalogBrand.trim(), db);
-      if (resolved) {
+      if (resolved && !resolved.rejected && resolved.id) {
         resolvedBrandId = resolved.id;
         brandAutoCreated = resolved.created;
         if (resolved.created) brandAutoCreatedName = catalogBrand.trim();
       }
+      // resolved.rejected (profanity/too_long) → brand boş kalır, kullanıcı manuel ekler
     } catch {
       // Brand resolve fail → product yine de oluşturulur, sadece brand boş kalır
     }

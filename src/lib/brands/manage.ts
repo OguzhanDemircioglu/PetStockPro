@@ -84,7 +84,7 @@ export type AddBrandResult =
   | { ok: true; brandId: string; moderationFlags?: ModerationFlagsResult }
   | {
       ok: false;
-      reason: 'invalid_input' | 'slug_taken' | 'unknown';
+      reason: 'invalid_input' | 'slug_taken' | 'profanity' | 'unknown';
       issues?: string[];
     };
 
@@ -102,6 +102,24 @@ export async function addBrand(
     };
   }
   const data = parsed.data;
+
+  // Moderation BLOCKING — küfür/uygunsuz içerik tespit edilirse INSERT yapma.
+  // (Önceki davranış: insert + flag — kullanıcı banner'ı görmezden gelebiliyordu.)
+  const moderation = await moderateFields({ 'Marka adı': data.name });
+  if (moderation.flagged) {
+    const detected = moderation.reasons
+      .filter((r) => r.source === 'blacklist' && r.term)
+      .map((r) => r.term)
+      .filter(Boolean);
+    return {
+      ok: false,
+      reason: 'profanity',
+      issues: [
+        `Marka adında uygunsuz içerik tespit edildi${detected.length > 0 ? ': ' + detected.join(', ') : ''}`,
+      ],
+    };
+  }
+
   const baseSlug = makeSlug(data.name);
   if (baseSlug.length < 1) {
     return {
@@ -131,20 +149,7 @@ export async function addBrand(
         logoUrl: data.logoUrl ?? null,
       })
       .returning({ id: brands.id });
-    const moderation = await moderateFields({ 'Marka adı': data.name });
-    return {
-      ok: true,
-      brandId: row.id,
-      ...(moderation.flagged
-        ? {
-            moderationFlags: {
-              flagged: true,
-              fieldsFlagged: moderation.fieldsFlagged,
-              reasons: moderation.reasons,
-            },
-          }
-        : {}),
-    };
+    return { ok: true, brandId: row.id };
   } catch {
     return { ok: false, reason: 'unknown' };
   }
@@ -158,7 +163,7 @@ export type UpdateBrandResult =
   | { ok: true; moderationFlags?: ModerationFlagsResult }
   | {
       ok: false;
-      reason: 'invalid_input' | 'not_found' | 'slug_taken' | 'unknown';
+      reason: 'invalid_input' | 'not_found' | 'slug_taken' | 'profanity' | 'unknown';
       issues?: string[];
     };
 
@@ -177,6 +182,22 @@ export async function updateBrand(
     };
   }
   const data = parsed.data;
+
+  // Moderation BLOCKING — küfür içeriyorsa UPDATE yapma
+  const moderation = await moderateFields({ 'Marka adı': data.name });
+  if (moderation.flagged) {
+    const detected = moderation.reasons
+      .filter((r) => r.source === 'blacklist' && r.term)
+      .map((r) => r.term)
+      .filter(Boolean);
+    return {
+      ok: false,
+      reason: 'profanity',
+      issues: [
+        `Marka adında uygunsuz içerik tespit edildi${detected.length > 0 ? ': ' + detected.join(', ') : ''}`,
+      ],
+    };
+  }
 
   const existing = await db
     .select({ id: brands.id })
@@ -217,19 +238,7 @@ export async function updateBrand(
         logoUrl: data.logoUrl ?? null,
       })
       .where(eq(brands.id, brandId));
-    const moderation = await moderateFields({ 'Marka adı': data.name });
-    return {
-      ok: true,
-      ...(moderation.flagged
-        ? {
-            moderationFlags: {
-              flagged: true,
-              fieldsFlagged: moderation.fieldsFlagged,
-              reasons: moderation.reasons,
-            },
-          }
-        : {}),
-    };
+    return { ok: true };
   } catch {
     return { ok: false, reason: 'unknown' };
   }

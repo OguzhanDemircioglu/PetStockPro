@@ -11,6 +11,8 @@ interface CategoryOption {
   name: string;
   emoji: string | null;
   slug: string;
+  /** null → root (üst kategori). uuid → o üst kategorinin alt'ı. */
+  parentId: string | null;
 }
 
 interface BrandOption {
@@ -64,6 +66,8 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
   // Controlled state — autocomplete prefill için
   const [name, setName] = useState(state?.formValues.name ?? '');
   const [description, setDescription] = useState('');
+  // Üst (parent) + alt (child) kategori — 2 dropdown ile
+  const [parentCategoryId, setParentCategoryId] = useState<string>('');
   const [categoryId, setCategoryId] = useState<string>(state?.formValues.categoryId ?? '');
   const [brandId, setBrandId] = useState<string>('');
   const [valueLabel, setValueLabel] = useState('Standart');
@@ -168,6 +172,16 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
     return m;
   }, [categories]);
 
+  // Üst kategoriler (root — parentId null) ve seçili üst'ün altları
+  const rootCategories = useMemo(
+    () => categories.filter((c) => !c.parentId),
+    [categories],
+  );
+  const childCategories = useMemo(
+    () => categories.filter((c) => c.parentId && c.parentId === parentCategoryId),
+    [categories, parentCategoryId],
+  );
+
   const handleSelectSeedProduct = (product: SearchResult) => {
     setName(product.name);
     setValueLabel(product.weight || 'Standart');
@@ -186,9 +200,16 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
       setCatalogBrand(product.brand); // server action otomatik oluşturacak
     }
 
-    // Kategori match
+    // Kategori match — alt + üst kategori birlikte set edilir
     const catMatch = categoryBySlug.get(product.categorySlug);
-    if (catMatch) setCategoryId(catMatch.id);
+    if (catMatch) {
+      setCategoryId(catMatch.id);
+      // Catalog category_slug zaten alt kategoridir (örn. kedi-kuru-mamalar)
+      // → parentId ile üst kategoriyi bul + set et
+      if (catMatch.parentId) {
+        setParentCategoryId(catMatch.parentId);
+      }
+    }
 
     // SKU önerisi (kullanıcı boşsa override etme)
     if (!sku.trim()) {
@@ -319,20 +340,25 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
               <div>
                 <label
                   className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
-                  htmlFor="categoryId"
+                  htmlFor="parentCategoryId"
                 >
-                  Kategori
+                  Üst kategori
                 </label>
                 <select
-                  id="categoryId"
-                  name="categoryId"
+                  id="parentCategoryId"
+                  name="parentCategoryId"
+                  data-testid="parent-category-select"
                   disabled={pending}
-                  value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
+                  value={parentCategoryId}
+                  onChange={(e) => {
+                    setParentCategoryId(e.target.value);
+                    // Üst değişince alt seçimi temizle (yanlış parent altında kalmasın)
+                    setCategoryId('');
+                  }}
                   className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 >
-                  <option value="">— Seç (opsiyonel) —</option>
-                  {categories.map((c) => (
+                  <option value="">— Seç —</option>
+                  {rootCategories.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.emoji ? `${c.emoji} ` : ''}
                       {c.name}
@@ -341,6 +367,36 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
                 </select>
               </div>
 
+              <div>
+                <label
+                  className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
+                  htmlFor="categoryId"
+                >
+                  Alt kategori
+                </label>
+                <select
+                  id="categoryId"
+                  name="categoryId"
+                  data-testid="child-category-select"
+                  disabled={pending || !parentCategoryId}
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                  className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15 disabled:opacity-50"
+                >
+                  <option value="">
+                    {parentCategoryId ? '— Seç —' : 'Önce üst kategori seç'}
+                  </option>
+                  {childCategories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.emoji ? `${c.emoji} ` : ''}
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
               <div>
                 <label
                   className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"

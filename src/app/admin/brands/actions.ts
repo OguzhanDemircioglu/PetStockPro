@@ -45,6 +45,7 @@ const REASON_MSG: Record<string, string> = {
   invalid_input: 'Geçersiz alan',
   slug_taken: 'Bu marka adı zaten kullanılıyor',
   not_found: 'Marka bulunamadı',
+  profanity: 'Marka adında uygunsuz içerik tespit edildi — lütfen düzelt',
   unknown: 'Kaydedilemedi, tekrar dene',
 };
 

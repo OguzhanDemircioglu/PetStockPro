@@ -28,6 +28,7 @@ export default async function NewProductPage() {
         name: categories.name,
         emoji: categories.emoji,
         slug: categories.slug,
+        parentId: categories.parentId,
       })
       .from(categories)
       .where(eq(categories.companyId, session.user.companyId))

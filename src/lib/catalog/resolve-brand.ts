@@ -15,10 +15,13 @@ import { and, eq, sql } from 'drizzle-orm';
 import type { DbClient } from '@/lib/db/client';
 import { brands } from '@/db/schema';
 import { makeSlug } from '@/lib/utils/slug';
+import { checkBlacklist } from '@/lib/moderation/blacklist';
 
 export interface ResolvedBrand {
   id: string;
   created: boolean;
+  /** Küfür/uygunsuz içerik nedeniyle reject edildi (oluşturma yapılmadı). */
+  rejected?: 'profanity' | 'too_long' | 'empty';
 }
 
 export async function resolveTenantBrand(
@@ -28,7 +31,17 @@ export async function resolveTenantBrand(
 ): Promise<ResolvedBrand | null> {
   const trimmed = brandName.trim();
   if (!trimmed) return null;
-  if (trimmed.length > 100) return null; // varchar(100) sınırı
+  if (trimmed.length > 100) {
+    return { id: '', created: false, rejected: 'too_long' };
+  }
+
+  // Küfür/uygunsuz içerik kontrolü (blacklist sync) — catalog auto-create
+  // akışı kullanıcı UI'sından bağımsız çalıştığı için tespit edilen küfürlü
+  // marka adlarını hiç oluşturmayız.
+  const bl = checkBlacklist(trimmed);
+  if (bl.matches.length > 0) {
+    return { id: '', created: false, rejected: 'profanity' };
+  }
 
   // 1. Mevcut brand var mı? (case-insensitive name match)
   const existing = await db
