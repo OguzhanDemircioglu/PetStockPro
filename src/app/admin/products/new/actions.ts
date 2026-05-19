@@ -167,71 +167,81 @@ export async function createProductAction(
     ? `&moderation=flagged&fields=${encodeURIComponent(result.moderationFlags.fieldsFlagged.join(','))}`
     : '';
 
-  // Görsel akışı — öncelik:
-  //   1. Manuel upload (productImage File) → R2'ye doğrudan tenant prefix'ine
-  //   2. Catalog seed (seedImagePath, R2 seed/ key) → catalog'tan tenant'a kopyala
-  //   3. Yok → ürün görselsiz oluşturuldu
-  //
-  // Banner suffix'i /admin/products?created=success&... query param ile UI'ya iletilir.
-  const productImageFile = formData.get('productImage');
-  const seedImagePath = formData.get('seedImagePath');
-  const hasManualImage = productImageFile instanceof File && productImageFile.size > 0;
-  const hasSeedImage = typeof seedImagePath === 'string' && seedImagePath.length > 0;
+  // Multi-image görsel akışı:
+  //   1. productImage[] — Manuel upload File array (0..n)
+  //   2. seedImagePaths[] — Catalog seed R2 key array (0..n)
+  //   Sırayla uploadProductImage + transferSeedImageToProduct çağrılır.
+  //   İlk yüklenen otomatik primary olur (helper içinde isPrimary=true mantığı).
+  const manualFiles = formData.getAll('productImage').filter(
+    (v): v is File => v instanceof File && v.size > 0,
+  );
+  const seedImagePaths = formData.getAll('seedImagePaths').filter(
+    (v): v is string => typeof v === 'string' && v.length > 0,
+  );
 
-  let imageTransferSuffix = '';
+  let imagesUploaded = 0;
+  let imagesFailed = 0;
+  const failReasons: string[] = [];
 
-  if (hasManualImage) {
-    const file = productImageFile as File;
-    // Erken validation (helper içinde de var ama UX için ayrı reason kodları)
+  // Manuel upload'lar
+  for (const file of manualFiles) {
     if (file.size > MAX_FILE_SIZE_BYTES) {
-      imageTransferSuffix = '&product_image=fail&reason=too_large';
-    } else if (!ALLOWED_MIME_TYPES.includes(file.type as (typeof ALLOWED_MIME_TYPES)[number])) {
-      imageTransferSuffix = '&product_image=fail&reason=wrong_mime';
-    } else {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const uploadResult = await uploadProductImage(
-        session.user.companyId,
+      imagesFailed++;
+      failReasons.push('too_large');
+      continue;
+    }
+    if (!ALLOWED_MIME_TYPES.includes(file.type as (typeof ALLOWED_MIME_TYPES)[number])) {
+      imagesFailed++;
+      failReasons.push('wrong_mime');
+      continue;
+    }
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const uploadResult = await uploadProductImage(
+      session.user.companyId,
+      {
+        productId: result.productId,
+        fileName: file.name,
+        contentType: file.type as (typeof ALLOWED_MIME_TYPES)[number],
+        altText: null,
+      },
+      buffer,
+      db,
+    );
+    if (uploadResult.ok) {
+      imagesUploaded++;
+      writeAuditLogAsync(
         {
-          productId: result.productId,
-          fileName: file.name,
-          contentType: file.type as (typeof ALLOWED_MIME_TYPES)[number],
-          altText: null,
+          companyId: session.user.companyId,
+          userId: session.user.id,
+          action: 'product.image_uploaded',
+          entityType: 'product',
+          entityId: result.productId,
+          afterState: {
+            imageId: uploadResult.imageId,
+            url: uploadResult.url,
+            sizeBytes: buffer.byteLength,
+            contentType: file.type,
+            source: 'new-product-form-manual',
+          },
         },
-        buffer,
         db,
       );
-      if (uploadResult.ok) {
-        writeAuditLogAsync(
-          {
-            companyId: session.user.companyId,
-            userId: session.user.id,
-            action: 'product.image_uploaded',
-            entityType: 'product',
-            entityId: result.productId,
-            afterState: {
-              imageId: uploadResult.imageId,
-              url: uploadResult.url,
-              sizeBytes: buffer.byteLength,
-              contentType: file.type,
-              source: 'new-product-form',
-            },
-          },
-          db,
-        );
-        imageTransferSuffix = '&product_image=ok';
-      } else {
-        imageTransferSuffix = `&product_image=fail&reason=${encodeURIComponent(uploadResult.reason)}`;
-      }
+    } else {
+      imagesFailed++;
+      failReasons.push(uploadResult.reason);
     }
-  } else if (hasSeedImage) {
-    // Manuel görsel yok → catalog seed transfer (mevcut akış)
+  }
+
+  // Catalog seed transfer'ları
+  for (const seedKey of seedImagePaths) {
     const transfer = await transferSeedImageToProduct(
       session.user.companyId,
       result.productId,
-      seedImagePath as string,
+      seedKey,
       db,
     );
     if (transfer.ok) {
+      imagesUploaded++;
       writeAuditLogAsync(
         {
           companyId: session.user.companyId,
@@ -239,15 +249,23 @@ export async function createProductAction(
           action: 'product.image_seed_transfer',
           entityType: 'product',
           entityId: result.productId,
-          afterState: { seedImagePath, imageId: transfer.imageId },
+          afterState: { seedImagePath: seedKey, imageId: transfer.imageId },
         },
         db,
       );
-      imageTransferSuffix = '&seed_image=ok';
     } else {
-      // Transfer fail olsa bile ürün oluşturuldu — sadece banner mesajıyla kullanıcıya bildir
-      imageTransferSuffix = `&seed_image=fail&reason=${encodeURIComponent(transfer.reason ?? 'unknown')}`;
+      imagesFailed++;
+      failReasons.push(transfer.reason ?? 'unknown');
     }
+  }
+
+  let imageTransferSuffix = '';
+  if (imagesUploaded > 0 && imagesFailed === 0) {
+    imageTransferSuffix = `&images=${imagesUploaded}`;
+  } else if (imagesUploaded > 0 && imagesFailed > 0) {
+    imageTransferSuffix = `&images=${imagesUploaded}&images_failed=${imagesFailed}`;
+  } else if (imagesFailed > 0) {
+    imageTransferSuffix = `&images_failed=${imagesFailed}&reason=${encodeURIComponent(failReasons[0] ?? 'unknown')}`;
   }
 
   redirect(`/admin/products?created=success${imageTransferSuffix}${moderationSuffix}` as never);

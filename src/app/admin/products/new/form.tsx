@@ -76,63 +76,86 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
   const [salePrice, setSalePrice] = useState(state?.formValues.salePrice ?? '');
   const [missingBrandHint, setMissingBrandHint] = useState<string | null>(null);
   const [catalogBrand, setCatalogBrand] = useState<string>(''); // auto-create için
-  const [seedImagePath, setSeedImagePath] = useState<string>('');
-  const [seedImagePreviewName, setSeedImagePreviewName] = useState<string | null>(null);
 
-  // Manuel görsel upload — variant section'da file input
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [imageName, setImageName] = useState<string | null>(null);
+  // Multi-image state — manual (File) + catalog (R2 URL referans)
+  interface PendingImage {
+    id: string; // local uuid — remove için
+    source: 'manual' | 'catalog';
+    url: string; // blob: URL veya R2 https URL
+    name: string;
+    file?: File; // manuel için File object
+    seedImagePath?: string; // catalog için R2 object key (server fallback)
+  }
+
+  const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const [imageError, setImageError] = useState<string | null>(null);
-  const [imageFromCatalog, setImageFromCatalog] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
   const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 
   // Object URL revoke — sadece blob: URL'ler için (R2 https URL'leri revoke etme)
-  const revokeIfBlob = (url: string | null) => {
+  const revokeIfBlob = (url: string | null | undefined) => {
     if (url && url.startsWith('blob:')) URL.revokeObjectURL(url);
+  };
+
+  const localId = () => `img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+  /**
+   * File input'u pendingImages.manual ile sync et (DataTransfer ile).
+   * Native HTML file input multiple seçimde override eder — append imkansız.
+   * Bu yüzden state'te tutulan File'ları her seferinde DataTransfer ile
+   * input.files'e yeniden set ederiz. Submit native FormData gönderirse
+   * tüm dosyalar geçer.
+   */
+  const syncFileInput = (images: PendingImage[]) => {
+    if (!fileInputRef.current) return;
+    const dt = new DataTransfer();
+    for (const img of images) {
+      if (img.source === 'manual' && img.file) dt.items.add(img.file);
+    }
+    fileInputRef.current.files = dt.files;
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setImageError(null);
-    const file = e.target.files?.[0];
-    if (!file) {
-      revokeIfBlob(imagePreview);
-      setImagePreview(null);
-      setImageName(null);
-      setImageFromCatalog(false);
-      return;
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+
+    // Her dosyayı validate + append
+    const newItems: PendingImage[] = [];
+    for (const file of files) {
+      if (file.size > MAX_SIZE) {
+        setImageError(`"${file.name}" 5MB'i geçiyor (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+        continue;
+      }
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        setImageError(`"${file.name}" desteklenmeyen tip (${file.type})`);
+        continue;
+      }
+      newItems.push({
+        id: localId(),
+        source: 'manual',
+        url: URL.createObjectURL(file),
+        name: file.name,
+        file,
+      });
     }
-    if (file.size > MAX_SIZE) {
-      setImageError(`Dosya 5MB'i geçemez (gönderilen: ${(file.size / 1024 / 1024).toFixed(2)}MB)`);
-      e.target.value = '';
-      return;
+
+    if (newItems.length > 0) {
+      setPendingImages((prev) => {
+        const next = [...prev, ...newItems];
+        // Submit edildiğinde input.files state ile aynı olmalı
+        setTimeout(() => syncFileInput(next), 0);
+        return next;
+      });
     }
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      setImageError('Sadece JPG, PNG veya WebP yükleyebilirsin');
-      e.target.value = '';
-      return;
-    }
-    revokeIfBlob(imagePreview);
-    setImagePreview(URL.createObjectURL(file));
-    setImageName(file.name);
-    // Manuel değişiklik — catalog override (yeni dosya manuel kabul edilir, seedImagePath ignore)
-    setImageFromCatalog(false);
-    setSeedImagePath(''); // server fallback'i de devre dışı bırak
   };
 
   /**
-   * Catalog'tan seçilen görseli UI'da "dosya seçilmiş" gibi göster.
-   *
-   * NOT: r2.dev public URL preflight CORS desteklemiyor, browser tarafında
-   * fetch fail eder. Bu yüzden gerçek File object inject yerine MOCK state:
-   * - preview thumb: R2 public URL (img src — CORS gerek yok)
-   * - imageName: catalog ürün adı
-   * - file input boş kalır
-   * Submit'te server seedImagePath'i okur + transferSeedImageToProduct ile
-   * R2'den R2'ye direkt server-side kopyalar (CORS yok, sunucu fetch).
-   * Kullanıcı dosya seçerse override (manuel yol öncelikli).
+   * Catalog'tan seçilen görseli pending listesine ekle.
+   * R2 public URL referans (CORS gerek yok), server'a seedImagePath gönderilir →
+   * transferSeedImageToProduct R2 → R2 server-side kopya.
    */
   const showCatalogImageAsSelected = (
     imagePath: string,
@@ -148,15 +171,34 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
         .toLowerCase()
         .slice(0, 60) || 'catalog';
 
-    // Önceki manuel preview'ı temizle
-    if (imagePreview && !imageFromCatalog) URL.revokeObjectURL(imagePreview);
-
-    setImagePreview(url); // R2 public URL — img src'e direkt verilir
-    setImageName(`${safeName}.${ext}`);
-    setImageFromCatalog(true);
+    // Aynı catalog ürünü tekrar seçilirse dup'ı önle
+    setPendingImages((prev) => {
+      const filtered = prev.filter((img) => img.seedImagePath !== imagePath);
+      return [
+        ...filtered,
+        {
+          id: localId(),
+          source: 'catalog',
+          url,
+          name: `${safeName}.${ext}`,
+          seedImagePath: imagePath,
+        },
+      ];
+    });
     setImageError(null);
-    // file input'u temizle (kullanıcı isterse seçer)
-    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeImage = (id: string) => {
+    setPendingImages((prev) => {
+      const removed = prev.find((img) => img.id === id);
+      if (removed) revokeIfBlob(removed.url);
+      const next = prev.filter((img) => img.id !== id);
+      // Manuel images değişirse file input'u resync et
+      if (removed?.source === 'manual') {
+        setTimeout(() => syncFileInput(next), 0);
+      }
+      return next;
+    });
   };
 
   // Marka / kategori case-insensitive eşleşmesi için preset
@@ -216,20 +258,9 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
       setSku(suggestSku(product.brand, product.name, product.weight));
     }
 
-    // Seed katalog görseli — UI'da "dosya seçilmiş" gibi göster, server seedImagePath'i kullanır
+    // Seed katalog görseli — pending images listesine ekle
     if (product.imagePath) {
-      setSeedImagePath(product.imagePath);
-      setSeedImagePreviewName(`${product.brand} ${product.name}`.slice(0, 60));
       showCatalogImageAsSelected(product.imagePath, `${product.brand}-${product.name}`);
-    } else {
-      setSeedImagePath('');
-      setSeedImagePreviewName(null);
-      // Eğer önceki seçimden catalog görsel kalıntısı varsa temizle
-      if (imageFromCatalog) {
-        setImagePreview(null);
-        setImageName(null);
-        setImageFromCatalog(false);
-      }
     }
   };
 
@@ -287,10 +318,19 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
       </section>
 
       <form action={formAction} className="flex flex-col gap-6">
-        {/* Seed katalog imagePath — autocomplete onSelect ile set edilir, server'da transfer */}
-        <input type="hidden" name="seedImagePath" value={seedImagePath} />
         {/* Catalog brand string — tenant'ta yoksa server action otomatik oluşturur */}
         <input type="hidden" name="catalogBrand" value={catalogBrand} />
+        {/* Catalog seed image path'leri — multi-value (her catalog image için bir input) */}
+        {pendingImages
+          .filter((img) => img.source === 'catalog' && img.seedImagePath)
+          .map((img) => (
+            <input
+              key={img.id}
+              type="hidden"
+              name="seedImagePaths"
+              value={img.seedImagePath ?? ''}
+            />
+          ))}
 
         {/* TEMEL BİLGİLER */}
         <section className="rounded-2xl border border-line bg-paper p-6">
@@ -556,13 +596,13 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
               </div>
             </div>
 
-            {/* Ürün görseli — opsiyonel, catalog seçimini override eder */}
+            {/* Ürün görselleri — multi-image, her görselde ✕ iptal butonu */}
             <div className="border-t border-line pt-4">
               <label
                 className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
                 htmlFor="productImage"
               >
-                📷 Ürün görseli (opsiyonel)
+                📷 Ürün görselleri ({pendingImages.length})
               </label>
 
               <input
@@ -571,21 +611,14 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
                 name="productImage"
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
+                multiple
                 disabled={pending}
                 onChange={handleImageChange}
                 data-testid="product-image-input"
                 className="block w-full text-sm text-ink-3 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-cat-soft file:px-4 file:py-2 file:text-sm file:font-bold file:text-cat-7 hover:file:bg-cat/20 disabled:opacity-60"
               />
               <p className="mt-1.5 text-xs text-ink-3">
-                JPG / PNG / WebP — max 5 MB.
-                {imageFromCatalog && (
-                  <span
-                    data-testid="catalog-image-note"
-                    className="ml-1 font-bold text-arrow-7"
-                  >
-                    Katalogtan otomatik geldi — değiştirmek için yeni dosya seç.
-                  </span>
-                )}
+                JPG / PNG / WebP — max 5 MB / dosya · birden fazla dosya seçebilirsin · ilk görsel ana görsel olur.
               </p>
               {imageError && (
                 <p
@@ -596,23 +629,61 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
                   ✕ {imageError}
                 </p>
               )}
-              {imagePreview && (
-                <div
-                  data-testid="image-preview"
-                  className="mt-3 flex items-center gap-3 rounded-xl border border-cat/30 bg-cat-soft/30 p-3"
+
+              {/* Multi-image grid — her thumb'ın sağ üstünde ✕ iptal butonu */}
+              {pendingImages.length > 0 && (
+                <ul
+                  data-testid="pending-images-grid"
+                  className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-4"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={imagePreview}
-                    alt="Yüklenecek görsel önizleme"
-                    className="h-20 w-20 rounded-lg object-cover ring-1 ring-line"
-                  />
-                  <div className="flex-1 text-xs">
-                    <div className="font-bold text-cart">{imageName}</div>
-                    <div className="text-ink-3">Önizleme — kayıtta R2&apos;ye yüklenecek</div>
-                  </div>
-                </div>
+                  {pendingImages.map((img, idx) => (
+                    <li
+                      key={img.id}
+                      data-testid={`pending-image-${img.source}`}
+                      className={
+                        idx === 0
+                          ? 'group relative aspect-square overflow-hidden rounded-xl border-2 border-cat bg-line-soft shadow-[var(--shadow-cat)]'
+                          : 'group relative aspect-square overflow-hidden rounded-xl border border-line bg-line-soft'
+                      }
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={img.url}
+                        alt={img.name}
+                        className="h-full w-full object-cover"
+                      />
+                      {/* Primary badge */}
+                      {idx === 0 && (
+                        <span className="absolute left-1 top-1 rounded-full bg-cat px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
+                          ★ Ana
+                        </span>
+                      )}
+                      {/* Catalog kaynağı badge */}
+                      {img.source === 'catalog' && (
+                        <span className="absolute bottom-1 left-1 rounded-full bg-arrow/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
+                          📷 Katalog
+                        </span>
+                      )}
+                      {/* ✕ Remove button — daima görünür sağ üst */}
+                      <button
+                        type="button"
+                        onClick={() => removeImage(img.id)}
+                        disabled={pending}
+                        data-testid={`pending-image-remove-${img.id}`}
+                        aria-label={`${img.name} görselini kaldır`}
+                        className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-danger/95 text-sm font-bold text-white shadow-md transition-transform hover:scale-110 active:scale-95 disabled:opacity-60"
+                      >
+                        ✕
+                      </button>
+                      {/* Dosya adı — alt overlay */}
+                      <div className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/70 to-transparent px-2 py-1 text-[10px] font-bold text-white">
+                        {img.name}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
               )}
+
             </div>
           </div>
         </section>

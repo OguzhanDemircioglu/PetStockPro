@@ -152,6 +152,17 @@ export function ImagesSection({ productId, images }: Props) {
                     ★ Ana görsel
                   </span>
                 )}
+                {/* ✕ Sil button — thumb sağ üst köşede daima görünür */}
+                <button
+                  type="button"
+                  onClick={() => handleDelete(img.id, img.altText ?? 'görsel')}
+                  disabled={isPending}
+                  data-testid={`image-delete-${img.id}`}
+                  aria-label={`${img.altText ?? 'görsel'} sil`}
+                  className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-danger/95 text-sm font-bold text-white shadow-md transition-transform hover:scale-110 active:scale-95 disabled:opacity-60"
+                >
+                  ✕
+                </button>
               </div>
               {/* Meta + actions */}
               <div className="flex flex-1 flex-col gap-2 p-3">
@@ -159,28 +170,17 @@ export function ImagesSection({ productId, images }: Props) {
                   Sıra: {img.displayOrder} ·{' '}
                   {img.altText ?? 'Alt metin yok'}
                 </div>
-                <div className="mt-auto flex flex-wrap gap-2">
-                  {!img.isPrimary && (
-                    <button
-                      type="button"
-                      onClick={() => handleSetPrimary(img.id)}
-                      disabled={isPending}
-                      data-testid={`image-set-primary-${img.id}`}
-                      className="flex-1 rounded-lg border border-cat/40 bg-cat-soft px-2 py-1.5 text-[12px] font-bold text-cart hover:bg-cat hover:text-white disabled:opacity-60"
-                    >
-                      ★ Ana yap
-                    </button>
-                  )}
+                {!img.isPrimary && (
                   <button
                     type="button"
-                    onClick={() => handleDelete(img.id, img.altText ?? 'görsel')}
+                    onClick={() => handleSetPrimary(img.id)}
                     disabled={isPending}
-                    data-testid={`image-delete-${img.id}`}
-                    className="rounded-lg border border-line bg-paper px-2 py-1.5 text-[12px] font-bold text-danger hover:bg-danger hover:text-white disabled:opacity-60"
+                    data-testid={`image-set-primary-${img.id}`}
+                    className="mt-auto rounded-lg border border-cat/40 bg-cat-soft px-2 py-1.5 text-[12px] font-bold text-cart hover:bg-cat hover:text-white disabled:opacity-60"
                   >
-                    🗑
+                    ★ Ana yap
                   </button>
-                </div>
+                )}
               </div>
             </li>
           ))}
