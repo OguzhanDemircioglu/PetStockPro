@@ -72,6 +72,40 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
   const [seedImagePath, setSeedImagePath] = useState<string>('');
   const [seedImagePreviewName, setSeedImagePreviewName] = useState<string | null>(null);
 
+  // Manuel görsel upload — variant section'da file input
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageName, setImageName] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setImageError(null);
+    const file = e.target.files?.[0];
+    if (!file) {
+      // Önceki preview'ı temizle (object URL revoke)
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+      setImagePreview(null);
+      setImageName(null);
+      return;
+    }
+    if (file.size > MAX_SIZE) {
+      setImageError(`Dosya 5MB'i geçemez (gönderilen: ${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+      e.target.value = '';
+      return;
+    }
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setImageError('Sadece JPG, PNG veya WebP yükleyebilirsin');
+      e.target.value = '';
+      return;
+    }
+    // Önceki preview'ı temizle
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(URL.createObjectURL(file));
+    setImageName(file.name);
+  };
+
   // Marka / kategori case-insensitive eşleşmesi için preset
   const brandByName = useMemo(() => {
     const m = new Map<string, BrandOption>();
@@ -188,7 +222,7 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
         )}
       </section>
 
-      <form action={formAction} className="flex flex-col gap-6">
+      <form action={formAction} encType="multipart/form-data" className="flex flex-col gap-6">
         {/* Seed katalog imagePath — autocomplete onSelect ile set edilir, server'da transfer */}
         <input type="hidden" name="seedImagePath" value={seedImagePath} />
 
@@ -419,6 +453,60 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
                   className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
               </div>
+            </div>
+
+            {/* Ürün görseli — opsiyonel, catalog seçimini override eder */}
+            <div className="border-t border-line pt-4">
+              <label
+                className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
+                htmlFor="productImage"
+              >
+                📷 Ürün görseli (opsiyonel)
+              </label>
+              <input
+                id="productImage"
+                name="productImage"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                disabled={pending}
+                onChange={handleImageChange}
+                data-testid="product-image-input"
+                className="block w-full text-sm text-ink-3 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-cat-soft file:px-4 file:py-2 file:text-sm file:font-bold file:text-cat-7 hover:file:bg-cat/20 disabled:opacity-60"
+              />
+              <p className="mt-1.5 text-xs text-ink-3">
+                JPG / PNG / WebP — max 5 MB.{' '}
+                {seedImagePreviewName && (
+                  <span className="font-bold text-arrow-7">
+                    Görsel seçersen katalog görseli yerine bu kullanılır.
+                  </span>
+                )}
+              </p>
+              {imageError && (
+                <p
+                  role="alert"
+                  data-testid="image-error"
+                  className="mt-1.5 text-xs font-bold text-danger-7"
+                >
+                  ✕ {imageError}
+                </p>
+              )}
+              {imagePreview && (
+                <div
+                  data-testid="image-preview"
+                  className="mt-3 flex items-center gap-3 rounded-xl border border-cat/30 bg-cat-soft/30 p-3"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={imagePreview}
+                    alt="Yüklenecek görsel önizleme"
+                    className="h-20 w-20 rounded-lg object-cover ring-1 ring-line"
+                  />
+                  <div className="flex-1 text-xs">
+                    <div className="font-bold text-cart">{imageName}</div>
+                    <div className="text-ink-3">Önizleme — kayıtta R2&apos;ye yüklenecek</div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </section>

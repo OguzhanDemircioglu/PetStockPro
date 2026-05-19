@@ -4,6 +4,11 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { createProduct } from '@/lib/catalog/products';
+import {
+  uploadProductImage,
+  ALLOWED_MIME_TYPES,
+  MAX_FILE_SIZE_BYTES,
+} from '@/lib/catalog/product-images';
 import { transferSeedImageToProduct } from '@/lib/catalog/seed-image-transfer';
 import { writeAuditLogAsync } from '@/lib/audit/log';
 import { logModerationFlag } from '@/lib/moderation/audit';
@@ -124,14 +129,68 @@ export async function createProductAction(
     ? `&moderation=flagged&fields=${encodeURIComponent(result.moderationFlags.fieldsFlagged.join(','))}`
     : '';
 
-  // Seed katalog görselini transfer et (autocomplete'ten seçilen ürünün imagePath'i)
+  // Görsel akışı — öncelik:
+  //   1. Manuel upload (productImage File) → R2'ye doğrudan tenant prefix'ine
+  //   2. Catalog seed (seedImagePath, R2 seed/ key) → catalog'tan tenant'a kopyala
+  //   3. Yok → ürün görselsiz oluşturuldu
+  //
+  // Banner suffix'i /admin/products?created=success&... query param ile UI'ya iletilir.
+  const productImageFile = formData.get('productImage');
   const seedImagePath = formData.get('seedImagePath');
+  const hasManualImage = productImageFile instanceof File && productImageFile.size > 0;
+  const hasSeedImage = typeof seedImagePath === 'string' && seedImagePath.length > 0;
+
   let imageTransferSuffix = '';
-  if (typeof seedImagePath === 'string' && seedImagePath.length > 0) {
+
+  if (hasManualImage) {
+    const file = productImageFile as File;
+    // Erken validation (helper içinde de var ama UX için ayrı reason kodları)
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      imageTransferSuffix = '&product_image=fail&reason=too_large';
+    } else if (!ALLOWED_MIME_TYPES.includes(file.type as (typeof ALLOWED_MIME_TYPES)[number])) {
+      imageTransferSuffix = '&product_image=fail&reason=wrong_mime';
+    } else {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const uploadResult = await uploadProductImage(
+        session.user.companyId,
+        {
+          productId: result.productId,
+          fileName: file.name,
+          contentType: file.type as (typeof ALLOWED_MIME_TYPES)[number],
+          altText: null,
+        },
+        buffer,
+        db,
+      );
+      if (uploadResult.ok) {
+        writeAuditLogAsync(
+          {
+            companyId: session.user.companyId,
+            userId: session.user.id,
+            action: 'product.image_uploaded',
+            entityType: 'product',
+            entityId: result.productId,
+            afterState: {
+              imageId: uploadResult.imageId,
+              url: uploadResult.url,
+              sizeBytes: buffer.byteLength,
+              contentType: file.type,
+              source: 'new-product-form',
+            },
+          },
+          db,
+        );
+        imageTransferSuffix = '&product_image=ok';
+      } else {
+        imageTransferSuffix = `&product_image=fail&reason=${encodeURIComponent(uploadResult.reason)}`;
+      }
+    }
+  } else if (hasSeedImage) {
+    // Manuel görsel yok → catalog seed transfer (mevcut akış)
     const transfer = await transferSeedImageToProduct(
       session.user.companyId,
       result.productId,
-      seedImagePath,
+      seedImagePath as string,
       db,
     );
     if (transfer.ok) {
