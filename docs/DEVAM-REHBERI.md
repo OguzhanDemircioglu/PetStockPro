@@ -1,21 +1,23 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-19 (akşam — **Sprint E: Catalog Seed + Drizzle Flyway baseline + R2 hazırlık**)
-**Mevcut Branch:** `cray61` — origin'in **176 commit** ileri (push edilmedi)
-**Son commit:** `3fb4565` feat(storage): R2 client + bulk upload script (Sprint E hazırlığı)
-**Önceki commit:** `c36ddb8` feat(catalog-seed): 1.240 ürün DB-backed katalog + Drizzle Flyway baseline
-**Test:** **1352 passed** (önceki 1340 → +12 seed-catalog pure scoring + integration testleri browser E2E'ye taşındı)
+**Tarih:** 2026-05-19 (gece — **Sprint E: Catalog Seed + Drizzle Flyway + R2 tam geçiş**)
+**Mevcut Branch:** `cray61` — origin'in **178 commit** ileri (push edilmedi)
+**Son commit:** `60a7309` refactor(storage): Supabase Storage → Cloudflare R2 (tam geçiş + cleanup)
+**Test:** **1349 passed** (önceki 1352 → -4 silinen admin.test.ts + 1 cleanup ayar)
 **Lint+typecheck:** 0 error
-**Migration:** **18** (Drizzle baseline 17 + 0018_catalog_seed_products yeni)
+**Migration:** **18** (Drizzle baseline 17 + 0018_catalog_seed_products)
 **Aiven:** dormant (LOCAL_DB_* env vars `.env`'de hazır, production'a çıkınca aktif)
+**Supabase Storage:** ❌ KALDIRILDI — codebase'de hiç @supabase/* paketi yok artık
+**R2:** ✅ Kod tarafı tamamen entegre — bucket setup tek bekleyen (kullanıcı tarafı)
 
-## 🆕 Bu tur (2026-05-19) — Sprint E: Catalog Seed + Flyway Disiplin + R2 hazırlık
+## 🆕 Bu tur (2026-05-19) — Sprint E: Catalog Seed + Flyway Disiplin + R2 tam geçiş
 
 | # | İş | Commit |
 |---|---|---|
-| A | 1.240 ürün scrape (4 tur, markamama+petlebi sitemap) + WebP dönüşüm (146→49 MB) + JSON v0.2.6 + 8 yeni script (scrape/merge/filter/cleanup/webp/seed/baseline/analyze) | `c36ddb8` |
+| A | 1.240 ürün scrape (4 tur, markamama+petlebi sitemap) + WebP dönüşüm (146→49 MB) + JSON v0.2.6 + 8 yeni script | `c36ddb8` |
 | B | catalog_seed_products schema (INT id + GIN trgm + 6 kompakt VARCHAR + UNIQUE) + 0018 migration + DB-backed searchSeedCatalog + Drizzle Flyway baseline (17 entry __drizzle_migrations) | `c36ddb8` |
-| C | R2 client (lazy-init, S3-uyumlu) + upload-to-r2.ts script (8 paralel, idempotent) + .env.example R2 vars + @aws-sdk paketleri | `3fb4565` |
+| C | R2 client (lazy-init, S3-uyumlu) + upload-to-r2.ts script + .env.example R2 vars + @aws-sdk paketleri | `3fb4565` |
+| D | **Storage refactor TAMAMLANDI** — product-images.ts + seed-image-transfer.ts R2'ye, supabase/admin.ts + admin.test.ts silindi, @supabase/* paketleri uninstall, system-settings env check R2'ye, 53 test mock güncellendi | `60a7309` |
 
 ### 📊 Bu tur rakamları
 
