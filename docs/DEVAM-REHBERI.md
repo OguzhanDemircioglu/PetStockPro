@@ -1,11 +1,94 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-18 (gece-geç — **M/N/O/P 4 commit polish: brand SEO landing + ara kategori filter + Leaflet compass + Storage cache-control**)
-**Mevcut Branch:** `cray61` — origin'in **174 commit** ileri (push edilmedi)
-**Son commit:** `4d9c7ed` feat(storage): product image upload'da cacheControl=31536000 (1 yıl)
-**Test:** **1340 passed** (önceki 1314 → +13 brand-listings + 30 product-images +cacheControl assertion = +13 net)
-**Lint+typecheck:** 0 error (pre-existing register.ts $client cast hariç)
-**Migration:** 17 (değişmedi)
+**Tarih:** 2026-05-19 (akşam — **Sprint E: Catalog Seed + Drizzle Flyway baseline + R2 hazırlık**)
+**Mevcut Branch:** `cray61` — origin'in **176 commit** ileri (push edilmedi)
+**Son commit:** `3fb4565` feat(storage): R2 client + bulk upload script (Sprint E hazırlığı)
+**Önceki commit:** `c36ddb8` feat(catalog-seed): 1.240 ürün DB-backed katalog + Drizzle Flyway baseline
+**Test:** **1352 passed** (önceki 1340 → +12 seed-catalog pure scoring + integration testleri browser E2E'ye taşındı)
+**Lint+typecheck:** 0 error
+**Migration:** **18** (Drizzle baseline 17 + 0018_catalog_seed_products yeni)
+**Aiven:** dormant (LOCAL_DB_* env vars `.env`'de hazır, production'a çıkınca aktif)
+
+## 🆕 Bu tur (2026-05-19) — Sprint E: Catalog Seed + Flyway Disiplin + R2 hazırlık
+
+| # | İş | Commit |
+|---|---|---|
+| A | 1.240 ürün scrape (4 tur, markamama+petlebi sitemap) + WebP dönüşüm (146→49 MB) + JSON v0.2.6 + 8 yeni script (scrape/merge/filter/cleanup/webp/seed/baseline/analyze) | `c36ddb8` |
+| B | catalog_seed_products schema (INT id + GIN trgm + 6 kompakt VARCHAR + UNIQUE) + 0018 migration + DB-backed searchSeedCatalog + Drizzle Flyway baseline (17 entry __drizzle_migrations) | `c36ddb8` |
+| C | R2 client (lazy-init, S3-uyumlu) + upload-to-r2.ts script (8 paralel, idempotent) + .env.example R2 vars + @aws-sdk paketleri | `3fb4565` |
+
+### 📊 Bu tur rakamları
+
+| Metric | Değer |
+|---|---|
+| Yeni commit | **2** |
+| Yeni test | **+12** pure scoring (integration testleri browser E2E'ye taşındı) |
+| Yeni dosya | **9 scripts + 1 lib helper + 1 migration** |
+| Catalog ürün | 328 → **1.240** (3.78x) + %100 image coverage (önceden %46) |
+| Marka çeşitliliği | 46 → **95** |
+| Image klasör | 13.7 MB → 49.3 MB webp |
+| Branch ahead | 174 → **176 commit** |
+| EXPLAIN ANALYZE | **0.48ms** (GIN trgm Bitmap Index Scan) |
+
+### 🔑 Bu turda netleşen büyük kararlar
+
+1. **Drizzle Flyway disiplini kuruldu** (kullanıcı kuralı)
+   - `db:push` (state-based) artık YOK — sadece `db:generate` + `db:migrate`
+   - 17 mevcut migration `drizzle.__drizzle_migrations` history table'a baseline'landı
+   - `scripts/baseline-drizzle-migrations.ts` one-time bootstrap
+   - Sonraki schema değişikliği: schema.ts → `npm run db:generate` (SQL üret) → review → `npm run db:migrate` (apply + history kayıt)
+
+2. **Catalog seed JSON-memory'den DB-backed'e geçti**
+   - Cloudflare Workers bundle size + production deploy şart koştu
+   - `searchSeedCatalog` async + Drizzle execute SQL
+   - Pure `scoreSeedProduct` ranking korundu (DB-free, test edilebilir)
+   - GIN trgm + EXPLAIN 0.48ms (network +30-50ms = <100ms total)
+
+3. **Storage altyapısı: Supabase Storage → Cloudflare R2** (kullanıcı kararı)
+   - "Cloudinary" projede yoktu, kullanıcı `product-images` Supabase Storage bucket'ını kastediyordu
+   - R2 seçim: 10 GB free + bandwidth FREE + tek geliştirici felsefesine uyumlu
+   - Object key: `seed/{hash}.webp` + `tenants/{companyId}/{productId}/{uuid}.{ext}`
+   - **5 dosyalık refactor bekliyor** (kullanıcı bucket açınca)
+
+4. **Aiven Postgres LOCAL DB olarak rezerve**
+   - `.env`'de LOCAL_DB_* env vars var, drizzle config DATABASE_URL (Supabase prod) kullanıyor
+   - Production'a çıkınca local dev için Aiven'a yönlendirme
+
+5. **iyzico başvurusu — Yol B (PetStockPro odaklı)**
+   - DriverMesh ile aynı tüzel kişilik → "Yeni Mağaza" eklemeyi gelecek için sakla
+   - Şimdi: sandbox başvuru (anında) + petstockpro.com landing deploy (2-3 gün) + production başvuru (5-15 iş günü)
+   - Ayrı tur olarak ele alınacak
+
+### ⏭ Bekleyen / Sıradaki olası işler
+
+1. **🔴 BLOKER — R2 bucket setup** (kullanıcı tarafı, Cloudflare Dashboard)
+   - `petstockpro-images` bucket oluştur, public access + CORS aç
+   - API token (Object Read & Write, bucket-scoped)
+   - 5 env var doldur: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_URL
+
+2. **R2 setup geldikten sonra (sıradaki tur):**
+   - `npx tsx scripts/upload-to-r2.ts` — 1.286 webp → seed/{hash}.webp
+   - `src/lib/catalog/product-images.ts` refactor — Supabase Storage → R2 SDK (uploadProductImage, deleteProductImage, listProductImages, setPrimaryProductImage)
+   - `src/lib/catalog/seed-image-transfer.ts` refactor — lokal `fs.readFile` → `fetchFromR2('seed/{hash}.webp')`
+   - 3 admin UI dosyası: `src/app/admin/products/[id]/edit/*` (Supabase public URL → R2 public URL)
+   - Browser E2E: `/admin/products/new` combobox + image transfer doğrulama
+
+3. **iyzico landing page** (ayrı tur, 2-3 gün)
+   - 6 sayfa statik (home + fiyatlar + KVKK + çerez + üyelik sözleşmesi + iletişim)
+   - Cloudflare Pages deploy
+
+4. **Catalog kalite cleanup** (opsiyonel)
+   - Brand-duplicate isimler: "Chef's Choice Chef's Choice ..." pattern ~%5
+   - HTML entity'ler: `&#039;` → `'`
+
+5. **`scripts/data/images/` .gitignore'a alma** (R2 upload sonrası)
+   - 49 MB repo'da gerekli değil R2'ye yüklendikten sonra
+
+---
+
+## 📜 ESKİ TURLAR (referans)
+
+
 
 ## 🆕 Bu mini-tur (2026-05-18, gece-geç) — M/N/O/P 4 commit polish
 
