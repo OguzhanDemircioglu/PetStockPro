@@ -1025,6 +1025,8 @@ export const catalogSeedProducts = petstockproSchema.table(
     animalType: varchar('animal_type', { length: 10 }).notNull(),
     categorySlug: varchar('category_slug', { length: 40 }).notNull(),
     imagePath: varchar('image_path', { length: 48 }).notNull(),
+    /** Form prefill için TR satış-pazarlama metni (1-2 cümle). Nullable — eski seed'lerde null. */
+    description: text('description'),
   },
   (t) => [
     uniqueIndex('catalog_seed_brand_name_weight_unique').on(t.brand, t.name, t.weight),

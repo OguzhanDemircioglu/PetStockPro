@@ -10,6 +10,7 @@ import {
   MAX_FILE_SIZE_BYTES,
 } from '@/lib/catalog/product-images';
 import { transferSeedImageToProduct } from '@/lib/catalog/seed-image-transfer';
+import { resolveTenantBrand } from '@/lib/catalog/resolve-brand';
 import { writeAuditLogAsync } from '@/lib/audit/log';
 import { logModerationFlag } from '@/lib/moderation/audit';
 
@@ -66,13 +67,34 @@ export async function createProductAction(
       ? parseInt(thresholdRaw, 10)
       : 5;
 
+  // Marka resolve — form'dan seçili brandId yoksa ama catalogBrand (catalog'tan
+  // gelen string) varsa tenant'ta otomatik oluştur veya mevcut'u kullan.
+  const catalogBrand = formData.get('catalogBrand');
+  let resolvedBrandId: string | undefined =
+    typeof brandId === 'string' && brandId.length > 0 ? brandId : undefined;
+  let brandAutoCreated = false;
+  let brandAutoCreatedName: string | null = null;
+
+  if (!resolvedBrandId && typeof catalogBrand === 'string' && catalogBrand.trim().length > 0) {
+    try {
+      const resolved = await resolveTenantBrand(session.user.companyId, catalogBrand.trim(), db);
+      if (resolved) {
+        resolvedBrandId = resolved.id;
+        brandAutoCreated = resolved.created;
+        if (resolved.created) brandAutoCreatedName = catalogBrand.trim();
+      }
+    } catch {
+      // Brand resolve fail → product yine de oluşturulur, sadece brand boş kalır
+    }
+  }
+
   const result = await createProduct(
     session.user.companyId,
     {
       name,
       description: typeof description === 'string' && description.length > 0 ? description : undefined,
       categoryId: typeof categoryId === 'string' && categoryId.length > 0 ? categoryId : undefined,
-      brandId: typeof brandId === 'string' && brandId.length > 0 ? brandId : undefined,
+      brandId: resolvedBrandId,
       variant: {
         valueLabel: typeof valueLabel === 'string' && valueLabel.length > 0 ? valueLabel : 'Standart',
         sku,
@@ -111,6 +133,21 @@ export async function createProductAction(
     },
     db,
   );
+
+  // Brand auto-create audit
+  if (brandAutoCreated && resolvedBrandId && brandAutoCreatedName) {
+    writeAuditLogAsync(
+      {
+        companyId: session.user.companyId,
+        userId: session.user.id,
+        action: 'brand.auto_created',
+        entityType: 'brand',
+        entityId: resolvedBrandId,
+        afterState: { name: brandAutoCreatedName, source: 'catalog-seed-product-form' },
+      },
+      db,
+    );
+  }
 
   // Moderation flag varsa audit log + redirect query param ile UI bildirimi
   if (result.moderationFlags?.flagged) {

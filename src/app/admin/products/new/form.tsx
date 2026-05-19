@@ -69,8 +69,11 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
   const [barcode, setBarcode] = useState('');
   const [salePrice, setSalePrice] = useState(state?.formValues.salePrice ?? '');
   const [missingBrandHint, setMissingBrandHint] = useState<string | null>(null);
+  const [catalogBrand, setCatalogBrand] = useState<string>(''); // auto-create için
   const [seedImagePath, setSeedImagePath] = useState<string>('');
   const [seedImagePreviewName, setSeedImagePreviewName] = useState<string | null>(null);
+
+  const r2PublicUrl = process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? '';
 
   // Manuel görsel upload — variant section'da file input
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -125,14 +128,16 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
     if (product.barcode) setBarcode(product.barcode);
     if (product.description) setDescription(product.description);
 
-    // Marka match
+    // Marka match — yoksa catalogBrand hidden input ile auto-create yapılır
     const brandMatch = brandByName.get(product.brand.toLowerCase());
     if (brandMatch) {
       setBrandId(brandMatch.id);
       setMissingBrandHint(null);
+      setCatalogBrand('');
     } else {
       setBrandId('');
       setMissingBrandHint(product.brand);
+      setCatalogBrand(product.brand); // server action otomatik oluşturacak
     }
 
     // Kategori match
@@ -194,37 +199,53 @@ export function ProductForm({ categories, brands }: ProductFormProps) {
         </p>
         {missingBrandHint && (
           <div
-            role="alert"
-            data-testid="missing-brand-hint"
-            className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-bars/30 bg-bars-soft px-3 py-2 text-[12.5px] font-bold text-bars-7"
+            role="status"
+            data-testid="auto-brand-hint"
+            className="mt-3 flex items-center gap-2 rounded-xl border border-arrow/30 bg-arrow-soft/40 px-3 py-2 text-[12.5px] font-bold text-arrow-7"
           >
-            <span>⚠ &quot;{missingBrandHint}&quot; markası tenant&apos;ında yok.</span>
-            <Link
-              href={'/admin/brands/new' as never}
-              target="_blank"
-              className="rounded-lg border border-bars/40 bg-paper px-2 py-1 text-[11px] hover:bg-bars hover:text-white"
-            >
-              + Marka ekle
-            </Link>
+            <span>
+              🆕 &quot;{missingBrandHint}&quot; markası tenant&apos;ında yok —{' '}
+              <span className="font-normal">kayıtta otomatik oluşturulacak.</span>
+            </span>
           </div>
         )}
 
-        {seedImagePreviewName && (
+        {seedImagePath && (
           <div
             data-testid="seed-image-hint"
-            className="mt-2 rounded-xl border border-arrow/30 bg-arrow-soft/40 px-3 py-2 text-[12.5px] font-bold text-arrow-7"
+            className="mt-2 flex items-center gap-3 rounded-xl border border-arrow/30 bg-arrow-soft/40 p-3"
           >
-            📷 Seçili ürünün görseli kayıt sırasında otomatik yüklenecek
-            <span className="ml-1 font-normal opacity-75">
-              ({seedImagePreviewName})
-            </span>
+            {r2PublicUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={`${r2PublicUrl}/${seedImagePath}`}
+                alt={seedImagePreviewName ?? 'Catalog görseli'}
+                className="h-20 w-20 rounded-lg object-cover ring-1 ring-arrow/30"
+              />
+            ) : (
+              <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-arrow-soft text-2xl ring-1 ring-arrow/30">
+                📷
+              </div>
+            )}
+            <div className="flex-1 text-[12.5px]">
+              <div className="font-bold text-arrow-7">
+                📷 Katalog görseli — kayıtta tenant&apos;ınıza kopyalanacak
+              </div>
+              {seedImagePreviewName && (
+                <div className="mt-0.5 text-xs font-normal text-ink-3">
+                  {seedImagePreviewName}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </section>
 
-      <form action={formAction} encType="multipart/form-data" className="flex flex-col gap-6">
+      <form action={formAction} className="flex flex-col gap-6">
         {/* Seed katalog imagePath — autocomplete onSelect ile set edilir, server'da transfer */}
         <input type="hidden" name="seedImagePath" value={seedImagePath} />
+        {/* Catalog brand string — tenant'ta yoksa server action otomatik oluşturur */}
+        <input type="hidden" name="catalogBrand" value={catalogBrand} />
 
         {/* TEMEL BİLGİLER */}
         <section className="rounded-2xl border border-line bg-paper p-6">

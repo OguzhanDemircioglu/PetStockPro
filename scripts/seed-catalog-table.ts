@@ -39,6 +39,7 @@ interface PetProduct {
   animalType: string;
   weight: string;
   imagePath: string | null;
+  description?: string;
 }
 
 interface CatalogFile {
@@ -52,6 +53,7 @@ interface SeedRow {
   animal_type: string;
   category_slug: string;
   image_path: string;
+  description: string | null;
 }
 
 function toR2Key(localPath: string): string {
@@ -70,6 +72,11 @@ function normalize(p: PetProduct): SeedRow | null {
   if (p.animalType.length > 10) return null;
   if (p.categorySlug.length > 40) return null;
   if (image_path.length > 48) return null;
+  // Description çok uzunsa kırp (text alanı sınırsız ama UI için anlamlı tut)
+  const desc =
+    p.description && p.description.trim().length > 0
+      ? p.description.trim().slice(0, 1000)
+      : null;
   return {
     name: p.name,
     brand: p.brand,
@@ -77,6 +84,7 @@ function normalize(p: PetProduct): SeedRow | null {
     animal_type: p.animalType,
     category_slug: p.categorySlug,
     image_path,
+    description: desc,
   };
 }
 
@@ -112,8 +120,12 @@ async function main(): Promise<void> {
     const batch = rows.slice(i, i + CHUNK_SIZE);
     const result = await sql`
       INSERT INTO petstockpro.catalog_seed_products
-        ${sql(batch, 'name', 'brand', 'weight', 'animal_type', 'category_slug', 'image_path')}
-      ON CONFLICT (brand, name, weight) DO NOTHING
+        ${sql(batch, 'name', 'brand', 'weight', 'animal_type', 'category_slug', 'image_path', 'description')}
+      ON CONFLICT (brand, name, weight) DO UPDATE SET
+        animal_type   = EXCLUDED.animal_type,
+        category_slug = EXCLUDED.category_slug,
+        image_path    = EXCLUDED.image_path,
+        description   = EXCLUDED.description
     `;
     totalInserted += result.count;
     process.stdout.write(`\r[seed] ${Math.min(i + CHUNK_SIZE, rows.length)}/${rows.length} (inserted ${totalInserted})`);

@@ -146,8 +146,9 @@ export async function searchSeedCatalog(query: string, limit = 8): Promise<Searc
     animal_type: string;
     category_slug: string;
     image_path: string;
+    description: string | null;
   }>(sql`
-    SELECT id, name, brand, weight, animal_type, category_slug, image_path
+    SELECT id, name, brand, weight, animal_type, category_slug, image_path, description
     FROM petstockpro.catalog_seed_products
     WHERE lower(name) LIKE '%' || ${lowerQ} || '%'
        OR lower(brand) LIKE '%' || ${lowerQ} || '%'
@@ -167,7 +168,7 @@ export async function searchSeedCatalog(query: string, limit = 8): Promise<Searc
       // Geriye uyumluluk (DB modelinde yok)
       barcode: null,
       imageUrl: null,
-      description: '',
+      description: r.description ?? '',
       sourceUrl: null,
     };
     const score = scoreSeedProduct(product, q);
