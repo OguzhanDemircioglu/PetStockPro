@@ -86,12 +86,20 @@ export default async function ProductsPage({
             {hasActiveFilter ? ' (filtreli)' : ' · FREE plan 50 ürün limit'}
           </p>
         </div>
-        <Link
-          href={'/admin/products/new' as never}
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-cat to-cat-2 px-5 py-2.5 text-sm font-bold text-white shadow-[var(--shadow-cat)] hover:-translate-y-0.5 transition-transform"
-        >
-          + Yeni ürün
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href={'/admin/products/import' as never}
+            className="inline-flex items-center gap-2 rounded-xl border border-cat/40 bg-cat-soft px-4 py-2.5 text-sm font-bold text-cat-7 hover:bg-cat hover:text-white"
+          >
+            📥 Excel&apos;den içeri aktar
+          </Link>
+          <Link
+            href={'/admin/products/new' as never}
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-cat to-cat-2 px-5 py-2.5 text-sm font-bold text-white shadow-[var(--shadow-cat)] hover:-translate-y-0.5 transition-transform"
+          >
+            + Yeni ürün
+          </Link>
+        </div>
       </header>
 
       {justCreated && (

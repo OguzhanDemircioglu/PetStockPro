@@ -52,6 +52,7 @@
     "react-hook-form": "^7.54.2",
     "react-leaflet": "^5.0.0",
     "recharts": "^2.15.0",
+    "sweetalert2": "^11.26.24",
     "tailwind-merge": "^2.5.5",
     "zod": "^3.24.1",
     "zustand": "^5.0.2"
