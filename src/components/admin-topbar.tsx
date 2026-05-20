@@ -11,6 +11,8 @@ interface Props {
   userEmail: string;
   unreadCount: number;
   isSuperadmin?: boolean;
+  /** Faz 8 (2026-05-21) — OBSERVER (İzleyici) sticky banner + topbar rozet. */
+  isObserver?: boolean;
 }
 
 const TITLE_BY_PATH: { match: RegExp | string; title: string }[] = [
@@ -63,7 +65,7 @@ const TR_DATE = new Intl.DateTimeFormat('tr-TR', {
   year: 'numeric',
 });
 
-export function AdminTopbar({ userEmail, unreadCount, isSuperadmin }: Props) {
+export function AdminTopbar({ userEmail, unreadCount, isSuperadmin, isObserver }: Props) {
   const pathname = usePathname();
   const title = pathTitle(pathname);
   const dateLabel = TR_DATE.format(new Date());
@@ -117,6 +119,16 @@ export function AdminTopbar({ userEmail, unreadCount, isSuperadmin }: Props) {
         >
           🛡 Süperadmin
         </Link>
+      )}
+
+      {isObserver && (
+        <span
+          data-testid="topbar-observer-badge"
+          title="İzleyici — sadece okur, hiçbir aksiyon yapamaz"
+          className="inline-flex items-center gap-1 rounded-xl border border-cat/40 bg-cat-soft px-3 py-1.5 text-[12.5px] font-bold text-cart"
+        >
+          🔍 İzleyici
+        </span>
       )}
 
       <NotificationBell unreadCount={unreadCount} />

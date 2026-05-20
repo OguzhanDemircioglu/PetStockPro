@@ -198,8 +198,18 @@ export function InviteUserForm({ branchOptions }: Props) {
 
       <div className="mt-4 flex items-center justify-between">
         <p className="text-[12px] text-ink-4">
-          Audit log&apos;a yazılır. İzleyici atandığı şubenin tüm modüllerini
-          görüntüler; Çalışan sadece satış kaydı + sayıma katılır.
+          Audit log&apos;a yazılır.{' '}
+          {role === 'OBSERVER' ? (
+            <>
+              <strong>🔍 İzleyici</strong>, tenantın tüm verilerini sadece
+              görüntüler — hiçbir aksiyon yapamaz.
+            </>
+          ) : (
+            <>
+              <strong>💼 Çalışan</strong>, sadece satış kaydı + sayıma katılır;
+              diğer 12 yetkiyi tek tek açabilirsin.
+            </>
+          )}
         </p>
         <button
           type="submit"

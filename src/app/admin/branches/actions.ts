@@ -15,6 +15,30 @@ import { setBranchStatus, type BranchStatus } from '@/lib/branches/status';
 import { writeAuditLogAsync } from '@/lib/audit/log';
 import { logModerationFlag } from '@/lib/moderation/audit';
 import { moderationRedirectSuffix } from '@/lib/moderation/redirect-suffix';
+import { assertNotObserver, ObserverReadOnlyError } from '@/lib/auth/role-gate';
+
+/**
+ * Faz 8 (2026-05-21) — Branches CRUD action'larında Observer reject helper.
+ * BranchActionState shape ile çalışır.
+ */
+function rejectIfObserver(
+  session: { user?: { role?: string } | null } | null,
+  branchId: string | null = null,
+): BranchActionState | null {
+  try {
+    assertNotObserver(session);
+    return null;
+  } catch (e) {
+    if (e instanceof ObserverReadOnlyError) {
+      return {
+        ...EMPTY,
+        branchId,
+        message: 'İzleyici modundasın — bu işlem yapılamaz',
+      };
+    }
+    throw e;
+  }
+}
 
 export interface BranchActionState {
   ok: boolean;
@@ -64,6 +88,8 @@ export async function addBranchAction(
 ): Promise<BranchActionState> {
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+  const gate = rejectIfObserver(session);
+  if (gate) return gate;
 
   const input = parseFormInput(formData);
   if (!input) {
@@ -123,6 +149,8 @@ export async function updateBranchAction(
 ): Promise<BranchActionState> {
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+  const gate = rejectIfObserver(session, branchId);
+  if (gate) return gate;
 
   const input = parseFormInput(formData);
   if (!input) {
@@ -177,6 +205,8 @@ export async function removeBranchManagerAction(
 ): Promise<BranchActionState> {
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+  const gate = rejectIfObserver(session, branchId);
+  if (gate) return gate;
 
   if (session.user.role !== 'BAYI_SAHIBI' && session.user.role !== 'SUPERADMIN') {
     return {
@@ -226,6 +256,8 @@ export async function toggleBranchActiveAction(
 ): Promise<BranchActionState> {
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+  const gate = rejectIfObserver(session, branchId);
+  if (gate) return gate;
 
   const result = await setBranchActive(
     session.user.companyId,

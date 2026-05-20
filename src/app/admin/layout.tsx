@@ -28,6 +28,8 @@ export default async function AdminLayout({
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
 
   const showToolbox = isSuperadmin(session);
+  // Faz 8 (2026-05-21) — OBSERVER (İzleyici) read-only sticky banner + topbar rozet.
+  const isObserverRole = session.user.role === 'OBSERVER';
 
   // Impersonation: SUPERADMIN için cookie'den effective companyId
   const impersonation = showToolbox
@@ -95,10 +97,21 @@ export default async function AdminLayout({
             impersonatorEmail={impersonation.impersonatorEmail}
           />
         )}
+        {isObserverRole && (
+          <div
+            role="status"
+            data-testid="observer-readonly-banner"
+            className="border-b border-cat/30 bg-cat-soft px-6 py-2 text-[12.5px] font-bold text-cart"
+          >
+            🔍 İzleyici modundasın — tenantın tüm verilerini görebilirsin, ama
+            hiçbir aksiyon yapamazsın (satış, ürün, sayım, transfer, ayar).
+          </div>
+        )}
         <AdminTopbar
           userEmail={session.user.email ?? ''}
           unreadCount={unreadCount}
           isSuperadmin={showToolbox}
+          isObserver={isObserverRole}
         />
         <div className="flex-1">{children}</div>
       </div>
