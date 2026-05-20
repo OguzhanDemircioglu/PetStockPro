@@ -20,6 +20,7 @@ export default async function BranchesPage({
   searchParams: Promise<{
     created?: string;
     updated?: string;
+    staff_skipped?: string;
     moderation?: 'flagged';
     fields?: string;
   }>;
@@ -68,6 +69,18 @@ export default async function BranchesPage({
       {params.created === 'success' && (
         <div className="rounded-xl border border-arrow/40 bg-arrow-soft px-4 py-3 text-sm font-bold text-arrow-7">
           ✅ Şube eklendi.
+          {params.staff_skipped === '1' && (
+            <span className="ml-1 font-normal">
+              Çalışan eklemeyi sonraya bıraktın —{' '}
+              <a
+                href="/admin/settings/users"
+                className="underline hover:text-arrow"
+              >
+                Kullanıcılar
+              </a>{' '}
+              sayfasından ekleyebilirsin.
+            </span>
+          )}
         </div>
       )}
       {params.updated === 'success' && (

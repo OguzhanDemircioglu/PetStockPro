@@ -108,7 +108,12 @@ export async function addBranchAction(
   }
 
   revalidatePath('/admin/branches');
-  redirect(`/admin/branches?created=success${moderationRedirectSuffix(result.moderationFlags)}` as never);
+  // Faz 7 (2026-05-21) — şube eklendikten sonra wizard step 2'ye geç
+  // ("Çalışan ekle veya atla"). Onboarding'deki ilk şube etkilenmez
+  // (orada ayrı firstBranchAction).
+  redirect(
+    `/admin/branches/new?step=2&branchId=${result.branchId}${moderationRedirectSuffix(result.moderationFlags)}` as never,
+  );
 }
 
 export async function updateBranchAction(
