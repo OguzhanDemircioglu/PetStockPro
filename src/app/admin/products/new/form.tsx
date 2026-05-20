@@ -28,6 +28,15 @@ interface ProductFormProps {
 }
 
 /**
+ * Local image id — sadece client-side anahtarlama için (UUID'ye gerek yok,
+ * timestamp + random suffix yeterli). Component DIŞINDA tanımlı: pure-render
+ * kuralı (react-hooks/purity) ihlal edilmesin.
+ */
+function localId(): string {
+  return `img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/**
  * SKU önerisi üret — `<BRAND>-<NAME>-<WEIGHT>` format'ında, max 24 char.
  * Marka 1-4 harfli kısaltma (kelime başlarından), name ilk anlamlı kelime (3-4 harf),
  * weight cleanup (boşluksuz, büyük harf).
@@ -99,7 +108,7 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
     if (url && url.startsWith('blob:')) URL.revokeObjectURL(url);
   };
 
-  const localId = () => `img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  // localId — modül seviyesinde (component dışında) tanımlı; pure-render uyumlu.
 
   /**
    * File input'u pendingImages.manual ile sync et (DataTransfer ile).
@@ -156,6 +165,10 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
    * Catalog'tan seçilen görseli pending listesine ekle.
    * R2 public URL referans (CORS gerek yok), server'a seedImagePath gönderilir →
    * transferSeedImageToProduct R2 → R2 server-side kopya.
+   *
+   * Davranış: catalog seçimi name/brand/category override eder; image de aynı
+   * semantikte — önceki catalog kaynaklı görselleri temizle, yeniyi ekle.
+   * Kullanıcının manuel eklediği görseller korunur.
    */
   const showCatalogImageAsSelected = (
     imagePath: string,
@@ -171,11 +184,11 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
         .toLowerCase()
         .slice(0, 60) || 'catalog';
 
-    // Aynı catalog ürünü tekrar seçilirse dup'ı önle
     setPendingImages((prev) => {
-      const filtered = prev.filter((img) => img.seedImagePath !== imagePath);
+      // Önceki catalog kaynaklı görselleri at — manuel olanları koru
+      const manualOnly = prev.filter((img) => img.source !== 'catalog');
       return [
-        ...filtered,
+        ...manualOnly,
         {
           id: localId(),
           source: 'catalog',
