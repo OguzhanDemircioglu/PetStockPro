@@ -6,6 +6,8 @@ import { listCompanyUsers } from '@/lib/users/manage';
 import { branches, users as usersTable } from '@/db/schema';
 import { SettingsShell } from '@/components/settings-shell';
 import { InviteUserForm } from './invite-form';
+import { PermissionsModalLauncher } from './permissions-modal';
+import { getUserPermissions } from '@/lib/users/permissions';
 
 // Faz 3 (2026-05-21) — Türkçe rol etiketleri:
 //   BAYI_SAHIBI → "Bayi Admin"
@@ -59,7 +61,20 @@ export default async function UsersSettingsPage() {
 
   const canInvite =
     session.user.role === 'BAYI_SAHIBI' || session.user.role === 'SUPERADMIN';
+  const canManagePermissions = canInvite;
   const now = new Date();
+
+  // Faz 6 — STAFF kullanıcıların yetki listelerini server-side preload (modal
+  // initialEnabled için). Modal sadece STAFF rolüne gösterildiği için filter.
+  const staffPermissions = new Map<string, readonly string[]>();
+  if (canManagePermissions) {
+    const staffUsers = users.filter((u) => u.role === 'STAFF');
+    await Promise.all(
+      staffUsers.map(async (u) => {
+        staffPermissions.set(u.id, await getUserPermissions(u.id, db));
+      }),
+    );
+  }
 
   return (
     <SettingsShell
@@ -107,6 +122,11 @@ export default async function UsersSettingsPage() {
                     <th className="border-b-2 border-line bg-paper px-2 py-2 text-left font-bold text-cart">
                       Tarih
                     </th>
+                    {canManagePermissions && (
+                      <th className="border-b-2 border-line bg-paper px-2 py-2 text-left font-bold text-cart">
+                        Yetkiler
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -180,6 +200,20 @@ export default async function UsersSettingsPage() {
                             year: '2-digit',
                           })}
                         </td>
+                        {canManagePermissions && (
+                          <td className="px-2 py-2">
+                            {u.role === 'STAFF' ? (
+                              <PermissionsModalLauncher
+                                userId={u.id}
+                                email={u.email}
+                                displayName={u.name}
+                                initialEnabled={staffPermissions.get(u.id) ?? []}
+                              />
+                            ) : (
+                              <span className="text-[11px] text-ink-4">—</span>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
