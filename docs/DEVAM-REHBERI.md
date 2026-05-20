@@ -1,23 +1,60 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-19 (gece — **Sprint E: Catalog Seed + Drizzle Flyway + R2 tam geçiş**)
-**Mevcut Branch:** `cray61` — origin'in **178 commit** ileri (push edilmedi)
-**Son commit:** `60a7309` refactor(storage): Supabase Storage → Cloudflare R2 (tam geçiş + cleanup)
-**Test:** **1349 passed** (önceki 1352 → -4 silinen admin.test.ts + 1 cleanup ayar)
+**Tarih:** 2026-05-20 (sabah — **Sprint E full kapsam: Catalog Seed + R2 + Multi-image + Users invite refactor**)
+**Mevcut Branch:** `cray61` — origin'in **185 commit** ileri (push edilmedi)
+**Son commit:** `cf61e37` feat(users): link-only davet + şube tek-müdür constraint
+**Test:** **1349+** passed (catalog 123 + brands 13 + users 14 + diğer suite'ler stabil)
 **Lint+typecheck:** 0 error
-**Migration:** **18** (Drizzle baseline 17 + 0018_catalog_seed_products)
-**Aiven:** dormant (LOCAL_DB_* env vars `.env`'de hazır, production'a çıkınca aktif)
-**Supabase Storage:** ❌ KALDIRILDI — codebase'de hiç @supabase/* paketi yok artık
-**R2:** ✅ Kod tarafı tamamen entegre — bucket setup tek bekleyen (kullanıcı tarafı)
+**Migration:** **20** (Drizzle baseline 17 + 0018 catalog_seed + 0019 description + 0020 users.branch_id)
+**Aiven:** dormant (.env'de LOCAL_DB_* hazır)
+**Supabase Storage:** ❌ KALDIRILDI (@supabase/* paketleri sökülmüş)
+**R2:** ✅ Kod + bucket + 1.283 webp upload + img-src CSP aktif
 
-## 🆕 Bu tur (2026-05-19) — Sprint E: Catalog Seed + Flyway Disiplin + R2 tam geçiş
+## 🆕 Bu tur (2026-05-19 → 20) — Sprint E full kapsam
 
 | # | İş | Commit |
 |---|---|---|
-| A | 1.240 ürün scrape (4 tur, markamama+petlebi sitemap) + WebP dönüşüm (146→49 MB) + JSON v0.2.6 + 8 yeni script | `c36ddb8` |
-| B | catalog_seed_products schema (INT id + GIN trgm + 6 kompakt VARCHAR + UNIQUE) + 0018 migration + DB-backed searchSeedCatalog + Drizzle Flyway baseline (17 entry __drizzle_migrations) | `c36ddb8` |
-| C | R2 client (lazy-init, S3-uyumlu) + upload-to-r2.ts script + .env.example R2 vars + @aws-sdk paketleri | `3fb4565` |
-| D | **Storage refactor TAMAMLANDI** — product-images.ts + seed-image-transfer.ts R2'ye, supabase/admin.ts + admin.test.ts silindi, @supabase/* paketleri uninstall, system-settings env check R2'ye, 53 test mock güncellendi | `60a7309` |
+| A | 1.240 ürün scrape (4 tur) + WebP (146→49 MB) + JSON v0.2.6 + 8 script | `c36ddb8` |
+| B | catalog_seed_products schema (INT id + GIN trgm) + 0018 migration + DB-backed searchSeedCatalog + Drizzle Flyway baseline (17 entry) | `c36ddb8` |
+| C | R2 client (lazy-init, S3-uyumlu) + upload-to-r2.ts + .env.example R2 vars + @aws-sdk paketleri | `3fb4565` |
+| D | Storage tam refactor — product-images.ts + seed-image-transfer.ts R2'ye, supabase/admin.ts silindi, 53 test mock | `60a7309` |
+| E | R2 smoke test + 1.283 webp R2'ye (49 MB) | `b5dd00c` |
+| F | Variant section'a manuel image upload (single → multi'ye evrildi sonra) | `b750746` |
+| G | Catalog seçimi → description + brand auto-create + R2 thumb | `13d88d8` |
+| H | Tenant bulk import: 95 brand + 1.240 ürün + 1.246 görsel + 1.276 variant catch-up | `452a685` |
+| I | Catalog görseli "dosya seçilmiş" görünür (file input alanında thumb) | `0d60912` |
+| J | Üst+alt kategori 2 dropdown (cascade) + brand moderation BLOCK | `98ede6d` |
+| K | Multi-image upload (manual + catalog) + ✕ iptal button (new + edit) | `efedef1` |
+| L | CSP fix — *.r2.dev img-src + connect-src eklendi (image decode) | `7236dfa` |
+| M | Users link-only invite + şube tek-müdür constraint (DB unique index + UI disabled) | `cf61e37` |
+
+### 📊 Bu tur rakamları
+
+| Metric | Değer |
+|---|---|
+| Yeni commit | **14** (origin'den 185 ahead) |
+| Yeni dosya | **12 script + 3 lib helper + 3 migration + 1 R2 client** |
+| Catalog ürün | 328 → **1.240** (3.78x) + %100 image coverage |
+| Marka çeşitliliği | 46 → **95** |
+| Image klasör | 13.7 MB → 49.3 MB webp (lokal) + 1.283 R2'de |
+| EXPLAIN ANALYZE | **0.48ms** (GIN trgm Bitmap Index Scan) |
+| Süperadmin tenant DB | 5 → **1.249 ürün + 1.285 variant + 1.246 image + 99 brand** |
+| Migration | 17 → **20** (Flyway disiplinle) |
+
+### 🔑 Bu turda netleşen büyük kararlar
+
+1. **Drizzle Flyway disiplini** — `db:push` YOK, `db:generate` + `db:migrate` zorunlu
+2. **Catalog seed DB-backed** — JSON memory bypass (Workers bundle size)
+3. **Storage: Supabase → R2** (10 GB free + bandwidth free, tek-geliştirici uyum)
+4. **Multi-image** new + edit, ✕ button thumb sağ üst köşede daima görünür
+5. **Catalog görseli UI'da "dosya seçilmiş"** — mock state (CORS preflight r2.dev yok), server seedImagePaths array ile transfer
+6. **Üst+alt kategori cascade** — catalog seçimi parent+child birlikte set
+7. **Brand moderation BLOCK** — küfür tespit edilirse INSERT REJECT (önceki: flag+allow)
+8. **Tenant bulk import script** — test/playground için tek komut
+9. **CSP r2.dev eklendi** — img decode için kritik (sessiz reject sorunu çözüldü)
+10. **Users davet link-only** — email kaldırıldı, 24 saat link + admin elden iletir
+11. **Şube tek-müdür** — DB partial unique index + UI disabled options + warning banner
+12. **Aiven LOCAL DB rezerve** — production sonrası aktif
 
 ### 📊 Bu tur rakamları
 
@@ -63,25 +100,33 @@
 
 ### ⏭ Bekleyen / Sıradaki olası işler
 
-1. **🔴 BLOKER — R2 bucket setup** (kullanıcı tarafı, Cloudflare Dashboard)
-   - `petstockpro-images` bucket oluştur, public access + CORS aç
-   - API token (Object Read & Write, bucket-scoped)
-   - 5 env var doldur: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_URL
-
-2. **R2 setup geldikten sonra (sıradaki tur):**
-   - `npx tsx scripts/upload-to-r2.ts` — 1.286 webp → seed/{hash}.webp
-   - `src/lib/catalog/product-images.ts` refactor — Supabase Storage → R2 SDK (uploadProductImage, deleteProductImage, listProductImages, setPrimaryProductImage)
-   - `src/lib/catalog/seed-image-transfer.ts` refactor — lokal `fs.readFile` → `fetchFromR2('seed/{hash}.webp')`
-   - 3 admin UI dosyası: `src/app/admin/products/[id]/edit/*` (Supabase public URL → R2 public URL)
-   - Browser E2E: `/admin/products/new` combobox + image transfer doğrulama
-
-3. **iyzico landing page** (ayrı tur, 2-3 gün)
+1. **iyzico landing page** (ayrı tur, 2-3 gün) — CLAUDE.md "Yol B" kararlı
    - 6 sayfa statik (home + fiyatlar + KVKK + çerez + üyelik sözleşmesi + iletişim)
    - Cloudflare Pages deploy
+   - iyzico sandbox başvurusu paralel (anında API key)
+   - Production başvurusu landing tamamlanınca (5-15 iş günü)
 
-4. **Catalog kalite cleanup** (opsiyonel)
-   - Brand-duplicate isimler: "Chef's Choice Chef's Choice ..." pattern ~%5
-   - HTML entity'ler: `&#039;` → `'`
+2. **Catalog kalite cleanup** (opsiyonel, küçük iş)
+   - Brand-duplicate isimler: "Chef's Choice Chef's Choice ..." pattern ~%5 etkili
+   - HTML entity'ler: `&#039;` → `'` (catalog'ta görünüyor bazı ürünlerde)
+   - Tek bir cleanup script ile name + description regex replace + UPSERT
+
+3. **`scripts/data/images/` .gitignore** kontrolü
+   - 1.283 webp R2'ye yüklendi → repo'da 49 MB lokal kalmasına gerek yok
+   - .gitignore zaten kapsıyor (kontrol et) veya açıkça ekle
+
+4. **Branch detail/edit sayfasında "atanmış müdür" gösterimi**
+   - `/admin/branches/{id}` veya `/admin/branches/{id}/edit` — şube müdürü atanmışsa kart üzerinde göster
+   - "Müdürü kaldır" butonu (BAYI_SAHIBI yetkisi)
+   - Şu an sadece kullanıcı listesinde gözüküyor — branch UI'da yokluk var
+
+5. **Edit form'da multi-image batch upload**
+   - Mevcut /admin/products/[id]/edit upload form'u tek file (sıra ile yükle)
+   - Kullanıcı 3 file seçince 3 ayrı action çağrısı yerine multi-file tek action
+
+6. **Tenant onboarding'a 95 brand seed**
+   - Yeni tenant register sırasında 95 catalog markası otomatik tenant brands'e seed et
+   - Onboarding'de bir seçenek: "Tüm catalog markalarını içeri aktar?"
 
 5. **`scripts/data/images/` .gitignore'a alma** (R2 upload sonrası)
    - 49 MB repo'da gerekli değil R2'ye yüklendikten sonra
