@@ -66,10 +66,11 @@ Memory dosyası: `memory/reference_test_account.md` (lansman öncesi silinmeli).
 
 ### ⏭ Sıradaki olası işler
 
-1. **Smoke artıklarını temizle** (kullanıcı onayıyla) — Onboard Test company + mudur.smoke user + Acana smoke ürünü silinebilir; Claude Test kalıcı kalır
-2. **iyzico landing page** (ayrı tur, 2-3 gün) — DEVAM-REHBERI önceki turda planlandı
-3. **`scripts/data/yeni-resimler/` klasörü** (41 dosya, gitignore'da) — gözden geçirme bitince silinebilir
-4. **Push to origin** (`git push -u origin cray61` — 195 commit ileri, kullanıcı kararı)
+1. ~~**Smoke artıklarını temizle**~~ ✅ Tamamlandı (mudur.smoke + claude.onboard user + Claude Onboard Test company + Acana smoke ürünü silindi; Claude Test kalıcı)
+2. ~~**Sprint 12 WhatsApp feedback balonu smoke**~~ ✅ Tamamlandı — implementation zaten hazırdı (helper + API + balloon + WhatsappLinkScript + storefront analitik). Vitrin'de `/vitrin/magaza/sprint-3-products-test` → wa.me click → 5sn → balloon open → 😊 click → submit → DB row `status=submitted, rating=very_good` + UI "Teşekkürler"
+3. **iyzico landing page** (ayrı tur, 2-3 gün) — Sırada
+4. **`scripts/data/yeni-resimler/` klasörü** (41 dosya, gitignore'da) — gözden geçirme bitince silinebilir
+5. **Push to origin** (`git push -u origin cray61` — 195 commit ileri, kullanıcı kararı)
 
 ---
 
