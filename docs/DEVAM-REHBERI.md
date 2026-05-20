@@ -1,14 +1,60 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-20 (gece-geç — **4 atlanmış smoke testi canlı doğrulandı + kalıcı Claude test hesabı**)
-**Mevcut Branch:** `cray61` — origin'in **194 commit** ileri (push edilmedi)
-**Son commit:** `9f9ec88` docs(devam-rehberi): f4ef28e commit hash yerine konuldu
+**Tarih:** 2026-05-20 (gece-geç — **Smoke + cleanup + Sprint 12 doğrulama + iyzico landing 6 sayfa**)
+**Mevcut Branch:** `cray61` — origin'in **197 commit** ileri
+**Son commit:** `b1dbb2e` feat(landing): iyzico üye işyeri için 6 sayfa public landing + footer
 **Test:** **1385** passed
 **Lint+typecheck:** 0 error
 **Migration:** **20** (değişmedi)
 **Aiven:** dormant (.env'de LOCAL_DB_* hazır)
 **Supabase Storage:** ❌ KALDIRILDI
 **R2:** ✅ Kod + bucket + 1.283 webp upload + 44 dosya overrite edilmiş
+
+## 🆕 Bu mini-tur (2026-05-20, gece-geç) — iyzico landing page 6 sayfa
+
+DEVAM-REHBERI #3 madde — iyzico Üye İşyeri başvurusu için zorunlu yasal sayfalar + marketing landing.
+
+| # | Sayfa | Özellik |
+|---|---|---|
+| `/` | Marketing home | Hero + 3 feature kart + 3 plan teaser + trust strip + final CTA. Auth'lı user redirect korundu. |
+| `/fiyatlar` | Plan detay | 3 plan kart (FREE/PRO/PRO+) + 4 SSS (iptal/cayma/fatura/upgrade) |
+| `/kvkk` | KVKK Aydınlatma | 7 bölüm: veri sorumlusu, toplanan veri, amaç, aktarım, saklama, Md.11 hakları, iletişim |
+| `/cerez-politikasi` | Çerez politikası | 5 çerez tablosu (next-auth, lock state, feedback dismiss, cookie consent, cf) |
+| `/uyelik-sozlesmesi` | Üyelik şartları | 10 madde (taraflar, konu, şartlar, ücret, yükümlülükler, sorumluluk, fesih, hukuk, yürürlük) |
+| `/mesafeli-satis-sozlesmesi` | Mesafeli satış | 6502 sayılı kanun uyumlu (satıcı/alıcı kutu, cayma m.15/1-ğ açıklama) |
+| `/iletisim` | İletişim | Destek + KVKK email + firma placeholder + yanıt süreleri |
+
+**Yeni component:**
+- `src/components/marketing/header.tsx` — sticky nav (Logo + Fiyatlar + İletişim + Giriş + Ücretsiz başla CTA)
+- `src/components/marketing/footer.tsx` — 4 kolon (Platform / Yasal / İletişim / brand) + copyright + trust strip
+
+**Entegrasyon:** `/register` KVKK linkleri `/legal/kvkk` → `/kvkk` ve `/legal/eu-data` → `/kvkk#veri-aktarimi` olarak düzeltildi.
+
+**Browser smoke:** Anonim user `/` → marketing landing (hero + pricing + footer'da 4 yasal link). 6 sayfa hepsi 200 OK, marketing-header + marketing-footer mount edildi.
+
+### ⛔ Lansman blokerleri
+
+| Konu | Detay |
+|---|---|
+| **Şirket kuruluş** | VKN + MERSİS + ticari unvan + adres bilgileri **[PLACEHOLDER]** olarak işaretli. Kuruluş sonrası 4 sayfada (KVKK + Üyelik + Mesafeli Satış + İletişim) doldurulacak. |
+| **Avukat onayı** | Yasal metinlere &ldquo;TASLAK&rdquo; banner eklendi. Production öncesi avukat finalize edecek. |
+| **Cloudflare Pages deploy** | `petstockpro.com` DNS → bu landing'i Cloudflare Workers/Pages'a deploy. Şu an localhost. |
+
+### 📊 Bu mini-tur rakamları
+
+| Metric | Değer |
+|---|---|
+| Yeni sayfa | **6** (fiyatlar + kvkk + cerez + uyelik + mesafeli + iletisim) |
+| Yenilenen sayfa | **2** (root `/` + register linkleri) |
+| Yeni component | **2** (MarketingHeader + MarketingFooter) |
+| Toplam ekleme | **1.396** satır (10 dosya) |
+| Lint+typecheck | ✅ 0 error |
+| Yeni test | 0 (statik içerik, smoke ile doğrulandı) |
+| Branch ahead | 195 → **197 commit** |
+
+---
+
+## 🆕 Önceki tur (2026-05-20, gece-geç) — 4 atlanmış smoke testi + Claude test hesabı + Sprint 12 smoke
 
 ## 🆕 Bu tur (2026-05-20, gece-geç) — 4 atlanmış browser smoke testi + Claude test hesabı
 
