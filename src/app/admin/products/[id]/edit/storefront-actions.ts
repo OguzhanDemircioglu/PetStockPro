@@ -10,12 +10,45 @@ import {
   type StorefrontIssue,
 } from '@/lib/catalog/storefront';
 import { writeAuditLogAsync } from '@/lib/audit/log';
+import { assertNotObserver, ObserverReadOnlyError } from '@/lib/auth/role-gate';
+import { hasPermission } from '@/lib/users/permissions';
+import { PERMISSION_KEYS } from '@/lib/users/permission-keys';
 
 export interface StorefrontActionState {
   ok: boolean;
   message: string | null;
   issues: StorefrontIssue[];
   scope: 'publish' | 'unpublish' | null;
+}
+
+async function guardVitrinManage(
+  session: { user?: { id?: string; role?: string } | null } | null,
+  scope: 'publish' | 'unpublish',
+): Promise<StorefrontActionState | null> {
+  try {
+    assertNotObserver(session);
+  } catch (e) {
+    if (e instanceof ObserverReadOnlyError) {
+      return {
+        ok: false,
+        message: 'İzleyici modundasın — bu işlem yapılamaz',
+        issues: [],
+        scope,
+      };
+    }
+    throw e;
+  }
+  if (!session?.user?.id) return null;
+  const allowed = await hasPermission(session.user.id, PERMISSION_KEYS.VITRIN_MANAGE, db);
+  if (!allowed) {
+    return {
+      ok: false,
+      message: 'Vitrin yönetimi yetkisi yok — Bayi Admin\'den iste',
+      issues: [],
+      scope,
+    };
+  }
+  return null;
 }
 
 export async function publishProductAction(
@@ -25,6 +58,9 @@ export async function publishProductAction(
   if (!session?.user?.companyId || !session.user.id) {
     redirect('/login' as never);
   }
+
+  const gate = await guardVitrinManage(session, 'publish');
+  if (gate) return gate;
 
   const result = await publishProduct(
     session.user.companyId,
@@ -88,6 +124,9 @@ export async function unpublishProductAction(
   if (!session?.user?.companyId) {
     redirect('/login' as never);
   }
+
+  const gate = await guardVitrinManage(session, 'unpublish');
+  if (gate) return gate;
 
   const result = await unpublishProduct(session.user.companyId, productId, db);
   if (!result.ok) {

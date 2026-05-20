@@ -5,6 +5,9 @@ import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { softDeleteProduct, updateProduct } from '@/lib/catalog/products';
 import { writeAuditLogAsync } from '@/lib/audit/log';
+import { assertNotObserver, ObserverReadOnlyError } from '@/lib/auth/role-gate';
+import { hasAnyPermission } from '@/lib/users/permissions';
+import { PERMISSION_KEYS } from '@/lib/users/permission-keys';
 
 export interface EditProductState {
   ok: boolean;
@@ -21,6 +24,28 @@ export async function updateProductAction(
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) {
     redirect('/login' as never);
+  }
+
+  // Faz 2 — Observer reject + STAFF için price.edit yetkisi (BAYI_SAHIBI bypass).
+  try {
+    assertNotObserver(session);
+  } catch (e) {
+    if (e instanceof ObserverReadOnlyError) {
+      return { ok: false, error: 'İzleyici modundasın — bu işlem yapılamaz', issues: [] };
+    }
+    throw e;
+  }
+  const canEdit = await hasAnyPermission(
+    session.user.id,
+    [PERMISSION_KEYS.PRICE_EDIT],
+    db,
+  );
+  if (!canEdit) {
+    return {
+      ok: false,
+      error: 'Ürün düzenleme yetkisi yok — Bayi Admin\'den iste',
+      issues: [],
+    };
   }
 
   const name = formData.get('name');
@@ -102,6 +127,11 @@ export async function deleteProductAction(productId: string): Promise<void> {
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) {
     redirect('/login' as never);
+  }
+  // Faz 2 — silme yalnızca BAYI_SAHIBI/SUPERADMIN'e (STAFF için yetki key yok).
+  // Observer + STAFF reject; BAYI_SAHIBI/SUPERADMIN bypass.
+  if (session.user.role === 'OBSERVER' || session.user.role === 'STAFF') {
+    redirect('/admin/products?deleted=denied' as never);
   }
   await softDeleteProduct(session.user.companyId, productId, db);
   writeAuditLogAsync(

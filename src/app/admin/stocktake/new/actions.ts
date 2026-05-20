@@ -6,6 +6,10 @@ import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { startStocktake } from '@/lib/stocktake/sessions';
 import { writeAuditLogAsync } from '@/lib/audit/log';
+import { assertNotObserver, ObserverReadOnlyError } from '@/lib/auth/role-gate';
+import { hasPermission } from '@/lib/users/permissions';
+import { PERMISSION_KEYS } from '@/lib/users/permission-keys';
+import { assertBranchOperational, BranchNotOperationalError } from '@/lib/branches/status';
 
 export interface StartStocktakeState {
   ok?: boolean;
@@ -21,10 +25,34 @@ export async function startStocktakeAction(
     return { error: 'Oturum geçersiz, lütfen tekrar giriş yap' };
   }
 
+  // Faz 2 — Observer reject + STOCKTAKE_CREATE yetkisi + şube operasyonel mi
+  try {
+    assertNotObserver(session);
+  } catch (e) {
+    if (e instanceof ObserverReadOnlyError) {
+      return { error: 'İzleyici modundasın — sayım başlatamazsın' };
+    }
+    throw e;
+  }
+
   const branchId = formData.get('branchId');
   const note = formData.get('note');
   if (typeof branchId !== 'string' || branchId.length === 0) {
     return { error: 'Şube seçimi zorunlu' };
+  }
+
+  const allowed = await hasPermission(session.user.id, PERMISSION_KEYS.STOCKTAKE_CREATE, db);
+  if (!allowed) {
+    return { error: 'Sayım başlatma yetkisi yok — Bayi Admin\'den iste' };
+  }
+
+  try {
+    await assertBranchOperational(branchId, db);
+  } catch (e) {
+    if (e instanceof BranchNotOperationalError) {
+      return { error: 'Şube pasif — sayım başlatılamaz' };
+    }
+    throw e;
   }
 
   const result = await startStocktake(

@@ -14,6 +14,28 @@ import {
 } from '@/lib/stocktake/sessions';
 import { writeAuditLogAsync } from '@/lib/audit/log';
 import { createNotificationAsync } from '@/lib/notifications/manage';
+import { assertNotObserver, ObserverReadOnlyError } from '@/lib/auth/role-gate';
+
+/**
+ * Faz 2 — sayım oturumu içi mutation'lar (update/complete/cancel) Observer'a
+ * yasak; STOCKTAKE_CREATE yetkisi /admin/stocktake/new'da kontrol edilir
+ * (sayım başlatma noktası), ondan sonraki kayıt edenler gevşek bırakılır
+ * (zaten yetkisi olmasa başlatamazdı).
+ */
+function rejectIfObserver<T extends { error?: string }>(
+  session: { user?: { role?: string } | null } | null,
+  shape: T,
+): T | null {
+  try {
+    assertNotObserver(session);
+    return null;
+  } catch (e) {
+    if (e instanceof ObserverReadOnlyError) {
+      return { ...shape, error: 'İzleyici modundasın — sayım düzenleyemezsin' };
+    }
+    throw e;
+  }
+}
 
 export interface UpdateCountState {
   ok?: boolean;
@@ -32,6 +54,8 @@ export async function updateCountAction(
 ): Promise<UpdateCountState> {
   const session = await auth();
   if (!session?.user?.companyId) return { error: 'Oturum geçersiz' };
+  const gate = rejectIfObserver<UpdateCountState>(session, { itemId });
+  if (gate) return gate;
 
   const countedRaw = formData.get('countedQty');
   const reasonRaw = formData.get('reason');
@@ -95,6 +119,8 @@ export async function completeStocktakeAction(
   if (!session?.user?.companyId || !session.user.id) {
     return { error: 'Oturum geçersiz' };
   }
+  const gate = rejectIfObserver<CompleteStocktakeState>(session, {});
+  if (gate) return gate;
 
   const result = await completeStocktake(
     session.user.companyId,
@@ -169,6 +195,8 @@ export async function cancelStocktakeAction(
   if (!session?.user?.companyId || !session.user.id) {
     return { error: 'Oturum geçersiz' };
   }
+  const gate = rejectIfObserver<CancelStocktakeState>(session, {});
+  if (gate) return gate;
 
   const result = await cancelStocktake(session.user.companyId, stocktakeId, db);
 

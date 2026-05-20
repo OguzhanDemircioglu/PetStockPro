@@ -16,6 +16,10 @@ import {
 } from '@/lib/stock/movements';
 import { writeAuditLogAsync } from '@/lib/audit/log';
 import { checkAndNotifyStockChange } from '@/lib/notifications/stock-triggers';
+import { assertNotObserver, ObserverReadOnlyError } from '@/lib/auth/role-gate';
+import { hasPermission } from '@/lib/users/permissions';
+import { PERMISSION_KEYS, type PermissionKey } from '@/lib/users/permission-keys';
+import { assertBranchOperational, BranchNotOperationalError } from '@/lib/branches/status';
 
 export interface MovementActionState {
   ok: boolean;
@@ -55,9 +59,74 @@ function reasonToMessage(reason: string, fallback: string): string {
     insufficient_stock: 'Yetersiz stok',
     invalid_state: 'Geçersiz durum',
     no_change: 'Sayım sistemdeki miktarla aynı — düzeltme yok',
+    observer_read_only: 'İzleyici modundasın — bu işlem yapılamaz',
+    permission_required: 'Bu işlem için yetki yok — Bayi Admin\'den iste',
+    branch_not_operational: 'Şube pasif veya tatilde — işlem yapılamaz',
     unknown: 'Kaydedilemedi, tekrar dene',
   };
   return map[reason] ?? fallback;
+}
+
+/**
+ * Faz 2 — mutation action başlangıç gate'i.
+ *
+ * 3 katmanlı kontrol:
+ *   1. Observer rolü → ObserverReadOnlyError (anında reject)
+ *   2. Permission yetkisi → required key STAFF için ON mu? (BAYI_SAHIBI/SUPERADMIN bypass)
+ *   3. Pasif/tatilde şube → BranchNotOperationalError
+ *
+ * Geriye state döndürürse caller doğrudan return eder; null → devam.
+ *
+ * @param scope        MovementActionState için scope
+ * @param userId       session.user.id
+ * @param requiredKey  hasPermission key (null → permission gate atlanır)
+ * @param branchId     assertBranchOperational için (null → gate atlanır)
+ * @param requireActiveBranch  true → tatilde de yasak (vitrin gibi)
+ */
+async function guardMutation(
+  scope: NonNullable<MovementActionState['scope']>,
+  userId: string,
+  session: { user?: { role?: string } | null } | null,
+  requiredKey: PermissionKey | null,
+  branchId: string | null,
+  requireActiveBranch = false,
+): Promise<MovementActionState | null> {
+  try {
+    assertNotObserver(session);
+  } catch (e) {
+    if (e instanceof ObserverReadOnlyError) {
+      return { ...EMPTY, scope, message: reasonToMessage('observer_read_only', 'Reddedildi') };
+    }
+    throw e;
+  }
+
+  if (requiredKey !== null) {
+    const allowed = await hasPermission(userId, requiredKey, db);
+    if (!allowed) {
+      return {
+        ...EMPTY,
+        scope,
+        message: reasonToMessage('permission_required', 'Yetki yok'),
+      };
+    }
+  }
+
+  if (branchId !== null) {
+    try {
+      await assertBranchOperational(branchId, db, { requireActive: requireActiveBranch });
+    } catch (e) {
+      if (e instanceof BranchNotOperationalError) {
+        return {
+          ...EMPTY,
+          scope,
+          message: reasonToMessage('branch_not_operational', 'Şube uygun değil'),
+        };
+      }
+      throw e;
+    }
+  }
+
+  return null;
 }
 
 function buildState<
@@ -117,6 +186,15 @@ export async function stockInAction(
       message: 'Şube, variant ve miktar zorunlu',
     };
   }
+
+  const gate = await guardMutation(
+    'stock_in',
+    session.user.id,
+    session,
+    PERMISSION_KEYS.STOCK_IN_CREATE,
+    branchId,
+  );
+  if (gate) return gate;
 
   const result = await recordStockIn(
     session.user.companyId,
@@ -209,6 +287,42 @@ export async function stockOutAction(
     };
   }
 
+  // Stock-out subtype → permission key mapping (Plan §2.3).
+  // 'other' subtype Plan'da yok → SALE_CREATE'e indirgeme (sale'in altküme'si gibi).
+  const subtypeToKey: Record<StockOutSubtype, PermissionKey> = {
+    sale: PERMISSION_KEYS.SALE_CREATE,
+    waste: PERMISSION_KEYS.STOCK_OUT_WASTE,
+    gift: PERMISSION_KEYS.STOCK_OUT_GIFT,
+    sample: PERMISSION_KEYS.STOCK_OUT_SAMPLE,
+    internal_use: PERMISSION_KEYS.STOCK_OUT_INTERNAL,
+    return: PERMISSION_KEYS.STOCK_OUT_RETURN,
+    other: PERMISSION_KEYS.SALE_CREATE,
+  };
+  const gate = await guardMutation(
+    'stock_out',
+    session.user.id,
+    session,
+    subtypeToKey[subtype],
+    branchId,
+  );
+  if (gate) return gate;
+
+  // Veresiye satış için ek yetki kontrolü
+  if (subtype === 'sale' && paymentMethod === 'credit') {
+    const creditAllowed = await hasPermission(
+      session.user.id,
+      PERMISSION_KEYS.CREDIT_SALE_CREATE,
+      db,
+    );
+    if (!creditAllowed) {
+      return {
+        ...EMPTY,
+        scope: 'stock_out',
+        message: reasonToMessage('permission_required', 'Veresiye yetkisi yok'),
+      };
+    }
+  }
+
   const result = await recordStockOut(
     session.user.companyId,
     session.user.id,
@@ -292,6 +406,29 @@ export async function transferAction(
     };
   }
 
+  // Transfer için hem kaynak hem hedef şube operasyonel olmalı.
+  const gateSource = await guardMutation(
+    'transfer',
+    session.user.id,
+    session,
+    PERMISSION_KEYS.TRANSFER_CREATE,
+    sourceBranchId,
+  );
+  if (gateSource) return gateSource;
+
+  try {
+    await assertBranchOperational(targetBranchId, db);
+  } catch (e) {
+    if (e instanceof BranchNotOperationalError) {
+      return {
+        ...EMPTY,
+        scope: 'transfer',
+        message: reasonToMessage('branch_not_operational', 'Hedef şube uygun değil'),
+      };
+    }
+    throw e;
+  }
+
   const result = await recordTransfer(
     session.user.companyId,
     session.user.id,
@@ -348,6 +485,15 @@ export async function stocktakeAction(
       message: 'Şube, variant ve sayım miktarı zorunlu',
     };
   }
+
+  const gate = await guardMutation(
+    'stocktake',
+    session.user.id,
+    session,
+    PERMISSION_KEYS.STOCKTAKE_CREATE,
+    branchId,
+  );
+  if (gate) return gate;
 
   const result = await recordStocktakeAdjustment(
     session.user.companyId,
@@ -408,6 +554,22 @@ export async function reverseMovementAction(
 ): Promise<ReversalActionState> {
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+
+  // OBSERVER reversal yapamaz. STAFF için Plan'da reversal yetkisi tanımlı değil
+  // (24h pencere zaten kullanıcı koruması, Bayi Admin'in iznine bağlı). Mevcut
+  // sade-tut: assertNotObserver yeter; sıkı yetki Faz 2 sonrası.
+  try {
+    assertNotObserver(session);
+  } catch (e) {
+    if (e instanceof ObserverReadOnlyError) {
+      return {
+        ok: false,
+        message: reasonToMessage('observer_read_only', 'Reddedildi'),
+        meta: null,
+      };
+    }
+    throw e;
+  }
 
   const result = await reverseStockMovement(
     session.user.companyId,

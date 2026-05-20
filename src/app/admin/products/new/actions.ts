@@ -13,6 +13,7 @@ import { transferSeedImageToProduct } from '@/lib/catalog/seed-image-transfer';
 import { resolveTenantBrand } from '@/lib/catalog/resolve-brand';
 import { writeAuditLogAsync } from '@/lib/audit/log';
 import { logModerationFlag } from '@/lib/moderation/audit';
+import { assertNotObserver, ObserverReadOnlyError } from '@/lib/auth/role-gate';
 
 export interface CreateProductState {
   ok: boolean;
@@ -33,6 +34,40 @@ export async function createProductAction(
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) {
     redirect('/login' as never);
+  }
+
+  // Faz 2 — Yeni ürün oluşturma yalnızca BAYI_SAHIBI/SUPERADMIN'e.
+  // OBSERVER + STAFF reject (STAFF için bu yetki Plan §C'de tanımlı değil).
+  try {
+    assertNotObserver(session);
+  } catch (e) {
+    if (e instanceof ObserverReadOnlyError) {
+      return {
+        ok: false,
+        error: 'İzleyici modundasın — yeni ürün ekleyemezsin',
+        issues: [],
+        formValues: {
+          name: typeof formData.get('name') === 'string' ? (formData.get('name') as string) : null,
+          categoryId: null,
+          sku: null,
+          salePrice: null,
+        },
+      };
+    }
+    throw e;
+  }
+  if (session.user.role === 'STAFF') {
+    return {
+      ok: false,
+      error: 'Yeni ürün ekleme yetkisi yok — Bayi Admin\'den iste',
+      issues: [],
+      formValues: {
+        name: typeof formData.get('name') === 'string' ? (formData.get('name') as string) : null,
+        categoryId: null,
+        sku: null,
+        salePrice: null,
+      },
+    };
   }
 
   const name = formData.get('name');
