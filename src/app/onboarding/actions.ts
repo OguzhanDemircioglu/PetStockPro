@@ -18,12 +18,16 @@ import {
   completeOnboarding,
 } from '@/lib/onboarding/actions';
 import { createProduct } from '@/lib/catalog/products';
+import { seedCatalogBrandsForCompany } from '@/lib/brands/seed-catalog';
+import { writeAuditLogAsync } from '@/lib/audit/log';
 
 export interface BranchState {
   ok: boolean;
   error: string | null;
   issues: string[];
   branchId: string | null;
+  /** Catalog marka seed yapıldıysa ne kadar eklendi (UI'da banner). */
+  brandsImported?: number | null;
 }
 
 export async function branchAction(
@@ -73,7 +77,44 @@ export async function branchAction(
     };
   }
 
-  return { ok: true, error: null, issues: [], branchId: result.branchId };
+  // Opsiyonel: catalog markalarını içeri aktar (checkbox işaretli)
+  let brandsImported: number | null = null;
+  if (formData.get('importBrands') === 'true') {
+    try {
+      const seed = await seedCatalogBrandsForCompany(session.user.companyId, db);
+      brandsImported = seed.inserted;
+      if (seed.inserted > 0 && session.user.id) {
+        writeAuditLogAsync(
+          {
+            companyId: session.user.companyId,
+            userId: session.user.id,
+            action: 'brands.catalog_seeded',
+            entityType: 'company',
+            entityId: session.user.companyId,
+            afterState: {
+              inserted: seed.inserted,
+              skipped: seed.skipped,
+              totalCandidates: seed.totalCandidates,
+              source: 'onboarding_step1',
+            },
+          },
+          db,
+        );
+      }
+    } catch {
+      // Brand seed başarısız olursa onboarding'i bloklamayız — sessiz ihlal,
+      // kullanıcı şubeyi kaydetti, markaları sonra manuel ekleyebilir.
+      brandsImported = 0;
+    }
+  }
+
+  return {
+    ok: true,
+    error: null,
+    issues: [],
+    branchId: result.branchId,
+    brandsImported,
+  };
 }
 
 export interface StorefrontState {

@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { cities, companies } from '@/db/schema';
+import { countCatalogBrands } from '@/lib/brands/seed-catalog';
 import { OnboardingWizard } from './wizard';
 
 /**
@@ -25,16 +26,19 @@ export default async function OnboardingPage() {
   // Onboarding zaten tamamlandıysa /'a redirect — middleware yedek, burada da kontrol
   // (middleware Sprint 2.6'da pratik olarak gerek olmayabilir, ama defansif)
 
-  const cityRows = await db
-    .select({ id: cities.id, name: cities.name })
-    .from(cities)
-    .orderBy(cities.id);
+  const [cityRows, companyRows, catalogBrandCount] = await Promise.all([
+    db
+      .select({ id: cities.id, name: cities.name })
+      .from(cities)
+      .orderBy(cities.id),
+    db
+      .select({ name: companies.name, slug: companies.slug })
+      .from(companies)
+      .where(eq(companies.id, session.user.companyId))
+      .limit(1),
+    countCatalogBrands(db).catch(() => 0),
+  ]);
 
-  const companyRows = await db
-    .select({ name: companies.name, slug: companies.slug })
-    .from(companies)
-    .where(eq(companies.id, session.user.companyId))
-    .limit(1);
   const company = companyRows[0];
 
   if (!company) {
@@ -47,6 +51,7 @@ export default async function OnboardingPage() {
       companyName={company.name}
       currentSlug={company.slug}
       citiesList={cityRows}
+      catalogBrandCount={catalogBrandCount}
     />
   );
 }
