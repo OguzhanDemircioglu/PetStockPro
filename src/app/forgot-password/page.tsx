@@ -22,6 +22,8 @@ export default function ForgotPasswordPage() {
   // ForgotPasswordState yalnızca validationError üzerinden hata raporlar;
   // generic enumeration-safe message her durumda submitted ekranında gösterilir.
   useSwalOnErrorString(state?.validationError, 'Geçersiz email');
+  // Field-level kızartma — validationError varsa email input'una aria-invalid set et.
+  const hasError = !!state?.validationError;
 
   // Submitted → bilgi ekranı
   if (state?.submitted) {
@@ -112,6 +114,7 @@ export default function ForgotPasswordPage() {
               required
               disabled={pending}
               defaultValue={state?.email ?? ''}
+              aria-invalid={hasError || undefined}
               className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink transition-all focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
             />
           </div>

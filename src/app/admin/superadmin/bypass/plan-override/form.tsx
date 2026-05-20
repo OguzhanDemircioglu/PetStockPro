@@ -17,6 +17,7 @@ export function PlanOverrideForm() {
     null,
   );
   useSwalOnError(state);
+  const hasError = !!state?.error;
 
   if (state?.ok) {
     return (
@@ -58,6 +59,7 @@ export function PlanOverrideForm() {
           required
           disabled={pending}
           data-testid="target-company-id"
+          aria-invalid={hasError || undefined}
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2 font-mono text-[12.5px] focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
         <p className="mt-1 text-[12px] text-ink-4">
@@ -76,6 +78,7 @@ export function PlanOverrideForm() {
           disabled={pending}
           defaultValue="PRO"
           data-testid="new-plan"
+          aria-invalid={hasError || undefined}
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         >
           {Object.entries(PLAN_LABELS).map(([v, label]) => (
@@ -100,6 +103,7 @@ export function PlanOverrideForm() {
           placeholder="Örn: Müşteri PRO satın aldı 12:30'da, iyzico webhook gecikti hâlâ FREE — manuel düzeltme"
           disabled={pending}
           data-testid="reason"
+          aria-invalid={hasError || undefined}
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>
@@ -117,6 +121,7 @@ export function PlanOverrideForm() {
           placeholder="••••••••"
           disabled={pending}
           data-testid="superadmin-password"
+          aria-invalid={hasError || undefined}
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-2.5 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>

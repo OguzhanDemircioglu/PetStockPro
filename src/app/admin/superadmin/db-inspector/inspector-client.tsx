@@ -46,6 +46,7 @@ export function DbInspectorClient() {
     null,
   );
   useSwalOnError(state);
+  const hasError = !!state?.error;
 
   return (
     <div className="flex flex-col gap-4">
@@ -63,6 +64,7 @@ export function DbInspectorClient() {
           disabled={pending}
           defaultValue={state?.sql ?? "SELECT id, email, role FROM petstockpro.users LIMIT 10"}
           data-testid="sql-input"
+          aria-invalid={hasError || undefined}
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-[13.5px] focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           spellCheck={false}
         />

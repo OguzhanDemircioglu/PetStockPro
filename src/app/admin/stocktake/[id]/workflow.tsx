@@ -445,6 +445,10 @@ function SwipeCard({
   const hasDiff = diff !== null && diff !== 0;
   const needsReason = hasDiff && !reason;
   const completed = savedCounted !== '';
+  // Field-level kızartma — submit hatası varsa counted input aria-invalid alır.
+  // Reason input ayrıca needsReason true ise invalid sayılır (zaten görsel
+  // olarak border-danger var, aria-invalid screen reader uyumluluğu ekler).
+  const hasError = !!error;
 
   return (
     <div className="flex flex-col gap-4">
@@ -520,6 +524,7 @@ function SwipeCard({
             }
           }}
           placeholder="0"
+          aria-invalid={hasError || undefined}
           data-counted-input
           className="mt-1 w-full rounded-xl border-2 border-line bg-paper px-4 py-4 text-right font-mono text-3xl font-bold focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
@@ -540,6 +545,7 @@ function SwipeCard({
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             disabled={!editable || pending}
+            aria-invalid={needsReason || hasError || undefined}
             data-reason-select
             className={`mt-1 w-full rounded-xl border-2 px-3 py-3 text-sm focus:border-cat focus:outline-none ${
               needsReason ? 'border-danger/40 bg-danger-soft/30' : 'border-line bg-paper'
@@ -611,6 +617,8 @@ function ItemRow({
   const hasDiff = diff !== null && diff !== 0;
   const needsReason = hasDiff && !reason;
   const isDirty = counted !== savedCounted || reason !== savedReason;
+  // Field-level kızartma — submit hatası varsa counted input aria-invalid alır.
+  const hasError = !!error;
 
   return (
     <tr
@@ -641,6 +649,7 @@ function ItemRow({
                 submit();
               }
             }}
+            aria-invalid={hasError || undefined}
             data-counted-input
             className="w-20 rounded-lg border border-line bg-paper px-2 py-1 text-right font-mono text-sm focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
           />
@@ -675,6 +684,7 @@ function ItemRow({
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             disabled={!editable || pending}
+            aria-invalid={needsReason || hasError || undefined}
             data-reason-select
             className={
               needsReason

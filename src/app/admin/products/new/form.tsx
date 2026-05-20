@@ -74,6 +74,10 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
   );
   useSwalOnError(state);
 
+  // Field-level kızartma — form action sonrası hata varsa zorunlu input'lara
+  // aria-invalid set edilir (CSS: globals.css → kırmızı border + soft bg).
+  const hasError = !!(state && !state.ok && state.error);
+
   // Controlled state — autocomplete prefill için
   const [name, setName] = useState(state?.formValues.name ?? '');
   const [description, setDescription] = useState('');
@@ -353,6 +357,7 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
                 disabled={pending}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                aria-invalid={hasError || undefined}
                 className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
               />
             </div>
@@ -511,6 +516,7 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
                   disabled={pending}
                   value={sku}
                   onChange={(e) => setSku(e.target.value)}
+                  aria-invalid={hasError || undefined}
                   className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
               </div>
@@ -572,6 +578,7 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
                   disabled={pending}
                   value={salePrice}
                   onChange={(e) => setSalePrice(e.target.value)}
+                  aria-invalid={hasError || undefined}
                   className="w-full rounded-xl border-[1.5px] border-cat bg-paper px-4 py-3 font-mono text-sm font-bold text-cart focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
               </div>

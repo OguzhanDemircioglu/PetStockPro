@@ -42,6 +42,8 @@ export function SupplierForm({ action, initial, submitLabel }: Props) {
   );
   useSwalOnError(errorState);
 
+  const hasError = !!errorState;
+
   return (
     <form action={formAction} className="flex flex-col gap-5">
       <Section title="🏢 Firma">
@@ -56,6 +58,7 @@ export function SupplierForm({ action, initial, submitLabel }: Props) {
             defaultValue={initial?.name ?? ''}
             placeholder="Royal Canin TR, Mama Toptan Ltd. vs."
             data-testid="supplier-name"
+            aria-invalid={hasError || undefined}
             className={fieldClasses}
           />
         </Field>

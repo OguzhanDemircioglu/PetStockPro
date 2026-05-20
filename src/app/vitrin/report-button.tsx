@@ -38,6 +38,7 @@ export function ReportButton({
   const [error, setError] = useState<string | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
   useSwalOnErrorString(error, 'Bildirim hatası');
+  const hasError = !!error;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -157,6 +158,7 @@ export function ReportButton({
                 checked={reason === opt.value}
                 onChange={(e) => setReason(e.target.value)}
                 data-reason={opt.value}
+                aria-invalid={hasError || undefined}
                 className="sr-only"
               />
               <span>{opt.emoji}</span>

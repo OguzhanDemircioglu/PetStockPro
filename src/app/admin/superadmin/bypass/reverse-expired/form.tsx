@@ -11,6 +11,7 @@ export function ReverseExpiredForm() {
     null,
   );
   useSwalOnError(state);
+  const hasError = !!state?.error;
 
   if (state?.ok) {
     return (
@@ -56,6 +57,7 @@ export function ReverseExpiredForm() {
           placeholder="00000000-0000-0000-0000-000000000000"
           disabled={pending}
           data-testid="movement-id"
+          aria-invalid={hasError || undefined}
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-2.5 font-mono text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
         <p className="mt-1 text-[12px] text-ink-4">
@@ -80,6 +82,7 @@ export function ReverseExpiredForm() {
           placeholder="Örn: Kullanıcı 26 saat sonra fark etti, müşteri iade talebi, ürün hasarlı çıktı"
           disabled={pending}
           data-testid="reason"
+          aria-invalid={hasError || undefined}
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>
@@ -100,6 +103,7 @@ export function ReverseExpiredForm() {
           placeholder="••••••••"
           disabled={pending}
           data-testid="superadmin-password"
+          aria-invalid={hasError || undefined}
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-2.5 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>

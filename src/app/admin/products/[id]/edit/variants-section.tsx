@@ -110,6 +110,10 @@ function CreateVariantRow({
     queueMicrotask(onDone);
   }
 
+  // Field-level kızartma — create action sonrası hata varsa zorunlu input'lar
+  // (valueLabel + sku + salePrice) aria-invalid alır.
+  const hasError = !!(state && !state.ok && state.message && state.scope === 'create');
+
   return (
     <form
       action={formAction}
@@ -126,7 +130,7 @@ function CreateVariantRow({
         </button>
       </div>
 
-      <VariantFormFields branches={branches} />
+      <VariantFormFields branches={branches} invalid={hasError} />
 
       <div className="mt-4 flex gap-2">
         <button
@@ -322,6 +326,10 @@ function EditVariantRow({
     queueMicrotask(onDone);
   }
 
+  // Field-level kızartma — update action sonrası hata varsa zorunlu input'lar
+  // (valueLabel + sku + salePrice) aria-invalid alır.
+  const hasError = !!(state && !state.ok && state.message && state.scope === 'update');
+
   return (
     <form
       action={formAction}
@@ -342,6 +350,7 @@ function EditVariantRow({
         initial={variant}
         branches={branches}
         editing
+        invalid={hasError}
       />
 
       <div className="mt-4 flex gap-2">
@@ -365,10 +374,12 @@ function VariantFormFields({
   initial,
   branches,
   editing = false,
+  invalid = false,
 }: {
   initial?: VariantListItem;
   branches: BranchOption[];
   editing?: boolean;
+  invalid?: boolean;
 }) {
   const [branchThresholds, setBranchThresholds] = useState<Record<string, number>>(
     initial?.branchThresholds ?? {},
@@ -400,6 +411,7 @@ function VariantFormFields({
             required
             defaultValue={initial?.valueLabel ?? ''}
             placeholder="2kg"
+            aria-invalid={invalid || undefined}
             className="w-full rounded-lg border-[1.5px] border-line bg-paper px-3 py-2 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
         </div>
@@ -413,6 +425,7 @@ function VariantFormFields({
             required
             defaultValue={initial?.sku ?? ''}
             placeholder="ROY-CAT-2KG"
+            aria-invalid={invalid || undefined}
             className="w-full rounded-lg border-[1.5px] border-line bg-paper px-3 py-2 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
         </div>
@@ -455,6 +468,7 @@ function VariantFormFields({
             inputMode="decimal"
             required
             defaultValue={initial?.salePrice ?? ''}
+            aria-invalid={invalid || undefined}
             className="w-full rounded-lg border-[1.5px] border-cat bg-paper px-3 py-2 font-mono text-sm font-bold text-cart focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
         </div>

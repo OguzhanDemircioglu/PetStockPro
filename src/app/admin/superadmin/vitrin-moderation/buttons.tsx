@@ -17,6 +17,7 @@ export function FlagButton({ feedbackId }: { feedbackId: string }) {
   useSwalOnError(state);
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
+  const hasError = !!state?.error;
 
   if (state?.ok && state.action === 'flagged') {
     return (
@@ -56,6 +57,7 @@ export function FlagButton({ feedbackId }: { feedbackId: string }) {
         placeholder="Spam / küfür / yalan…"
         disabled={pending}
         data-flag-reason
+        aria-invalid={hasError || undefined}
         className="w-48 rounded-lg border-[1.5px] border-line bg-paper px-2 py-1 text-[12.5px] focus:border-danger focus:outline-none focus:ring-2 focus:ring-danger/15"
       />
       <div className="flex gap-1">
@@ -134,6 +136,7 @@ export function ResolveReportButton({ reportId }: { reportId: string }) {
     'resolved',
   );
   const [note, setNote] = useState('');
+  const hasError = !!state?.error;
 
   if (state?.ok) {
     return (
@@ -174,6 +177,7 @@ export function ResolveReportButton({ reportId }: { reportId: string }) {
         }
         disabled={pending}
         data-resolve-resolution
+        aria-invalid={hasError || undefined}
         className="w-32 rounded-lg border-[1.5px] border-line bg-paper px-2 py-1 text-[12.5px] focus:border-cat focus:outline-none"
       >
         <option value="resolved">✓ Çözüldü</option>

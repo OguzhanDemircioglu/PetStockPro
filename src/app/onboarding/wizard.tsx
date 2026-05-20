@@ -76,6 +76,10 @@ export function OnboardingWizard({
   useSwalOnError(branchState);
   useSwalOnError(productState);
   useSwalOnError(storefrontState);
+  // Field-level kızartma — her form için ayrı hasError (3 wizard adımı).
+  const hasBranchError = !!branchState?.error;
+  const hasProductError = !!productState?.error;
+  const hasStorefrontError = !!storefrontState?.error;
 
   // İl seçince ilçeleri çek. AbortController ile yarış kontrolü (kullanıcı il'i hızlı değiştirirse).
   useEffect(() => {
@@ -158,6 +162,7 @@ export function OnboardingWizard({
                   placeholder="Merkez Şube"
                   required
                   disabled={branchPending}
+                  aria-invalid={hasBranchError || undefined}
                   className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
               </div>
@@ -179,6 +184,7 @@ export function OnboardingWizard({
                     onChange={(e) =>
                       setSelectedCityId(e.target.value ? parseInt(e.target.value, 10) : null)
                     }
+                    aria-invalid={hasBranchError || undefined}
                     className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                   >
                     <option value="">Seç...</option>
@@ -202,6 +208,7 @@ export function OnboardingWizard({
                     name="districtId"
                     required
                     disabled={branchPending || districtsLoading || districts.length === 0}
+                    aria-invalid={hasBranchError || undefined}
                     className="w-full rounded-xl border-[1.5px] border-line bg-white px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15 disabled:bg-line-soft disabled:text-ink-4"
                   >
                     <option value="">
@@ -335,6 +342,7 @@ export function OnboardingWizard({
                   placeholder="Royal Canin Adult Kedi 2kg"
                   required
                   disabled={productPending}
+                  aria-invalid={hasProductError || undefined}
                   className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
               </div>
@@ -354,6 +362,7 @@ export function OnboardingWizard({
                     placeholder="RC-AD-KEDI-2KG"
                     required
                     disabled={productPending}
+                    aria-invalid={hasProductError || undefined}
                     className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                   />
                 </div>
@@ -373,6 +382,7 @@ export function OnboardingWizard({
                     placeholder="180"
                     required
                     disabled={productPending}
+                    aria-invalid={hasProductError || undefined}
                     className="w-full rounded-xl border-[1.5px] border-cat bg-white px-4 py-3 font-mono text-sm font-bold text-cart focus:outline-none focus:ring-4 focus:ring-cat/15"
                   />
                 </div>
@@ -442,6 +452,7 @@ export function OnboardingWizard({
                     minLength={3}
                     maxLength={80}
                     disabled={storefrontPending}
+                    aria-invalid={hasStorefrontError || undefined}
                     className="flex-1 bg-transparent py-3 text-sm text-ink focus:outline-none"
                   />
                 </div>

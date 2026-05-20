@@ -43,6 +43,10 @@ export function StockOutDrawer({ branches, variants, onClose }: Props) {
   }, [state]);
   useSwalOnError(errorState);
 
+  // Field-level kızartma — submit sonrası hata varsa zorunlu alanlar (branchId,
+  // variantId, subtype, quantity, conditional customerRef) aria-invalid alır.
+  const hasError = !!errorState;
+
   const [subtype, setSubtype] = useState<string>('sale');
   const [paymentMethod, setPaymentMethod] = useState<string>('cash');
 
@@ -70,6 +74,7 @@ export function StockOutDrawer({ branches, variants, onClose }: Props) {
             name="branchId"
             required
             defaultValue={branches[0]?.id ?? ''}
+            aria-invalid={hasError || undefined}
             className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             {branches.map((b) => (
@@ -86,6 +91,7 @@ export function StockOutDrawer({ branches, variants, onClose }: Props) {
             name="variantId"
             required
             defaultValue=""
+            aria-invalid={hasError || undefined}
             className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             <option value="" disabled>
@@ -106,6 +112,7 @@ export function StockOutDrawer({ branches, variants, onClose }: Props) {
             required
             value={subtype}
             onChange={(e) => setSubtype(e.target.value)}
+            aria-invalid={hasError || undefined}
             className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             {SUBTYPE_OPTIONS.map((o) => (
@@ -125,6 +132,7 @@ export function StockOutDrawer({ branches, variants, onClose }: Props) {
               min={1}
               max={1000000}
               required
+              aria-invalid={hasError || undefined}
               data-testid="quantity"
               className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
             />
@@ -173,6 +181,7 @@ export function StockOutDrawer({ branches, variants, onClose }: Props) {
               maxLength={100}
               required={requiresCustomerForCredit}
               placeholder="Ad veya telefon"
+              aria-invalid={(requiresCustomerForCredit && hasError) || undefined}
               className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
             />
             {requiresCustomerForCredit && (

@@ -34,6 +34,12 @@ export function StorefrontSection({
 
   const canPublish = validation.ok;
 
+  // Field-level kızartma — vitrin toggle'ı validation pass değilse + yayında
+  // değilse "invalid" sayılır (eksiklikler ValidationPanel'de listelenir).
+  // Action sonrası hata da invalid sayılır (örn idempotent fail).
+  const actionFailed = !!(feedback && !feedback.ok);
+  const toggleInvalid = (!published && !canPublish) || actionFailed;
+
   const handlePublish = () => {
     setFeedback(null);
     startTransition(async () => {
@@ -107,6 +113,7 @@ export function StorefrontSection({
               if (e.target.checked) handlePublish();
               else handleUnpublish();
             }}
+            aria-invalid={toggleInvalid || undefined}
             className="h-4 w-4 accent-cat"
             data-testid="storefront-toggle"
           />

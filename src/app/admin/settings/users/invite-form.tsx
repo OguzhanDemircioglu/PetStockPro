@@ -73,6 +73,8 @@ export function InviteUserForm({ branchOptions }: Props) {
   const [role, setRole] = useState<'SUBE_MUDURU' | 'STAFF'>('STAFF');
   const [selectedBranchId, setSelectedBranchId] = useState<string>('');
 
+  const hasError = !!(state && state.ok !== true && state.error);
+
   // SUBE_MUDURU rolündeyken: müdürü atanmamış şubeler seçilebilir
   // STAFF rolündeyken: tüm aktif şubeler seçilebilir (opsiyonel)
   const branchSelectOptions = useMemo(() => {
@@ -116,6 +118,7 @@ export function InviteUserForm({ branchOptions }: Props) {
             required
             disabled={pending}
             data-testid="invite-email"
+            aria-invalid={hasError || undefined}
             className="w-full rounded-lg border-[1.5px] border-line bg-paper px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
           />
         </div>
@@ -148,6 +151,7 @@ export function InviteUserForm({ branchOptions }: Props) {
               setSelectedBranchId('');
             }}
             data-testid="invite-role"
+            aria-invalid={hasError || undefined}
             className="w-full rounded-lg border-[1.5px] border-line bg-paper px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
           >
             <option value="STAFF">💼 Kasiyer (STAFF)</option>
@@ -166,6 +170,7 @@ export function InviteUserForm({ branchOptions }: Props) {
             value={selectedBranchId}
             onChange={(e) => setSelectedBranchId(e.target.value)}
             data-testid="invite-branch"
+            aria-invalid={(branchRequired && hasError) || undefined}
             className="w-full rounded-lg border-[1.5px] border-line bg-paper px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15 disabled:opacity-50"
           >
             <option value="">

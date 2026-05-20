@@ -11,6 +11,7 @@ export function StocktakeUndoForm() {
     null,
   );
   useSwalOnError(state);
+  const hasError = !!state?.error;
 
   if (state?.ok) {
     return (
@@ -67,6 +68,7 @@ export function StocktakeUndoForm() {
           required
           disabled={pending}
           data-testid="stocktake-id"
+          aria-invalid={hasError || undefined}
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2 font-mono text-[12.5px] focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
         <p className="mt-1 text-[12px] text-ink-4">
@@ -89,6 +91,7 @@ export function StocktakeUndoForm() {
           placeholder="Örn: Yanlış şubede sayım yapıldı — kayıtlar geri alınıyor, doğru şubede tekrar sayılacak"
           disabled={pending}
           data-testid="reason"
+          aria-invalid={hasError || undefined}
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>
@@ -106,6 +109,7 @@ export function StocktakeUndoForm() {
           placeholder="••••••••"
           disabled={pending}
           data-testid="superadmin-password"
+          aria-invalid={hasError || undefined}
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-2.5 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>

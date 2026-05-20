@@ -37,6 +37,9 @@ export function ImagesSection({ productId, images }: Props) {
   );
   useSwalOnError(errorState);
 
+  // Field-level kızartma — upload sonrası hata varsa file input aria-invalid alır.
+  const hasError = !!errorState;
+
   const handleUpload = (formData: FormData) => {
     setStatus(null);
     startTransition(async () => {
@@ -104,6 +107,7 @@ export function ImagesSection({ productId, images }: Props) {
           required
           disabled={isPending}
           onChange={onFilesChange}
+          aria-invalid={hasError || undefined}
           data-testid="image-file-input"
           className="flex-1 min-w-[200px] cursor-pointer rounded-lg border border-line bg-paper p-2 text-[13px] text-ink-2 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-cat file:px-3 file:py-1.5 file:text-[12px] file:font-bold file:text-white hover:file:bg-cat-2"
         />

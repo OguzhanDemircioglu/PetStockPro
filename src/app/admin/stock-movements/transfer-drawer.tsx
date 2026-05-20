@@ -39,6 +39,10 @@ export function TransferDrawer({ branches, variants, onClose, initial }: Props) 
   }, [state]);
   useSwalOnError(errorState);
 
+  // Field-level kızartma — submit sonrası hata varsa zorunlu alanlar
+  // (sourceBranchId, targetBranchId, variantId, quantity) aria-invalid alır.
+  const hasError = !!errorState;
+
   useEffect(() => {
     if (state?.ok) {
       const t = setTimeout(onClose, 1200);
@@ -61,6 +65,7 @@ export function TransferDrawer({ branches, variants, onClose, initial }: Props) 
               name="sourceBranchId"
               required
               defaultValue={initial?.sourceBranchId ?? ''}
+              aria-invalid={hasError || undefined}
               className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
             >
               <option value="" disabled>
@@ -79,6 +84,7 @@ export function TransferDrawer({ branches, variants, onClose, initial }: Props) 
               name="targetBranchId"
               required
               defaultValue={initial?.targetBranchId ?? ''}
+              aria-invalid={hasError || undefined}
               className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
             >
               <option value="" disabled>
@@ -99,6 +105,7 @@ export function TransferDrawer({ branches, variants, onClose, initial }: Props) 
             name="variantId"
             required
             defaultValue={initial?.variantId ?? ''}
+            aria-invalid={hasError || undefined}
             className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             <option value="" disabled>
@@ -121,6 +128,7 @@ export function TransferDrawer({ branches, variants, onClose, initial }: Props) 
             max={1000000}
             required
             defaultValue={initial?.quantity ?? ''}
+            aria-invalid={hasError || undefined}
             data-testid="quantity"
             className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />

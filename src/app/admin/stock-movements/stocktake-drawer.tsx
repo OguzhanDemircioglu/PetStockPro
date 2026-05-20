@@ -27,6 +27,10 @@ export function StocktakeDrawer({ branches, variants, onClose }: Props) {
   );
   useSwalOnError(errorState);
 
+  // Field-level kızartma — submit sonrası hata varsa zorunlu alanlar
+  // (branchId, variantId, countedQty) aria-invalid alır.
+  const hasError = !!errorState;
+
   useEffect(() => {
     if (state?.ok) {
       const t = setTimeout(onClose, 1200);
@@ -48,6 +52,7 @@ export function StocktakeDrawer({ branches, variants, onClose }: Props) {
             name="branchId"
             required
             defaultValue={branches[0]?.id ?? ''}
+            aria-invalid={hasError || undefined}
             className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             {branches.map((b) => (
@@ -64,6 +69,7 @@ export function StocktakeDrawer({ branches, variants, onClose }: Props) {
             name="variantId"
             required
             defaultValue=""
+            aria-invalid={hasError || undefined}
             className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             <option value="" disabled>
@@ -85,6 +91,7 @@ export function StocktakeDrawer({ branches, variants, onClose }: Props) {
             min={0}
             max={1000000}
             required
+            aria-invalid={hasError || undefined}
             data-testid="countedQty"
             className="w-full rounded-xl border-[1.5px] border-cat bg-paper px-4 py-3 font-mono text-lg font-bold text-cart focus:outline-none focus:ring-4 focus:ring-cat/15"
           />

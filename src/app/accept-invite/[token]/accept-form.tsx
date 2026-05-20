@@ -26,6 +26,8 @@ export function AcceptInviteForm({ token, email, companyName }: Props) {
   useSwalOnError(state);
   const [password, setPassword] = useState('');
   const [passwordRepeat, setPasswordRepeat] = useState('');
+  // Field-level kızartma — error varsa password + passwordRepeat input'una aria-invalid set et.
+  const hasError = !!state?.error;
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-arrow-soft via-bg to-cat-soft px-6 py-16">
@@ -71,6 +73,7 @@ export function AcceptInviteForm({ token, email, companyName }: Props) {
               disabled={pending}
               data-testid="accept-password"
               autoComplete="new-password"
+              aria-invalid={hasError || undefined}
               className="w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
             />
           </div>
@@ -89,6 +92,7 @@ export function AcceptInviteForm({ token, email, companyName }: Props) {
               disabled={pending}
               data-testid="accept-password-repeat"
               autoComplete="new-password"
+              aria-invalid={hasError || undefined}
               className="w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
             />
           </div>

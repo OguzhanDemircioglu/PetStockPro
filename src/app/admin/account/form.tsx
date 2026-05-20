@@ -22,6 +22,8 @@ export function AccountForm({
   useSwalOnError(state);
   const [showForm, setShowForm] = useState(false);
 
+  const hasError = !!(state && state.ok === false && state.error);
+
   // Init success → confirm screen göster
   if (state?.ok && state.pendingEmail) {
     return (
@@ -88,6 +90,7 @@ export function AccountForm({
                 autoComplete="email"
                 required
                 disabled={pending}
+                aria-invalid={hasError || undefined}
                 className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
               />
             </div>
@@ -106,6 +109,7 @@ export function AccountForm({
                 autoComplete="current-password"
                 required
                 disabled={pending}
+                aria-invalid={hasError || undefined}
                 className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
               />
             </div>

@@ -45,6 +45,8 @@ export function TelegramForm({
   );
   useSwalOnError(testErrorState);
 
+  const saveHasError = !!saveErrorState;
+
   // Maskeli görünüm: token kaydedilmişse "•••••• son 6 karakter"
   const maskedToken =
     initialBotToken && initialBotToken.length >= 6
@@ -71,6 +73,7 @@ export function TelegramForm({
             placeholder={maskedToken || '1234567890:ABCdef...'}
             data-testid="tg-bot-token"
             required
+            aria-invalid={saveHasError || undefined}
             className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2.5 font-mono text-xs text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
           <p className="mt-1 text-[12px] text-ink-4">
@@ -95,6 +98,7 @@ export function TelegramForm({
             placeholder="987654321 veya -1001234567890 (grup)"
             data-testid="tg-chat-id"
             required
+            aria-invalid={saveHasError || undefined}
             className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2.5 font-mono text-xs text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
           <p className="mt-1 text-[12px] text-ink-4">

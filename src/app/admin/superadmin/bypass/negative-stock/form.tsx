@@ -11,6 +11,7 @@ export function NegativeStockForm() {
     null,
   );
   useSwalOnError(state);
+  const hasError = !!state?.error;
 
   if (state?.ok) {
     return (
@@ -45,6 +46,7 @@ export function NegativeStockForm() {
             required
             disabled={pending}
             data-testid="branch-id"
+            aria-invalid={hasError || undefined}
             className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2 font-mono text-[12.5px] focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
         </div>
@@ -61,6 +63,7 @@ export function NegativeStockForm() {
             required
             disabled={pending}
             data-testid="quantity"
+            aria-invalid={hasError || undefined}
             className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2 text-right font-mono text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
         </div>
@@ -76,6 +79,7 @@ export function NegativeStockForm() {
           required
           disabled={pending}
           data-testid="variant-id"
+          aria-invalid={hasError || undefined}
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2 font-mono text-[12.5px] focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
         <p className="mt-1 text-[12px] text-ink-4">
@@ -98,6 +102,7 @@ export function NegativeStockForm() {
           placeholder="Örn: Muhasebe kaydında 5 adet satış ama sistemde yok, fiziksel stok kontrol edildi düzeltiliyor"
           disabled={pending}
           data-testid="reason"
+          aria-invalid={hasError || undefined}
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>
@@ -115,6 +120,7 @@ export function NegativeStockForm() {
           placeholder="••••••••"
           disabled={pending}
           data-testid="superadmin-password"
+          aria-invalid={hasError || undefined}
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-2.5 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>

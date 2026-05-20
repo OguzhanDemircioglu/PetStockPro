@@ -44,6 +44,7 @@ export function ForcePasswordResetForm({ targetUserId }: BaseProps) {
     null,
   );
   useSwalOnError(state);
+  const hasError = !!state?.error;
 
   return (
     <form action={formAction} className="rounded-xl border border-line bg-paper p-4">
@@ -67,6 +68,7 @@ export function ForcePasswordResetForm({ targetUserId }: BaseProps) {
             disabled={pending}
             data-testid="pr-reason"
             placeholder="Örn: Kullanıcı destek üzerinden talep etti, email'i değişmiş, kendi /forgot ile ulaşamıyor"
+            aria-invalid={hasError || undefined}
             className={inputClass}
           />
         </div>
@@ -82,6 +84,7 @@ export function ForcePasswordResetForm({ targetUserId }: BaseProps) {
             autoComplete="current-password"
             disabled={pending}
             data-testid="pr-password"
+            aria-invalid={hasError || undefined}
             className={inputClass}
           />
         </div>
@@ -109,6 +112,7 @@ export function ResetTwoFactorForm({ targetUserId, isEnabled }: BaseProps & { is
     null,
   );
   useSwalOnError(state);
+  const hasError = !!state?.error;
 
   return (
     <form action={formAction} className="rounded-xl border border-line bg-paper p-4">
@@ -144,6 +148,7 @@ export function ResetTwoFactorForm({ targetUserId, isEnabled }: BaseProps & { is
               rows={2}
               data-testid="tfa-reason"
               placeholder="Örn: Telefonunu kaybetti, recovery code'ları da bulamıyor, kimlik doğrulandı"
+              aria-invalid={hasError || undefined}
               className={inputClass}
             />
           </div>
@@ -158,6 +163,7 @@ export function ResetTwoFactorForm({ targetUserId, isEnabled }: BaseProps & { is
               required={isEnabled}
               autoComplete="current-password"
               data-testid="tfa-password"
+              aria-invalid={hasError || undefined}
               className={inputClass}
             />
           </div>
@@ -186,6 +192,7 @@ export function LockAccountForm({ targetUserId, isLocked }: BaseProps & { isLock
     null,
   );
   useSwalOnError(state);
+  const hasError = !!state?.error;
 
   return (
     <form action={formAction} className="rounded-xl border border-danger/40 bg-danger-soft/30 p-4">
@@ -217,6 +224,7 @@ export function LockAccountForm({ targetUserId, isLocked }: BaseProps & { isLock
             required
             disabled={pending}
             data-testid="lock-hours"
+            aria-invalid={hasError || undefined}
             className={inputClass}
           />
         </div>
@@ -234,6 +242,7 @@ export function LockAccountForm({ targetUserId, isLocked }: BaseProps & { isLock
             disabled={pending}
             data-testid="lock-reason"
             placeholder="Örn: Şüpheli aktivite, müşteri talebi üzerine geçici askıya alma"
+            aria-invalid={hasError || undefined}
             className={inputClass}
           />
         </div>
@@ -249,6 +258,7 @@ export function LockAccountForm({ targetUserId, isLocked }: BaseProps & { isLock
             autoComplete="current-password"
             disabled={pending}
             data-testid="lock-password"
+            aria-invalid={hasError || undefined}
             className={inputClass}
           />
         </div>
@@ -276,6 +286,7 @@ export function UnlockAccountForm({ targetUserId, isLocked }: BaseProps & { isLo
     null,
   );
   useSwalOnError(state);
+  const hasError = !!state?.error;
 
   return (
     <form action={formAction} className="rounded-xl border border-arrow/40 bg-arrow-soft/40 p-4">
@@ -307,6 +318,7 @@ export function UnlockAccountForm({ targetUserId, isLocked }: BaseProps & { isLo
             disabled={pending}
             data-testid="unlock-reason"
             placeholder="Örn: Müşteri destek dosyası, doğrulama tamamlandı, hesap güvenli"
+            aria-invalid={hasError || undefined}
             className={inputClass}
           />
         </div>
@@ -322,6 +334,7 @@ export function UnlockAccountForm({ targetUserId, isLocked }: BaseProps & { isLo
             autoComplete="current-password"
             disabled={pending}
             data-testid="unlock-password"
+            aria-invalid={hasError || undefined}
             className={inputClass}
           />
         </div>

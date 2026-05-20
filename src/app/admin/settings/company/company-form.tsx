@@ -45,6 +45,8 @@ export function CompanyForm({ initial, cities, initialDistricts }: Props) {
   );
   useSwalOnError(errorState);
 
+  const hasError = !!errorState;
+
   const [selectedCityId, setSelectedCityId] = useState<number | null>(
     initial.cityId,
   );
@@ -113,6 +115,7 @@ export function CompanyForm({ initial, cities, initialDistricts }: Props) {
             maxLength={255}
             defaultValue={initial.name}
             data-testid="company-name"
+            aria-invalid={hasError || undefined}
             className={fieldClasses}
           />
         </Field>

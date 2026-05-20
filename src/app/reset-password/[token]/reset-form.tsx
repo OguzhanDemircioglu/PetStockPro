@@ -22,6 +22,8 @@ export function ResetForm({ token, email }: ResetFormProps) {
     null,
   );
   useSwalOnError(state);
+  // Field-level kızartma — error varsa password + passwordRepeat input'una aria-invalid set et.
+  const hasError = !!state?.error;
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-cat-soft via-bg to-bars-soft px-6 py-16">
@@ -59,6 +61,7 @@ export function ResetForm({ token, email }: ResetFormProps) {
               required
               disabled={pending}
               minLength={8}
+              aria-invalid={hasError || undefined}
               className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink transition-all focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
             />
           </div>
@@ -79,6 +82,7 @@ export function ResetForm({ token, email }: ResetFormProps) {
               required
               disabled={pending}
               minLength={8}
+              aria-invalid={hasError || undefined}
               className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink transition-all focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
             />
           </div>

@@ -27,6 +27,8 @@ export default function RegisterPage() {
     null,
   );
   useSwalOnError(state);
+  // Field-level kızartma — error varsa shopName/email/password input'una aria-invalid set et.
+  const hasError = !!state?.error;
 
   return (
     <div className="grid h-screen w-screen grid-cols-1 overflow-hidden md:grid-cols-2">
@@ -132,6 +134,7 @@ export default function RegisterPage() {
                 autoComplete="organization"
                 required
                 disabled={pending}
+                aria-invalid={hasError || undefined}
                 className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink transition-all focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
               />
             </div>
@@ -148,6 +151,7 @@ export default function RegisterPage() {
                 autoComplete="email"
                 required
                 disabled={pending}
+                aria-invalid={hasError || undefined}
                 className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink transition-all focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
               />
             </div>
@@ -164,6 +168,7 @@ export default function RegisterPage() {
                 autoComplete="new-password"
                 required
                 disabled={pending}
+                aria-invalid={hasError || undefined}
                 className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink transition-all focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
               />
             </div>

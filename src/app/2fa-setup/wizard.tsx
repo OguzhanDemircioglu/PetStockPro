@@ -53,6 +53,8 @@ export function TwoFactorWizard({
   );
   useSwalOnError(verifyState);
   useSwalOnError(enableState);
+  // Field-level kızartma — Step 2 TOTP input hata zinciri.
+  const hasVerifyError = !!verifyState?.error;
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-cat-soft via-bg to-bars-soft px-6 py-12">
@@ -161,6 +163,7 @@ export function TwoFactorWizard({
                 required
                 disabled={verifyPending}
                 maxLength={7}
+                aria-invalid={hasVerifyError || undefined}
                 className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-4 text-center font-mono text-2xl tracking-[0.4em] text-ink transition-all focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
               />
 

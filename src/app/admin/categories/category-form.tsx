@@ -56,6 +56,8 @@ export function CategoryForm({
   );
   useSwalOnError(errorState);
 
+  const hasError = !!errorState;
+
   // 'root' = üst kategori, parentId UUID = alt kategori
   const initialMode: 'root' | 'child' = initial?.parentId ? 'child' : 'root';
   const [mode, setMode] = useState<'root' | 'child'>(initialMode);
@@ -118,6 +120,7 @@ export function CategoryForm({
             required
             data-testid="parent-select"
             defaultValue={initial?.parentId ?? ''}
+            aria-invalid={hasError || undefined}
             className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             <option value="">— Üst kategori seç —</option>
@@ -172,6 +175,7 @@ export function CategoryForm({
               mode === 'root' ? 'Kedi, Köpek, Kuş...' : 'Kuru mama, Oyuncak...'
             }
             data-testid="category-name"
+            aria-invalid={hasError || undefined}
             className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           />
         </div>

@@ -49,6 +49,9 @@ export function SecurityForms({
   const [showDisable, setShowDisable] = useState(false);
   const [showRegen, setShowRegen] = useState(false);
 
+  const disableHasError = !!(disableState && disableState.ok === false && disableState.error);
+  const regenHasError = !!(regenState && regenState.error);
+
   return (
     <div className="flex max-w-2xl flex-col gap-6">
       <p className="text-sm text-ink-3">
@@ -146,6 +149,7 @@ export function SecurityForms({
                 required
                 disabled={disablePending}
                 maxLength={7}
+                aria-invalid={disableHasError || undefined}
                 className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-center font-mono text-lg tracking-[0.3em] text-ink focus:border-danger focus:outline-none focus:ring-4 focus:ring-danger/15"
               />
               <div className="flex gap-2">
@@ -214,6 +218,7 @@ export function SecurityForms({
                 required
                 disabled={regenPending}
                 maxLength={7}
+                aria-invalid={regenHasError || undefined}
                 className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-center font-mono text-lg tracking-[0.3em] text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
               />
               <div className="flex gap-2">

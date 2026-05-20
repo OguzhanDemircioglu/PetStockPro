@@ -11,6 +11,7 @@ export function HardDeleteForm() {
     null,
   );
   useSwalOnError(state);
+  const hasError = !!state?.error;
 
   if (state?.ok) {
     return (
@@ -46,6 +47,7 @@ export function HardDeleteForm() {
           placeholder="00000000-0000-0000-0000-000000000000"
           disabled={pending}
           data-testid="product-id"
+          aria-invalid={hasError || undefined}
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-2.5 font-mono text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
         <p className="mt-1 text-[12px] text-ink-4">
@@ -67,6 +69,7 @@ export function HardDeleteForm() {
           placeholder="Örn: Test ürünü yanlış kaydedildi, tamamen kaldırılması gerek"
           disabled={pending}
           data-testid="reason"
+          aria-invalid={hasError || undefined}
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>
@@ -84,6 +87,7 @@ export function HardDeleteForm() {
           placeholder="••••••••"
           disabled={pending}
           data-testid="superadmin-password"
+          aria-invalid={hasError || undefined}
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-2.5 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>

@@ -15,6 +15,9 @@ export function StartStocktakeForm({ branches }: Props) {
   );
   useSwalOnError(state);
 
+  // Field-level kızartma — sayım başlatma sonrası hata varsa branchId aria-invalid alır.
+  const hasError = !!(state && !state.ok && state.error);
+
   return (
     <form action={formAction} className="flex flex-col gap-4 rounded-2xl border border-line bg-paper p-6">
       <div>
@@ -29,6 +32,7 @@ export function StartStocktakeForm({ branches }: Props) {
           name="branchId"
           required
           disabled={pending}
+          aria-invalid={hasError || undefined}
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-2.5 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         >
           <option value="" disabled>

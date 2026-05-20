@@ -32,6 +32,10 @@ export function StockInDrawer({ branches, variants, suppliers, onClose }: Props)
   );
   useSwalOnError(errorState);
 
+  // Field-level kızartma — submit sonrası hata varsa zorunlu alanlar (branchId,
+  // variantId, quantity) aria-invalid alır.
+  const hasError = !!errorState;
+
   useEffect(() => {
     if (state?.ok) {
       const t = setTimeout(onClose, 800);
@@ -53,6 +57,7 @@ export function StockInDrawer({ branches, variants, suppliers, onClose }: Props)
             name="branchId"
             required
             defaultValue={branches[0]?.id ?? ''}
+            aria-invalid={hasError || undefined}
             className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             {branches.map((b) => (
@@ -69,6 +74,7 @@ export function StockInDrawer({ branches, variants, suppliers, onClose }: Props)
             name="variantId"
             required
             defaultValue=""
+            aria-invalid={hasError || undefined}
             className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             <option value="" disabled>
@@ -91,6 +97,7 @@ export function StockInDrawer({ branches, variants, suppliers, onClose }: Props)
               min={1}
               max={1000000}
               required
+              aria-invalid={hasError || undefined}
               className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
               data-testid="quantity"
             />

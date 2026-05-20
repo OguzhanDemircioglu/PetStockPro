@@ -55,6 +55,8 @@ export function BranchForm({
   );
   useSwalOnError(errorState);
 
+  const hasError = !!errorState;
+
   const [selectedCityId, setSelectedCityId] = useState<number | null>(
     initial?.cityId ?? null,
   );
@@ -104,6 +106,7 @@ export function BranchForm({
           defaultValue={initial?.name ?? ''}
           placeholder="Merkez, Kadıköy, Anadolu vs."
           data-testid="branch-name"
+          aria-invalid={hasError || undefined}
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </Field>
@@ -117,6 +120,7 @@ export function BranchForm({
             value={selectedCityId ?? ''}
             onChange={(e) => setSelectedCityId(parseInt(e.target.value, 10) || null)}
             data-testid="branch-city"
+            aria-invalid={hasError || undefined}
             className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
           >
             <option value="" disabled>
@@ -137,6 +141,7 @@ export function BranchForm({
             disabled={districtsLoading || districts.length === 0}
             defaultValue={initial?.districtId ?? ''}
             data-testid="branch-district"
+            aria-invalid={hasError || undefined}
             className="w-full rounded-xl border-[1.5px] border-line bg-paper px-3 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15 disabled:opacity-60"
           >
             <option value="" disabled>

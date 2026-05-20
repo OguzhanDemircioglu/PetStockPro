@@ -42,6 +42,8 @@ export default function LoginPage() {
   const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   useSwalOnErrorString(uploadError, 'Yedek kod dosyası');
+  // Field-level kızartma — error varsa email/password/totp input'una aria-invalid set et.
+  const hasError = !!state?.error;
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const totpInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -231,6 +233,7 @@ export default function LoginPage() {
                 readOnly={state?.requires2fa}
                 defaultValue={state?.email ?? ''}
                 disabled={pending}
+                aria-invalid={hasError || undefined}
                 className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink transition-all focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15 read-only:bg-line-soft"
               />
             </div>
@@ -249,6 +252,7 @@ export default function LoginPage() {
                   required
                   defaultValue={state?.password ?? ''}
                   disabled={pending}
+                  aria-invalid={hasError || undefined}
                   className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 pr-12 text-sm text-ink transition-all focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
                 <button
@@ -299,6 +303,7 @@ export default function LoginPage() {
                   autoFocus
                   disabled={pending}
                   maxLength={20}
+                  aria-invalid={hasError || undefined}
                   className="w-full rounded-xl border-[1.5px] border-cat bg-white px-4 py-3 text-center font-mono text-lg tracking-[0.3em] text-ink transition-all focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
                 <p className="mt-1.5 text-[12.5px] text-ink-4">
