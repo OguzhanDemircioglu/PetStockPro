@@ -2,7 +2,7 @@
 
 **Tarih:** 2026-05-20 (gece — **Catalog image kalite temizliği: 44 watermarklı/kampanyalı resim değiştirildi**)
 **Mevcut Branch:** `cray61` — origin'in **194 commit** ileri (push edilmedi)
-**Son commit:** `<NEW>` chore(catalog): 44 watermarklı seed image R2'de temizlendi (21 scrape + 13 kullanıcı + 10 reddedildi/yeniden alındı)
+**Son commit:** `f4ef28e` chore(catalog): 44 watermarklı seed image R2'de temizlendi (21 scrape + 13 kullanıcı + 10 reddedildi/yeniden alındı)
 **Test:** **1385** passed
 **Lint+typecheck:** 0 error
 **Migration:** **20** (değişmedi)
