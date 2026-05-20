@@ -87,7 +87,7 @@ describe('buildXlsxBuffer', () => {
     const dateCell = ws.getCell(4, 3);
     expect(qtyCell.numFmt).toBe('#,##0');
     expect(priceCell.numFmt).toContain('₺');
-    expect(dateCell.numFmt).toBe('dd.mm.yyyy');
+    expect(dateCell.numFmt).toBe('dd/mm/yyyy');
   });
 
   it('boolean format ✓ / ✕ string üretir', async () => {

@@ -62,8 +62,8 @@ const FORMAT_MAP: Record<CellFormat, string> = {
   text: '@',
   integer: '#,##0',
   currency_try: '#,##0.00 [$₺-tr-TR]',
-  date_tr: 'dd.mm.yyyy',
-  datetime_tr: 'dd.mm.yyyy hh:mm',
+  date_tr: 'dd/mm/yyyy',
+  datetime_tr: 'dd/mm/yyyy hh:mm',
   boolean: '@', // ✓ / ✕ string
   percent: '0.00%',
 };
