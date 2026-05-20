@@ -33,11 +33,12 @@
 
 ## 🚀 YENİ SESSION'A GİRDİĞİNDE — İLK OKUMA SIRASI
 
-**2026-05-14 chat'i 2 kapsamlı revizyon turu yaptı.** Bağlam büyük, dokümante edildi:
+**2026-05-20 sonu:** SWAL toast + aria-invalid + Excel ürün import tamamlandı. **Sıradaki büyük iş: Observer/Yetki/Şube-state refactor** — plan: `docs/PLAN-OBSERVER-STAFF-BRANCH-STATE.md` ⭐
 
-1. **`docs/DEVAM-REHBERI.md`** ⭐ — kararlar listesi + bekleyen açık noktalar (önce bunu oku!)
-2. **`docs/MANTIK-HATALARI-2026-05-14.md`** 🆕 — **40 mantık hatası çözüldü** (4 tur: K1-5 + O1-8 + S1-6 + KT2-1/2/3 + OT2-1..6 + ST2-1..5 + YT-1..7). Tüm düzeltmeler doc'lara yansıtıldı, ✅ işaretli.
-3. Bu CLAUDE.md (proje genel durumu)
+1. **`docs/PLAN-OBSERVER-STAFF-BRANCH-STATE.md`** 🆕 — 9 fazlı kapsamlı plan, yeni session başlangıç dosyası
+2. **`docs/DEVAM-REHBERI.md`** ⭐ — kararlar listesi + bekleyen açık noktalar
+3. **`docs/MANTIK-HATALARI-2026-05-14.md`** — 40 mantık hatası çözüldü (4 tur)
+4. Bu CLAUDE.md (proje genel durumu)
 4. `docs/PLAN-KADEMELERI.md` (**3-tier B — FREE 50 / PRO 500 750₺ / PRO+ ∞ 1.750₺, TR-only** — 2026-05-14 revize, otoritatif)
 5. `docs/DATABASE-SCHEMA.md` (36 tablo MVP — 6 yeni: subscriptions/invoices/processed_webhooks/vitrin_reports/system_errors/vitrin_whatsapp_feedback; storefrontStatus enum; user_role JWT claim)
 6. `docs/EKRAN-PUBLIC-VITRIN.md` (merkezi tek vitrin, hibrit fotoğraf moderation YT-1)
@@ -69,6 +70,11 @@
 | **WhatsApp Geri Bildirim Balonu** (2026-05-15 onay) | Müşteri vitrin'de WhatsApp tıkladıktan sonra sağ alt sticky balon (dış tıklama dismiss etmez). 5 emoji seçenek (😊/🙂/😐/😕/😞), **tek tıklama = submit** (submit butonu yok), yorum YOK (Faz 2). Counter felsefesi: closed_manually + dismissed bile değerli sinyal. Anti-spam: 1 IP × 1 tenant × 24h. Pet shop için funnel + rating dağılımı + ortalama puan. Süperadmin için tenant ranking + cevap hızı sorunu alert. Yeni tablo `vitrin_whatsapp_feedback` (1 yıl retention) + 2 enum + 4 yeni vitrinEvent type. Sprint 12'de implement (+1 iş günü = 14 iş günü). | `EKRAN-PUBLIC-VITRIN.md §15` + `DATABASE-SCHEMA.md §3.8.1` + `EKRAN-AYARLAR.md §2.1.1` + `EKRAN-SUPERADMIN.md §1.1` + `SPRINT-PLAN.md §15` |
 | **EKRAN-AUTH.md + Cloudflare Turnstile** (2026-05-15 onay) | Yeni doc (15 bölüm + 52 test): Login + Register + Email Verification + Forgot Password + Email Change + 2FA Setup + Onboarding 3 adım + Account Lock + KVKK çift checkbox. **Cloudflare Turnstile** (Google reCAPTCHA değil — Workers native, KVKK temiz, $0). Register + Forgot Password + Change Email **zorunlu**, Login 5+ fail sonrası **conditional**. Email enumeration koruma + HIBP password check + 7 gün grace period + 24h email verify TTL + 30dk password reset TTL. users tablosuna 10 yeni field. Sprint 2: 1.5 → 2 hafta. | `EKRAN-AUTH.md` (yeni) + `TECH-STACK.md §3.9c` + `DATABASE-SCHEMA.md §3.1` + `DEPLOYMENT.md §1` + `EKRAN-AYARLAR.md §2.5` (sadeleşti, AUTH'a referans) + `SPRINT-PLAN.md §5` (2 hafta) + `UI-MOCKUP-PLAN.md §5.5` |
 | **Brute-force sıkı policy** (2026-05-15 onay) | Önceki "10 başarısız → 15 dk" yetersiz görüldü, sıkılaştırıldı: **5 başarısız → 1 SAAT lock** + 3 art arda lock → 24 saat kalıcı + acil email. **Kalan hak UX:** 3. yanlıştan itibaren frontend banner ("3 hakkın kaldı" → "2 hakkın kaldı + Şifremi Unuttum" → "1 hakkın kaldı + lock uyarı"). 2. yanlışta banner yok (parmak hatası varsayımı). Şifremi Unuttum lock'u bypass eder. TOTP yanlışı sayılmaz. Test: 52 → 59. | `EKRAN-AUTH.md §2.2 + §2.3 + §10` + `EKRAN-AYARLAR.md §2.5.2` + `DATABASE-SCHEMA.md §3.1 users` |
+| **Excel Ürün Import** (2026-05-20) | `/admin/products/import` — pet shop sahipleri xlsx ile toplu ürün ekler. 11 sütun + 5 örnek satır şablon, 15+ validation (sınır + duplicate + DB cross-check), SWAL özet modal, drag-drop UI. vitrinPublished=false zorunlu (görsel olmadan vitrin yok). 38+20 unit test. | `EKRAN-URUNLER.md §6` |
+| **CSV → Excel xlsx Export** (2026-05-20) | 7 export route (.xlsx zengin format: TR header, dd/mm/yyyy locale, ₺ para, auto-filter, freeze pane, zebra). exceljs paketi + `lib/utils/xlsx.ts` helper. Brands + Categories export kaldırıldı (sabit data). | `EKRAN-AYARLAR.md §2.6` |
+| **SWAL Toast UX** (2026-05-20) | Form üstü `role="alert"` banner'ları KALDIRILDI. Sağ üstte 4 sn auto-dismiss toast (hover pause). Modal yerine toast. `useSwalOnError(state)` hook 41 form'da. Inline UX-info banner'lar (login kalan hak, KVKK uyarı, plan limit) kasıtlı korundu. | `lib/ui/swal.ts` + `lib/ui/use-swal-on-error.ts` |
+| **Field-Level Kızartma** (2026-05-20) | `globals.css` aria-invalid kuralı (border-danger + soft bg + focus ring). 36 form'da ~75+ zorunlu input'a `aria-invalid={hasError \|\| undefined}`. Opsiyonel input'lara dokunulmadı. | `globals.css` |
+| **Observer + Yetki + Şube state** (2026-05-21 planlandı) | **SUBE_MUDURU → OBSERVER** (read-only viewer, "İzleyici" UI), **STAFF → "Çalışan"** UI etiketi + granular permission matrix (13 key), **şube 3-state** (active/holiday/inactive), Faz 3 BAYI_ADMIN İPTAL, Vitrin tatil rozet + Satıcıya sor disabled, Çalışan yetki modal /admin/settings/users. **Plan:** `PLAN-OBSERVER-STAFF-BRANCH-STATE.md` 9 faz | `EKRAN-KULLANICILAR.md` + `EKRAN-SUBELER.md` + `EKRAN-PUBLIC-VITRIN.md` |
 
 **Geride bekleyen (sen-yapacak):**
 - Şirket kuruluş + vergi no + IBAN (lansman bloker, 2-4 hafta)

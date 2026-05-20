@@ -1,8 +1,119 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-20 (gece-geç — **Karar A/C uygulama + test rollback + Bayi Admin iskelet + cookie banner UX**)
-**Mevcut Branch:** `cray61` — origin'in 2 commit ileri (Karar A/C + Bayi Admin)
-**Son commit:** `d3cea77` feat(pricing): Karar A + C uygulandı — PRO 1.250₺ + PRO+ 2.250₺
+**Tarih:** 2026-05-20 (gece-en-geç — **Observer + Yetki + Şube state planı hazır, yeni session'da başlayacak**)
+**Mevcut Branch:** `cray61` — origin sync (0 commit ahead)
+**Son commit:** `711be26` fix(reports): settle-credit-button SWAL'a bağlı değildi — eklendi
+
+---
+
+## 🚀 YENİ SESSION'A GİRDİĞİNDE — İLK OKUMA
+
+> **Önce planı oku:** `docs/PLAN-OBSERVER-STAFF-BRANCH-STATE.md` ⭐
+>
+> 9 fazlı kapsamlı plan: SUBE_MUDURU→OBSERVER rename, branch_status 3-state (active/holiday/inactive), STAFF granular permission matrix, Faz 3 BAYI_ADMIN iptal, vitrin tatil rozet, çalışan yetki modal, observer davet flow.
+>
+> İlk komut: "PLAN-OBSERVER-STAFF-BRANCH-STATE.md oku ve Faz 1'e başla"
+
+---
+
+## 🆕 Son turlar (2026-05-20, 12 commit) — bu DEVAM-REHBERI'a işlenmiş hali
+
+### Pricing + Karar A/C (d3cea77)
+
+- **Karar A:** PRO upsell motivasyonu (a) sade tut — ürün limiti tek farklılaşma
+- **Karar C:** Pricing PRO 750→**1.250₺** + PRO+ 1.750→**2.250₺** — net hedef ~$10K/ay
+- 10 dosya güncel (UI + lib + docs)
+
+### Bayi Admin iskelet (37f42cf) ⚠ **İPTAL**
+
+`/admin/bayi` placeholder sayfa eklendi (Faz 3 multi-tenant viewer). **Sonraki tur'da iptal edildi** — Observer onun yerini aldı.
+
+### Excel Export Suite — CSV → xlsx (0b37c5c + d2ebd33 + 4fbff90)
+
+- 7 export route .xlsx'e dönüştü (ürünler/şubeler/tedarikçi/audit/raporlar/stok-hareketleri × daily/top)
+- exceljs paketi + `lib/utils/xlsx.ts` helper (zengin format: TR başlık, dd/mm/yyyy locale, ₺ para, auto-filter, freeze pane, zebra)
+- Brands + Categories export kaldırıldı
+- 11 yeni unit test
+- Mock script (`scripts/generate-excel-mocks.ts`) masaüstüne 7 örnek xlsx üretir
+- Ürünler sidebar'a 🛍 prefix
+- .env.example'a 14 şirket placeholder (COMPANY_LEGAL_NAME, VKN, MERSİS, IBAN, vs)
+
+### Excel Ürün Import (56c7269 + c88a55c)
+
+Yeni `/admin/products/import` sayfası — pet shop sahipleri Excel ile toplu ürün ekler:
+
+- `lib/products/import-template.ts` — 11 sütun + 5 örnek satır (mama/kumu/oyuncak/SKT/akvaryum)
+- `lib/products/import-validate.ts` — pure validation library (15+ kural, dosya + satır + duplicate)
+- `lib/products/import-execute.ts` — server-side DB insert (brand auto-create + initial stock + transaction)
+- Drag-drop UI + hata tablosu + SWAL özet modal
+- vitrinPublished=false zorunlu (görsel olmadan vitrin yok)
+- 38 + 20 unit test (= 58 yeni)
+- Plan limit aware (FREE 50 / PRO 500 / PRO+ ∞)
+
+### SWAL Refactor — Modal → Toast (62bd594 + b7bd70e + 4e4d997 + 711be26)
+
+Kullanıcı kararı (2026-05-20): "Form üzerinde hata mesajı YOK, sağ üstte 4 sn auto-dismiss toast."
+
+- `lib/ui/swal.ts` — sweetalert2 wrapper (TR locale + cat-soft tema)
+- `lib/ui/use-swal-on-error.ts` — useSwalOnError(state) + useSwalOnErrorString(value, title) hook
+- **41 form'da `role="alert"` banner kaldırıldı + useSwalOnError eklendi** (4 paralel agent batch)
+- 1 son fix: `settle-credit-button.tsx` audit'te eksik tespit, eklendi
+- Korunan 16 dosya: kasıtlı info/warning/JSDoc banner'lar (login remainingAttempts, KVKK uyarı, plan limit, süperadmin tehlike, vs)
+
+### Field-Level Kızartma — aria-invalid (b7bd70e + d80d893)
+
+- `globals.css` aria-invalid kuralı: kırmızı border + soft pembe bg + focus ring
+- **36 form'da ~75+ zorunlu input'a `aria-invalid={hasError || undefined}` eklendi** (4 paralel agent batch)
+- Opsiyonel input'lara DOKUNULMADI (note, address, opsiyonel id'ler)
+- Hook + CSS + brand örneği → tüm projeye yayıldı
+- Browser smoke: `/admin/brands/new` duplicate "Royal Canin" → toast top-end + input aria-invalid + border kırmızı (196,69,58)
+
+### Test Kapsam Genişletmesi (c88a55c)
+
+- Excel import için 79 yeni edge case test (sınır değerleri, karakter setleri, tarih formatları, duplicate kombinasyonlar, executeImport server mock)
+- Toplam: 1385 → **1503 test pass** (+118)
+
+---
+
+## 📊 Genel Durum (2026-05-20 sonu)
+
+| Konu | Değer |
+|---|---|
+| Branch | cray61 (origin sync) |
+| Son commit | 711be26 |
+| Test | **1503 pass** (101 dosya) |
+| Lint+typecheck | 0 error |
+| Migration | 20 |
+| Aiven | dormant (.env'de LOCAL_DB_* hazır) |
+| R2 | 1.283 webp + 44 image overwrite + 3 mock |
+| Tasarım sistemi | SWAL toast + aria-invalid + form-üstü banner YOK |
+| Plan | docs/PLAN-OBSERVER-STAFF-BRANCH-STATE.md hazır |
+
+---
+
+## 🆕 Faz Planı (Yeni Session — 2026-05-21+)
+
+Detay: `docs/PLAN-OBSERVER-STAFF-BRANCH-STATE.md`
+
+| Faz | İçerik | Süre |
+|---|---|---|
+| 1 | Migration 0019 + Drizzle + permission keys + tests | 1.5h |
+| 2 | Backend helper'lar + 14 server action gate | 1.5h |
+| 3 | Türkçe etiket güncelleme (25 dosya, agent paralel) | 30m |
+| 4 | Şube state UI (admin paneli) | 1.5h |
+| 5 | Vitrin tatil/pasif (rozet + uyarı banner) | 1h |
+| 6 | Çalışan yetki modal | 1.5h |
+| 7 | Şube ekleme wizard step 2 "çalışan ekle" | 30m |
+| 8 | Observer davet flow | 45m |
+| 9 | Tests + browser smoke (10 senaryo) + doküman + push | 1h |
+
+**Toplam:** ~9-10 saat (3-4 tur'a yayılır)
+
+---
+
+## 📜 ESKI TUR ÖZETLERİ
+
+## 🆕 Bu mini-tur (2026-05-20, gece-geç) — Karar A/C + test rollback + Bayi Admin iskelet + cookie banner UX
 **Test:** **1385** passed
 **Lint+typecheck:** 0 error
 **Migration:** **20** (değişmedi)
