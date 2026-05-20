@@ -1,7 +1,9 @@
+import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { dailySalesSummary, topSellingVariants } from '@/lib/reports/sales';
-import { csvResponseBody } from '@/lib/utils/csv';
+import { xlsxResponse } from '@/lib/utils/xlsx';
+import { companies } from '@/db/schema';
 
 const VALID_RANGES = [7, 30, 90] as const;
 const VALID_KINDS = ['daily', 'top'] as const;
@@ -20,38 +22,51 @@ export async function GET(req: Request) {
     ? (kindRaw as 'daily' | 'top')
     : 'daily';
 
-  let body: string;
-  let filename: string;
+  const [tenant] = await db
+    .select({ name: companies.name })
+    .from(companies)
+    .where(eq(companies.id, session.user.companyId))
+    .limit(1);
 
   if (kind === 'top') {
     const rows = await topSellingVariants(session.user.companyId, db, days, 50);
-    body = csvResponseBody(
-      ['Ürün', 'Variant', 'SKU', 'Toplam Adet', 'Toplam Ciro (₺)', 'Satış Sayısı'],
-      rows.map((r) => [
-        r.productName,
-        r.variantLabel,
-        r.sku,
-        r.totalQty,
-        r.totalRevenue,
-        r.saleCount,
-      ]),
-    );
-    filename = `en-cok-satan-${days}gun.csv`;
-  } else {
-    const rows = await dailySalesSummary(session.user.companyId, db, days);
-    body = csvResponseBody(
-      ['Tarih', 'Adet', 'Ciro (₺)', 'Satış Sayısı'],
-      rows.map((r) => [r.day, r.qty, r.revenue, r.count]),
-    );
-    filename = `gunluk-satis-${days}gun.csv`;
+    return xlsxResponse(`en-cok-satan-${days}gun`, {
+      sheetName: 'En Çok Satanlar',
+      title: '🏆 En Çok Satan Ürünler',
+      subtitle: `Son ${days} gün · ${rows.length} variant`,
+      metadata: {
+        tenantName: tenant?.name,
+        generatedAt: new Date(),
+        filterSummary: `Pencere: ${days} gün`,
+      },
+      columns: [
+        { key: 'productName', header: 'Ürün', width: 36 },
+        { key: 'variantLabel', header: 'Variant', width: 18 },
+        { key: 'sku', header: 'SKU', width: 22 },
+        { key: 'totalQty', header: 'Toplam Adet', width: 14, format: 'integer' },
+        { key: (r) => Number(r.totalRevenue), header: 'Toplam Ciro (₺)', width: 18, format: 'currency_try' },
+        { key: 'saleCount', header: 'Satış Sayısı', width: 14, format: 'integer' },
+      ],
+      rows,
+    });
   }
 
-  return new Response(body, {
-    status: 200,
-    headers: {
-      'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': `attachment; filename="${filename}"`,
-      'Cache-Control': 'no-store',
+  const rows = await dailySalesSummary(session.user.companyId, db, days);
+  return xlsxResponse(`gunluk-satis-${days}gun`, {
+    sheetName: 'Günlük Satış',
+    title: '📈 Günlük Satış Raporu',
+    subtitle: `Son ${days} gün · ${rows.length} gün veri`,
+    metadata: {
+      tenantName: tenant?.name,
+      generatedAt: new Date(),
+      filterSummary: `Pencere: ${days} gün`,
     },
+    columns: [
+      { key: (r) => new Date(r.day), header: 'Tarih', width: 14, format: 'date_tr' },
+      { key: 'qty', header: 'Adet', width: 12, format: 'integer' },
+      { key: (r) => Number(r.revenue), header: 'Ciro (₺)', width: 16, format: 'currency_try' },
+      { key: 'count', header: 'Satış Sayısı', width: 14, format: 'integer' },
+    ],
+    rows,
   });
 }

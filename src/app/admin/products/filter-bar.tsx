@@ -214,7 +214,7 @@ export function FilterBar({ categories, brands, initial }: Props) {
           data-testid="products-export"
           className="ml-auto rounded-xl border border-line bg-paper px-3 py-2.5 text-xs font-bold text-cart hover:bg-cat-soft"
         >
-          ⬇ CSV
+          ⬇ Excel
         </a>
       </form>
     </section>

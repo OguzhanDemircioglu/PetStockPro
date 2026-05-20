@@ -61,7 +61,7 @@ export function AdminSidebar({
     {
       label: 'Envanter',
       links: [
-        { label: 'Ürünler', href: '/admin/products' },
+        { label: '🛍 Ürünler', href: '/admin/products' },
         { label: '📦 Hareketler', href: '/admin/stock-movements' },
         {
           label: '⚠ Düşük stok',

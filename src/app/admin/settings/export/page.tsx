@@ -8,8 +8,9 @@ import { SettingsShell } from '@/components/settings-shell';
  * EKRAN-AYARLAR §2.6'da planlanan: tek sayfada tüm CSV export linkleri.
  * İlerde "Hepsini ZIP olarak indir" (Sprint 14+) ek özellik.
  *
- * Şu an her link ayrı route handler — kullanıcı dilediği veriyi tek
- * tek indirir, Excel'de TR locale ile direkt açılır (UTF-8 BOM).
+ * Şu an her link ayrı route handler — kullanıcı dilediği veriyi tek tek
+ * indirir, .xlsx dosyası Excel/LibreOffice'ta direkt açılır (Türkçe başlık,
+ * tarih/para formatı, auto-filter, freeze header).
  */
 export default async function ExportHubPage() {
   const session = await auth();
@@ -21,63 +22,63 @@ export default async function ExportHubPage() {
       emoji: '',
       title: 'Ürün kataloğu',
       desc: 'Tüm ürünler — ad / kategori / marka / variant / stok / fiyat / vitrin durumu',
-      filename: 'urunler-<tarih>.csv',
+      filename: 'urunler-<tarih>.xlsx',
     },
     {
       href: '/admin/stock-movements/export',
       emoji: '📦',
       title: 'Stok hareketleri (ledger)',
       desc: 'Tüm stok hareketleri — giriş/çıkış/transfer/sayım + müşteri/tedarikçi/belge no',
-      filename: 'stok-hareketleri-<tarih>.csv',
+      filename: 'stok-hareketleri-<tarih>.xlsx',
     },
     {
       href: '/admin/reports/export?days=90&kind=daily',
       emoji: '📊',
       title: 'Günlük satış raporu (90 gün)',
       desc: 'Her gün için satış adedi + ciro + işlem sayısı',
-      filename: 'gunluk-satis-90gun.csv',
+      filename: 'gunluk-satis-90gun.xlsx',
     },
     {
       href: '/admin/reports/export?days=90&kind=top',
       emoji: '🏆',
       title: 'En çok satan variantlar (90 gün)',
       desc: 'Top 50 variant — toplam adet + ciro + satış sayısı',
-      filename: 'en-cok-satan-90gun.csv',
+      filename: 'en-cok-satan-90gun.xlsx',
     },
     {
       href: '/admin/audit-log/export',
       emoji: '📜',
       title: 'Denetim kayıtları (audit log)',
       desc: 'Tüm aksiyonlar — kim ne zaman ne yaptı (KVKK 5 yıl saklama)',
-      filename: 'audit-log-<tarih>.csv',
+      filename: 'audit-log-<tarih>.xlsx',
     },
     {
       href: '/admin/branches/export',
       emoji: '🏪',
       title: 'Şubeler',
       desc: 'Şube listesi — şehir / ilçe / WhatsApp / aktif variant / toplam stok',
-      filename: 'subeler-<tarih>.csv',
+      filename: 'subeler-<tarih>.xlsx',
     },
     {
       href: '/admin/suppliers/export',
       emoji: '🏢',
       title: 'Tedarikçiler',
       desc: 'Tedarikçi listesi — VKN / yetkili / IBAN / lead time / ödeme koşulu',
-      filename: 'tedarikciler-<tarih>.csv',
+      filename: 'tedarikciler-<tarih>.xlsx',
     },
     {
       href: '/admin/categories/export',
       emoji: '📂',
       title: 'Kategoriler',
       desc: 'Kategori listesi — emoji / KDV oranı / SKT zorunluluğu / sıralama',
-      filename: 'kategoriler-<tarih>.csv',
+      filename: 'kategoriler-<tarih>.xlsx',
     },
     {
       href: '/admin/brands/export',
       emoji: '🏷',
       title: 'Markalar',
       desc: 'Marka listesi — slug / logo URL / ürün sayısı',
-      filename: 'markalar-<tarih>.csv',
+      filename: 'markalar-<tarih>.xlsx',
     },
   ];
 
@@ -85,7 +86,7 @@ export default async function ExportHubPage() {
     <SettingsShell
       current="export"
       title="Verilerimi İndir"
-      description="KVKK Madde 11 — kişisel ve işletme verilerini her zaman indirebilirsin. CSV dosyaları Excel TR locale ile direkt açılır (UTF-8 BOM, noktalı virgül delimiter)."
+      description="KVKK Madde 11 — kişisel ve işletme verilerini her zaman indirebilirsin. Excel (.xlsx) dosyaları Türkçe başlıklar, tarih/para formatı ve filtre özellikleriyle hazırdır."
     >
       <div className="flex max-w-3xl flex-col gap-6">
         <div className="flex flex-col gap-3">
@@ -97,14 +98,18 @@ export default async function ExportHubPage() {
         <section className="rounded-2xl border border-line bg-paper p-5 text-xs text-ink-3">
           <h2 className="mb-2 text-sm font-bold text-cart">ℹ Bilgi</h2>
           <ul className="list-inside list-disc space-y-1">
-            <li>İndirme limiti: her CSV dosyası en fazla 5.000 satır içerir.</li>
-            <li>UTF-8 BOM + ; delimiter — Excel TR&apos;de doğru karakter görünür.</li>
+            <li>İndirme limiti: her dosya en fazla 5.000 satır içerir.</li>
+            <li>
+              Excel (.xlsx) format — TR locale tarih, ₺ para formatı,
+              auto-filter, freeze header, zebra striping.
+            </li>
             <li>
               Ledger ve audit log <strong>append-only</strong> — silinmiş
               kayıtlar da görünür (KVKK denetim için zorunlu).
             </li>
             <li>
-              Veri taşıma hakkı: bu CSV&apos;leri başka bir sisteme aktarabilirsin.
+              Veri taşıma hakkı: bu Excel dosyalarını başka bir sisteme
+              aktarabilirsin (Excel/LibreOffice/Google Sheets uyumlu).
             </li>
           </ul>
         </section>

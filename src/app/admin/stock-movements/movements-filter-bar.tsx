@@ -156,7 +156,7 @@ export function MovementsFilterBar({ branches, variants, initial }: Props) {
           data-testid="mv-export"
           className="ml-auto rounded-xl border border-line bg-paper px-3 py-2.5 text-xs font-bold text-cart hover:bg-cat-soft"
         >
-          ⬇ CSV
+          ⬇ Excel
         </a>
       </div>
     </section>

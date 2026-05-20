@@ -1,7 +1,9 @@
+import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { listBrands } from '@/lib/brands/manage';
-import { csvResponseBody } from '@/lib/utils/csv';
+import { xlsxResponse } from '@/lib/utils/xlsx';
+import { companies } from '@/db/schema';
 
 export async function GET() {
   const session = await auth();
@@ -9,25 +11,30 @@ export async function GET() {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const items = await listBrands(session.user.companyId, db);
+  const [items, [tenant]] = await Promise.all([
+    listBrands(session.user.companyId, db),
+    db
+      .select({ name: companies.name })
+      .from(companies)
+      .where(eq(companies.id, session.user.companyId))
+      .limit(1),
+  ]);
 
-  const body = csvResponseBody(
-    ['Marka', 'Slug', 'Logo URL', 'Ürün Sayısı', 'Oluşturma'],
-    items.map((b) => [
-      b.name,
-      b.slug,
-      b.logoUrl ?? '',
-      b.productCount,
-      new Date(b.createdAt).toISOString().slice(0, 10),
-    ]),
-  );
-
-  return new Response(body, {
-    status: 200,
-    headers: {
-      'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': `attachment; filename="markalar-${new Date().toISOString().slice(0, 10)}.csv"`,
-      'Cache-Control': 'no-store',
+  return xlsxResponse(`markalar-${new Date().toISOString().slice(0, 10)}`, {
+    sheetName: 'Markalar',
+    title: '🏷 Marka Listesi',
+    subtitle: `Toplam ${items.length} marka`,
+    metadata: {
+      tenantName: tenant?.name,
+      generatedAt: new Date(),
     },
+    columns: [
+      { key: 'name', header: 'Marka Adı', width: 30 },
+      { key: 'slug', header: 'Slug', width: 24 },
+      { key: (r) => r.logoUrl ?? '—', header: 'Logo URL', width: 36 },
+      { key: 'productCount', header: 'Ürün Sayısı', width: 14, format: 'integer' },
+      { key: (r) => new Date(r.createdAt), header: 'Oluşturma', width: 14, format: 'date_tr' },
+    ],
+    rows: items,
   });
 }

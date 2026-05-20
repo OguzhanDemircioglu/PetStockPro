@@ -1,7 +1,9 @@
+import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { listAuditLogs } from '@/lib/audit/list';
-import { csvResponseBody } from '@/lib/utils/csv';
+import { xlsxResponse } from '@/lib/utils/xlsx';
+import { companies } from '@/db/schema';
 
 export async function GET(req: Request) {
   const session = await auth();
@@ -16,44 +18,47 @@ export async function GET(req: Request) {
   const fromDate = url.searchParams.get('from') ?? undefined;
   const toDate = url.searchParams.get('to') ?? undefined;
 
-  const rows = await listAuditLogs(session.user.companyId, db, {
-    limit: 5000,
-    action: action || undefined,
-    entityType: entityType || undefined,
-    userId: userId || undefined,
-    fromDate: fromDate || undefined,
-    toDate: toDate || undefined,
-  });
+  const [rows, [tenant]] = await Promise.all([
+    listAuditLogs(session.user.companyId, db, {
+      limit: 5000,
+      action: action || undefined,
+      entityType: entityType || undefined,
+      userId: userId || undefined,
+      fromDate: fromDate || undefined,
+      toDate: toDate || undefined,
+    }),
+    db
+      .select({ name: companies.name })
+      .from(companies)
+      .where(eq(companies.id, session.user.companyId))
+      .limit(1),
+  ]);
 
-  const body = csvResponseBody(
-    [
-      'Tarih',
-      'Aksiyon',
-      'Kullanıcı',
-      'Hedef Türü',
-      'Hedef ID',
-      'Süperadmin',
-      'Süperadmin Sebep',
-      'After State (JSON)',
-    ],
-    rows.map((r) => [
-      new Date(r.createdAt).toISOString(),
-      r.action,
-      r.userEmail ?? '',
-      r.entityType ?? '',
-      r.entityId ?? '',
-      r.performedAsSuperadmin ? 'Evet' : '',
-      r.superadminReason ?? '',
-      r.afterState ? JSON.stringify(r.afterState) : '',
-    ]),
-  );
+  const filterParts: string[] = [];
+  if (action) filterParts.push(`Aksiyon: ${action}`);
+  if (entityType) filterParts.push(`Hedef türü: ${entityType}`);
+  if (fromDate) filterParts.push(`Başlangıç: ${fromDate}`);
+  if (toDate) filterParts.push(`Bitiş: ${toDate}`);
 
-  return new Response(body, {
-    status: 200,
-    headers: {
-      'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': `attachment; filename="audit-log-${new Date().toISOString().slice(0, 10)}.csv"`,
-      'Cache-Control': 'no-store',
+  return xlsxResponse(`audit-log-${new Date().toISOString().slice(0, 10)}`, {
+    sheetName: 'Audit Log',
+    title: '📜 Denetim Kayıtları',
+    subtitle: `Son ${rows.length} kayıt`,
+    metadata: {
+      tenantName: tenant?.name,
+      generatedAt: new Date(),
+      filterSummary: filterParts.length > 0 ? filterParts.join(' · ') : 'Tüm kayıtlar',
     },
+    columns: [
+      { key: (r) => new Date(r.createdAt), header: 'Tarih', width: 18, format: 'datetime_tr' },
+      { key: 'action', header: 'Aksiyon', width: 24 },
+      { key: (r) => r.userEmail ?? '—', header: 'Kullanıcı', width: 28 },
+      { key: (r) => r.entityType ?? '—', header: 'Hedef Türü', width: 18 },
+      { key: (r) => r.entityId ?? '—', header: 'Hedef ID', width: 36 },
+      { key: (r) => (r.performedAsSuperadmin ? '✓' : '✕'), header: 'Süperadmin', width: 12, align: 'center' },
+      { key: (r) => r.superadminReason ?? '—', header: 'Süperadmin Sebep', width: 28 },
+      { key: (r) => (r.afterState ? JSON.stringify(r.afterState) : '—'), header: 'After State (JSON)', width: 60 },
+    ],
+    rows,
   });
 }

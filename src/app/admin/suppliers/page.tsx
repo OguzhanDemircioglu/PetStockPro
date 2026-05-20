@@ -50,7 +50,7 @@ export default async function SuppliersPage({
             download
             className="rounded-xl border border-line bg-paper px-3 py-2.5 text-xs font-bold text-cart hover:bg-cat-soft"
           >
-            ⬇ CSV
+            ⬇ Excel
           </a>
           <Link
             href={'/admin/suppliers/new' as never}

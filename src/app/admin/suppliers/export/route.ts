@@ -1,7 +1,9 @@
+import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { listSuppliers } from '@/lib/suppliers/manage';
-import { csvResponseBody } from '@/lib/utils/csv';
+import { xlsxResponse } from '@/lib/utils/xlsx';
+import { companies } from '@/db/schema';
 
 const PAYMENT_TR: Record<string, string> = {
   cash: 'Peşin',
@@ -16,47 +18,38 @@ export async function GET() {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const items = await listSuppliers(session.user.companyId, db);
+  const [items, [tenant]] = await Promise.all([
+    listSuppliers(session.user.companyId, db),
+    db
+      .select({ name: companies.name })
+      .from(companies)
+      .where(eq(companies.id, session.user.companyId))
+      .limit(1),
+  ]);
 
-  const body = csvResponseBody(
-    [
-      'Tedarikçi',
-      'VKN',
-      'Vergi Dairesi',
-      'Yetkili',
-      'Telefon',
-      'E-posta',
-      'Şehir',
-      'İlçe',
-      'Lead Time (gün)',
-      'Ödeme Koşulu',
-      'IBAN',
-      'Toplam Giriş Adedi',
-      'Durum',
-    ],
-    items.map((s) => [
-      s.name,
-      s.vatNo ?? '',
-      s.vatOffice ?? '',
-      s.contactName ?? '',
-      s.phone ?? '',
-      s.email ?? '',
-      s.city ?? '',
-      s.district ?? '',
-      s.leadTimeDays,
-      PAYMENT_TR[s.paymentTerms] ?? s.paymentTerms,
-      s.iban ?? '',
-      s.totalIncomingQty,
-      s.isActive ? 'Aktif' : 'Pasif',
-    ]),
-  );
-
-  return new Response(body, {
-    status: 200,
-    headers: {
-      'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': `attachment; filename="tedarikciler-${new Date().toISOString().slice(0, 10)}.csv"`,
-      'Cache-Control': 'no-store',
+  return xlsxResponse(`tedarikciler-${new Date().toISOString().slice(0, 10)}`, {
+    sheetName: 'Tedarikçiler',
+    title: '🏢 Tedarikçi Listesi',
+    subtitle: `Toplam ${items.length} tedarikçi`,
+    metadata: {
+      tenantName: tenant?.name,
+      generatedAt: new Date(),
     },
+    columns: [
+      { key: 'name', header: 'Tedarikçi Adı', width: 28 },
+      { key: (r) => r.vatNo ?? '—', header: 'VKN', width: 14 },
+      { key: (r) => r.vatOffice ?? '—', header: 'Vergi Dairesi', width: 20 },
+      { key: (r) => r.contactName ?? '—', header: 'Yetkili Kişi', width: 22 },
+      { key: (r) => r.phone ?? '—', header: 'Telefon', width: 18 },
+      { key: (r) => r.email ?? '—', header: 'E-posta', width: 26 },
+      { key: (r) => r.city ?? '—', header: 'Şehir', width: 14 },
+      { key: (r) => r.district ?? '—', header: 'İlçe', width: 14 },
+      { key: 'leadTimeDays', header: 'Lead Time (gün)', width: 16, format: 'integer' },
+      { key: (r) => PAYMENT_TR[r.paymentTerms] ?? r.paymentTerms, header: 'Ödeme Koşulu', width: 18 },
+      { key: (r) => r.iban ?? '—', header: 'IBAN', width: 32 },
+      { key: 'totalIncomingQty', header: 'Toplam Giriş', width: 14, format: 'integer' },
+      { key: (r) => (r.isActive ? 'Aktif' : 'Pasif'), header: 'Durum', width: 10, align: 'center' },
+    ],
+    rows: items,
   });
 }
