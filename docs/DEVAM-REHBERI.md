@@ -1,8 +1,8 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-20 (gece-geç — **Smoke + cleanup + Sprint 12 doğrulama + iyzico landing 6 sayfa**)
-**Mevcut Branch:** `cray61` — origin'in **197 commit** ileri
-**Son commit:** `b1dbb2e` feat(landing): iyzico üye işyeri için 6 sayfa public landing + footer
+**Tarih:** 2026-05-20 (gece-geç — **Karar A/C uygulama + test rollback + Bayi Admin iskelet + cookie banner UX**)
+**Mevcut Branch:** `cray61` — origin'in 2 commit ileri (Karar A/C + Bayi Admin)
+**Son commit:** `d3cea77` feat(pricing): Karar A + C uygulandı — PRO 1.250₺ + PRO+ 2.250₺
 **Test:** **1385** passed
 **Lint+typecheck:** 0 error
 **Migration:** **20** (değişmedi)
@@ -10,7 +10,51 @@
 **Supabase Storage:** ❌ KALDIRILDI
 **R2:** ✅ Kod + bucket + 1.283 webp upload + 44 dosya overrite edilmiş
 
-## 🆕 Bu mini-tur (2026-05-20, gece-geç) — iyzico landing page 6 sayfa
+## 🆕 Bu mini-tur (2026-05-20, gece-en-geç) — Karar A/C + test rollback + Bayi Admin iskelet + cookie banner UX
+
+7 işin tamamı tek turda tamamlandı:
+
+| # | İş | Sonuç |
+|---|---|---|
+| 9 | **Karar A** — PRO upsell motivasyonu | ✅ Kullanıcı (a) Sade tut seçti. Ürün limiti tek farklılaşma kalır. Vitrin rozet/sıralama bonusu Faz 2'ye saklı. CLAUDE.md §Karar A işaretlendi. |
+| 10 | **Karar C** — Pricing yükseltme | ✅ Kullanıcı (a) Pricing yükselt seçti. **PRO 750→1.250₺**, **PRO+ 1.750→2.250₺**. Yeni net hedef ~$10.000/ay (önceki $6.400). 10 dosya güncellendi (UI + lib + docs). plan-limits.test.ts 13/13 pass. |
+| 11 | **Test hesapları rollback** | ✅ oguzhanturgut611@gmail.com SUPERADMIN→BAYI_SAHIBI. magicui zaten BAYI_SAHIBI'ymış. claude@petstockpro.local kalıcı SUPERADMIN kalır. |
+| 12 | **yeni-resimler/ silme** | ✅ 41 dosya + 16 MB silindi. .gitignore'da olduğu için git'i etkilemiyor. |
+| 13 | ~~Vision API tarama~~ | ❌ Kullanıcı vazgeçti ("gerektiğinde sonra"). Mevcut 44 görünür sorun düzeltildi, kalan 1.239 sample-test edilebilir. |
+| 14 | **Bayi Admin (Faz 3) iskelet** | ✅ `/admin/bayi` placeholder sayfa (coming-soon banner + Faz 3 kapsam taslağı + referans dokümanlar). Schema migration Faz 3'te. |
+| 15 | **Cookie banner UX** | ✅ Anonim user `/vitrin` → 🍪 banner → "Çerezlere izin ver" → banner kayboldu + localStorage 180 gün TTL doğrulandı. |
+
+### 📊 Bu mini-tur rakamları
+
+| Metric | Değer |
+|---|---|
+| Yeni commit | **2** (Karar A/C + Bayi Admin iskelet) |
+| Pricing değişen yer | **10 dosya** (UI 3 + lib 3 + docs 2 + schema 1 + test 1) |
+| Pricing yeni | PRO **1.250₺** + PRO+ **2.250₺** (önceki 750/1.750) |
+| Yeni placeholder sayfa | `/admin/bayi` (Faz 3) |
+| DB rollback | 1 user (oguzhanturgut SUPERADMIN→BAYI_SAHIBI) |
+| Disk temizliği | 16 MB (41 dosya, yeni-resimler/) |
+| Test | 1385 pass (13/13 plan-limits güncel) |
+
+### 🔑 Bu turda netleşen
+
+1. **Karar A:** "Eşit rekabet" felsefesi korundu. PRO'ya yükselme motivasyonu sadece ürün limiti. Lansman sonrası gerçek conversion verisi ile değerlendirilecek (Faz 2).
+
+2. **Karar C net gelir senaryosu:**
+   - 1K tenant × %70 FREE + %25 PRO (250×1.250) + %5 PRO+ (50×2.250) = **425K₺ brüt/ay**
+   - iyzico %3 (-12.750) + OPEX (-7.500) + müşavir (-2.500) - vergi %25 (-100K) = **~301K₺ net ≈ $10.000/ay**
+   - Önceki $6.400'den +%56 iyileşme. Tek geliştirici geçim hedefini karşılar.
+
+3. **Test hesapları durumu (LANSMAN ÖNCESİ ROLLBACK ✅):**
+   - `magicui@petshop.test` → BAYI_SAHIBI ✓
+   - `oguzhanturgut611@gmail.com` → BAYI_SAHIBI ✓
+   - `claude@petstockpro.local` → SUPERADMIN (kalıcı, lansman öncesi silinecek — memory'de kayıtlı)
+
+4. **Cookie banner UX kanıt:** localStorage TTL doğrulandı (`vitrin-cookie-banner-dismissed-at` 6 ay = 15.552.000.000 ms, expiresInDays=180).
+
+---
+
+## 📜 Önceki mini-tur (2026-05-20, gece-geç) — iyzico landing page 6 sayfa
 
 DEVAM-REHBERI #3 madde — iyzico Üye İşyeri başvurusu için zorunlu yasal sayfalar + marketing landing.
 
