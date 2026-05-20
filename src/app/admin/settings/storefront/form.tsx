@@ -65,7 +65,8 @@ export function StorefrontForm({ initial }: Props) {
         />
         <Field
           name="metaDescription"
-          label="SEO açıklaması (Google arama özeti, max 300 karakter)"
+          label="SEO açıklaması"
+          helperText="Google'da pet shop'un adı arandığında başlığın altında çıkacak özet yazı. Müşteriye 1-2 cümlede sen kimsin, hangi şehirde ve ne sattığını anlat. Boş bırakırsan Google &quot;Hakkında&quot; yazısının ilk 160 karakterini kullanır. (max 300 karakter)"
           placeholder="İzmir Aliağa'da pet shop. Mama, oyuncak, aksesuar..."
           defaultValue={initial?.metaDescription ?? ''}
           multiline
@@ -161,6 +162,7 @@ export function StorefrontForm({ initial }: Props) {
 function Field({
   name,
   label,
+  helperText,
   placeholder,
   defaultValue,
   type = 'text',
@@ -170,6 +172,8 @@ function Field({
 }: {
   name: string;
   label: string;
+  /** Label altında küçük gri açıklama metni — alanın ne işe yaradığını anlatır. */
+  helperText?: string;
   placeholder?: string;
   defaultValue?: string;
   type?: string;
@@ -180,6 +184,9 @@ function Field({
   return (
     <label className="flex flex-col gap-1">
       <span className="text-[12.5px] font-bold uppercase tracking-wider text-ink-3">{label}</span>
+      {helperText && (
+        <span className="text-[11.5px] leading-snug text-ink-3">{helperText}</span>
+      )}
       {multiline ? (
         <textarea
           name={name}
