@@ -1,9 +1,9 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-20 (öğle — **Branch detail müdür gösterimi + remove action**)
-**Mevcut Branch:** `cray61` — origin'in **186 commit** ileri (push edilmedi)
-**Son commit:** `5c7b5b7` feat(branches): detay sayfasında atanmış müdür + STAFF kartı + "Müdürü kaldır"
-**Test:** **1356+** passed (+7: detail 3 + manage removeBranchManager 4)
+**Tarih:** 2026-05-20 (öğle — **Müdür kart + Catalog cleanup**)
+**Mevcut Branch:** `cray61` — origin'in **189 commit** ileri (push edilmedi)
+**Son commit:** `e48ea39` feat(catalog): HTML entity + whitespace cleanup helper + script
+**Test:** **1378+** passed (+7 branch detail + 22 text-cleanup helper)
 **Lint+typecheck:** 0 error
 **Migration:** **20** (değişmedi — schema değişmedi, mevcut `users.branch_id` field kullanıldı)
 **Aiven:** dormant (.env'de LOCAL_DB_* hazır)
@@ -44,6 +44,35 @@
 ### ✅ Temizlik
 
 - `test.mudur@petshop.test` seed user (id `bd11c363-2154-4454-b4f3-aa67ed775dd4`) bu turun sonunda silindi (kullanıcı onayıyla DELETE) — DB temiz.
+
+---
+
+## 🆕 Bu tur (2026-05-20, ikindi) — Catalog kalite cleanup + .gitignore kontrol
+
+| # | İş | Commit |
+|---|---|---|
+| O | `src/lib/utils/text-cleanup.ts` — decodeHtmlEntities (numeric/hex + 13 named) + normalizeInlineWhitespace + normalizeProductName + normalizeProductDescription + cleanProductTextFields. 22 unit test. | `e48ea39` |
+| O | `scripts/cleanup-catalog-text.ts` — dry-run default, `--apply` ile JSON (`scripts/data/pet-products-catalog.json`) + DB (`catalog_seed_products`) symmetric güncelleme. Idempotent doğrulandı. | `e48ea39` |
+| O | DEVAM-REHBERI #3 — `.gitignore` kontrol: `scripts/data/` line 98 + `scripts/enrich-product-images.ts` line 99. 1283 webp track edilmiyor, ek değişiklik gerekmedi. | (no commit) |
+
+### 📊 Bu tur rakamları
+
+| Metric | Değer |
+|---|---|
+| Yeni commit | **1** (cleanup helper + script) |
+| Yeni test | **+22** (text-cleanup) |
+| Catalog satır temizlenen | **124 / 1240** (~%10) |
+| HTML entity sayısı sonrası | 0 |
+| Whitespace anomalisi sonrası | 0 |
+| Branch ahead | 188 → **189 commit** |
+
+### 🔑 Bu turda netleşen
+
+1. **JSON dosyası `.gitignore` kapsamında** (`scripts/data/`) → JSON cleanup commit'ine girmiyor ama lokal source-of-truth temizlendi (sonraki seed-catalog-table.ts çalıştığında temiz JSON DB'ye yazılır).
+
+2. **`scripts/data/images/` 1283 webp** track edilmiyor, R2'de mevcut. Repo temiz, ek `.gitignore` satırı gerekmedi.
+
+3. **Brand-duplicate isimler:** DEVAM-REHBERI tahmini "%5 etkili" idi; gerçekte `\m(\S+)\s+\1\M` regex ile 0 satır → temizlik gerekmedi. HTML entity (`&#039;` vb.) tek gerçek sorundu.
 
 ---
 
@@ -143,14 +172,9 @@
    - iyzico sandbox başvurusu paralel (anında API key)
    - Production başvurusu landing tamamlanınca (5-15 iş günü)
 
-2. **Catalog kalite cleanup** (opsiyonel, küçük iş)
-   - Brand-duplicate isimler: "Chef's Choice Chef's Choice ..." pattern ~%5 etkili
-   - HTML entity'ler: `&#039;` → `'` (catalog'ta görünüyor bazı ürünlerde)
-   - Tek bir cleanup script ile name + description regex replace + UPSERT
+2. ~~**Catalog kalite cleanup**~~ ✅ Tamamlandı 2026-05-20 ikindi — `e48ea39` (124 satır temizlendi)
 
-3. **`scripts/data/images/` .gitignore** kontrolü
-   - 1.283 webp R2'ye yüklendi → repo'da 49 MB lokal kalmasına gerek yok
-   - .gitignore zaten kapsıyor (kontrol et) veya açıkça ekle
+3. ~~**`scripts/data/images/` .gitignore** kontrolü~~ ✅ Kontrol edildi 2026-05-20 ikindi — kapsamda (`scripts/data/` line 98), 1283 webp track edilmiyor
 
 4. ~~**Branch detail/edit sayfasında "atanmış müdür" gösterimi**~~ ✅ Tamamlandı 2026-05-20 öğle (yukarı bölüm)
 
