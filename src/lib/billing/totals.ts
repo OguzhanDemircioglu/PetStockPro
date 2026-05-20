@@ -10,7 +10,7 @@
  * Para birimi: TRY (TR-only, Paddle Faz 2). Hesaplamalar 2 ondalık precision.
  */
 
-/** Subscription fiyatlandırması KDV dahil — TR yasal pratik (PRO 750₺ KDV dahil). */
+/** Subscription fiyatlandırması KDV dahil — TR yasal pratik (PRO 1.250₺ KDV dahil). */
 export const SUBSCRIPTION_VAT_RATE = 20; // yüzde
 
 export interface InvoiceTotals {
@@ -25,9 +25,9 @@ export interface InvoiceTotals {
 /**
  * KDV dahil toplam tutardan matrah + KDV ayrıştır.
  *
- * Pet shop'a PRO 750₺ KDV dahil tahsil ediyoruz. Nilvera e-Arşiv için:
- *   matrah = 750 / 1.20 = 625.00
- *   vat    = 750 - 625  = 125.00
+ * Pet shop'a PRO 1.250₺ KDV dahil tahsil ediyoruz. Nilvera e-Arşiv için:
+ *   matrah = 1250 / 1.20 = 1041.67
+ *   vat    = 1250 - 1041.67  = 208.33
  *
  * Yuvarlama: matrah'ı 2 ondalığa yuvarla, vat'ı toplam-matrah olarak hesap.
  * Bu sayede vat + matrah = total tam eşit kalır (penny rounding bug yok).

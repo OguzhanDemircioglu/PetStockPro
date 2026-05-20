@@ -12,13 +12,13 @@ describe('PLAN_LIMITS', () => {
     expect(PLAN_LIMITS.FREE.productLimit).toBe(50);
     expect(PLAN_LIMITS.FREE.priceMonthlyTry).toBe(0);
   });
-  it('PRO = 500 ürün, 750₺', () => {
+  it('PRO = 500 ürün, 1250₺', () => {
     expect(PLAN_LIMITS.PRO.productLimit).toBe(500);
-    expect(PLAN_LIMITS.PRO.priceMonthlyTry).toBe(750);
+    expect(PLAN_LIMITS.PRO.priceMonthlyTry).toBe(1250);
   });
-  it('PRO_PLUS = ∞, 1750₺', () => {
+  it('PRO_PLUS = ∞, 2250₺', () => {
     expect(PLAN_LIMITS.PRO_PLUS.productLimit).toBe(Infinity);
-    expect(PLAN_LIMITS.PRO_PLUS.priceMonthlyTry).toBe(1750);
+    expect(PLAN_LIMITS.PRO_PLUS.priceMonthlyTry).toBe(2250);
   });
 });
 
@@ -43,6 +43,6 @@ describe('planLimitDisplay', () => {
 
 describe('planPrice', () => {
   it('FREE = 0', () => expect(planPrice('FREE')).toBe(0));
-  it('PRO = 750', () => expect(planPrice('PRO')).toBe(750));
-  it('PRO_PLUS = 1750', () => expect(planPrice('PRO_PLUS')).toBe(1750));
+  it('PRO = 1250', () => expect(planPrice('PRO')).toBe(1250));
+  it('PRO_PLUS = 2250', () => expect(planPrice('PRO_PLUS')).toBe(2250));
 });

@@ -6,8 +6,8 @@ import { planOverrideAction, type PlanOverrideState } from './actions';
 
 const PLAN_LABELS: Record<string, string> = {
   FREE: 'FREE (50 ürün)',
-  PRO: 'PRO (500 ürün · 750₺/ay)',
-  PRO_PLUS: 'PRO+ (∞ · 1.750₺/ay)',
+  PRO: 'PRO (500 ürün · 1.250₺/ay)',
+  PRO_PLUS: 'PRO+ (∞ · 2.250₺/ay)',
 };
 
 export function PlanOverrideForm() {

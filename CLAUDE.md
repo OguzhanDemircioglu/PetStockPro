@@ -50,7 +50,7 @@
 
 | Konu | Sonuç | Otoritatif Belge |
 |---|---|---|
-| **3-tier B + TR-only** | FREE 50/PRO 500 750₺/PRO+ ∞ 1.750₺, KDV dahil. Paddle Faz 2'de saklı. | `PLAN-KADEMELERI.md` |
+| **3-tier B + TR-only** | FREE 50/PRO 500 1.250₺/PRO+ ∞ 2.250₺, KDV dahil. **2026-05-20 Karar C ile pricing yükseltildi** (önceki 750/1.750 → geçim hedefi yetersizdi). Paddle Faz 2'de saklı. | `PLAN-KADEMELERI.md` |
 | **Süperadmin URL kaldırıldı** | Tek `/admin` URL, role-based sidebar menü. SUPERADMIN role'lü kullanıcı ek menüleri görür. JWT `user_role='SUPERADMIN'` claim. | `EKRAN-SUPERADMIN.md` + `SUPABASE-SETUP.md` |
 | **Net gelir tablosu** | 1K tenant × (%70 FREE / %25 PRO / %5 PRO+) = 275K₺ brüt, **~193K₺ net ≈ $6.400/ay**. iyzico "tahsilat ücreti" (POS işlem). B2C komisyon YOK. | `DEPLOYMENT.md §6.4` |
 | **Pazar verisi (TR pet shop)** | TAM 5-15K, SAM 3-4K, SOM 500-1.500 tenant (2-3 yıl). %0-5 SaaS = YEŞİL ALAN. | `DEPLOYMENT.md §6.5` |
@@ -312,16 +312,16 @@ Tartışmadan çıkan kararlar dokümanlara entegre edildi. **Önceki PetStockPr
 
 Aşağıdakilerin hepsi **teknik değil ticari/stratejik** kararlar — Sprint 16 lansman öncesi netleşmesi gerek.
 
-### Karar A — PRO Upsell Motivasyonu
+### Karar A — PRO Upsell Motivasyonu ✅ **2026-05-20 KARAR: (a) Sade tut**
 
 **Sorun:** Vitrin tek tema, eşit görünüm. FREE 50 kullanıcı PRO'ya neden yükselsin? Sadece "50 ürünü geçtim" diye → ince motivasyon.
 
 **Seçenek:**
-- (a) Olduğu gibi bırak — "ürün limiti yeter" yeterli motivasyon, sade tut
-- (b) PRO'ya küçük avantaj ekle: "✓ Onaylı PRO Üye" rozeti vitrin profilinde + sıralama bonusu (~5%)
-- (c) Vitrin'de "Sponsored" özelliği aç (PRO ürünleri haftada 1 kez öne çıkar) — ama "rekabet eşit" felsefesini bozar
+- (a) ✅ **SEÇİLDİ** — "ürün limiti yeter" yeterli motivasyon, sade tut
+- ~~(b) PRO'ya küçük avantaj ekle: "✓ Onaylı PRO Üye" rozeti vitrin profilinde + sıralama bonusu (~5%)~~
+- ~~(c) Vitrin'de "Sponsored" özelliği aç — "rekabet eşit" felsefesini bozar~~
 
-**Aday:** (b) küçük avantaj — eşit rekabet bozulmaz ama PRO için somut görünür değer
+**Karar gerekçesi:** Eşit rekabet felsefesi korundu, üç tier farklılaşması yalnız stok limiti. PRO+ rozet veya sıralama bonusu üzerinde tartışma Faz 2'ye saklı (lansman sonrası gerçek conversion verisi ile yeniden değerlendirilebilir).
 
 ### Karar B — WhatsApp Tıklama → İlgi Ölçümü Atfı
 
@@ -337,16 +337,18 @@ Aşağıdakilerin hepsi **teknik değil ticari/stratejik** kararlar — Sprint 1
 
 **(b) seçenek istersen Faz 2'de eklenebilir** — küçük UX, opsiyonel kullanım.
 
-### Karar C — Pricing + Hedef (Gelir Hedefi)
+### Karar C — Pricing + Hedef (Gelir Hedefi) ✅ **2026-05-20 KARAR: (a) Pricing yükselt**
 
-**Sorun:** 1K tenant × %5 PRO × 500₺ = 25K₺/ay (~$833) → maliyet sonrası net $500 → tek geliştirici geçim parası bile değil.
+**Sorun:** 1K tenant × %5 PRO × 750₺ = 25K₺/ay (~$833) → maliyet sonrası net $500 → tek geliştirici geçim parası bile değil.
 
-**Seçenek:**
-- (a) Pricing yükselt — PRO 500₺ → 1000-1500₺ (sade FREE/PRO yapısında PRO'da daha çok değer pozisyonlama)
-- (b) Hedef büyüt — 5-10K tenant (Türkiye geneli pazarlama yatırımı)
-- (c) Kombine — orta pricing (750₺) + makul hedef (5K tenant) = ~$6K/ay net
+**Karar:** ✅ **(a) Pricing yükselt** — PRO 750₺ → **1.250₺**, PRO+ 1.750₺ → **2.250₺**. Orta nokta tercih edildi (1.000-1.500₺ aralığında):
+- 1K tenant × %25 PRO × 1.250₺ = 312.500₺
+- 1K tenant × %5 PRO+ × 2.250₺ = 112.500₺
+- Toplam brüt ~425.000₺/ay, net ~298K₺/ay = **~$9.900/ay net** (önceki ~$6.400'den iyileşti)
 
-**Realite:** Türkiye'de 10-15K aktif pet shop var (sektör tahmin). %5 conversion'la 5K tenant kazanmak = %33 pazar penetrasyonu = 2-3 yıl iş ama mümkün. Bu **Sprint 16 lansman öncesi** kullanıcı kararı verecek — şimdi karar şart değil.
+**Hedef tenant:** 1K tenant (2-3 yılda). 5K hedefe geçiş ise lansman sonrası 12 aylık conversion ölçümü ile yeniden değerlendirilir.
+
+**Etkilenen dosyalar:** `lib/constants/plan-limits.ts`, `lib/billing/totals.ts`, `db/schema/index.ts`, `app/page.tsx`, `app/fiyatlar/page.tsx`, `app/mesafeli-satis-sozlesmesi/page.tsx`, `app/admin/superadmin/bypass/plan-override/form.tsx`, `PLAN-KADEMELERI.md`.
 
 ### Süperadmin Felsefe Netleştirme (uygulandı 2026-05-14)
 
@@ -403,7 +405,7 @@ EKRAN-SUPERADMIN.md §2.5 yeniden yazıldı — Vitrin Modlama 5 alt-sekme (Manu
 ## 🔑 Önemli Kararlar (Hatırlat)
 
 1. **Tech stack:** Next.js 16 + Supabase + Drizzle + Auth.js v5. **Eski Pet/server (Java/Spring) kodu KULLANILMIYOR** — sıfırdan TS.
-2. **Plan limitleri:** **3-tier B (2026-05-14): FREE 50 / PRO 500 750₺ / PRO+ ∞ 1.750₺ — TR-only.** Tek farklılaşma stok limiti. Diğer tüm özellikler her planda açık. 2026-05-13 "2-tier, PRO+ rafa" kararı iptal edildi.
+2. **Plan limitleri:** **3-tier B: FREE 50 / PRO 500 / PRO+ ∞ — TR-only.** Tek farklılaşma stok limiti. Diğer tüm özellikler her planda açık. **Pricing (2026-05-20 Karar C revize): PRO 1.250₺ + PRO+ 2.250₺** (önceki 2026-05-14: 750/1.750). 2026-05-13 "2-tier, PRO+ rafa" kararı iptal edildi.
 
 2.5. **🚨 PARA AKIŞI ÇİZGİSİ (DEĞİŞMEZ — 2026-05-14):** Alıcı (müşteri) ile satıcı (pet shop) arasındaki para alışverişine **PetStockPro ASLA dahil değildir.** Bizim rolümüz sadece WhatsApp deep link açmak (dizin/yer sağlayıcı). Online sipariş YOK, sepet YOK, ödeme aracılığı YOK, komisyon YOK, kargo entegrasyonu YOK. Detay: `EKRAN-PUBLIC-VITRIN.md §13.4`. Bu çizgi yasal güvenlik (ödeme kuruluşu lisansı, sub-merchant, ETBİS aracı, KKDF) için kritik.
 3. **Tipografi:** **Verdana saf** (sistem font, kullanıcı tercihi). mockup-v3'teki Plus Jakarta + Fraunces değil.

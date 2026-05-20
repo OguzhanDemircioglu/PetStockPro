@@ -40,8 +40,8 @@ interface PlanCard {
 
 const PLAN_CARDS: PlanCard[] = [
   { name: 'FREE', price: '0 ₺', limit: '50 ürün' },
-  { name: 'PRO', price: '750 ₺/ay', limit: '500 ürün', highlight: true },
-  { name: 'PRO+', price: '1.750 ₺/ay', limit: 'Sınırsız' },
+  { name: 'PRO', price: '1.250 ₺/ay', limit: '500 ürün', highlight: true },
+  { name: 'PRO+', price: '2.250 ₺/ay', limit: 'Sınırsız' },
 ];
 
 export default async function Home() {

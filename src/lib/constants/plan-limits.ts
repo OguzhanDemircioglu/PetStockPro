@@ -2,17 +2,18 @@
  * Plan tier limit'leri — tek kaynak
  *
  * 2026-05-14 karar: 3-tier B (TR-only)
+ * 2026-05-20 revize (Karar C): pricing yükseltildi — tek geliştirici geçim hedefi.
  *   FREE   = 50 ürün (deneme, 0₺)
- *   PRO    = 500 ürün (750₺/ay KDV dahil)
- *   PRO+   = sınırsız (1.750₺/ay KDV dahil)
+ *   PRO    = 500 ürün (1.250₺/ay KDV dahil)
+ *   PRO+   = sınırsız (2.250₺/ay KDV dahil)
  *
  * Bkz. docs/PLAN-KADEMELERI.md (otoritatif).
  */
 
 export const PLAN_LIMITS = {
   FREE: { productLimit: 50, priceMonthlyTry: 0 },
-  PRO: { productLimit: 500, priceMonthlyTry: 750 },
-  PRO_PLUS: { productLimit: Infinity, priceMonthlyTry: 1750 },
+  PRO: { productLimit: 500, priceMonthlyTry: 1250 },
+  PRO_PLUS: { productLimit: Infinity, priceMonthlyTry: 2250 },
 } as const;
 
 export type PlanKey = keyof typeof PLAN_LIMITS;

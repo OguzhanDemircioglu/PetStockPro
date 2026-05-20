@@ -319,7 +319,7 @@ export const branches = petstockproSchema.table('branches', {
  * SUBSCRIPTIONS — iyzico abonelik kayıtları
  *
  * FREE plan için subscription kaydı YOK (subscription = aktif para akışı).
- * PRO 750₺ + PRO+ 1750₺ aboneleri için iyzico subscription ref'i tutulur.
+ * PRO 1.250₺ + PRO+ 2.250₺ aboneleri için iyzico subscription ref'i tutulur.
  *
  * Tek aktif abonelik per tenant (partial unique index: status='active' satırlarda).
  * Cancelled/expired kayıtlar geçmiş için saklanır (KVKK 5 yıl, vergi 10 yıl).
@@ -397,7 +397,7 @@ export const invoices = petstockproSchema.table('invoices', {
   // Tutar (2026 %20 KDV)
   amountMatrah: decimal('amount_matrah', { precision: 10, scale: 2 }).notNull(),    // KDV hariç (PRO için 625₺)
   vatAmount: decimal('vat_amount', { precision: 10, scale: 2 }).notNull(),          // KDV (125₺)
-  amountTotal: decimal('amount_total', { precision: 10, scale: 2 }).notNull(),      // KDV dahil (750₺)
+  amountTotal: decimal('amount_total', { precision: 10, scale: 2 }).notNull(),      // KDV dahil (1.250₺)
 
   // Nilvera e-Arşiv referansları
   nilveraInvoiceId: varchar('nilvera_invoice_id', { length: 100 }),
