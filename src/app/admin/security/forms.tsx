@@ -58,7 +58,7 @@ export function SecurityForms({
 
       {just2faDisabled && (
         <div
-          role="alert"
+          role="status"
           className="rounded-xl border border-arrow/40 bg-arrow-soft px-4 py-3 text-sm font-bold text-arrow-7"
         >
           ✅ 2FA başarıyla kapatıldı. Hesabın artık sadece şifreyle korunuyor.
