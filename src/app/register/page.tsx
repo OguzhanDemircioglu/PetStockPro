@@ -185,7 +185,7 @@ export default function RegisterPage() {
               />
               <span>
                 <strong className="text-cart">KVKK Aydınlatma Metni</strong>&apos;ni okudum, kişisel verilerimin işlenmesini onaylıyorum (Md. 10).{' '}
-                <a href="/legal/kvkk" className="font-bold text-cat hover:underline">
+                <a href="/kvkk" className="font-bold text-cat hover:underline">
                   Detay
                 </a>
               </span>
@@ -201,7 +201,7 @@ export default function RegisterPage() {
               <span>
                 Verilerin <strong className="text-cart">Avrupa Birliği bölgesinde</strong>{' '}
                 işlenmesine açık rıza veriyorum (KVKK Md. 9).{' '}
-                <a href="/legal/eu-data" className="font-bold text-cat hover:underline">
+                <a href="/kvkk#veri-aktarimi" className="font-bold text-cat hover:underline">
                   Detay
                 </a>
               </span>
