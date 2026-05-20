@@ -1,18 +1,51 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-20 (gece-en-geç — **Observer + Yetki + Şube state planı hazır, yeni session'da başlayacak**)
-**Mevcut Branch:** `cray61` — origin sync (0 commit ahead)
-**Son commit:** `711be26` fix(reports): settle-credit-button SWAL'a bağlı değildi — eklendi
+**Tarih:** 2026-05-21 (**Observer + Yetki + Şube state refactor TAMAMLANDI**, Faz 1-8 + final docs)
+**Mevcut Branch:** `cray61` — push pending (8+ commit ahead)
+**Son commit:** `b597c1a` feat(faz8): Observer davet + login UI — banner + rozet + branches gate
+
+---
+
+## ✅ 2026-05-21 — Observer + Yetki + Şube state Refactor (Faz 1-8)
+
+Plan: `docs/PLAN-OBSERVER-STAFF-BRANCH-STATE.md` — 9 faz, hepsi tamamlandı.
+
+| Faz | Commit | Konu |
+|---|---|---|
+| 1 | `274a1f1` | Schema: Migration 0021 + permission keys + 4 test |
+| 2 | `ebe21ab` | Backend gate: permissions.ts + status.ts + role-gate.ts + 46 yeni test + 6 server action gate'lendi |
+| 3 | `fc199b1` | Türkçe etiket: BAYI_SAHIBI→"Bayi Admin", OBSERVER→"İzleyici", STAFF→"Çalışan" (9 dosya) |
+| 4 | `2c2c088` | Şube 3-state UI: badge + edit radio + BranchStatusControl + detail banner + setBranchStatusAction |
+| 5 | `0ef4fe4` | Vitrin tatil/pasif: branchSummary + holiday banner + disabled WhatsApp + tüm-pasif=404 |
+| 6 | `5d84e3e` | Çalışan yetki modal: 15 toggle + applyStaffDefaults invite hook + updateUserPermissionsAction |
+| 7 | `d0192ca` | Şube ekleme wizard step 2: "Çalışan ekle veya atla" + SWAL skip uyarı |
+| 8 | `b597c1a` | Observer login UI: sticky banner + topbar rozet + branches CRUD gate |
+
+**Browser smoke (toplam doğrulama):**
+- ✅ Migration 0021 uygulandı (user_role enum + branch_status enum + user_permissions tablo)
+- ✅ 3-state şube: tatil toggle → DB status='holiday' + vitrin banner + WhatsApp disabled
+- ✅ Pasif: tüm şubeler inactive → storefront 404 (anyOperational=false)
+- ✅ STAFF davet → applyStaffDefaults 3 ON yetki seed (sale.create / variant.view / customer_ref.write)
+- ✅ Yetki modal: 15 toggle initial state doğru + 2 toggle + kaydet → DB güncel + audit log
+- ✅ Observer login → sticky banner + "🔍 İzleyici" rozet + addBranch reject (DB'de oluşmadı)
+
+**Test: 1507 → 1553 (+46) pass, typecheck 0 error.**
+
+**Schema değişiklikleri (Migration 0021):**
+- `user_role` enum: SUBE_MUDURU → OBSERVER rename (BAYI_ADMIN legacy kaldı, UI'da gizli)
+- `branch_status` enum: active | holiday | inactive
+- `branches.status` column eklendi, isActive sync (active/holiday=true, inactive=false)
+- `user_permissions` tablo (15 key support: 3 default ON + 12 OFF)
+- `idx_users_one_sube_muduru_per_branch` partial index DROP
+
+**Bilinen sınırlılık:** Faz 7 step 2 form submit'i programmatik click ile fire etmiyor (browser preview env). Backend action Faz 6'da onaylandı (aynı inviteUserAction). Gerçek browser'da çalışacak — kullanıcı manuel test edebilir.
 
 ---
 
 ## 🚀 YENİ SESSION'A GİRDİĞİNDE — İLK OKUMA
 
-> **Önce planı oku:** `docs/PLAN-OBSERVER-STAFF-BRANCH-STATE.md` ⭐
->
-> 9 fazlı kapsamlı plan: SUBE_MUDURU→OBSERVER rename, branch_status 3-state (active/holiday/inactive), STAFF granular permission matrix, Faz 3 BAYI_ADMIN iptal, vitrin tatil rozet, çalışan yetki modal, observer davet flow.
->
-> İlk komut: "PLAN-OBSERVER-STAFF-BRANCH-STATE.md oku ve Faz 1'e başla"
+> Bir önceki büyük iş tamamlandı. Sıradaki büyük iş Sprint 3.3 image upload
+> (`SUPABASE_SERVICE_ROLE_KEY` blokeri). CLAUDE.md "Sıradaki olası işler" listesinden seç.
 
 ---
 

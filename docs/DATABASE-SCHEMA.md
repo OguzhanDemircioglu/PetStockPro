@@ -181,14 +181,31 @@ export const plans = pgTable('plans', {
 //   PRO_PLUS | productLimit: NULL  | priceTryMonthly: 1750  | priceUsdMonthly: 0
 // TR-only kararı: priceUsdMonthly = 0 (Faz 2 yurt dışı açılışında doldurulur).
 
-// 2026-05-14 MANTIK-HATALARI S1: STAFF rolü = kasiyer olarak tanımlandı (Faz 2'ye saklamak yerine MVP'de aktif).
-//   SUPERADMIN: sistem yöneticisi (sen)
-//   ADMIN:      pet shop sahibi (branchId=NULL) veya şube müdürü (branchId=X)
-//   STAFF:      kasiyer — sadece satış kaydeder + sayıma katılır + düşük stok görür
-//               (ürün CRUD yok, fiyat değişikliği yok, sipariş yok, tedarikçi yok)
-//   BAYI_ADMIN: multi-tenant viewer (Faz 3 — enum hazır, UI yok)
+// 2026-05-21 — Migration 0021 (Observer + Yetki + Şube state refactor):
+//   SUBE_MUDURU → OBSERVER rename. Yeni enum:
+//   SUPERADMIN:  sistem yöneticisi (sen)
+//   BAYI_SAHIBI: pet shop sahibi (branchId=NULL, tenant geneli, tüm yetkiler bypass)
+//   OBSERVER:    "İzleyici" — read-only multi-branch viewer; hiçbir mutation yapamaz
+//                (assertNotObserver gate ile mutation reddedilir)
+//   STAFF:       "Çalışan" — granular permission (user_permissions tablosu).
+//                3 default ON (sale.create / variant.view / customer_ref.write),
+//                12 default OFF (Bayi Admin tek tek açar yetki modal'ından)
+//   BAYI_ADMIN:  legacy — UI'da yok, schema'da kaldı (Postgres enum drop limited)
 // Yetki matrisi: EKRAN-KULLANICILAR.md §12.5
-export const userRoleEnum = pgEnum('user_role', ['SUPERADMIN', 'ADMIN', 'STAFF', 'BAYI_ADMIN']);
+export const userRoleEnum = pgEnum('user_role', ['SUPERADMIN', 'BAYI_SAHIBI', 'OBSERVER', 'STAFF', 'BAYI_ADMIN']);
+
+// 2026-05-21 Migration 0021 — Şube 3-state:
+//   active:   normal — vitrin'de görünür, tüm aksiyonlar açık
+//   holiday:  tatilde — vitrin "🏖" rozet + WhatsApp disabled, admin operasyonu devam edebilir
+//   inactive: pasif  — vitrin'den çekilir + admin read-only
+// branches.is_active sync: active/holiday=true, inactive=false (geri uyumluluk)
+export const branchStatusEnum = pgEnum('branch_status', ['active', 'holiday', 'inactive']);
+
+// 2026-05-21 Migration 0021 — STAFF granular permission (Plan §C):
+//   id, user_id, permission_key (60 char), enabled, granted_by_id, granted_at
+//   UNIQUE(user_id, permission_key). 15 key whitelist (lib/users/permission-keys.ts).
+//   BAYI_SAHIBI + SUPERADMIN bypass eder, OBSERVER her zaman reject.
+//   RLS enabled (postgres bypass, anon REST default-deny).
 export const userStatusEnum = pgEnum('user_status', ['active', 'invited', 'inactive', 'expired_invite']);
 
 // 2026-05-14 davet hibrit akışı — admin email veya link iki yöntem seçer (kullanıcı kararı):
