@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useRef } from 'react';
 import {
-  uploadImageAction,
+  uploadImagesAction,
   deleteImageAction,
   setPrimaryImageAction,
   type ImageActionState,
@@ -19,18 +19,24 @@ const ACCEPT = 'image/jpeg,image/png,image/webp';
 export function ImagesSection({ productId, images }: Props) {
   const [isPending, startTransition] = useTransition();
   const [status, setStatus] = useState<ImageActionState | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   const handleUpload = (formData: FormData) => {
     setStatus(null);
     startTransition(async () => {
-      const result = await uploadImageAction(productId, null, formData);
+      const result = await uploadImagesAction(productId, null, formData);
       setStatus(result);
       if (result.ok) {
         formRef.current?.reset();
+        setSelectedFiles([]);
       }
     });
+  };
+
+  const onFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedFiles(Array.from(e.target.files ?? []));
   };
 
   const handleDelete = (imageId: string, name: string) => {
@@ -61,13 +67,14 @@ export function ImagesSection({ productId, images }: Props) {
             📷 Görseller ({images.length})
           </h3>
           <p className="mt-0.5 text-[12.5px] text-ink-3">
-            JPG / PNG / WebP · max 5MB · ilk yüklenen otomatik ana görsel olur.
+            JPG / PNG / WebP · max 5MB · birden fazla seçebilirsin · ilk yüklenen otomatik ana görsel olur.
           </p>
         </div>
       </div>
 
       {/* Upload form — React 19 function action + FormData otomatik multipart handle eder,
-          encType/method attribute'ları belirtilmemeli (hydration uyarısı) */}
+          encType/method attribute'ları belirtilmemeli (hydration uyarısı).
+          name="file" + multiple → formData.getAll('file') sunucuda File[] döner. */}
       <form
         ref={formRef}
         action={handleUpload}
@@ -79,28 +86,43 @@ export function ImagesSection({ productId, images }: Props) {
           type="file"
           name="file"
           accept={ACCEPT}
+          multiple
           required
           disabled={isPending}
+          onChange={onFilesChange}
           data-testid="image-file-input"
           className="flex-1 min-w-[200px] cursor-pointer rounded-lg border border-line bg-paper p-2 text-[13px] text-ink-2 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-cat file:px-3 file:py-1.5 file:text-[12px] file:font-bold file:text-white hover:file:bg-cat-2"
         />
-        <input
-          type="text"
-          name="altText"
-          maxLength={200}
-          placeholder="Alt metin (opsiyonel, SEO için)"
-          disabled={isPending}
-          className="min-w-[180px] flex-1 rounded-lg border border-line bg-paper px-3 py-2 text-[13px] text-ink"
-        />
         <button
           type="submit"
-          disabled={isPending}
+          disabled={isPending || selectedFiles.length === 0}
           data-testid="image-upload-submit"
           className="rounded-xl bg-gradient-to-br from-cat to-cat-2 px-4 py-2 text-[13px] font-bold text-white shadow-sm hover:-translate-y-px transition-transform disabled:opacity-60"
         >
-          {isPending ? '⏳ Yükleniyor...' : '⬆ Yükle'}
+          {isPending
+            ? `⏳ Yükleniyor${selectedFiles.length > 0 ? ` (${selectedFiles.length})` : ''}…`
+            : selectedFiles.length > 0
+              ? `⬆ Yükle (${selectedFiles.length})`
+              : '⬆ Yükle'}
         </button>
       </form>
+
+      {selectedFiles.length > 0 && !isPending && (
+        <ul
+          data-testid="image-upload-queue"
+          className="flex flex-wrap gap-2 rounded-xl border border-line-soft bg-paper px-3 py-2 text-[12px] text-ink-3"
+        >
+          {selectedFiles.map((f, i) => (
+            <li
+              key={`${f.name}-${i}`}
+              className="rounded-full bg-line-soft px-2 py-0.5 font-bold text-ink-2"
+              title={`${(f.size / 1024).toFixed(1)} KB · ${f.type}`}
+            >
+              {f.name}
+            </li>
+          ))}
+        </ul>
+      )}
 
       {/* Status banner */}
       {status?.message && (
@@ -114,6 +136,18 @@ export function ImagesSection({ productId, images }: Props) {
           }
         >
           {status.message}
+          {status.failures.length > 0 && (
+            <ul
+              data-testid="image-upload-failures"
+              className="mt-2 list-disc space-y-0.5 pl-5 text-[12px] font-normal text-ink-2"
+            >
+              {status.failures.map((f, i) => (
+                <li key={`${f.file}-${i}`}>
+                  <span className="font-bold">{f.file}</span> — {f.reason}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 
