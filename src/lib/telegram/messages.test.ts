@@ -4,6 +4,8 @@ import {
   buildDailyReportSummaryAlert,
   buildNewVitrinReportAlert,
   buildTwoFactorDisabledAlert,
+  buildSitemapRebuildFailedAlert,
+  buildSitemapCacheStaleAlert,
 } from './messages';
 
 describe('buildAccountLockedAlert', () => {
@@ -232,5 +234,62 @@ describe('buildDailyReportSummaryAlert', () => {
       topTenants: [],
     });
     expect(req.text).not.toContain('En çok bekleyen tenant:');
+  });
+});
+
+describe('buildSitemapRebuildFailedAlert', () => {
+  it('critical severity + hata mesajı + panel link', () => {
+    const req = buildSitemapRebuildFailedAlert({
+      triggeredAt: '2026-05-21T03:00:00Z',
+      errorMessage: 'Connection timeout to Postgres',
+      panelUrl: 'https://petstockpro.com/admin/superadmin/system-settings',
+    });
+    expect(req.severity).toBe('critical');
+    expect(req.disableNotification).toBe(false);
+    expect(req.text).toContain('Sitemap rebuild başarısız');
+    expect(req.text).toContain('Connection timeout');
+    expect(req.text).toContain('https://petstockpro.com/admin/superadmin/system-settings');
+  });
+
+  it('HTML tag içeren error sanitize edilir', () => {
+    const req = buildSitemapRebuildFailedAlert({
+      triggeredAt: '2026-05-21T03:00:00Z',
+      errorMessage: '<script>alert(1)</script>Bad input',
+    });
+    expect(req.text).not.toContain('<script>');
+    expect(req.text).not.toContain('</script>');
+  });
+
+  it('errorMessage 250 char ile kesilir', () => {
+    const longErr = 'x'.repeat(500);
+    const req = buildSitemapRebuildFailedAlert({
+      triggeredAt: '2026-05-21T03:00:00Z',
+      errorMessage: longErr,
+    });
+    expect(req.text).toContain('x'.repeat(250));
+    expect(req.text).not.toContain('x'.repeat(251));
+  });
+
+  it('panelUrl yok ise link section çıkmaz', () => {
+    const req = buildSitemapRebuildFailedAlert({
+      triggeredAt: '2026-05-21T03:00:00Z',
+      errorMessage: 'fail',
+    });
+    expect(req.text).not.toContain('Sistem ayarları →');
+  });
+});
+
+describe('buildSitemapCacheStaleAlert', () => {
+  it('warning severity + yaş ve cachedAt göster', () => {
+    const req = buildSitemapCacheStaleAlert({
+      ageHours: 28.7,
+      cachedAt: '2026-05-19T23:00:00Z',
+      panelUrl: 'https://x.com/admin',
+    });
+    expect(req.severity).toBe('warning');
+    expect(req.text).toContain('Sitemap cache yaşlandı');
+    expect(req.text).toContain('29 saat'); // round
+    expect(req.text).toContain('2026-05-19T23:00:00Z');
+    expect(req.text).toContain('https://x.com/admin');
   });
 });

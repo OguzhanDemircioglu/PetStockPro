@@ -10,6 +10,10 @@ import {
 } from '@/lib/constants/plan-limits';
 import { VAT_RATE_OPTIONS, DEFAULT_VAT_RATE } from '@/lib/constants/vat-rates';
 import { DEFAULT_CATEGORIES } from '@/lib/catalog/default-categories';
+import {
+  getSitemapStatus,
+  SITEMAP_STALE_THRESHOLD_HOURS,
+} from '@/lib/vitrin/sitemap-status';
 
 interface EnvCheck {
   key: string;
@@ -51,9 +55,10 @@ async function getTableCount() {
 export default async function SystemSettingsPage() {
   await requireSuperadmin();
 
-  const [extensions, tableCount] = await Promise.all([
+  const [extensions, tableCount, sitemapStatus] = await Promise.all([
     getDbExtensions(),
     getTableCount(),
+    getSitemapStatus(),
   ]);
 
   const envChecks: EnvCheck[] = [
@@ -251,10 +256,132 @@ export default async function SystemSettingsPage() {
         </div>
       </section>
 
+      <section data-testid="sitemap-status">
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
+          🗺 Sitemap pre-build cache
+        </h2>
+        <div
+          className={`rounded-2xl border bg-paper p-5 ${
+            !sitemapStatus.healthy
+              ? 'border-danger/40 bg-danger-soft/30'
+              : 'border-line'
+          }`}
+          data-testid="sitemap-status-card"
+          data-healthy={sitemapStatus.healthy ? '1' : '0'}
+        >
+          {!sitemapStatus.cached && (
+            <div className="mb-3 rounded-xl border border-cat/30 bg-cat-soft px-3 py-2 text-[13px] font-bold text-cart">
+              ℹ Cache henüz oluşmadı — ilk cron tetiklemesini bekliyor.
+              SSR fallback aktif, /sitemap.xml dinamik üretiliyor.
+            </div>
+          )}
+          {sitemapStatus.stale && (
+            <div className="mb-3 rounded-xl border border-danger/40 bg-danger-soft px-3 py-2 text-[13px] font-bold text-danger-7">
+              ⚠ Cache {SITEMAP_STALE_THRESHOLD_HOURS} saatten eski — cron
+              tetikleyicisi son rebuild&apos;de fail etmiş olabilir. Telegram
+              alert tetiklendi.
+            </div>
+          )}
+
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-[13.5px] sm:grid-cols-3">
+            <Stat
+              label="Backend"
+              value={
+                sitemapStatus.cacheBackend === 'r2'
+                  ? 'R2 (production)'
+                  : sitemapStatus.cacheBackend === 'memory'
+                    ? 'in-memory (dev)'
+                    : 'yok'
+              }
+              tone={sitemapStatus.cacheBackend === 'r2' ? 'arrow' : 'ink'}
+            />
+            <Stat
+              label="Cache durumu"
+              value={sitemapStatus.cached ? '✓ Dolu' : '— Boş'}
+              tone={sitemapStatus.cached ? 'arrow' : 'cat'}
+            />
+            <Stat
+              label="Son rebuild"
+              value={
+                sitemapStatus.cachedAt
+                  ? new Date(sitemapStatus.cachedAt).toLocaleString('tr-TR')
+                  : '—'
+              }
+            />
+            <Stat
+              label="Yaş"
+              value={
+                sitemapStatus.ageHours !== null
+                  ? `${Math.round(sitemapStatus.ageHours * 10) / 10} saat`
+                  : '—'
+              }
+              tone={sitemapStatus.stale ? 'danger' : 'ink'}
+            />
+            <Stat
+              label="URL adedi"
+              value={
+                sitemapStatus.urlCount !== null
+                  ? sitemapStatus.urlCount.toLocaleString('tr-TR')
+                  : '—'
+              }
+            />
+            <Stat
+              label="XML boyutu"
+              value={
+                sitemapStatus.xmlBytes !== null
+                  ? `${(sitemapStatus.xmlBytes / 1024).toFixed(1)} KB`
+                  : '—'
+              }
+            />
+            <Stat
+              label="Cron tetikleyici"
+              value={sitemapStatus.cronConfigured ? '✓ Aktif' : '⚠ Yapılandırılmamış'}
+              tone={sitemapStatus.cronConfigured ? 'arrow' : 'cat'}
+            />
+            <Stat
+              label="R2 binding"
+              value={sitemapStatus.r2Configured ? '✓ Aktif' : '⚠ Yapılandırılmamış'}
+              tone={sitemapStatus.r2Configured ? 'arrow' : 'cat'}
+            />
+          </dl>
+
+          <p className="mt-4 text-[12px] text-ink-4">
+            Cron 03:00 UTC (06:00 TR) günlük çalışır. Fail durumunda
+            Telegram bildirimi gönderilir. 50K+ URL&apos;de cache-first
+            switch aktive olur (Faz 2).
+          </p>
+        </div>
+      </section>
+
       <p className="text-center text-[12.5px] text-ink-4">
         ⚙ Read-only. Editleme Faz 2 (system_settings tablo + UPDATE mode + audit).
         Plan tier&apos;ları manuel değişiyorsa <code>lib/constants/plan-limits.ts</code> dosyasını güncelle.
       </p>
     </main>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  tone = 'ink',
+}: {
+  label: string;
+  value: string;
+  tone?: 'ink' | 'arrow' | 'cat' | 'danger';
+}) {
+  const valueCls: Record<NonNullable<Parameters<typeof Stat>[0]['tone']>, string> = {
+    ink: 'text-ink',
+    arrow: 'text-arrow-7',
+    cat: 'text-cart',
+    danger: 'text-danger-7',
+  };
+  return (
+    <div>
+      <dt className="text-[10.5px] font-bold uppercase tracking-wider text-ink-4">
+        {label}
+      </dt>
+      <dd className={`mt-0.5 font-bold ${valueCls[tone]}`}>{value}</dd>
+    </div>
   );
 }

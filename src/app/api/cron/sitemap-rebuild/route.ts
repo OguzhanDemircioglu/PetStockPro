@@ -22,6 +22,8 @@ import {
   collectSitemapEntries,
   getPublicBaseUrl,
 } from '@/lib/vitrin/sitemap-data';
+import { sendTelegramAlert } from '@/lib/telegram/client';
+import { buildSitemapRebuildFailedAlert } from '@/lib/telegram/messages';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -58,6 +60,20 @@ export async function POST(req: Request) {
     );
   } catch (err) {
     console.error('[cron:sitemap-rebuild] failed:', err);
+    // Fire-and-forget Telegram alert — fail SEO etkili, süperadmin haberdar olsun.
+    const errMessage = err instanceof Error ? err.message : String(err);
+    const panelUrl = process.env.NEXT_PUBLIC_APP_URL
+      ? `${process.env.NEXT_PUBLIC_APP_URL}/admin/superadmin/system-settings`
+      : undefined;
+    void sendTelegramAlert(
+      buildSitemapRebuildFailedAlert({
+        triggeredAt: new Date().toISOString(),
+        errorMessage: errMessage,
+        panelUrl,
+      }),
+    ).catch(() => {
+      /* Telegram alert hatası loglanmaz — cron primary failure'a karışmasın. */
+    });
     return Response.json(
       { ok: false, reason: 'execution_failed' },
       { status: 500 },

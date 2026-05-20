@@ -301,3 +301,81 @@ export function buildNewVitrinReportAlert(
     severity: 'warning',
   };
 }
+
+// ─────────────────────────────────────────────────────────────────
+// Sitemap rebuild alertleri (2026-05-21)
+// ─────────────────────────────────────────────────────────────────
+
+export interface SitemapRebuildFailedAlertInput {
+  /** Tetikleme zamanı (ISO). */
+  triggeredAt: string;
+  /** Hata mesajı (özet, ilk 250 char). */
+  errorMessage: string;
+  /** Süperadmin paneli URL'i (opsiyonel). */
+  panelUrl?: string;
+}
+
+/**
+ * Cron tetiklemesinde sitemap-rebuild başarısız oldu — SEO etkili. SSR fallback
+ * çalışsa bile cache populate olmayacağı için 50K+ URL'de yavaşlama riski.
+ * Critical (sessize alınmaz).
+ */
+export function buildSitemapRebuildFailedAlert(
+  input: SitemapRebuildFailedAlertInput,
+): TelegramSendRequest {
+  const msg = input.errorMessage.slice(0, 250);
+  return {
+    text: [
+      '🚨 <b>Sitemap rebuild başarısız</b>',
+      '',
+      `<b>Zaman:</b> <code>${input.triggeredAt}</code>`,
+      `<b>Hata:</b> <code>${msg.replace(/[<>]/g, '')}</code>`,
+      '',
+      '<i>SSR fallback çalışıyor, ama büyük tenant tablosunda /sitemap.xml yavaşlar.</i>',
+      input.panelUrl
+        ? `<a href="${input.panelUrl}">Sistem ayarları →</a>`
+        : '',
+    ]
+      .filter(Boolean)
+      .join('\n'),
+    parseMode: 'HTML',
+    severity: 'critical',
+    disableNotification: false,
+  };
+}
+
+export interface SitemapCacheStaleAlertInput {
+  /** Cache yaşı (saat). */
+  ageHours: number;
+  /** Son rebuild ISO. */
+  cachedAt: string;
+  /** Süperadmin paneli URL'i (opsiyonel). */
+  panelUrl?: string;
+}
+
+/**
+ * Cache 25h+ yaşlandı — cron tetiklenmedi veya hep fail oluyor. Genelde
+ * buildSitemapRebuildFailedAlert öncesinde gelir (uyarı niyetinde, warning).
+ */
+export function buildSitemapCacheStaleAlert(
+  input: SitemapCacheStaleAlertInput,
+): TelegramSendRequest {
+  const hours = Math.round(input.ageHours);
+  return {
+    text: [
+      '⚠ <b>Sitemap cache yaşlandı</b>',
+      '',
+      `<b>Yaş:</b> ${hours} saat (limit 25h)`,
+      `<b>Son rebuild:</b> <code>${input.cachedAt}</code>`,
+      '',
+      '<i>Cron tetikleyicisi son 25 saat içinde başarılı çalışmadı. Workers cron / pg_cron logunu kontrol et.</i>',
+      input.panelUrl
+        ? `<a href="${input.panelUrl}">Sistem ayarları →</a>`
+        : '',
+    ]
+      .filter(Boolean)
+      .join('\n'),
+    parseMode: 'HTML',
+    severity: 'warning',
+  };
+}
