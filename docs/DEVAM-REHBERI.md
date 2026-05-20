@@ -2,7 +2,7 @@
 
 **Tarih:** 2026-05-20 (öğle — **Branch detail müdür gösterimi + remove action**)
 **Mevcut Branch:** `cray61` — origin'in **186 commit** ileri (push edilmedi)
-**Son commit:** `<NEW>` feat(branches): detay sayfasında atanmış müdür + STAFF kartı + "Müdürü kaldır"
+**Son commit:** `5c7b5b7` feat(branches): detay sayfasında atanmış müdür + STAFF kartı + "Müdürü kaldır"
 **Test:** **1356+** passed (+7: detail 3 + manage removeBranchManager 4)
 **Lint+typecheck:** 0 error
 **Migration:** **20** (değişmedi — schema değişmedi, mevcut `users.branch_id` field kullanıldı)
@@ -14,11 +14,11 @@
 
 | # | İş | Commit |
 |---|---|---|
-| N | `listBranchAssignedUsers` helper (lib/branches/detail.ts) — `users.branchId = branchId` filtre + role'a göre manager/staff bölüştürme. `BranchUserRow` + `BranchAssignedUsers` tipleri. | `<NEW>` |
-| N | `removeBranchManager` helper (lib/branches/manage.ts) — şube ownership + manager lookup + `branchId=null` update. Reason codes: `branch_not_found`, `no_manager_assigned`, `unknown`. Rolü SUBE_MUDURU kalır (kullanıcı tenant'a bağlı kalır, başka şubeye atanması ayrı karar). | `<NEW>` |
-| N | `removeBranchManagerAction` server action — BAYI_SAHIBI/SUPERADMIN yetki check + audit log `branch.manager_removed` + revalidatePath. | `<NEW>` |
-| N | `/admin/branches/[id]` UI — yeni "👤 Şube ekibi" section: Müdür bloğu (atanmış: ad+email+✓ Doğrulandı/Davet bekliyor + "Müdürü kaldır" buton / atanmamış: "Henüz müdür atanmadı + + Müdür davet et" CTA) + Kasiyer bloğu (STAFF dizisi + Davet bekliyor badge). | `<NEW>` |
-| N | `RemoveManagerButton` client component — `confirm()` onay metni (kullanıcı kalır + rol korunur + diğer atama users listesi) + `useTransition` pending + `data-testid="remove-manager-button"`. | `<NEW>` |
+| N | `listBranchAssignedUsers` helper (lib/branches/detail.ts) — `users.branchId = branchId` filtre + role'a göre manager/staff bölüştürme. `BranchUserRow` + `BranchAssignedUsers` tipleri. | `5c7b5b7` |
+| N | `removeBranchManager` helper (lib/branches/manage.ts) — şube ownership + manager lookup + `branchId=null` update. Reason codes: `branch_not_found`, `no_manager_assigned`, `unknown`. Rolü SUBE_MUDURU kalır (kullanıcı tenant'a bağlı kalır, başka şubeye atanması ayrı karar). | `5c7b5b7` |
+| N | `removeBranchManagerAction` server action — BAYI_SAHIBI/SUPERADMIN yetki check + audit log `branch.manager_removed` + revalidatePath. | `5c7b5b7` |
+| N | `/admin/branches/[id]` UI — yeni "👤 Şube ekibi" section: Müdür bloğu (atanmış: ad+email+✓ Doğrulandı/Davet bekliyor + "Müdürü kaldır" buton / atanmamış: "Henüz müdür atanmadı + + Müdür davet et" CTA) + Kasiyer bloğu (STAFF dizisi + Davet bekliyor badge). | `5c7b5b7` |
+| N | `RemoveManagerButton` client component — `confirm()` onay metni (kullanıcı kalır + rol korunur + diğer atama users listesi) + `useTransition` pending + `data-testid="remove-manager-button"`. | `5c7b5b7` |
 
 ### 📊 Bu tur rakamları
 
