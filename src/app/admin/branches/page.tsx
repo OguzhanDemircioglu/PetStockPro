@@ -4,7 +4,15 @@ import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { listBranches } from '@/lib/branches/manage';
 import { ModerationQueryBanner } from '@/components/moderation/moderation-query-banner';
-import { ToggleActiveButton } from './toggle-active-button';
+import { BranchStatusControl } from './branch-status-control';
+import { BRANCH_STATUS_EMOJI, BRANCH_STATUS_LABELS, type BranchStatus } from '@/lib/branches/status';
+
+// Faz 4 (2026-05-21) — 3-state şube badge stilleri.
+const STATUS_BADGE_CLS: Record<BranchStatus, string> = {
+  active: 'bg-arrow-soft text-arrow-7',
+  holiday: 'bg-cat-soft text-cart',
+  inactive: 'bg-line-soft text-ink-4',
+};
 
 export default async function BranchesPage({
   searchParams,
@@ -21,7 +29,8 @@ export default async function BranchesPage({
 
   const items = await listBranches(session.user.companyId, db);
   const params = await searchParams;
-  const activeCount = items.filter((b) => b.isActive).length;
+  const activeCount = items.filter((b) => b.status === 'active').length;
+  const holidayCount = items.filter((b) => b.status === 'holiday').length;
 
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-12">
@@ -35,6 +44,7 @@ export default async function BranchesPage({
           </h1>
           <p className="mt-1 text-sm text-ink-3">
             {items.length} şube · {activeCount} aktif
+            {holidayCount > 0 ? ` · ${holidayCount} tatilde` : ''}
           </p>
         </div>
         <div className="flex gap-2">
@@ -76,8 +86,13 @@ export default async function BranchesPage({
           <article
             key={b.id}
             data-branch-id={b.id}
+            data-branch-status={b.status}
             className={`rounded-2xl border bg-paper p-5 ${
-              b.isActive ? 'border-line' : 'border-line bg-line-soft/40 opacity-70'
+              b.status === 'inactive'
+                ? 'border-line bg-line-soft/40 opacity-70'
+                : b.status === 'holiday'
+                ? 'border-cat/40'
+                : 'border-line'
             }`}
           >
             <div className="flex items-start justify-between gap-2">
@@ -87,15 +102,12 @@ export default async function BranchesPage({
               >
                 {b.name}
               </Link>
-              {b.isActive ? (
-                <span className="rounded bg-arrow-soft px-2 py-0.5 text-[11.5px] font-bold text-arrow-7">
-                  Aktif
-                </span>
-              ) : (
-                <span className="rounded bg-line-soft px-2 py-0.5 text-[11.5px] font-bold text-ink-4">
-                  Pasif
-                </span>
-              )}
+              <span
+                className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11.5px] font-bold ${STATUS_BADGE_CLS[b.status]}`}
+                data-testid={`branch-status-${b.status}`}
+              >
+                {BRANCH_STATUS_EMOJI[b.status]} {BRANCH_STATUS_LABELS[b.status]}
+              </span>
             </div>
 
             <div className="mt-2 text-xs text-ink-3">
@@ -124,9 +136,9 @@ export default async function BranchesPage({
                 {b.variantInventoryCount} variant ·{' '}
                 <strong className="text-ink">{b.totalStockQty}</strong> stok
               </div>
-              <ToggleActiveButton
+              <BranchStatusControl
                 branchId={b.id}
-                currentlyActive={b.isActive}
+                currentStatus={b.status}
               />
             </div>
           </article>

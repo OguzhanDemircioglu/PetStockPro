@@ -56,9 +56,14 @@ export default async function BranchDetailPage({
           <p className="mt-1 text-sm text-ink-3">
             {branch.cityName ?? '—'}
             {branch.districtName ? ` · ${branch.districtName}` : ''}
-            {!branch.isActive && (
+            {branch.status === 'holiday' && (
+              <span className="ml-2 rounded-full bg-cat-soft px-2 py-0.5 text-[11.5px] font-bold text-cart">
+                🏖 Tatilde
+              </span>
+            )}
+            {branch.status === 'inactive' && (
               <span className="ml-2 rounded-full bg-line-soft px-2 py-0.5 text-[11.5px] font-bold text-ink-3">
-                Pasif
+                ⚫ Pasif
               </span>
             )}
           </p>
@@ -70,6 +75,27 @@ export default async function BranchDetailPage({
           ✎ Şubeyi düzenle
         </Link>
       </header>
+
+      {branch.status === 'inactive' && (
+        <div
+          role="status"
+          className="rounded-xl border border-ink-2/30 bg-line-soft px-4 py-3 text-sm font-bold text-ink-2"
+          data-testid="branch-inactive-banner"
+        >
+          ⚠ Bu şube pasif. Vitrin&apos;den çekildi, üzerinden hiçbir aksiyon yapılamaz.
+          Yalnızca görüntüleyebilirsin. Devam etmek için şubeyi aktif veya tatil moduna geri al.
+        </div>
+      )}
+      {branch.status === 'holiday' && (
+        <div
+          role="status"
+          className="rounded-xl border border-cat/40 bg-cat-soft px-4 py-3 text-sm font-bold text-cart"
+          data-testid="branch-holiday-banner"
+        >
+          🏖 Bu şube tatilde. Vitrin&apos;de &quot;Tatilde&quot; rozeti görünür, müşteri WhatsApp atamaz.
+          Admin operasyonları (sayım, transfer, stok hareketi) devam edebilir.
+        </div>
+      )}
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KPI title="Toplam stok" value={totalStock} emoji="📦" />

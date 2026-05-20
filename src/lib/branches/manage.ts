@@ -38,6 +38,8 @@ export interface BranchListItem {
   address: string | null;
   whatsappPhone: string | null;
   isActive: boolean;
+  /** Faz 1 (2026-05-21) — 3-state şube. 'active' | 'holiday' | 'inactive'. */
+  status: 'active' | 'holiday' | 'inactive';
   createdAt: Date;
   variantInventoryCount: number;
   totalStockQty: number;
@@ -58,6 +60,7 @@ export async function listBranches(
       address: branches.address,
       whatsappPhone: branches.whatsappPhone,
       isActive: branches.isActive,
+      status: branches.status,
       createdAt: branches.createdAt,
       variantInventoryCount: sql<number>`(
         SELECT COUNT(*)::int FROM ${branchInventory}

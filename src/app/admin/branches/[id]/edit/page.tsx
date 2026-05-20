@@ -7,6 +7,7 @@ import { cities, districts } from '@/db/schema';
 import { getBranchDetail } from '@/lib/branches/manage';
 import { BranchForm } from '../../branch-form';
 import { updateBranchAction } from '../../actions';
+import { BranchStatusControl } from '../../branch-status-control';
 
 export default async function EditBranchPage({
   params,
@@ -48,6 +49,23 @@ export default async function EditBranchPage({
           {branch.name}
         </h1>
       </header>
+
+      <section className="rounded-2xl border border-line bg-paper p-5">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-ink-3">
+          Şube durumu
+        </h2>
+        <p className="mt-1 text-[12.5px] text-ink-4">
+          Tatil moduna alma anında uygulanır. Pasifleştirme onay ister
+          (geri alınabilir).
+        </p>
+        <div className="mt-4">
+          <BranchStatusControl
+            branchId={branch.id}
+            currentStatus={branch.status}
+            variant="radio"
+          />
+        </div>
+      </section>
 
       <BranchForm
         action={boundUpdate}
