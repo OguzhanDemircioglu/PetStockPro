@@ -70,7 +70,7 @@ function mockDb(opts: {
       else if (key === 'brands') nextTopSelect = 'categories';
       return mkChain(data);
     }),
-    insert: vi.fn().mockImplementation(() => {
+    insert: vi.fn().mockImplementation((...args: unknown[]) => {
       insertCount++;
       if (opts.txThrowsAt && insertCount === opts.txThrowsAt) {
         return {
@@ -80,7 +80,7 @@ function mockDb(opts: {
           }),
         };
       }
-      insertSpy(...(arguments as unknown as unknown[]));
+      insertSpy(...args);
       // Insert chain — varying returning values
       return {
         values: vi.fn().mockReturnValue({
