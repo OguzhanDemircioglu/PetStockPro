@@ -1,9 +1,9 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-20 (öğle — **Müdür kart + Catalog cleanup**)
-**Mevcut Branch:** `cray61` — origin'in **189 commit** ileri (push edilmedi)
-**Son commit:** `e48ea39` feat(catalog): HTML entity + whitespace cleanup helper + script
-**Test:** **1378+** passed (+7 branch detail + 22 text-cleanup helper)
+**Tarih:** 2026-05-20 (akşam — **Müdür kart + Catalog cleanup + Multi-image + Brand seed**)
+**Mevcut Branch:** `cray61` — origin'in **193 commit** ileri (push edilmedi)
+**Son commit:** `41f9e56` feat(onboarding): catalog markalarını içeri aktar opsiyonu (Step 1)
+**Test:** **1385** passed (+7 branch detail + 22 text-cleanup + 7 seed-catalog brands)
 **Lint+typecheck:** 0 error
 **Migration:** **20** (değişmedi — schema değişmedi, mevcut `users.branch_id` field kullanıldı)
 **Aiven:** dormant (.env'de LOCAL_DB_* hazır)
@@ -73,6 +73,42 @@
 2. **`scripts/data/images/` 1283 webp** track edilmiyor, R2'de mevcut. Repo temiz, ek `.gitignore` satırı gerekmedi.
 
 3. **Brand-duplicate isimler:** DEVAM-REHBERI tahmini "%5 etkili" idi; gerçekte `\m(\S+)\s+\1\M` regex ile 0 satır → temizlik gerekmedi. HTML entity (`&#039;` vb.) tek gerçek sorundu.
+
+---
+
+## 🆕 Bu tur (2026-05-20, akşam) — Multi-image batch + Brand seed + bug fix
+
+| # | İş | Commit |
+|---|---|---|
+| P | Edit form multi-image batch upload — `uploadImagesAction` (plural) + `formData.getAll('file')` + queue chip listesi + success/failure banner | `318cebe` |
+| Q | products/new catalog seçim BUG fix — her seçimde yeni image eklenip birikiyordu; `source !== 'catalog'` filter ile tek catalog görseli kalır. + `localId` module-level (react-hooks/purity 2 error temizlik) | `ce236d7` |
+| R | Onboarding Step 1'de "Catalog markalarını içeri aktar (N marka)" checkbox + `seedCatalogBrandsForCompany` helper + audit log + success banner | `41f9e56` |
+
+### 📊 Bu tur rakamları
+
+| Metric | Değer |
+|---|---|
+| Yeni commit | **3** |
+| Yeni test | **+7** (seed-catalog: empty / 3 new / idempotent / slug-dedup / space-filter / all-existing / bulk-fail fallback) |
+| Yeni helper | `uploadImagesAction` + `seedCatalogBrandsForCompany` + `countCatalogBrands` |
+| Yeni audit action | `brands.catalog_seeded` |
+| Branch ahead | 189 → **193 commit** |
+
+### 🔑 Bu turda netleşen
+
+1. **Multi-image API kontratı:** `formData.getAll('file')` → `File[]`. Tek-file submit aynı action'a düşer (1 elemanlı dizi). Backward-compat hack gerekmedi.
+
+2. **Catalog seçim semantik:** name/brand/category gibi görsel de "override" semantiği taşır → önceki catalog kaynaklı görseller silinir, manuel olanlar korunur. Daha önce her catalog seçimi birikiyordu.
+
+3. **Brand seed idempotent:** `slug` bazlı skip + makeSlug ile "ProLine" + "Proline" tek slug → tekrar çağrılırsa duplicate olmaz. Onboarding tekrarlanırsa güvenli.
+
+### ⚠ Sonraki turda canlı browser doğrulaması
+
+Login + 2FA engelinden bu turda atlanan smoke testleri:
+- Branch detail "Müdürü kaldır" (Task 4'te atlandı, unit test'le kanıtlı)
+- Multi-image upload UI (queue chip + failure banner)
+- products/new catalog seçim bug fix (3 farklı ürün ardışık seç → 1 görsel)
+- Onboarding Step 1 checkbox + brands_imported banner
 
 ---
 
@@ -178,16 +214,9 @@
 
 4. ~~**Branch detail/edit sayfasında "atanmış müdür" gösterimi**~~ ✅ Tamamlandı 2026-05-20 öğle (yukarı bölüm)
 
-5. **Edit form'da multi-image batch upload**
-   - Mevcut /admin/products/[id]/edit upload form'u tek file (sıra ile yükle)
-   - Kullanıcı 3 file seçince 3 ayrı action çağrısı yerine multi-file tek action
+5. ~~**Edit form'da multi-image batch upload**~~ ✅ Tamamlandı 2026-05-20 akşam — `318cebe`
 
-6. **Tenant onboarding'a 95 brand seed**
-   - Yeni tenant register sırasında 95 catalog markası otomatik tenant brands'e seed et
-   - Onboarding'de bir seçenek: "Tüm catalog markalarını içeri aktar?"
-
-5. **`scripts/data/images/` .gitignore'a alma** (R2 upload sonrası)
-   - 49 MB repo'da gerekli değil R2'ye yüklendikten sonra
+6. ~~**Tenant onboarding'a 95 brand seed**~~ ✅ Tamamlandı 2026-05-20 akşam — `41f9e56` (Step 1 checkbox)
 
 ---
 
