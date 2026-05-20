@@ -1,16 +1,73 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-20 (akşam — **Müdür kart + Catalog cleanup + Multi-image + Brand seed**)
-**Mevcut Branch:** `cray61` — origin'in **193 commit** ileri (push edilmedi)
-**Son commit:** `41f9e56` feat(onboarding): catalog markalarını içeri aktar opsiyonu (Step 1)
-**Test:** **1385** passed (+7 branch detail + 22 text-cleanup + 7 seed-catalog brands)
+**Tarih:** 2026-05-20 (gece — **Catalog image kalite temizliği: 44 watermarklı/kampanyalı resim değiştirildi**)
+**Mevcut Branch:** `cray61` — origin'in **194 commit** ileri (push edilmedi)
+**Son commit:** `<NEW>` chore(catalog): 44 watermarklı seed image R2'de temizlendi (21 scrape + 13 kullanıcı + 10 reddedildi/yeniden alındı)
+**Test:** **1385** passed
 **Lint+typecheck:** 0 error
-**Migration:** **20** (değişmedi — schema değişmedi, mevcut `users.branch_id` field kullanıldı)
+**Migration:** **20** (değişmedi)
 **Aiven:** dormant (.env'de LOCAL_DB_* hazır)
-**Supabase Storage:** ❌ KALDIRILDI (@supabase/* paketleri sökülmüş)
-**R2:** ✅ Kod + bucket + 1.283 webp upload + img-src CSP aktif
+**Supabase Storage:** ❌ KALDIRILDI
+**R2:** ✅ Kod + bucket + 1.283 webp upload + 44 dosya overrite edilmiş
 
-## 🆕 Bu tur (2026-05-20, öğle) — Branch detail "👤 Şube ekibi" kartı
+## 🆕 Bu tur (2026-05-20, gece) — Catalog image kalite temizliği (44 ürün)
+
+Kullanıcı catalog_seed_products tablosundan **44 sorunlu resim hash'i** verdi (petlebi.com watermark / kampanya rozeti / "HEDİYE" etiket / "TÜRKİYE'DE İLK" pazarlama / Eastland marka kartlı paket / placeholder "Resim Hazırlanıyor" / vs.). Her birinin yerine **temiz alternatif** bulunup R2'de seed/{hash}.webp key'inin üzerine yazıldı (DB image_path değişmedi, content yenilendi).
+
+### Akış
+
+| Tur | Kapsam | Sonuç |
+|---|---|---|
+| Batch 1-5 | Firecrawl image search ile 21 ürün için temiz alternatif (Trendyol/Amazon/petburada/ciceksepeti/marka resmi sitesi vb.) | R2 PUT 21/21 ✓ |
+| Batch 6 | Yeni eklenen 8 sorunlu hash için arama | 8 alternatif gösterildi |
+| Batch 7-8 | Yeni eklenen 9 + 12 hash için arama | 12 alternatif gösterildi |
+| Kullanıcı feedback | 13 ürün için ben yanlış/yetersiz alternatif vermiştim (EuroGold Trixie Eastland Yengeç/Kaplumbağa/Küret/Köpekbalığı/Frizbi + Hill's/ProChoice/Royal Canin/Felicia/Ferplast/Felix yanlış SKU) | Kullanıcı kendisi Trendyol/Hepsiburada'dan 13 temiz görsel buldu, masaüstüne kaydetti |
+| Final | 13 kullanıcı PNG'si scripts/data/alt-images/user-{hash}.png olarak kopyalandı + R2'ye PUT | R2 PUT 13/13 ✓ |
+
+### Komutlar
+
+```bash
+# 21 scrape alternatif (batch 1-5)
+npx tsx scripts/replace-catalog-images.ts
+
+# 13 kullanıcı resmi (final fix)
+npx tsx scripts/replace-user-images.ts
+```
+
+### 📊 Bu tur rakamları
+
+| Metric | Değer |
+|---|---|
+| Yeni commit | **1** (chore: replace scripts) |
+| R2 dosya overwrite | **34** ürün (21 scrape + 13 kullanıcı) |
+| Hâlâ eski kalan tartışmalı | **10** (R2'de orijinal duruyor — kullanıcı temizliklerini yaptıklarımla yer değişti) |
+| Firecrawl arama | ~50 sorgu |
+| Branch ahead | 193 → **194 commit** |
+| Yeni klasör | `scripts/data/yeni-resimler/` (41 dosya, .gitignore'da, gözden geçirme için) |
+
+### 🔑 Bu turda netleşen
+
+1. **R2 PUT idempotent + DB image_path değişmez** — `seed/{hash}.webp` key'i sabit, content yenilenir. Browser cache'i hard-reload (Ctrl+Shift+R) gerektirir; CDN immutable cache + 1 yıl TTL.
+
+2. **TR pet sektörü tek stok foto sorunu** — Bazı yerli markalar (Eastland, EuroGold) tek bir resmi stok fotoğrafı dağıtıyor; tüm satıcılar aynı görseli kullanıyor. Bu durumda farklı *kaynak* aramak işe yaramaz — farklı *ürün varyantı* veya kullanıcı manuel.
+
+3. **PNG'yi .webp key'ine PUT etmek sorunsuz** — R2 content-type header'ı `image/png` set edilir, browser `<img>` tag'inde render eder. URL uzantısı `.webp` ama içerik PNG. İstenirse sonradan sharp ile convert edilebilir (Sprint Z).
+
+4. **Sorunlu içerik kategorileri:**
+   - 🔴 Watermark (petlebi.com sağ alt) — en sık (6/20 ilk turdan)
+   - 🟠 Kampanya rozeti (HEDİYE, BONUS PAKET, 6 ADET, 12 ADET, YENİ kurdele)
+   - 🟡 Yan label/şerit (Hill's "Kısırlaştırılmış Yavru Kedi" sol mavi)
+   - 🟡 Marka kartlı paket (Eastland Cat Toys & Accessories — ürünün gerçek perakende ambalajı, watermark değil ama "alıntı belli")
+   - ⚪ Placeholder ("Resim Hazırlanıyor")
+
+### ⚠ Bilinen kalanlar
+
+- **`yeni-resimler/` klasörü**: 41 alternatif resim local (review için). gitignore'da, repo'da değil.
+- **Image kalite tarama**: 1.283 resmin geri kalan 1.239'u henüz taranmadı. Bir Vision API tarama (Claude Vision veya OpenAI Vision, ~$15-25 maliyet) ileride yapılabilir.
+
+---
+
+## 🆕 Önceki tur (2026-05-20, öğle) — Branch detail "👤 Şube ekibi" kartı
 
 | # | İş | Commit |
 |---|---|---|
