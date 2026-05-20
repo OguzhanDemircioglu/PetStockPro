@@ -66,20 +66,6 @@ export default async function ExportHubPage() {
       desc: 'Tedarikçi listesi — VKN / yetkili / IBAN / lead time / ödeme koşulu',
       filename: 'tedarikciler-<tarih>.xlsx',
     },
-    {
-      href: '/admin/categories/export',
-      emoji: '📂',
-      title: 'Kategoriler',
-      desc: 'Kategori listesi — emoji / KDV oranı / SKT zorunluluğu / sıralama',
-      filename: 'kategoriler-<tarih>.xlsx',
-    },
-    {
-      href: '/admin/brands/export',
-      emoji: '🏷',
-      title: 'Markalar',
-      desc: 'Marka listesi — slug / logo URL / ürün sayısı',
-      filename: 'markalar-<tarih>.xlsx',
-    },
   ];
 
   return (

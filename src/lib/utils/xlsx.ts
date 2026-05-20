@@ -62,8 +62,10 @@ const FORMAT_MAP: Record<CellFormat, string> = {
   text: '@',
   integer: '#,##0',
   currency_try: '#,##0.00 [$₺-tr-TR]',
-  date_tr: 'dd/mm/yyyy',
-  datetime_tr: 'dd/mm/yyyy hh:mm',
+  // [$-tr-TR] locale prefix Excel'in date sütununu "Türk Lirası" locale'da yorumlamasını sağlar
+  // Aksi halde locale-default'a düşer ve raw serial number gözükebilir (46158.21539...).
+  date_tr: '[$-tr-TR]dd/mm/yyyy',
+  datetime_tr: '[$-tr-TR]dd/mm/yyyy hh:mm',
   boolean: '@', // ✓ / ✕ string
   percent: '0.00%',
 };

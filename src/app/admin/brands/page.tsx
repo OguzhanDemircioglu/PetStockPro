@@ -48,13 +48,6 @@ export default async function BrandsPage({
           </p>
         </div>
         <div className="flex gap-2">
-          <a
-            href="/admin/brands/export"
-            download
-            className="rounded-xl border border-line bg-paper px-3 py-2.5 text-xs font-bold text-cart hover:bg-cat-soft"
-          >
-            ⬇ Excel
-          </a>
           <Link
             href={'/admin/brands/new' as never}
             className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-cat to-cat-2 px-5 py-2.5 text-sm font-bold text-white shadow-[var(--shadow-cat)] hover:-translate-y-0.5 transition-transform"

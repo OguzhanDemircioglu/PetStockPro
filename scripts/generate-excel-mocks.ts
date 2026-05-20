@@ -427,8 +427,6 @@ async function main() {
   await mkdir(OUTPUT_DIR, { recursive: true });
   const generators = [
     genUrunler,
-    genMarkalar,
-    genKategoriler,
     genSubeler,
     genTedarikciler,
     genAuditLog,
