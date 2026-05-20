@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState, useTransition } from 'react';
+import { useActionState, useMemo, useTransition } from 'react';
+import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import { settleCreditAction, type SettleCreditActionState } from './actions';
 
 const INITIAL: SettleCreditActionState = { ok: false };
@@ -8,6 +9,15 @@ const INITIAL: SettleCreditActionState = { ok: false };
 export function SettleCreditButton({ movementId }: { movementId: string }) {
   const [state, formAction] = useActionState(settleCreditAction, INITIAL);
   const [pending, startTransition] = useTransition();
+  // Sadece bu satırla ilgili hatayı SWAL toast'a yönlendir.
+  const errorState = useMemo(
+    () =>
+      state.movementId === movementId && !state.ok && state.message
+        ? { error: state.message }
+        : null,
+    [state, movementId],
+  );
+  useSwalOnError(errorState);
 
   return (
     <form
@@ -27,12 +37,12 @@ export function SettleCreditButton({ movementId }: { movementId: string }) {
       >
         {pending ? '...' : '✓ Krediyi kapat'}
       </button>
-      {state.movementId === movementId && state.message && (
+      {state.movementId === movementId && state.ok && state.message && (
         <span
-          role={state.ok ? 'status' : 'alert'}
-          className={`text-[11.5px] ${state.ok ? 'text-arrow-7' : 'text-danger-7'}`}
+          role="status"
+          className="text-[11.5px] text-arrow-7"
         >
-          {state.ok ? '✓' : '✕'} {state.message}
+          ✓ {state.message}
         </span>
       )}
     </form>
