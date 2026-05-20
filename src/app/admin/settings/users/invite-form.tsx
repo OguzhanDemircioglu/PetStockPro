@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useMemo, useState } from 'react';
+import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import { inviteUserAction, type InviteUserState } from './actions';
 
 interface BranchOption {
@@ -68,6 +69,7 @@ export function InviteUserForm({ branchOptions }: Props) {
     inviteUserAction,
     null,
   );
+  useSwalOnError(state);
   const [role, setRole] = useState<'SUBE_MUDURU' | 'STAFF'>('STAFF');
   const [selectedBranchId, setSelectedBranchId] = useState<string>('');
 
@@ -202,23 +204,6 @@ export function InviteUserForm({ branchOptions }: Props) {
           {pending ? '⏳ Davet hazırlanıyor...' : '🔗 Davet linki üret'}
         </button>
       </div>
-
-      {state?.error && (
-        <div
-          role="alert"
-          data-testid="invite-error"
-          className="mt-3 rounded-xl border border-danger/30 bg-danger-soft px-3 py-2 text-sm font-bold text-danger-7"
-        >
-          ✕ {state.error}
-          {state.issues && state.issues.length > 0 && (
-            <ul className="mt-1 list-inside list-disc text-[12.5px] font-normal">
-              {state.issues.map((i, idx) => (
-                <li key={idx}>{i}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
 
       {state?.ok && <InviteResult state={state} />}
     </form>

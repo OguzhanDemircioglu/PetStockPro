@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { useSwalOnErrorString } from '@/lib/ui/use-swal-on-error';
 import {
   updateCountAction,
   completeStocktakeAction,
@@ -408,6 +409,7 @@ function SwipeCard({
   const [reason, setReason] = useState<string>(item.reason ?? '');
   const [diff, setDiff] = useState<number | null>(item.diff);
   const [error, setError] = useState<string | null>(null);
+  useSwalOnErrorString(error, 'Sayım kaydı');
   const [savedCounted, setSavedCounted] = useState<string>(
     item.countedQty == null ? '' : String(item.countedQty),
   );
@@ -561,15 +563,6 @@ function SwipeCard({
       >
         {pending ? '...' : completed ? '✓ Güncellendi — Kaydet (Enter)' : '✓ Kaydet (Enter)'}
       </button>
-
-      {error && (
-        <div
-          role="alert"
-          className="rounded-xl bg-danger-soft px-3 py-2 text-[12.5px] text-danger-7"
-        >
-          {error}
-        </div>
-      )}
     </div>
   );
 }
@@ -590,6 +583,7 @@ function ItemRow({
   const [reason, setReason] = useState<string>(item.reason ?? '');
   const [diff, setDiff] = useState<number | null>(item.diff);
   const [error, setError] = useState<string | null>(null);
+  useSwalOnErrorString(error, 'Sayım kaydı');
   const [savedCounted, setSavedCounted] = useState<string>(
     item.countedQty == null ? '' : String(item.countedQty),
   );
@@ -706,14 +700,6 @@ function ItemRow({
         ) : (
           <span className="text-ink-4">○</span>
         )}
-        {error && (
-          <div
-            role="alert"
-            className="absolute mt-1 rounded bg-danger-soft px-2 py-1 text-[11.5px] text-danger-7"
-          >
-            {error}
-          </div>
-        )}
       </td>
     </tr>
   );
@@ -722,6 +708,7 @@ function ItemRow({
 function CompleteButton({ stocktakeId, disabled }: { stocktakeId: string; disabled: boolean }) {
   const [pending, startTransition] = useTransition();
   const [state, setState] = useState<CompleteStocktakeState | null>(null);
+  useSwalOnErrorString(state?.error ?? null, 'Sayım tamamlanamadı');
 
   const submit = () => {
     if (disabled) return;
@@ -750,11 +737,6 @@ function CompleteButton({ stocktakeId, disabled }: { stocktakeId: string; disabl
       >
         {pending ? 'Tamamlanıyor...' : '✓ Sayımı tamamla'}
       </button>
-      {state?.error && (
-        <div role="alert" className="rounded-lg bg-danger-soft px-3 py-1.5 text-[12.5px] text-danger-7">
-          {state.error}
-        </div>
-      )}
       {state?.ok && (
         <div className="rounded-lg bg-arrow-soft px-3 py-1.5 text-[12.5px] text-arrow-7">
           ✓ {state.movementsCreated ?? 0} stok hareketi üretildi
@@ -767,6 +749,7 @@ function CompleteButton({ stocktakeId, disabled }: { stocktakeId: string; disabl
 function CancelButton({ stocktakeId }: { stocktakeId: string }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  useSwalOnErrorString(error, 'Sayım iptal edilemedi');
 
   const submit = () => {
     if (!window.confirm('Sayımı iptal et? Sayılan veriler audit için saklanır, stok hareketi YOK.')) {
@@ -794,7 +777,6 @@ function CancelButton({ stocktakeId }: { stocktakeId: string }) {
       >
         {pending ? 'İptal ediliyor...' : '× İptal'}
       </button>
-      {error && <div role="alert" className="text-[12.5px] text-danger-7">{error}</div>}
     </div>
   );
 }

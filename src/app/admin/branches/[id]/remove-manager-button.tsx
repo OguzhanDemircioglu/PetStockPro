@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useSwalOnErrorString } from '@/lib/ui/use-swal-on-error';
 import { removeBranchManagerAction } from '../actions';
 
 interface Props {
@@ -16,6 +17,7 @@ export function RemoveManagerButton({ branchId, managerEmail }: Props) {
   const [pending, startTransition] = useTransition();
   const [okMsg, setOkMsg] = useState<string | null>(null);
   const [errMsg, setErrMsg] = useState<string | null>(null);
+  useSwalOnErrorString(errMsg, 'Müdür kaldırılamadı');
 
   const handleClick = () => {
     const confirmed = confirm(
@@ -59,14 +61,6 @@ export function RemoveManagerButton({ branchId, managerEmail }: Props) {
       >
         {pending ? '...' : '✕ Müdürü kaldır'}
       </button>
-      {errMsg && (
-        <span
-          className="rounded bg-danger-soft px-2 py-0.5 text-[11.5px] font-bold text-danger-7"
-          role="alert"
-        >
-          {errMsg}
-        </span>
-      )}
     </div>
   );
 }

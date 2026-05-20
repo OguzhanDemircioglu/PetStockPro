@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState, useEffect, useState } from 'react';
+import { useActionState, useEffect, useMemo, useState } from 'react';
+import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import type { BranchOption, VariantOption } from '@/lib/stock/options';
 import { DrawerShell } from './drawer-shell';
 import { stockOutAction, type MovementActionState } from './actions';
@@ -26,6 +27,21 @@ export function StockOutDrawer({ branches, variants, onClose }: Props) {
     MovementActionState | null,
     FormData
   >(stockOutAction, null);
+
+  const errorState = useMemo(() => {
+    if (!state || state.ok || !state.message) return null;
+    const detail: string[] = [];
+    if (state.meta?.available !== undefined) {
+      detail.push(
+        `Mevcut: ${state.meta.available}, istenen: ${state.meta.requested}`,
+      );
+    }
+    return {
+      error: state.message,
+      issues: [...detail, ...state.issues],
+    };
+  }, [state]);
+  useSwalOnError(errorState);
 
   const [subtype, setSubtype] = useState<string>('sale');
   const [paymentMethod, setPaymentMethod] = useState<string>('cash');
@@ -190,33 +206,17 @@ export function StockOutDrawer({ branches, variants, onClose }: Props) {
           />
         </Field>
 
-        {state?.message && (
+        {state?.ok && state.message && (
           <p
-            role="alert"
-            className={`rounded-lg px-3 py-2 text-sm font-bold ${
-              state.ok
-                ? 'bg-arrow-soft text-arrow-7'
-                : 'bg-danger-soft text-danger-7'
-            }`}
+            role="status"
+            className="rounded-lg bg-arrow-soft px-3 py-2 text-sm font-bold text-arrow-7"
             data-testid="stock-out-alert"
           >
-            {state.ok ? '✓' : '✕'} {state.message}
-            {state.meta?.available !== undefined && (
-              <span className="ml-2 font-mono text-[12.5px]">
-                (mevcut: {state.meta.available}, istenen: {state.meta.requested})
-              </span>
-            )}
-            {state.ok && state.meta?.afterQty !== undefined && (
+            ✓ {state.message}
+            {state.meta?.afterQty !== undefined && (
               <span className="ml-2 font-mono text-[12.5px]">
                 kalan: {state.meta.afterQty}
               </span>
-            )}
-            {state.issues.length > 0 && (
-              <ul className="mt-1 list-inside list-disc text-[12.5px] font-normal">
-                {state.issues.map((i, k) => (
-                  <li key={k}>{i}</li>
-                ))}
-              </ul>
             )}
           </p>
         )}

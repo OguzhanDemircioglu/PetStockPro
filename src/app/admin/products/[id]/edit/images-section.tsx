@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useTransition, useRef } from 'react';
+import { useMemo, useState, useTransition, useRef } from 'react';
+import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import {
   uploadImagesAction,
   deleteImageAction,
@@ -22,6 +23,19 @@ export function ImagesSection({ productId, images }: Props) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+
+  // Hata durumunda SWAL'a yönlendir; başarı banner'ı UI'da kalır.
+  const errorState = useMemo(
+    () =>
+      status && !status.ok && status.message
+        ? {
+            error: status.message,
+            issues: status.failures.map((f) => `${f.file} — ${f.reason}`),
+          }
+        : null,
+    [status],
+  );
+  useSwalOnError(errorState);
 
   const handleUpload = (formData: FormData) => {
     setStatus(null);
@@ -124,30 +138,14 @@ export function ImagesSection({ productId, images }: Props) {
         </ul>
       )}
 
-      {/* Status banner */}
-      {status?.message && (
+      {/* Başarı banner — hata SWAL modal'ına taşındı (kullanıcı kararı 2026-05-20) */}
+      {status?.ok && status.message && (
         <div
-          role="alert"
+          role="status"
           data-testid="image-action-status"
-          className={
-            status.ok
-              ? 'rounded-xl border border-arrow/40 bg-arrow-soft px-3 py-2 text-[13px] font-bold text-arrow-7'
-              : 'rounded-xl border border-danger/40 bg-danger-soft px-3 py-2 text-[13px] font-bold text-danger-7'
-          }
+          className="rounded-xl border border-arrow/40 bg-arrow-soft px-3 py-2 text-[13px] font-bold text-arrow-7"
         >
           {status.message}
-          {status.failures.length > 0 && (
-            <ul
-              data-testid="image-upload-failures"
-              className="mt-2 list-disc space-y-0.5 pl-5 text-[12px] font-normal text-ink-2"
-            >
-              {status.failures.map((f, i) => (
-                <li key={`${f.file}-${i}`}>
-                  <span className="font-bold">{f.file}</span> — {f.reason}
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
       )}
 

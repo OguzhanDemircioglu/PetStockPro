@@ -4,6 +4,7 @@ import { useActionState, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { SeedCatalogAutocomplete } from '@/components/products/seed-catalog-autocomplete';
 import type { SearchResult } from '@/lib/catalog/seed-catalog';
+import { useSwalOnError, useSwalOnErrorString } from '@/lib/ui/use-swal-on-error';
 import { createProductAction, type CreateProductState } from './actions';
 
 interface CategoryOption {
@@ -71,6 +72,7 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
     createProductAction,
     null,
   );
+  useSwalOnError(state);
 
   // Controlled state — autocomplete prefill için
   const [name, setName] = useState(state?.formValues.name ?? '');
@@ -98,6 +100,7 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
 
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const [imageError, setImageError] = useState<string | null>(null);
+  useSwalOnErrorString(imageError, 'Görsel hatası');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -290,22 +293,6 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
           Yeni ürün ekle
         </h1>
       </header>
-
-      {state?.error && (
-        <div
-          role="alert"
-          className="rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-bold text-danger-7"
-        >
-          {state.error}
-          {state.issues.length > 1 && (
-            <ul className="mt-2 list-inside list-disc text-xs font-normal">
-              {state.issues.slice(1).map((i, idx) => (
-                <li key={idx}>{i}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
 
       {/* Seed catalog autocomplete (form üstünde, opsiyonel) */}
       <section className="rounded-2xl border border-cat/30 bg-cat-soft/30 p-5">
@@ -633,16 +620,6 @@ export function ProductForm({ categories, brands, r2PublicUrl }: ProductFormProp
               <p className="mt-1.5 text-xs text-ink-3">
                 JPG / PNG / WebP — max 5 MB / dosya · birden fazla dosya seçebilirsin · ilk görsel ana görsel olur.
               </p>
-              {imageError && (
-                <p
-                  role="alert"
-                  data-testid="image-error"
-                  className="mt-1.5 text-xs font-bold text-danger-7"
-                >
-                  ✕ {imageError}
-                </p>
-              )}
-
               {/* Multi-image grid — her thumb'ın sağ üstünde ✕ iptal butonu */}
               {pendingImages.length > 0 && (
                 <ul

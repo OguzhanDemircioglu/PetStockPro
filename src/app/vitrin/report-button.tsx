@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSwalOnErrorString } from '@/lib/ui/use-swal-on-error';
 
 const REASON_OPTIONS: Array<{
   value: string;
@@ -36,6 +37,7 @@ export function ReportButton({
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
+  useSwalOnErrorString(error, 'Bildirim hatası');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -188,16 +190,6 @@ export function ReportButton({
         KVKK uyumlu anonim kayıt. IP adresinin hash&apos;i tutulur, kimlik
         bilgisi alınmaz.
       </p>
-
-      {error && (
-        <div
-          role="alert"
-          data-testid="report-error"
-          className="rounded-lg border border-danger/30 bg-danger-soft px-3 py-2 text-[12.5px] font-bold text-danger-7"
-        >
-          ✕ {error}
-        </div>
-      )}
 
       <button
         type="submit"

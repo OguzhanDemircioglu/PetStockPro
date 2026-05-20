@@ -3,6 +3,7 @@
 import { useActionState } from 'react';
 import type { StorefrontSettingsRow } from '@/lib/storefront/settings';
 import { ModerationWarning } from '@/components/moderation/moderation-warning';
+import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import { saveStorefrontAction, type StorefrontFormState } from './actions';
 
 interface Props {
@@ -14,6 +15,7 @@ export function StorefrontForm({ initial }: Props) {
     saveStorefrontAction,
     null,
   );
+  useSwalOnError(state);
 
   return (
     <form action={formAction} className="flex max-w-2xl flex-col gap-6" data-testid="storefront-form">
@@ -23,14 +25,6 @@ export function StorefrontForm({ initial }: Props) {
           className="rounded-xl border border-arrow/40 bg-arrow-soft px-4 py-3 text-sm font-bold text-arrow-7"
         >
           ✓ Vitrin profili kaydedildi
-        </div>
-      )}
-      {state?.error && (
-        <div
-          role="alert"
-          className="rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-bold text-danger-7"
-        >
-          {state.error}
         </div>
       )}
       {state?.moderationFlags?.flagged && (

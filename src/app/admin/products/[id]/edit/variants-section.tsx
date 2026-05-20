@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useState, useTransition } from 'react';
+import { useSwalOnErrorString } from '@/lib/ui/use-swal-on-error';
 import {
   createVariantAction,
   updateVariantAction,
@@ -99,6 +100,10 @@ function CreateVariantRow({
     boundCreate,
     null,
   );
+  useSwalOnErrorString(
+    state && !state.ok ? state.message ?? null : null,
+    'Variant eklenemedi',
+  );
 
   // Başarılı create sonrası kapat
   if (state?.ok && state.scope === 'create') {
@@ -122,15 +127,6 @@ function CreateVariantRow({
       </div>
 
       <VariantFormFields branches={branches} />
-
-      {state?.message && !state.ok && (
-        <p
-          role="alert"
-          className="mt-3 rounded-lg bg-danger-soft px-3 py-2 text-xs font-bold text-danger-7"
-        >
-          {state.message}
-        </p>
-      )}
 
       <div className="mt-4 flex gap-2">
         <button
@@ -200,6 +196,7 @@ function DisplayVariantRow({
 }) {
   const [pending, startTransition] = useTransition();
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  useSwalOnErrorString(actionMessage, 'Variant işlemi');
 
   const handleSetDefault = () => {
     setActionMessage(null);
@@ -296,14 +293,6 @@ function DisplayVariantRow({
         )}
       </div>
 
-      {actionMessage && (
-        <p
-          role="alert"
-          className="basis-full rounded-lg bg-danger-soft px-3 py-1.5 text-xs font-bold text-danger-7"
-        >
-          {actionMessage}
-        </p>
-      )}
     </div>
   );
 }
@@ -323,6 +312,10 @@ function EditVariantRow({
   const [state, formAction, pending] = useActionState<VariantActionState | null, FormData>(
     boundUpdate,
     null,
+  );
+  useSwalOnErrorString(
+    state && !state.ok ? state.message ?? null : null,
+    'Variant güncellenemedi',
   );
 
   if (state?.ok && state.scope === 'update') {
@@ -350,15 +343,6 @@ function EditVariantRow({
         branches={branches}
         editing
       />
-
-      {state?.message && !state.ok && (
-        <p
-          role="alert"
-          className="mt-3 rounded-lg bg-danger-soft px-3 py-2 text-xs font-bold text-danger-7"
-        >
-          {state.message}
-        </p>
-      )}
 
       <div className="mt-4 flex gap-2">
         <button

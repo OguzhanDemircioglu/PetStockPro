@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState, useEffect } from 'react';
+import { useActionState, useEffect, useMemo } from 'react';
+import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import type { BranchOption, VariantOption } from '@/lib/stock/options';
 import { DrawerShell } from './drawer-shell';
 import { stocktakeAction, type MovementActionState } from './actions';
@@ -16,6 +17,15 @@ export function StocktakeDrawer({ branches, variants, onClose }: Props) {
     MovementActionState | null,
     FormData
   >(stocktakeAction, null);
+
+  const errorState = useMemo(
+    () =>
+      state && !state.ok && state.message
+        ? { error: state.message, issues: state.issues }
+        : null,
+    [state],
+  );
+  useSwalOnError(errorState);
 
   useEffect(() => {
     if (state?.ok) {
@@ -104,29 +114,18 @@ export function StocktakeDrawer({ branches, variants, onClose }: Props) {
           />
         </Field>
 
-        {state?.message && (
+        {state?.ok && state.message && (
           <p
-            role="alert"
-            className={`rounded-lg px-3 py-2 text-sm font-bold ${
-              state.ok
-                ? 'bg-arrow-soft text-arrow-7'
-                : 'bg-danger-soft text-danger-7'
-            }`}
+            role="status"
+            className="rounded-lg bg-arrow-soft px-3 py-2 text-sm font-bold text-arrow-7"
             data-testid="stocktake-alert"
           >
-            {state.ok ? '✓' : '✕'} {state.message}
-            {state.ok && state.meta?.delta !== undefined && (
+            ✓ {state.message}
+            {state.meta?.delta !== undefined && (
               <span className="ml-2 font-mono text-[12.5px]">
                 Δ {state.meta.delta > 0 ? '+' : ''}
                 {state.meta.delta} → yeni stok {state.meta.afterQty}
               </span>
-            )}
-            {state.issues.length > 0 && (
-              <ul className="mt-1 list-inside list-disc text-[12.5px] font-normal">
-                {state.issues.map((i, k) => (
-                  <li key={k}>{i}</li>
-                ))}
-              </ul>
             )}
           </p>
         )}

@@ -9,6 +9,7 @@
 
 import { useActionState, useState } from 'react';
 import Link from 'next/link';
+import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import { resetPasswordAction, type ResetPasswordState } from '@/app/reset-password/[token]/actions';
 
 interface Props {
@@ -22,6 +23,7 @@ export function AcceptInviteForm({ token, email, companyName }: Props) {
     resetPasswordAction,
     null,
   );
+  useSwalOnError(state);
   const [password, setPassword] = useState('');
   const [passwordRepeat, setPasswordRepeat] = useState('');
 
@@ -90,19 +92,6 @@ export function AcceptInviteForm({ token, email, companyName }: Props) {
               className="w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
             />
           </div>
-
-          {state?.error && (
-            <div role="alert" className="rounded-xl border border-danger/30 bg-danger-soft px-3 py-2 text-sm font-bold text-danger-7">
-              ✕ {state.error}
-              {state.issues && state.issues.length > 0 && (
-                <ul className="mt-1 list-inside list-disc text-[12.5px] font-normal">
-                  {state.issues.map((i, idx) => (
-                    <li key={idx}>{i}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
 
           <button
             type="submit"

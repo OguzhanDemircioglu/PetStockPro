@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useSwalOnErrorString } from '@/lib/ui/use-swal-on-error';
 import {
   publishProductAction,
   unpublishProductAction,
@@ -26,6 +27,10 @@ export function StorefrontSection({
   const [pending, startTransition] = useTransition();
   const [published, setPublished] = useState(initialPublished);
   const [feedback, setFeedback] = useState<StorefrontActionState | null>(null);
+  useSwalOnErrorString(
+    feedback && !feedback.ok ? feedback.message ?? null : null,
+    'Vitrin işlemi',
+  );
 
   const canPublish = validation.ok;
 
@@ -122,16 +127,12 @@ export function StorefrontSection({
         <ValidationPanel validation={validation} />
       )}
 
-      {feedback?.message && (
+      {feedback?.ok && feedback.message && (
         <p
-          role="alert"
-          className={`mt-4 rounded-lg px-3 py-2 text-xs font-bold ${
-            feedback.ok
-              ? 'bg-arrow-soft text-arrow-7'
-              : 'bg-danger-soft text-danger-7'
-          }`}
+          role="status"
+          className="mt-4 rounded-lg bg-arrow-soft px-3 py-2 text-xs font-bold text-arrow-7"
         >
-          {feedback.ok ? '✓' : '✕'} {feedback.message}
+          ✓ {feedback.message}
         </p>
       )}
     </section>

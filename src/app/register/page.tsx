@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import Image from 'next/image';
+import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import { registerAction, type RegisterState } from './actions';
 
 /**
@@ -25,6 +26,7 @@ export default function RegisterPage() {
     registerAction,
     null,
   );
+  useSwalOnError(state);
 
   return (
     <div className="grid h-screen w-screen grid-cols-1 overflow-hidden md:grid-cols-2">
@@ -116,15 +118,6 @@ export default function RegisterPage() {
           <p className="mt-2 text-[15px] leading-normal text-ink-3">
             FREE 50 ürün · kredi kartı gerekmez · 2 dakikada hazır.
           </p>
-
-          {state?.error && (
-            <div
-              role="alert"
-              className="mt-6 rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-bold text-danger-7"
-            >
-              {state.error}
-            </div>
-          )}
 
           <form action={formAction} className="mt-7 flex flex-col gap-3.5">
             <div>

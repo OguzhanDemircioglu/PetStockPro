@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import Link from 'next/link';
+import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import { resetPasswordAction, type ResetPasswordState } from './actions';
 
 interface ResetFormProps {
@@ -20,6 +21,7 @@ export function ResetForm({ token, email }: ResetFormProps) {
     resetPasswordAction,
     null,
   );
+  useSwalOnError(state);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-cat-soft via-bg to-bars-soft px-6 py-16">
@@ -37,22 +39,6 @@ export function ResetForm({ token, email }: ResetFormProps) {
         <p className="mt-3 text-center text-sm leading-relaxed text-ink-3">
           <strong className="text-cart">{email}</strong> için yeni şifre belirle.
         </p>
-
-        {state?.error && (
-          <div
-            role="alert"
-            className="mt-6 rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-bold text-danger-7"
-          >
-            {state.error}
-            {state.issues.length > 1 && (
-              <ul className="mt-2 list-inside list-disc text-xs font-normal text-danger-7">
-                {state.issues.slice(1).map((issue, i) => (
-                  <li key={i}>{issue}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
 
         <form action={formAction} className="mt-6 flex flex-col gap-4">
           <input type="hidden" name="token" value={token} />

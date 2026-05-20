@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useState } from 'react';
+import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import { initChangeEmailAction, type ChangeEmailState } from './actions';
 
 interface AccountFormProps {
@@ -18,6 +19,7 @@ export function AccountForm({
     initChangeEmailAction,
     null,
   );
+  useSwalOnError(state);
   const [showForm, setShowForm] = useState(false);
 
   // Init success → confirm screen göster
@@ -58,15 +60,6 @@ export function AccountForm({
                 — {pendingEmailExpiresAt.toLocaleDateString('tr-TR')} kadar geçerli
               </span>
             )}
-          </div>
-        )}
-
-        {state?.error && (
-          <div
-            role="alert"
-            className="mt-3 rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-bold text-danger-7"
-          >
-            {state.error}
           </div>
         )}
 

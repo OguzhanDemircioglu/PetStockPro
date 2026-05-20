@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import Link from 'next/link';
+import { useSwalOnErrorString } from '@/lib/ui/use-swal-on-error';
 import { forgotPasswordAction, type ForgotPasswordState } from './actions';
 
 /**
@@ -18,6 +19,9 @@ export default function ForgotPasswordPage() {
     forgotPasswordAction,
     null,
   );
+  // ForgotPasswordState yalnızca validationError üzerinden hata raporlar;
+  // generic enumeration-safe message her durumda submitted ekranında gösterilir.
+  useSwalOnErrorString(state?.validationError, 'Geçersiz email');
 
   // Submitted → bilgi ekranı
   if (state?.submitted) {
@@ -90,14 +94,6 @@ export default function ForgotPasswordPage() {
           Hesap e-postanı gir, sana 30 dakika geçerli bir sıfırlama bağlantısı göndereceğiz.
         </p>
 
-        {state?.validationError && (
-          <div
-            role="alert"
-            className="mt-6 rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-bold text-danger-7"
-          >
-            {state.validationError}
-          </div>
-        )}
 
         <form action={formAction} className="mt-6 flex flex-col gap-4">
           <div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import { startStocktakeAction, type StartStocktakeState } from './actions';
 
 interface Props {
@@ -12,6 +13,7 @@ export function StartStocktakeForm({ branches }: Props) {
     startStocktakeAction,
     null,
   );
+  useSwalOnError(state);
 
   return (
     <form action={formAction} className="flex flex-col gap-4 rounded-2xl border border-line bg-paper p-6">
@@ -71,15 +73,6 @@ export function StartStocktakeForm({ branches }: Props) {
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-2.5 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>
-
-      {state?.error && (
-        <div
-          role="alert"
-          className="rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-bold text-danger-7"
-        >
-          {state.error}
-        </div>
-      )}
 
       <button
         type="submit"

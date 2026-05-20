@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useState } from 'react';
+import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import {
   flagFeedbackAction,
   resolveReportAction,
@@ -13,6 +14,7 @@ export function FlagButton({ feedbackId }: { feedbackId: string }) {
     ModerationActionState | null,
     FormData
   >(flagFeedbackAction, null);
+  useSwalOnError(state);
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
 
@@ -77,15 +79,6 @@ export function FlagButton({ feedbackId }: { feedbackId: string }) {
           Vazgeç
         </button>
       </div>
-      {state?.error && (
-        <div
-          role="alert"
-          data-flag-error
-          className="text-[11.5px] font-bold text-danger-7"
-        >
-          ✕ {state.error}
-        </div>
-      )}
     </form>
   );
 }
@@ -95,6 +88,7 @@ export function UnflagButton({ feedbackId }: { feedbackId: string }) {
     ModerationActionState | null,
     FormData
   >(unflagFeedbackAction, null);
+  useSwalOnError(state);
 
   if (state?.ok && state.action === 'unflagged') {
     return (
@@ -125,14 +119,6 @@ export function UnflagButton({ feedbackId }: { feedbackId: string }) {
       >
         {pending ? '...' : '↶ Flag kaldır'}
       </button>
-      {state?.error && (
-        <div
-          role="alert"
-          className="mt-1 text-[11.5px] font-bold text-danger-7"
-        >
-          ✕ {state.error}
-        </div>
-      )}
     </form>
   );
 }
@@ -142,6 +128,7 @@ export function ResolveReportButton({ reportId }: { reportId: string }) {
     ModerationActionState | null,
     FormData
   >(resolveReportAction, null);
+  useSwalOnError(state);
   const [open, setOpen] = useState(false);
   const [resolution, setResolution] = useState<'resolved' | 'dismissed'>(
     'resolved',
@@ -224,11 +211,6 @@ export function ResolveReportButton({ reportId }: { reportId: string }) {
           Vazgeç
         </button>
       </div>
-      {state?.error && (
-        <div role="alert" className="text-[11.5px] font-bold text-danger-7">
-          ✕ {state.error}
-        </div>
-      )}
     </form>
   );
 }

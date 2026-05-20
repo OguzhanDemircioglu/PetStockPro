@@ -1,7 +1,8 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import type { CategoryActionState } from './actions';
 
 interface Initial {
@@ -46,6 +47,14 @@ export function CategoryForm({
     CategoryActionState | null,
     FormData
   >(action, null);
+  const errorState = useMemo(
+    () =>
+      state && !state.ok && state.message
+        ? { error: state.message, issues: state.issues }
+        : null,
+    [state],
+  );
+  useSwalOnError(errorState);
 
   // 'root' = üst kategori, parentId UUID = alt kategori
   const initialMode: 'root' | 'child' = initial?.parentId ? 'child' : 'root';
@@ -209,26 +218,13 @@ export function CategoryForm({
         </span>
       </label>
 
-      {state?.message && (
+      {state?.ok && state.message && (
         <div
-          role="alert"
-          className={`rounded-lg px-3 py-2 text-sm font-bold ${
-            state.ok
-              ? 'bg-arrow-soft text-arrow-7'
-              : 'bg-danger-soft text-danger-7'
-          }`}
+          role="status"
+          className="rounded-lg bg-arrow-soft px-3 py-2 text-sm font-bold text-arrow-7"
           data-testid="category-alert"
         >
-          <p>
-            {state.ok ? '✓' : '✕'} {state.message}
-          </p>
-          {state.issues.length > 0 && (
-            <ul className="mt-1 list-inside list-disc text-[12.5px] font-normal">
-              {state.issues.map((i, k) => (
-                <li key={k}>{i}</li>
-              ))}
-            </ul>
-          )}
+          <p>✓ {state.message}</p>
         </div>
       )}
 

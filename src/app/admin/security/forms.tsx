@@ -3,6 +3,7 @@
 import { useActionState, useState } from 'react';
 import Link from 'next/link';
 import { RecoveryCodesActions } from '@/components/auth/recovery-codes-actions';
+import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import {
   disable2faAction,
   regenerate2faRecoveryAction,
@@ -37,11 +38,13 @@ export function SecurityForms({
     DisableState | null,
     FormData
   >(disable2faAction, null);
+  useSwalOnError(disableState);
 
   const [regenState, regenFormAction, regenPending] = useActionState<
     RegenerateState | null,
     FormData
   >(regenerate2faRecoveryAction, null);
+  useSwalOnError(regenState);
 
   const [showDisable, setShowDisable] = useState(false);
   const [showRegen, setShowRegen] = useState(false);
@@ -124,15 +127,6 @@ export function SecurityForms({
             </p>
           </div>
 
-          {disableState?.error && (
-            <div
-              role="alert"
-              className="mb-3 rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-bold text-danger-7"
-            >
-              {disableState.error}
-            </div>
-          )}
-
           {!showDisable ? (
             <button
               type="button"
@@ -186,15 +180,6 @@ export function SecurityForms({
               Authenticator&apos;ından güncel 6 haneli kodu gir.
             </p>
           </div>
-
-          {regenState?.error && (
-            <div
-              role="alert"
-              className="mb-3 rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-bold text-danger-7"
-            >
-              {regenState.error}
-            </div>
-          )}
 
           {regenState?.recoveryCodes.length ? (
             <div>

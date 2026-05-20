@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useMemo } from 'react';
+import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import {
   saveTelegramConfigAction,
   sendTestMessageAction,
@@ -22,10 +23,27 @@ export function TelegramForm({
     saveTelegramConfigAction,
     INIT,
   );
+  const saveErrorState = useMemo(
+    () =>
+      saveState && saveState.ok === false && saveState.message
+        ? { error: saveState.message, issues: saveState.issues }
+        : null,
+    [saveState],
+  );
+  useSwalOnError(saveErrorState);
+
   const [testState, testAction, testPending] = useActionState(
     sendTestMessageAction,
     INIT,
   );
+  const testErrorState = useMemo(
+    () =>
+      testState && testState.testOk === false && testState.message
+        ? { error: testState.message }
+        : null,
+    [testState],
+  );
+  useSwalOnError(testErrorState);
 
   // Maskeli görünüm: token kaydedilmişse "•••••• son 6 karakter"
   const maskedToken =
@@ -85,24 +103,13 @@ export function TelegramForm({
           </p>
         </div>
 
-        {saveState.message && (
+        {saveState.ok && saveState.message && (
           <div
-            role="alert"
+            role="status"
             data-testid="save-alert"
-            className={
-              saveState.ok
-                ? 'rounded-xl border border-arrow-7/30 bg-arrow-soft px-4 py-3 text-sm text-arrow-7'
-                : 'rounded-xl border border-danger-7/30 bg-danger-soft px-4 py-3 text-sm text-danger-7'
-            }
+            className="rounded-xl border border-arrow-7/30 bg-arrow-soft px-4 py-3 text-sm text-arrow-7"
           >
             <div className="font-bold">{saveState.message}</div>
-            {saveState.issues && saveState.issues.length > 0 && (
-              <ul className="mt-1 ml-4 list-disc text-[13.5px]">
-                {saveState.issues.map((iss) => (
-                  <li key={iss}>{iss}</li>
-                ))}
-              </ul>
-            )}
           </div>
         )}
 
@@ -128,15 +135,11 @@ export function TelegramForm({
         {/* Hidden alanlar: testAction inline kullanır eğer form değerleri varsa */}
         <input type="hidden" name="botToken" value={initialBotToken ?? ''} />
         <input type="hidden" name="chatId" value={initialChatId ?? ''} />
-        {testState.message && (
+        {testState.testOk && testState.message && (
           <div
-            role="alert"
+            role="status"
             data-testid="test-alert"
-            className={
-              testState.testOk
-                ? 'rounded-xl border border-arrow-7/30 bg-arrow-soft px-4 py-3 text-sm text-arrow-7'
-                : 'rounded-xl border border-danger-7/30 bg-danger-soft px-4 py-3 text-sm text-danger-7'
-            }
+            className="rounded-xl border border-arrow-7/30 bg-arrow-soft px-4 py-3 text-sm text-arrow-7"
           >
             {testState.message}
           </div>

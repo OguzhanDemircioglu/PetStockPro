@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import {
   resetMyCategoriesAction,
   type ResetCategoriesState,
@@ -17,6 +18,7 @@ export function ResetMyCategoriesButton() {
     ResetCategoriesState | null,
     FormData
   >(resetMyCategoriesAction, null);
+  useSwalOnError(state && !state.ok ? state : null);
 
   return (
     <div className="flex flex-col gap-3">
@@ -57,14 +59,6 @@ export function ResetMyCategoriesButton() {
           {(state.productsAffected ?? 0) > 0
             ? ` ${state.productsAffected} ürün kategorisiz kaldı.`
             : ''}
-        </div>
-      )}
-      {state && !state.ok && state.error && (
-        <div
-          data-testid="reset-my-categories-error"
-          className="rounded-xl border border-danger/40 bg-danger-soft px-4 py-2 text-[13px] font-bold text-danger-7"
-        >
-          ✕ {state.error}
         </div>
       )}
     </div>

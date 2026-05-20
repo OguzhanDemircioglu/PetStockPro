@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import Link from 'next/link';
+import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import { hardDeleteAction, type HardDeleteState } from './actions';
 
 export function HardDeleteForm() {
@@ -9,6 +10,7 @@ export function HardDeleteForm() {
     hardDeleteAction,
     null,
   );
+  useSwalOnError(state);
 
   if (state?.ok) {
     return (
@@ -85,22 +87,6 @@ export function HardDeleteForm() {
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-2.5 text-sm focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
         />
       </div>
-
-      {state?.error && (
-        <div
-          role="alert"
-          className="rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-bold text-danger-7"
-        >
-          ✕ {state.error}
-          {state.issues && state.issues.length > 0 && (
-            <ul className="mt-1 list-inside list-disc text-[12.5px] font-normal">
-              {state.issues.map((i, idx) => (
-                <li key={idx}>{i}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
 
       <button
         type="submit"

@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import { runInspectorQueryAction, type DbInspectorState } from './actions';
 
 const PRESET_QUERIES = [
@@ -44,6 +45,7 @@ export function DbInspectorClient() {
     runInspectorQueryAction,
     null,
   );
+  useSwalOnError(state);
 
   return (
     <div className="flex flex-col gap-4">
@@ -107,23 +109,6 @@ export function DbInspectorClient() {
           ))}
         </ul>
       </details>
-
-      {state?.error && (
-        <div
-          role="alert"
-          data-testid="error-banner"
-          className="rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-bold text-danger-7"
-        >
-          ✕ {state.error}
-          {state.issues && state.issues.length > 0 && (
-            <ul className="mt-1 list-inside list-disc text-[12.5px] font-normal">
-              {state.issues.map((i, idx) => (
-                <li key={idx}>{i}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
 
       {state?.ok && state.rows && (
         <article

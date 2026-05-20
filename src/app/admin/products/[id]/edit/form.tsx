@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import Link from 'next/link';
+import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import {
   updateProductAction,
   deleteProductAction,
@@ -56,6 +57,7 @@ export function EditForm({
     boundUpdate,
     null,
   );
+  useSwalOnError(state);
 
   return (
     <div className="flex flex-col gap-6">
@@ -70,15 +72,6 @@ export function EditForm({
           {initial.name}
         </h1>
       </header>
-
-      {state?.error && (
-        <div
-          role="alert"
-          className="rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-bold text-danger-7"
-        >
-          {state.error}
-        </div>
-      )}
 
       <form action={formAction} className="flex flex-col gap-6">
         <section className="rounded-2xl border border-line bg-paper p-6">

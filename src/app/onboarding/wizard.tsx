@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
+import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import {
   branchAction,
   storefrontAction,
@@ -72,6 +73,9 @@ export function OnboardingWizard({
     StorefrontState | null,
     FormData
   >(storefrontAction, null);
+  useSwalOnError(branchState);
+  useSwalOnError(productState);
+  useSwalOnError(storefrontState);
 
   // İl seçince ilçeleri çek. AbortController ile yarış kontrolü (kullanıcı il'i hızlı değiştirirse).
   useEffect(() => {
@@ -138,22 +142,6 @@ export function OnboardingWizard({
               <strong className="text-cart">{companyName}</strong> için en az 1 şube ekle
               — pet shop&apos;un fiziki konumu (stok takibi şube bazlı).
             </p>
-
-            {branchState?.error && (
-              <div
-                role="alert"
-                className="mt-5 rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-bold text-danger-7"
-              >
-                {branchState.error}
-                {branchState.issues.length > 1 && (
-                  <ul className="mt-2 list-inside list-disc text-xs font-normal">
-                    {branchState.issues.slice(1).map((i, idx) => (
-                      <li key={idx}>{i}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
 
             <form action={branchFormAction} className="mt-6 flex flex-col gap-4">
               <div>
@@ -332,15 +320,6 @@ export function OnboardingWizard({
               kedi kumu vs). Sonra Ürünler sayfasından daha fazla ekleyebilirsin.
             </p>
 
-            {productState?.error && (
-              <div
-                role="alert"
-                className="mt-5 rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-bold text-danger-7"
-              >
-                {productState.error}
-              </div>
-            )}
-
             <form action={productFormAction} className="mt-6 flex flex-col gap-4">
               <div>
                 <label
@@ -441,15 +420,6 @@ export function OnboardingWizard({
               &apos;dan bulup WhatsApp&apos;tan ulaşır. Slug&apos;ı şimdi değiştirebilirsin
               ya da sonra hallederim diyebilirsin.
             </p>
-
-            {storefrontState?.error && (
-              <div
-                role="alert"
-                className="mt-5 rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-bold text-danger-7"
-              >
-                {storefrontState.error}
-              </div>
-            )}
 
             <form action={storefrontFormAction} className="mt-6 flex flex-col gap-4">
               <div>

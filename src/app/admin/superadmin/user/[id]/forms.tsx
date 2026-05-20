@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import {
   forcePasswordResetAction,
   resetTwoFactorAction,
@@ -18,20 +19,7 @@ function StateBanner({ state }: { state: RemoteUserActionState | null }) {
       </div>
     );
   }
-  if (state.error) {
-    return (
-      <div className="mt-3 rounded-xl border border-danger/30 bg-danger-soft px-4 py-2.5 text-[13.5px] font-bold text-danger-7">
-        ✕ {state.error}
-        {state.issues && state.issues.length > 0 && (
-          <ul className="mt-1 list-inside list-disc text-[12px] font-normal">
-            {state.issues.map((i, idx) => (
-              <li key={idx}>{i}</li>
-            ))}
-          </ul>
-        )}
-      </div>
-    );
-  }
+  // Error case → SWAL ile gösterilir (form içinde useSwalOnError çağrılıyor)
   return null;
 }
 
@@ -55,6 +43,7 @@ export function ForcePasswordResetForm({ targetUserId }: BaseProps) {
     forcePasswordResetAction,
     null,
   );
+  useSwalOnError(state);
 
   return (
     <form action={formAction} className="rounded-xl border border-line bg-paper p-4">
@@ -119,6 +108,7 @@ export function ResetTwoFactorForm({ targetUserId, isEnabled }: BaseProps & { is
     resetTwoFactorAction,
     null,
   );
+  useSwalOnError(state);
 
   return (
     <form action={formAction} className="rounded-xl border border-line bg-paper p-4">
@@ -195,6 +185,7 @@ export function LockAccountForm({ targetUserId, isLocked }: BaseProps & { isLock
     lockAccountActionForm,
     null,
   );
+  useSwalOnError(state);
 
   return (
     <form action={formAction} className="rounded-xl border border-danger/40 bg-danger-soft/30 p-4">
@@ -284,6 +275,7 @@ export function UnlockAccountForm({ targetUserId, isLocked }: BaseProps & { isLo
     unlockAccountActionForm,
     null,
   );
+  useSwalOnError(state);
 
   return (
     <form action={formAction} className="rounded-xl border border-arrow/40 bg-arrow-soft/40 p-4">

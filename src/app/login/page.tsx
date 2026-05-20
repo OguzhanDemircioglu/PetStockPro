@@ -3,6 +3,7 @@
 import { useActionState, useRef, useState } from 'react';
 import Image from 'next/image';
 import { extractRecoveryCodesFromText } from '@/lib/auth/recovery-codes';
+import { useSwalOnError, useSwalOnErrorString } from '@/lib/ui/use-swal-on-error';
 import { loginAction, type LoginState } from './actions';
 
 /**
@@ -27,9 +28,20 @@ export default function LoginPage() {
     loginAction,
     null,
   );
+  // remainingAttempts banner'ları inline UX info olarak kalır (3/2/1 renkli),
+  // sadece error mesajı SWAL'a taşınır (banner kaldırıldı).
+  useSwalOnError(
+    state &&
+      (state.remainingAttempts === null ||
+        state.remainingAttempts === undefined ||
+        state.remainingAttempts > 3)
+      ? state
+      : null,
+  );
   const [showPassword, setShowPassword] = useState(false);
   const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  useSwalOnErrorString(uploadError, 'Yedek kod dosyası');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const totpInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -203,19 +215,6 @@ export default function LoginPage() {
               </div>
             )}
 
-          {/* Error banner (kalan hak yoksa veya 4+ ise gösterilir) */}
-          {state?.error &&
-            (state.remainingAttempts === null ||
-              state.remainingAttempts === undefined ||
-              state.remainingAttempts > 3) && (
-              <div
-                role="alert"
-                className="mt-6 rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-bold text-danger-7"
-              >
-                {state.error}
-              </div>
-            )}
-
           {/* Form */}
           <form action={formAction} className="mt-7 flex flex-col gap-3.5">
             <div>
@@ -325,16 +324,6 @@ export default function LoginPage() {
                   >
                     📎 Yedek kod dosyası yükle (.txt)
                   </button>
-                )}
-
-                {uploadError && (
-                  <div
-                    role="alert"
-                    data-testid="recovery-upload-error"
-                    className="mt-2 rounded-lg border border-danger/30 bg-danger-soft px-3 py-2 text-[12.5px] font-bold text-danger-7"
-                  >
-                    {uploadError}
-                  </div>
                 )}
 
                 {recoveryCodes && recoveryCodes.length > 0 && (

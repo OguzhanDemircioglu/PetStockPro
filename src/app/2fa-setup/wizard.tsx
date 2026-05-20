@@ -4,6 +4,7 @@ import { useState, useActionState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { RecoveryCodesActions } from '@/components/auth/recovery-codes-actions';
+import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import {
   verifySetupAction,
   enableSetupAction,
@@ -50,6 +51,8 @@ export function TwoFactorWizard({
     enableSetupAction,
     null,
   );
+  useSwalOnError(verifyState);
+  useSwalOnError(enableState);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-cat-soft via-bg to-bars-soft px-6 py-12">
@@ -147,15 +150,6 @@ export function TwoFactorWizard({
               Kod her 30 saniyede bir yenilenir.
             </p>
 
-            {verifyState?.error && (
-              <div
-                role="alert"
-                className="mt-5 rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-bold text-danger-7"
-              >
-                {verifyState.error}
-              </div>
-            )}
-
             <form action={verifyAction} className="mt-6 flex flex-col gap-4">
               <input
                 name="totpCode"
@@ -219,15 +213,6 @@ export function TwoFactorWizard({
               ⚠ Bu kodlar bir daha gösterilmeyecek — DB&apos;de SHA-256 hash olarak saklanır.
               Mutlaka güvenli bir yere kaydet (şifre yöneticin, kasada bir kâğıt, vs.).
             </div>
-
-            {enableState?.error && (
-              <div
-                role="alert"
-                className="mt-4 rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-bold text-danger-7"
-              >
-                {enableState.error}
-              </div>
-            )}
 
             <form action={enableAction} className="mt-6">
               <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-line bg-line-soft px-3.5 py-3 text-xs leading-relaxed text-ink-2">
