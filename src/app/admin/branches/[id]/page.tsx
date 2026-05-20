@@ -98,16 +98,16 @@ export default async function BranchDetailPage({
       )}
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KPI title="Toplam stok" value={totalStock} emoji="📦" />
-        <KPI title="Variant sayısı" value={variantStock.length} emoji="🏷" />
+        <KPI title="Toplam Stok" value={totalStock} emoji="📦" />
+        <KPI title="Variant Sayısı" value={variantStock.length} emoji="🏷" />
         <KPI
-          title="Düşük stok"
+          title="Düşük Stok"
           value={lowVariants}
           emoji="⚠"
           accent={lowVariants > 0 ? 'danger' : 'arrow'}
         />
         <KPI
-          title="Stok yok"
+          title="Stok Yok"
           value={zeroVariants}
           emoji="🔴"
           accent={zeroVariants > 0 ? 'danger' : 'arrow'}

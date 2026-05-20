@@ -64,7 +64,7 @@ export function AdminSidebar({
         { label: '🛍 Ürünler', href: '/admin/products' },
         { label: '📦 Hareketler', href: '/admin/stock-movements' },
         {
-          label: '⚠ Düşük stok',
+          label: '⚠ Düşük Stok',
           href: '/admin/low-stock',
           badge: lowStockCount > 0 ? lowStockCount : undefined,
           badgeTone: 'danger',
@@ -85,20 +85,15 @@ export function AdminSidebar({
       label: 'Analiz',
       links: [
         { label: '📈 Raporlar', href: '/admin/reports' },
-        { label: '📜 Audit log', href: '/admin/audit-log' },
+        { label: '📜 Audit Log', href: '/admin/audit-log' },
         { label: '🔔 Bildirimler', href: '/admin/notifications' },
-      ],
-    },
-    {
-      label: '🏪 Vitrin',
-      links: [
-        { label: '🌐 Vitrin profili', href: '/admin/settings/storefront' },
       ],
     },
     {
       label: 'Hesap',
       links: [
         { label: '⚙ Ayarlar', href: '/admin/settings' },
+        { label: '🌐 Vitrin Profili', href: '/admin/settings/storefront' },
         { label: '👤 Hesabım', href: '/admin/account' },
         { label: '🛡 Güvenlik', href: '/admin/security' },
       ],
@@ -110,9 +105,9 @@ export function AdminSidebar({
       label: '🛡 Süperadmin',
       links: [
         { label: 'Tenant\'lar', href: '/admin/superadmin' },
-        { label: 'Vitrin moderasyon', href: '/admin/superadmin/vitrin-moderation' },
+        { label: 'Vitrin Moderasyon', href: '/admin/superadmin/vitrin-moderation' },
         { label: 'DB Inspector', href: '/admin/superadmin/db-inspector' },
-        { label: 'Sistem ayarları', href: '/admin/superadmin/system-settings' },
+        { label: 'Sistem Ayarları', href: '/admin/superadmin/system-settings' },
       ],
     });
   }

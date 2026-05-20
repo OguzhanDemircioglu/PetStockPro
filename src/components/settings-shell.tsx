@@ -29,14 +29,14 @@ export interface SettingsNavItem {
 }
 
 const NAV: SettingsNavItem[] = [
-  { key: 'overview', href: '/admin/settings', emoji: '📊', label: 'Genel bakış' },
+  { key: 'overview', href: '/admin/settings', emoji: '📊', label: 'Genel Bakış' },
   { key: 'company', href: '/admin/settings/company', emoji: '🏢', label: 'Firma' },
-  { key: 'storefront', href: '/admin/settings/storefront', emoji: '🌐', label: 'Vitrin profili' },
+  { key: 'storefront', href: '/admin/settings/storefront', emoji: '🌐', label: 'Vitrin Profili' },
   { key: 'users', href: '/admin/settings/users', emoji: '👥', label: 'Kullanıcılar' },
   { key: 'notifications', href: '/admin/settings/notifications', emoji: '🔔', label: 'Bildirimler' },
   { key: 'account', href: '/admin/account', emoji: '👤', label: 'Hesap' },
   { key: 'security', href: '/admin/security', emoji: '🛡', label: 'Güvenlik' },
-  { key: 'audit', href: '/admin/audit-log', emoji: '📜', label: 'Audit log' },
+  { key: 'audit', href: '/admin/audit-log', emoji: '📜', label: 'Audit Log' },
   { key: 'export', href: '/admin/settings/export', emoji: '⬇', label: 'Verilerimi İndir' },
 ];
 

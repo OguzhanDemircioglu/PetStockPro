@@ -154,7 +154,7 @@ export default async function AuditLogPage({
   return (
     <SettingsShell
       current="audit"
-      title="Audit log"
+      title="Audit Log"
       description={
         totalCount > 0
           ? `${totalCount} aksiyon${hasFilter ? ' (filtreli)' : ' · Append-only (KVKK 5 yıl saklama)'} · sayfa ${Math.min(page, totalPages)} / ${totalPages}`

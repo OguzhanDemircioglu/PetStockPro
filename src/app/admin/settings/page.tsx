@@ -110,7 +110,7 @@ export default async function SettingsHubPage() {
   return (
     <SettingsShell
       current="overview"
-      title="Genel bakış"
+      title="Genel Bakış"
       description={`${company?.name ?? 'Pet shop'} — hesap, firma ve veri yönetimi durumu`}
     >
       <div className="flex flex-col gap-6">

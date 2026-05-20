@@ -40,7 +40,7 @@ export default async function StorefrontSettingsPage() {
   return (
     <SettingsShell
       current="storefront"
-      title="Vitrin profili"
+      title="Vitrin Profili"
       description="Pet shop'unu petstockpro.com/vitrin'de tanıtan halka açık profili."
     >
       <div className="flex flex-col gap-8">
