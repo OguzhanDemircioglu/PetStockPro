@@ -114,6 +114,18 @@ export interface StorefrontDetail {
   metaDescription: string | null;
   // Companies tablosu fallback whatsapp
   companyWhatsapp: string | null;
+  /**
+   * Faz 5 (2026-05-21) — Şube status özeti (vitrin tatil/pasif rendering).
+   * Tüm şubeler tatildeyse hero'da "🏖 Tatilde" banner + WhatsApp disabled,
+   * tüm şubeler pasif/tatil ise storefront null döner (filter).
+   */
+  branchSummary: {
+    activeCount: number;
+    holidayCount: number;
+    inactiveCount: number;
+    allOnHoliday: boolean;
+    anyOperational: boolean;
+  };
 }
 
 export interface StorefrontProduct {
@@ -544,6 +556,30 @@ export async function getStorefrontBySlug(
   if (!row.isEnabled) return null;
   if (row.storefrontStatus !== 'approved') return null;
 
+  // Faz 5 — şube status özeti (tek query GROUP BY).
+  const branchRows = (await db
+    .select({
+      status: branches.status,
+      count: sql<number>`COUNT(*)::int`,
+    })
+    .from(branches)
+    .where(eq(branches.companyId, row.companyId))
+    .groupBy(branches.status)) as Array<{ status: string; count: number }>;
+
+  let activeCount = 0;
+  let holidayCount = 0;
+  let inactiveCount = 0;
+  for (const r of branchRows) {
+    if (r.status === 'active') activeCount = r.count;
+    else if (r.status === 'holiday') holidayCount = r.count;
+    else if (r.status === 'inactive') inactiveCount = r.count;
+  }
+  const anyOperational = activeCount + holidayCount > 0;
+  const allOnHoliday = activeCount === 0 && holidayCount > 0;
+
+  // Hiç operasyonel şube yoksa (hepsi pasif) → storefront vitrin'den çekilir.
+  if (!anyOperational) return null;
+
   return {
     companyId: row.companyId,
     slug: row.slug,
@@ -564,6 +600,13 @@ export async function getStorefrontBySlug(
     socialTiktok: row.socialTiktok,
     metaDescription: row.metaDescription,
     companyWhatsapp: row.companyWhatsapp,
+    branchSummary: {
+      activeCount,
+      holidayCount,
+      inactiveCount,
+      allOnHoliday,
+      anyOperational,
+    },
   };
 }
 

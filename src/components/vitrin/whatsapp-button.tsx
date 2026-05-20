@@ -20,6 +20,10 @@ interface Props
   size?: 'sm' | 'md' | 'lg';
   /** Buton genişliği: 'auto' içeriğe göre, 'block' tam genişlik */
   width?: 'auto' | 'block';
+  /** Faz 5: Şube tatildeyse veya pasifse buton disabled. Anchor görünür ama tıklama no-op + tooltip. */
+  disabled?: boolean;
+  /** Disabled tooltip metni (örn. "Tatilde — cevap gecikebilir"). */
+  disabledReason?: string;
 }
 
 const SIZE_CLS: Record<NonNullable<Props['size']>, string> = {
@@ -39,9 +43,33 @@ export function WhatsappButton({
   label = 'Satıcıya sor',
   size = 'md',
   width = 'auto',
+  disabled = false,
+  disabledReason,
   className,
   ...rest
 }: Props) {
+  if (disabled) {
+    return (
+      <span
+        role="button"
+        aria-disabled="true"
+        title={disabledReason ?? 'Şu anda iletişime kapalı'}
+        data-testid="whatsapp-button-disabled"
+        className={`inline-flex cursor-not-allowed items-center justify-center rounded-xl bg-line-soft font-bold text-ink-3 opacity-70 ${
+          SIZE_CLS[size]
+        } ${width === 'block' ? 'w-full' : ''} ${className ?? ''}`}
+      >
+        <WhatsappIcon size={ICON_SIZE[size]} />
+        {label}
+        {disabledReason && (
+          <span className="ml-1 text-[10.5px] font-normal opacity-80">
+            ({disabledReason})
+          </span>
+        )}
+      </span>
+    );
+  }
+
   return (
     <a
       href={href}

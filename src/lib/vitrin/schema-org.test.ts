@@ -29,6 +29,13 @@ function makeStorefront(overrides: Partial<StorefrontDetail> = {}): StorefrontDe
     socialTiktok: null,
     metaDescription: 'Mavi Pet Shop İzmir Bornova — mama, aksesuar, oyuncak.',
     companyWhatsapp: '+905324567890',
+    branchSummary: {
+      activeCount: 1,
+      holidayCount: 0,
+      inactiveCount: 0,
+      allOnHoliday: false,
+      anyOperational: true,
+    },
     ...overrides,
   };
 }

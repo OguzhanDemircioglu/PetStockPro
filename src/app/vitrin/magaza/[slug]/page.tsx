@@ -119,14 +119,39 @@ export default async function StorefrontProfilePage({
         ← Tüm pet shop&apos;lar
       </Link>
 
+      {sf.branchSummary.allOnHoliday && (
+        <div
+          role="status"
+          className="rounded-2xl border-2 border-cat/50 bg-cat-soft px-5 py-4 text-sm font-bold text-cart"
+          data-testid="storefront-holiday-banner"
+        >
+          🏖 <span className="text-base">{sf.name}</span> şu anda tatilde.
+          <span className="ml-1 font-normal">
+            WhatsApp yazabilirsin ama cevap gecikebilir. Açıldığında haber vereceğiz.
+          </span>
+        </div>
+      )}
+
       <section
-        className="rounded-3xl bg-gradient-to-br from-cat-soft/40 to-arrow-soft/30 p-6 lg:p-8"
+        className={`rounded-3xl bg-gradient-to-br p-6 lg:p-8 ${
+          sf.branchSummary.allOnHoliday
+            ? 'from-cat-soft/60 to-cat-soft/40'
+            : 'from-cat-soft/40 to-arrow-soft/30'
+        }`}
         data-testid="storefront-hero"
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-cart" data-storefront-name>
               {sf.name}
+              {sf.branchSummary.allOnHoliday && (
+                <span
+                  className="ml-2 align-middle rounded-full bg-cat px-2.5 py-1 text-[11.5px] font-bold text-white"
+                  data-testid="storefront-holiday-badge"
+                >
+                  🏖 Tatilde
+                </span>
+              )}
             </h1>
             <p className="mt-1 text-sm text-ink-2">
               📍{' '}
@@ -139,6 +164,10 @@ export default async function StorefrontProfilePage({
               href={whatsappUrl}
               data-testid="hero-whatsapp"
               size="lg"
+              disabled={sf.branchSummary.allOnHoliday}
+              disabledReason={
+                sf.branchSummary.allOnHoliday ? 'Tatilde — cevap gecikebilir' : undefined
+              }
             />
           )}
         </div>
