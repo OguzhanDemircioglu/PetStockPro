@@ -81,19 +81,37 @@ export async function swalConfirm(
   return r.isConfirmed;
 }
 
-/** Sağ üst köşede 3 sn beliren bilgi toast'ı (success default). */
+/**
+ * Sağ üst köşede otomatik kapanan toast.
+ *
+ * Form hataları için default — modal yerine bu kullanılır (2026-05-20 kullanıcı
+ * tercihi: form üstü banner YOK, ortada modal YOK, sağ üstte kaybolur).
+ *
+ * @param title — başlık (zorunlu)
+ * @param text  — alt satır detay (opsiyonel)
+ * @param icon  — success / info / warning / error (default error)
+ * @param duration — ms (default 4000 — error'a 4 sn, success 3 sn)
+ */
 export function swalToast(
   title: string,
+  text?: string,
   icon: 'success' | 'info' | 'warning' | 'error' = 'success',
+  duration?: number,
 ): Promise<SweetAlertResult> {
+  const ms = duration ?? (icon === 'error' ? 4000 : 3000);
   return Swal.fire({
     toast: true,
     position: 'top-end',
     icon,
     title,
+    text,
     showConfirmButton: false,
-    timer: 3000,
+    timer: ms,
     timerProgressBar: true,
+    didOpen: (el) => {
+      el.addEventListener('mouseenter', Swal.stopTimer);
+      el.addEventListener('mouseleave', Swal.resumeTimer);
+    },
   });
 }
 

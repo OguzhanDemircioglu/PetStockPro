@@ -497,3 +497,24 @@ html.dark input[type='datetime-local'],
 html.dark input[type='time'] {
   color-scheme: dark;
 }
+
+/* ============================================================
+   Field-level validation kızartması (2026-05-20 kullanıcı kararı)
+   Hatalı veya eksik alanlar için kırmızı border + soft bg + ring.
+   Form action sonrası state.error varsa input'a aria-invalid="true" set edilir
+   (örn brand-form.tsx). Kullanıcı odak çekildiği için SWAL toast sağ üstte
+   görünür + input görsel olarak kızarır.
+   ============================================================ */
+input[aria-invalid='true'],
+textarea[aria-invalid='true'],
+select[aria-invalid='true'] {
+  border-color: var(--danger, #dc2626) !important;
+  background-color: color-mix(in srgb, var(--danger, #dc2626) 6%, transparent) !important;
+}
+input[aria-invalid='true']:focus,
+textarea[aria-invalid='true']:focus,
+select[aria-invalid='true']:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger, #dc2626) 18%, transparent) !important;
+  border-color: var(--danger, #dc2626) !important;
+}

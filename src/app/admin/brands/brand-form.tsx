@@ -33,6 +33,11 @@ export function BrandForm({ action, initial, submitLabel }: Props) {
   );
   useSwalOnError(errorState);
 
+  // Field-level kızartma — error varsa name input'una aria-invalid set et.
+  // (Bu form'da name tek zorunlu alan; daha karmaşık form'larda issues array'i
+  // parse edilip field bazlı invalid map oluşturulur.)
+  const nameInvalid = !!errorState;
+
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <div>
@@ -50,6 +55,7 @@ export function BrandForm({ action, initial, submitLabel }: Props) {
           minLength={1}
           maxLength={100}
           defaultValue={initial?.name ?? ''}
+          aria-invalid={nameInvalid || undefined}
           placeholder="Royal Canin, Hill's, Catit ..."
           data-testid="brand-name"
           className="w-full rounded-xl border-[1.5px] border-line bg-paper px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"

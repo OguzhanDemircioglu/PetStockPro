@@ -1,18 +1,22 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { swalError } from './swal';
+import { swalToast } from './swal';
 
 /**
- * Form action state'i değiştiğinde, state.error varsa SWAL modal göster.
+ * Form action state'i değiştiğinde, state.error varsa **sağ üstte toast** göster.
  *
- * Pattern (form üstü `role="alert"` banner'ı yerine — 2026-05-20 kullanıcı kararı):
+ * 2026-05-20 kullanıcı kararı:
+ *  - Form üstü `role="alert"` banner YOK
+ *  - Ortada SWAL modal YOK
+ *  - Sağ üstte 4 sn otomatik kapanan toast (hover ile pause)
+ *  - Input-level kızartma (border-danger) KALIR — bağımsız field validation
  *
+ * Pattern:
  *   const [state, formAction, pending] = useActionState(...);
  *   useSwalOnError(state);
  *
  * Aynı state referansını birden fazla render'da yakalamamak için ref ile track edilir.
- *
  * state.issues varsa (Zod multi-error) birinci elemandan sonrası detail olarak gösterilir.
  */
 interface MinimalErrorState {
@@ -28,9 +32,9 @@ export function useSwalOnError<T extends MinimalErrorState | null | undefined>(s
     lastShown.current = state;
     const detail =
       state.issues && state.issues.length > 1
-        ? state.issues.slice(1).join('\n')
+        ? state.issues.slice(1).join(' · ')
         : undefined;
-    void swalError(state.error, detail);
+    void swalToast(state.error, detail, 'error');
   }, [state]);
 }
 
@@ -47,6 +51,6 @@ export function useSwalOnErrorString(value: string | null | undefined, title = '
     if (!value) return;
     if (lastShown.current === value) return;
     lastShown.current = value;
-    void swalError(title, value);
+    void swalToast(title, value, 'error');
   }, [value, title]);
 }
