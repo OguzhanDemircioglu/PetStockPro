@@ -6,7 +6,9 @@ import { getBranchDetail } from '@/lib/branches/manage';
 import {
   listBranchVariantStock,
   listBranchRecentMovements,
+  listBranchAssignedUsers,
 } from '@/lib/branches/detail';
+import { RemoveManagerButton } from './remove-manager-button';
 
 const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
   stock_in: { label: '📥 Giriş', cls: 'bg-arrow-soft text-arrow-7' },
@@ -25,13 +27,17 @@ export default async function BranchDetailPage({
   if (!session?.user?.companyId) redirect('/login' as never);
 
   const { id } = await params;
-  const [branch, variantStock, movements] = await Promise.all([
+  const [branch, variantStock, movements, assigned] = await Promise.all([
     getBranchDetail(session.user.companyId, id, db),
     listBranchVariantStock(session.user.companyId, id, db),
     listBranchRecentMovements(session.user.companyId, id, db, 12),
+    listBranchAssignedUsers(session.user.companyId, id, db),
   ]);
 
   if (!branch) notFound();
+
+  const canManageUsers =
+    session.user.role === 'BAYI_SAHIBI' || session.user.role === 'SUPERADMIN';
 
   const totalStock = variantStock.reduce((sum, v) => sum + v.stockQty, 0);
   const lowVariants = variantStock.filter((v) => v.isLow).length;
@@ -80,6 +86,121 @@ export default async function BranchDetailPage({
           emoji="🔴"
           accent={zeroVariants > 0 ? 'danger' : 'arrow'}
         />
+      </section>
+
+      <section
+        className="rounded-2xl border border-line bg-paper p-5"
+        data-testid="branch-team-card"
+      >
+        <header className="mb-4 flex items-center justify-between">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-ink-3">
+            👤 Şube ekibi
+          </h2>
+          {canManageUsers && (
+            <Link
+              href={'/admin/settings/users' as never}
+              className="text-[12.5px] font-bold text-cat hover:underline"
+            >
+              Kullanıcı davet et →
+            </Link>
+          )}
+        </header>
+
+        <div className="grid gap-4 md:grid-cols-[1fr_1fr]">
+          <div
+            className="flex flex-col gap-2 rounded-xl border border-line-soft bg-cat-soft/30 p-4"
+            data-testid="branch-manager-block"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+                Şube müdürü
+              </span>
+              <span className="text-[10.5px] text-ink-4">en fazla 1</span>
+            </div>
+            {assigned.manager ? (
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-bold text-cart">
+                    {assigned.manager.name ?? assigned.manager.email}
+                  </div>
+                  {assigned.manager.name && (
+                    <div className="truncate text-[12px] text-ink-3">
+                      {assigned.manager.email}
+                    </div>
+                  )}
+                  <div className="mt-1 flex items-center gap-2 text-[11px] text-ink-4">
+                    {assigned.manager.emailVerifiedAt ? (
+                      <span className="rounded-full bg-arrow-soft px-1.5 py-0.5 font-bold text-arrow-7">
+                        ✓ Doğrulandı
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-line-soft px-1.5 py-0.5 font-bold text-ink-3">
+                        Davet bekliyor
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {canManageUsers && (
+                  <RemoveManagerButton
+                    branchId={branch.id}
+                    managerEmail={assigned.manager.email}
+                  />
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1">
+                <div className="text-sm text-ink-3">
+                  Henüz müdür atanmadı.
+                </div>
+                {canManageUsers && (
+                  <Link
+                    href={'/admin/settings/users' as never}
+                    className="text-[12.5px] font-bold text-cat hover:underline"
+                  >
+                    + Müdür davet et
+                  </Link>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div
+            className="flex flex-col gap-2 rounded-xl border border-line-soft bg-arrow-soft/30 p-4"
+            data-testid="branch-staff-block"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+                Kasiyerler (STAFF)
+              </span>
+              <span className="rounded-full bg-paper px-2 py-0.5 text-[11px] font-bold text-ink-2">
+                {assigned.staff.length}
+              </span>
+            </div>
+            {assigned.staff.length === 0 ? (
+              <div className="text-sm text-ink-3">
+                Bu şubeye atanmış kasiyer yok.
+              </div>
+            ) : (
+              <ul className="divide-y divide-line-soft" data-testid="branch-staff-rows">
+                {assigned.staff.map((s) => (
+                  <li
+                    key={s.id}
+                    className="flex items-center justify-between gap-2 py-1.5 text-[13px]"
+                  >
+                    <span className="min-w-0 flex-1 truncate font-bold text-ink">
+                      {s.name ?? s.email}
+                    </span>
+                    {!s.emailVerifiedAt && (
+                      <span className="rounded-full bg-line-soft px-1.5 py-0.5 text-[10.5px] font-bold text-ink-3">
+                        Davet bekliyor
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">

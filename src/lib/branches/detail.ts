@@ -1,8 +1,9 @@
 /**
- * Branch detay sayfası için veri toplama — variant stok matrix + son hareketler.
+ * Branch detay sayfası için veri toplama — variant stok matrix + son hareketler
+ * + atanmış kullanıcılar (müdür + STAFF).
  */
 
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import type { DbClient } from '@/lib/db/client';
 import {
   branchInventory,
@@ -121,4 +122,52 @@ export async function listBranchRecentMovements(
     .limit(limit);
 
   return rows as BranchMovementRow[];
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ASSIGNED USERS (manager + staff) — Branch detail "👤 Şube müdürü" kart
+// ─────────────────────────────────────────────────────────────────
+
+export interface BranchUserRow {
+  id: string;
+  email: string;
+  name: string | null;
+  role: string;
+  emailVerifiedAt: Date | null;
+  createdAt: Date;
+}
+
+export interface BranchAssignedUsers {
+  /** En fazla 1 (DB-level partial unique index garanti eder). */
+  manager: BranchUserRow | null;
+  /** O şubeye atanmış STAFF kullanıcılar. */
+  staff: BranchUserRow[];
+}
+
+/**
+ * Belirli şubeye atanmış kullanıcılar — SUBE_MUDURU (en fazla 1) + STAFF dizisi.
+ * BAYI_SAHIBI / SUPERADMIN tenant geneli olduğu için branchId null'dur ve burada
+ * görünmez.
+ */
+export async function listBranchAssignedUsers(
+  companyId: string,
+  branchId: string,
+  db: DbClient,
+): Promise<BranchAssignedUsers> {
+  const rows = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      role: users.role,
+      emailVerifiedAt: users.emailVerifiedAt,
+      createdAt: users.createdAt,
+    })
+    .from(users)
+    .where(and(eq(users.companyId, companyId), eq(users.branchId, branchId)))
+    .orderBy(asc(users.role), asc(users.createdAt));
+
+  const manager = (rows.find((r) => r.role === 'SUBE_MUDURU') as BranchUserRow | undefined) ?? null;
+  const staff = rows.filter((r) => r.role === 'STAFF') as BranchUserRow[];
+  return { manager, staff };
 }

@@ -1,16 +1,53 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-20 (sabah — **Sprint E full kapsam: Catalog Seed + R2 + Multi-image + Users invite refactor**)
-**Mevcut Branch:** `cray61` — origin'in **185 commit** ileri (push edilmedi)
-**Son commit:** `cf61e37` feat(users): link-only davet + şube tek-müdür constraint
-**Test:** **1349+** passed (catalog 123 + brands 13 + users 14 + diğer suite'ler stabil)
+**Tarih:** 2026-05-20 (öğle — **Branch detail müdür gösterimi + remove action**)
+**Mevcut Branch:** `cray61` — origin'in **186 commit** ileri (push edilmedi)
+**Son commit:** `<NEW>` feat(branches): detay sayfasında atanmış müdür + STAFF kartı + "Müdürü kaldır"
+**Test:** **1356+** passed (+7: detail 3 + manage removeBranchManager 4)
 **Lint+typecheck:** 0 error
-**Migration:** **20** (Drizzle baseline 17 + 0018 catalog_seed + 0019 description + 0020 users.branch_id)
+**Migration:** **20** (değişmedi — schema değişmedi, mevcut `users.branch_id` field kullanıldı)
 **Aiven:** dormant (.env'de LOCAL_DB_* hazır)
 **Supabase Storage:** ❌ KALDIRILDI (@supabase/* paketleri sökülmüş)
 **R2:** ✅ Kod + bucket + 1.283 webp upload + img-src CSP aktif
 
-## 🆕 Bu tur (2026-05-19 → 20) — Sprint E full kapsam
+## 🆕 Bu tur (2026-05-20, öğle) — Branch detail "👤 Şube ekibi" kartı
+
+| # | İş | Commit |
+|---|---|---|
+| N | `listBranchAssignedUsers` helper (lib/branches/detail.ts) — `users.branchId = branchId` filtre + role'a göre manager/staff bölüştürme. `BranchUserRow` + `BranchAssignedUsers` tipleri. | `<NEW>` |
+| N | `removeBranchManager` helper (lib/branches/manage.ts) — şube ownership + manager lookup + `branchId=null` update. Reason codes: `branch_not_found`, `no_manager_assigned`, `unknown`. Rolü SUBE_MUDURU kalır (kullanıcı tenant'a bağlı kalır, başka şubeye atanması ayrı karar). | `<NEW>` |
+| N | `removeBranchManagerAction` server action — BAYI_SAHIBI/SUPERADMIN yetki check + audit log `branch.manager_removed` + revalidatePath. | `<NEW>` |
+| N | `/admin/branches/[id]` UI — yeni "👤 Şube ekibi" section: Müdür bloğu (atanmış: ad+email+✓ Doğrulandı/Davet bekliyor + "Müdürü kaldır" buton / atanmamış: "Henüz müdür atanmadı + + Müdür davet et" CTA) + Kasiyer bloğu (STAFF dizisi + Davet bekliyor badge). | `<NEW>` |
+| N | `RemoveManagerButton` client component — `confirm()` onay metni (kullanıcı kalır + rol korunur + diğer atama users listesi) + `useTransition` pending + `data-testid="remove-manager-button"`. | `<NEW>` |
+
+### 📊 Bu tur rakamları
+
+| Metric | Değer |
+|---|---|
+| Yeni commit | **1** |
+| Yeni test | **+7** (detail 3 + manage removeBranchManager 4) |
+| Yeni helper | `listBranchAssignedUsers` + `removeBranchManager` |
+| Yeni server action | `removeBranchManagerAction` |
+| Yeni client component | `RemoveManagerButton` |
+| Yeni audit action | `branch.manager_removed` |
+| Schema | değişmedi (mevcut `users.branch_id` field reuse) |
+| Branch ahead | 185 → **186 commit** |
+
+### 🔑 Bu turda netleşen küçük kararlar
+
+1. **"Müdürü kaldır" semantik:** sadece `branchId=null` yapar. Rol SUBE_MUDURU kalır. Başka şubeye atanmak için Kullanıcılar listesinde rol/şube güncellemek gerekir (ayrı yetki ekranı). UI'daki confirm metni bunu açıklar.
+
+2. **DB constraint dostluğu:** `idx_users_one_sube_muduru_per_branch` partial unique index (cf61e37) `WHERE branch_id IS NOT NULL` — `branchId=null` olunca constraint dışı kalır → başka müdür atanabilir, ek temizlik yok.
+
+3. **Browser smoke kapsamı:** Müdür-**yok** hali canlı doğrulandı (snapshot: "Henüz müdür atanmadı + Müdür davet et"). Müdür-**var** hali + "Kaldır" tıklama unit test'te 4 senaryo ile kanıtlandı; canlı tıklama 2FA login engelinden bu turda atlandı (DB'de test müdür `test.mudur@petshop.test` seed kalıntı — sonraki turda silinecek).
+
+### ⚠ Sonraki turda silinecek
+
+- `petstockpro.users` tablosunda `test.mudur@petshop.test` (id `bd11c363-2154-4454-b4f3-aa67ed775dd4`) — bu turda E2E için INSERT edildi, browser flow atlandı için kalıntı. `DELETE FROM petstockpro.users WHERE email = 'test.mudur@petshop.test';` yeterli.
+
+---
+
+## 🆕 Önceki tur (2026-05-19 → 20) — Sprint E full kapsam
 
 | # | İş | Commit |
 |---|---|---|
@@ -115,10 +152,7 @@
    - 1.283 webp R2'ye yüklendi → repo'da 49 MB lokal kalmasına gerek yok
    - .gitignore zaten kapsıyor (kontrol et) veya açıkça ekle
 
-4. **Branch detail/edit sayfasında "atanmış müdür" gösterimi**
-   - `/admin/branches/{id}` veya `/admin/branches/{id}/edit` — şube müdürü atanmışsa kart üzerinde göster
-   - "Müdürü kaldır" butonu (BAYI_SAHIBI yetkisi)
-   - Şu an sadece kullanıcı listesinde gözüküyor — branch UI'da yokluk var
+4. ~~**Branch detail/edit sayfasında "atanmış müdür" gösterimi**~~ ✅ Tamamlandı 2026-05-20 öğle (yukarı bölüm)
 
 5. **Edit form'da multi-image batch upload**
    - Mevcut /admin/products/[id]/edit upload form'u tek file (sıra ile yükle)

@@ -21,6 +21,7 @@ import {
   districts,
   productVariants,
   branchInventory,
+  users,
 } from '@/db/schema';
 
 // ─────────────────────────────────────────────────────────────────
@@ -313,6 +314,62 @@ export async function setBranchActive(
       .set({ isActive: active })
       .where(eq(branches.id, branchId));
     return { ok: true, isActive: active };
+  } catch {
+    return { ok: false, reason: 'unknown' };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// MANAGER REMOVE — şubeye atanmış SUBE_MUDURU'nün branch ilişkisini koparır
+// ─────────────────────────────────────────────────────────────────
+
+export type RemoveBranchManagerResult =
+  | { ok: true; userId: string; email: string }
+  | {
+      ok: false;
+      reason: 'branch_not_found' | 'no_manager_assigned' | 'unknown';
+    };
+
+/**
+ * Belirtilen şubenin müdürünü kaldırır.
+ *
+ * - Sadece `branchId` field'ını NULL'a çeker — kullanıcı tenant'a bağlı kalır,
+ *   rolü SUBE_MUDURU olarak korunur (rol değişimi BAYI_SAHIBI'nin ayrı kararı).
+ * - DB partial unique constraint (`idx_users_one_sube_muduru_per_branch`)
+ *   branchId NULL olunca devre dışı kalır → başka müdür atanabilir.
+ * - BAYI_SAHIBI yetkisi server action'da kontrol edilir.
+ */
+export async function removeBranchManager(
+  companyId: string,
+  branchId: string,
+  db: DbClient,
+): Promise<RemoveBranchManagerResult> {
+  const branchOwn = await db
+    .select({ id: branches.id })
+    .from(branches)
+    .where(and(eq(branches.id, branchId), eq(branches.companyId, companyId)))
+    .limit(1);
+  if (branchOwn.length === 0) return { ok: false, reason: 'branch_not_found' };
+
+  const manager = await db
+    .select({ id: users.id, email: users.email })
+    .from(users)
+    .where(
+      and(
+        eq(users.companyId, companyId),
+        eq(users.branchId, branchId),
+        eq(users.role, 'SUBE_MUDURU'),
+      ),
+    )
+    .limit(1);
+  if (manager.length === 0) return { ok: false, reason: 'no_manager_assigned' };
+
+  try {
+    await db
+      .update(users)
+      .set({ branchId: null, updatedAt: new Date() })
+      .where(eq(users.id, manager[0].id));
+    return { ok: true, userId: manager[0].id, email: manager[0].email };
   } catch {
     return { ok: false, reason: 'unknown' };
   }

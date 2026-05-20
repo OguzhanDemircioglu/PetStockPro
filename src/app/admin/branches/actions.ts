@@ -8,6 +8,7 @@ import {
   addBranch,
   updateBranch,
   setBranchActive,
+  removeBranchManager,
   type BranchInput,
 } from '@/lib/branches/manage';
 import { writeAuditLogAsync } from '@/lib/audit/log';
@@ -51,6 +52,8 @@ const REASON_MSG: Record<string, string> = {
   district_mismatch: 'İlçe bu ile ait değil',
   not_found: 'Şube bulunamadı',
   last_active_branch: 'Son aktif şube pasifleştirilemez',
+  branch_not_found: 'Şube bulunamadı',
+  no_manager_assigned: 'Bu şubeye atanmış müdür yok',
   unknown: 'Kaydedilemedi, tekrar dene',
 };
 
@@ -161,6 +164,54 @@ export async function updateBranchAction(
 
   revalidatePath('/admin/branches');
   redirect(`/admin/branches?updated=success${moderationRedirectSuffix(result.moderationFlags)}` as never);
+}
+
+export async function removeBranchManagerAction(
+  branchId: string,
+): Promise<BranchActionState> {
+  const session = await auth();
+  if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+
+  if (session.user.role !== 'BAYI_SAHIBI' && session.user.role !== 'SUPERADMIN') {
+    return {
+      ...EMPTY,
+      branchId,
+      message: 'Bu işlem için BAYI_SAHIBI yetkisi gerekli',
+    };
+  }
+
+  const result = await removeBranchManager(session.user.companyId, branchId, db);
+  if (!result.ok) {
+    return {
+      ...EMPTY,
+      branchId,
+      message: REASON_MSG[result.reason] ?? 'Hata',
+    };
+  }
+
+  writeAuditLogAsync(
+    {
+      companyId: session.user.companyId,
+      userId: session.user.id,
+      action: 'branch.manager_removed',
+      entityType: 'branch',
+      entityId: branchId,
+      afterState: {
+        removedUserId: result.userId,
+        removedEmail: result.email,
+      },
+    },
+    db,
+  );
+
+  revalidatePath(`/admin/branches/${branchId}`);
+  revalidatePath('/admin/settings/users');
+  return {
+    ok: true,
+    branchId,
+    message: `Müdür kaldırıldı: ${result.email}`,
+    issues: [],
+  };
 }
 
 export async function toggleBranchActiveAction(

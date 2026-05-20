@@ -3,6 +3,7 @@ import {
   addBranch,
   updateBranch,
   setBranchActive,
+  removeBranchManager,
   branchSchema,
 } from './manage';
 import type { DbClient } from '@/lib/db/client';
@@ -265,5 +266,75 @@ describe('setBranchActive', () => {
     const result = await setBranchActive(COMPANY, BRANCH, false, db);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe('not_found');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// removeBranchManager
+// ─────────────────────────────────────────────────────────────────
+
+describe('removeBranchManager', () => {
+  const MANAGER_ID = '99999999-9999-9999-9999-999999999999';
+
+  it('happy path — müdür branchId=null güncellenir', async () => {
+    const select = makeSelectChain([
+      [{ id: BRANCH }], // branch ownership
+      [{ id: MANAGER_ID, email: 'mudur@petshop.test' }],
+    ]);
+    const setFn = vi.fn().mockReturnValue({
+      where: vi.fn().mockResolvedValue(undefined),
+    });
+    const update = vi.fn().mockReturnValue({ set: setFn });
+    const db = { select, update } as unknown as DbClient;
+
+    const result = await removeBranchManager(COMPANY, BRANCH, db);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.userId).toBe(MANAGER_ID);
+      expect(result.email).toBe('mudur@petshop.test');
+    }
+    expect(update).toHaveBeenCalledTimes(1);
+    // set çağrısı branchId=null içeriyor mu?
+    expect(setFn).toHaveBeenCalledWith(
+      expect.objectContaining({ branchId: null }),
+    );
+  });
+
+  it('branch tenant\'a ait değil → branch_not_found', async () => {
+    const select = makeSelectChain([[]]); // branch ownership fail
+    const db = { select } as unknown as DbClient;
+
+    const result = await removeBranchManager(COMPANY, BRANCH, db);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe('branch_not_found');
+  });
+
+  it('şubede atanmış müdür yok → no_manager_assigned', async () => {
+    const select = makeSelectChain([
+      [{ id: BRANCH }], // branch ownership OK
+      [], // manager yok
+    ]);
+    const db = { select } as unknown as DbClient;
+
+    const result = await removeBranchManager(COMPANY, BRANCH, db);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe('no_manager_assigned');
+  });
+
+  it('update throw → unknown', async () => {
+    const select = makeSelectChain([
+      [{ id: BRANCH }],
+      [{ id: MANAGER_ID, email: 'mudur@petshop.test' }],
+    ]);
+    const update = vi.fn().mockReturnValue({
+      set: vi.fn().mockReturnValue({
+        where: vi.fn().mockRejectedValue(new Error('db down')),
+      }),
+    });
+    const db = { select, update } as unknown as DbClient;
+
+    const result = await removeBranchManager(COMPANY, BRANCH, db);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe('unknown');
   });
 });
