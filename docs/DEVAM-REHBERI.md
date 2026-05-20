@@ -41,9 +41,9 @@
 
 3. **Browser smoke kapsamı:** Müdür-**yok** hali canlı doğrulandı (snapshot: "Henüz müdür atanmadı + Müdür davet et"). Müdür-**var** hali + "Kaldır" tıklama unit test'te 4 senaryo ile kanıtlandı; canlı tıklama 2FA login engelinden bu turda atlandı (DB'de test müdür `test.mudur@petshop.test` seed kalıntı — sonraki turda silinecek).
 
-### ⚠ Sonraki turda silinecek
+### ✅ Temizlik
 
-- `petstockpro.users` tablosunda `test.mudur@petshop.test` (id `bd11c363-2154-4454-b4f3-aa67ed775dd4`) — bu turda E2E için INSERT edildi, browser flow atlandı için kalıntı. `DELETE FROM petstockpro.users WHERE email = 'test.mudur@petshop.test';` yeterli.
+- `test.mudur@petshop.test` seed user (id `bd11c363-2154-4454-b4f3-aa67ed775dd4`) bu turun sonunda silindi (kullanıcı onayıyla DELETE) — DB temiz.
 
 ---
 
