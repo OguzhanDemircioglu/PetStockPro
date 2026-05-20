@@ -240,6 +240,14 @@ export const users = petstockproSchema.table('users', {
   role: userRoleEnum('role').notNull().default('STAFF'),
   inviteMethod: userInviteMethodEnum('invite_method'),
   invitedById: uuid('invited_by_id'),
+  /**
+   * Şube ataması (SUBE_MUDURU + STAFF için).
+   * SUBE_MUDURU: zorunlu — bir şubeye atanır, 1 şube = 1 müdür constraint.
+   * STAFF: opsiyonel (belirli şubede çalışıyorsa atanabilir).
+   * BAYI_SAHIBI / SUPERADMIN: null (tenant geneli).
+   * ON DELETE SET NULL — şube silinince kullanıcı kalır, branchId null olur.
+   */
+  branchId: uuid('branch_id'),
   twoFactorEnabled: boolean('two_factor_enabled').notNull().default(false),
   lockedUntil: timestamp('locked_until', { withTimezone: true }),
   lockedReason: varchar('locked_reason', { length: 50 }), // 'BRUTE_FORCE_1H' | 'BRUTE_FORCE_24H' | 'EMAIL_UNVERIFIED' | 'SUPERADMIN'

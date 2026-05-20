@@ -1,7 +1,9 @@
 import { redirect } from 'next/navigation';
+import { eq, and } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { listCompanyUsers } from '@/lib/users/manage';
+import { branches, users as usersTable } from '@/db/schema';
 import { SettingsShell } from '@/components/settings-shell';
 import { InviteUserForm } from './invite-form';
 
@@ -23,6 +25,33 @@ export default async function UsersSettingsPage() {
   if (!session?.user?.companyId) redirect('/login' as never);
 
   const users = await listCompanyUsers(session.user.companyId, db);
+
+  // Şubeler — her şube için mevcut SUBE_MUDURU var mı bilgisi
+  const branchRows = await db
+    .select({
+      id: branches.id,
+      name: branches.name,
+      isActive: branches.isActive,
+    })
+    .from(branches)
+    .where(eq(branches.companyId, session.user.companyId))
+    .orderBy(branches.name);
+  const managerByBranchId = new Map<string, string>();
+  const existingManagers = await db
+    .select({ branchId: usersTable.branchId, name: usersTable.name, email: usersTable.email })
+    .from(usersTable)
+    .where(and(eq(usersTable.companyId, session.user.companyId), eq(usersTable.role, 'SUBE_MUDURU')));
+  for (const m of existingManagers) {
+    if (m.branchId) managerByBranchId.set(m.branchId, m.name ?? m.email);
+  }
+  const branchOptions = branchRows
+    .filter((b) => b.isActive)
+    .map((b) => ({
+      id: b.id,
+      name: b.name,
+      managerName: managerByBranchId.get(b.id) ?? null,
+    }));
+
   const canInvite =
     session.user.role === 'BAYI_SAHIBI' || session.user.role === 'SUPERADMIN';
   const now = new Date();
@@ -35,7 +64,7 @@ export default async function UsersSettingsPage() {
     >
       <div className="flex flex-col gap-5">
         {canInvite ? (
-          <InviteUserForm />
+          <InviteUserForm branchOptions={branchOptions} />
         ) : (
           <div className="rounded-2xl border border-line bg-paper p-4 text-[13.5px] text-ink-3">
             Davet etme yetkisi sadece <strong>Sahibi</strong>&apos;ndedir.

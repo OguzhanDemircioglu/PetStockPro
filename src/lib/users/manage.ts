@@ -2,46 +2,48 @@
  * Tenant user yönetimi — Sprint 9.
  *
  * BAYI_SAHIBI bir tenant'a yeni kullanıcı davet edebilir (SUBE_MUDURU veya STAFF).
- * Hibrit davet (CLAUDE.md kararı 2026-05-14):
- *   📧 Email — Brevo SMTP 7 gün TTL — şube müdürü için
- *   🔗 Link — 24 saat TTL, admin elden iletir — STAFF kasiyer için
+ * Davet yöntemi: **sadece LINK** (2026-05-20 karar revizyonu — email kaldırıldı).
+ *   - 24 saat TTL token üretilir
+ *   - Admin elden iletir (WhatsApp / kopya-yapıştır)
+ *   - Brevo email gönderilmez (gereksiz dış servis, admin zaten kullanıcıyla iletişimde)
+ *
+ * Şube müdürü constraint (2026-05-20):
+ *   - SUBE_MUDURU rolü için branchId ZORUNLU
+ *   - Bir şube = 1 müdür (DB-level unique index + runtime check)
+ *   - STAFF için branchId opsiyonel
  *
  * Token mekanizması: mevcut passwordResetToken/passwordResetExpiresAt
- * field'larını reuse — kullanıcı /accept-invite/[token] sayfasında şifre
- * belirler. (Yeni invite_token field eklemek migration getirirdi; reuse
- * MVP yeterli, davet zaten password-belirleme akışı.)
+ * field'larını reuse — kullanıcı /accept-invite/[token] sayfasında şifre belirler.
  */
 
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { DbClient } from '@/lib/db/client';
-import { users, companies } from '@/db/schema';
+import { users, branches } from '@/db/schema';
 import { createResetToken } from '@/lib/auth/password-reset';
-import { sendBrevoEmail } from '@/lib/brevo/client';
-import { buildUserInviteTemplate } from '@/lib/brevo/templates';
 
 export const ROLE_VALUES = ['SUBE_MUDURU', 'STAFF'] as const;
 export type InviteRole = (typeof ROLE_VALUES)[number];
 
-export const INVITE_METHOD_VALUES = ['email', 'link'] as const;
-export type InviteMethod = (typeof INVITE_METHOD_VALUES)[number];
-
-export const INVITE_TTL_BY_METHOD: Record<InviteMethod, number> = {
-  email: 7 * 24 * 60 * 60 * 1000, // 7 gün
-  link: 24 * 60 * 60 * 1000, // 24 saat
-};
+/** Davet TTL — link yöntemiyle 24 saat. */
+export const INVITE_TTL_MS = 24 * 60 * 60 * 1000;
 
 export const ROLE_LABELS: Record<InviteRole, string> = {
   SUBE_MUDURU: 'Şube Müdürü',
   STAFF: 'Kasiyer (STAFF)',
 };
 
-export const inviteUserSchema = z.object({
-  email: z.string().email('Geçersiz email').toLowerCase(),
-  role: z.enum(ROLE_VALUES),
-  method: z.enum(INVITE_METHOD_VALUES),
-  name: z.string().max(120).optional(),
-});
+export const inviteUserSchema = z
+  .object({
+    email: z.string().email('Geçersiz email').toLowerCase(),
+    role: z.enum(ROLE_VALUES),
+    name: z.string().max(120).optional(),
+    branchId: z.string().uuid('Geçersiz şube id').nullable().optional(),
+  })
+  .refine(
+    (v) => v.role !== 'SUBE_MUDURU' || (v.branchId && v.branchId.length > 0),
+    { message: 'Şube Müdürü için şube seçimi zorunlu', path: ['branchId'] },
+  );
 export type InviteUserInput = z.input<typeof inviteUserSchema>;
 
 export type InviteUserResult =
@@ -49,14 +51,14 @@ export type InviteUserResult =
       ok: true;
       userId: string;
       email: string;
-      method: InviteMethod;
       token: string;
       acceptUrl: string;
       expiresAt: Date;
-      emailSent?: boolean;
     }
   | { ok: false; reason: 'invalid_input'; issues: string[] }
   | { ok: false; reason: 'email_already_exists' }
+  | { ok: false; reason: 'branch_not_found' }
+  | { ok: false; reason: 'branch_already_has_manager' }
   | { ok: false; reason: 'unknown' };
 
 export async function inviteUser(
@@ -75,6 +77,7 @@ export async function inviteUser(
     };
   }
   const data = parsed.data;
+  const branchIdValue = data.branchId ?? null;
 
   // Email çakışma kontrol (case-insensitive)
   const existing = await db
@@ -86,27 +89,47 @@ export async function inviteUser(
     return { ok: false, reason: 'email_already_exists' };
   }
 
-  // Token TTL'i method'a göre override (createResetToken default 30dk, biz aslında
-  // expiresAt'i manuel override edeceğiz)
+  // Branch ownership + sube-müdürü constraint (SUBE_MUDURU rolü için)
+  if (data.role === 'SUBE_MUDURU' && branchIdValue) {
+    // 1. Branch tenant'a ait mi?
+    const branchOwn = await db
+      .select({ id: branches.id })
+      .from(branches)
+      .where(and(eq(branches.id, branchIdValue), eq(branches.companyId, companyId)))
+      .limit(1);
+    if (branchOwn.length === 0) {
+      return { ok: false, reason: 'branch_not_found' };
+    }
+    // 2. Bu şubeye atanmış başka SUBE_MUDURU var mı? (1 şube = 1 müdür)
+    const existingManager = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(
+        and(
+          eq(users.branchId, branchIdValue),
+          eq(users.role, 'SUBE_MUDURU'),
+        ),
+      )
+      .limit(1);
+    if (existingManager.length > 0) {
+      return { ok: false, reason: 'branch_already_has_manager' };
+    }
+  }
+
+  // STAFF + branchId opsiyonel — branch ownership check (verilmişse)
+  if (data.role === 'STAFF' && branchIdValue) {
+    const branchOwn = await db
+      .select({ id: branches.id })
+      .from(branches)
+      .where(and(eq(branches.id, branchIdValue), eq(branches.companyId, companyId)))
+      .limit(1);
+    if (branchOwn.length === 0) {
+      return { ok: false, reason: 'branch_not_found' };
+    }
+  }
+
   const tokenResult = createResetToken(now);
-  const expiresAt = new Date(now.getTime() + INVITE_TTL_BY_METHOD[data.method]);
-
-  // Tenant + inviter detayı (email içeriği için)
-  const tenantRows = await db
-    .select({
-      companyName: companies.name,
-    })
-    .from(companies)
-    .where(eq(companies.id, companyId))
-    .limit(1);
-  const inviterRows = await db
-    .select({ inviterName: users.name, inviterEmail: users.email })
-    .from(users)
-    .where(eq(users.id, inviterUserId))
-    .limit(1);
-
-  const companyName = tenantRows[0]?.companyName ?? 'Pet shop';
-  const inviterName = inviterRows[0]?.inviterName ?? inviterRows[0]?.inviterEmail ?? 'Yönetici';
+  const expiresAt = new Date(now.getTime() + INVITE_TTL_MS);
 
   let newUserId: string;
   try {
@@ -117,7 +140,8 @@ export async function inviteUser(
         email: data.email,
         name: data.name ?? null,
         role: data.role,
-        inviteMethod: data.method,
+        branchId: branchIdValue,
+        inviteMethod: 'link', // her zaman link (legacy enum değeri korunur)
         invitedById: inviterUserId,
         passwordHash: null,
         emailVerifiedAt: null,
@@ -128,52 +152,21 @@ export async function inviteUser(
       })
       .returning({ id: users.id });
     newUserId = inserted[0].id;
-  } catch {
+  } catch (err) {
+    // DB constraint violation (idx_users_one_sube_muduru_per_branch) — race
+    const code = (err as { code?: string })?.code;
+    if (code === '23505') {
+      return { ok: false, reason: 'branch_already_has_manager' };
+    }
     return { ok: false, reason: 'unknown' };
   }
 
   const acceptUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/accept-invite/${tokenResult.token}`;
 
-  if (data.method === 'email') {
-    const template = buildUserInviteTemplate({
-      inviteeName: data.name ?? null,
-      inviterName,
-      companyName,
-      roleLabel: ROLE_LABELS[data.role],
-      acceptUrl,
-      expiresInDays: 7,
-    });
-    let emailSent = false;
-    try {
-      await sendBrevoEmail({
-        to: { email: data.email, name: data.name ?? undefined },
-        subject: template.subject,
-        htmlContent: template.htmlContent,
-        textContent: template.textContent,
-        tags: ['user-invite', data.method],
-      });
-      emailSent = true;
-    } catch (err) {
-      console.warn(`[invite] Brevo email fail user=${newUserId}:`, err);
-    }
-    return {
-      ok: true,
-      userId: newUserId,
-      email: data.email,
-      method: 'email',
-      token: tokenResult.token,
-      acceptUrl,
-      expiresAt,
-      emailSent,
-    };
-  }
-
-  // method === 'link' — admin elden iletir, email gönderilmez
   return {
     ok: true,
     userId: newUserId,
     email: data.email,
-    method: 'link',
     token: tokenResult.token,
     acceptUrl,
     expiresAt,
@@ -189,6 +182,7 @@ export interface TenantUserListItem {
   email: string;
   name: string | null;
   role: string;
+  branchId: string | null;
   emailVerifiedAt: Date | null;
   passwordHash: string | null;
   inviteMethod: string | null;
@@ -209,6 +203,7 @@ export async function listCompanyUsers(
       email: users.email,
       name: users.name,
       role: users.role,
+      branchId: users.branchId,
       emailVerifiedAt: users.emailVerifiedAt,
       passwordHash: users.passwordHash,
       inviteMethod: users.inviteMethod,

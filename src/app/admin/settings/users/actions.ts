@@ -6,30 +6,22 @@ import { z } from 'zod';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { writeAuditLogAsync } from '@/lib/audit/log';
-import {
-  inviteUser,
-  ROLE_VALUES,
-  INVITE_METHOD_VALUES,
-  type InviteRole,
-  type InviteMethod,
-} from '@/lib/users/manage';
+import { inviteUser, ROLE_VALUES, type InviteRole } from '@/lib/users/manage';
 
 export interface InviteUserState {
   ok?: boolean;
   error?: string;
   issues?: string[];
   email?: string;
-  method?: InviteMethod;
   acceptUrl?: string;
   expiresAt?: string;
-  emailSent?: boolean;
 }
 
 const formSchema = z.object({
   email: z.string().email('Geçersiz email').toLowerCase(),
   role: z.enum(ROLE_VALUES),
-  method: z.enum(INVITE_METHOD_VALUES),
   name: z.string().max(120).optional(),
+  branchId: z.string().uuid().optional().nullable(),
 });
 
 export async function inviteUserAction(
@@ -44,11 +36,13 @@ export async function inviteUserAction(
     return { error: 'Bu işlem için BAYI_SAHIBI yetkisi gerekli' };
   }
 
+  const branchIdRaw = formData.get('branchId');
   const parsed = formSchema.safeParse({
     email: formData.get('email'),
     role: formData.get('role'),
-    method: formData.get('method'),
     name: formData.get('name') || undefined,
+    branchId:
+      typeof branchIdRaw === 'string' && branchIdRaw.length > 0 ? branchIdRaw : null,
   });
   if (!parsed.success) {
     return { error: 'Form geçersiz', issues: parsed.error.issues.map((i) => i.message) };
@@ -61,8 +55,8 @@ export async function inviteUserAction(
     {
       email: data.email,
       role: data.role as InviteRole,
-      method: data.method as InviteMethod,
       name: data.name,
+      branchId: data.branchId ?? null,
     },
     db,
   );
@@ -72,7 +66,10 @@ export async function inviteUserAction(
       return { error: 'Lib validation hatası', issues: result.issues };
     }
     const messages: Record<string, string> = {
-      email_already_exists: 'Bu email zaten kullanıyor — başka email deneyin',
+      email_already_exists: 'Bu email zaten kullanılıyor — başka email deneyin',
+      branch_not_found: 'Şube bulunamadı veya başka tenant\'a ait',
+      branch_already_has_manager:
+        'Bu şubeye zaten bir Şube Müdürü atanmış — bir şubeye yalnız 1 müdür eklenebilir',
       unknown: 'Bilinmeyen hata',
     };
     return { error: messages[result.reason] ?? 'Hata' };
@@ -88,9 +85,9 @@ export async function inviteUserAction(
       afterState: {
         email: result.email,
         role: data.role,
-        method: result.method,
+        method: 'link',
+        branchId: data.branchId ?? null,
         expiresAt: result.expiresAt.toISOString(),
-        emailSent: result.emailSent ?? null,
       },
     },
     db,
@@ -100,9 +97,7 @@ export async function inviteUserAction(
   return {
     ok: true,
     email: result.email,
-    method: result.method,
     acceptUrl: result.acceptUrl,
     expiresAt: result.expiresAt.toISOString(),
-    emailSent: result.emailSent,
   };
 }

@@ -2,27 +2,55 @@ import { describe, it, expect } from 'vitest';
 import {
   inviteUserSchema,
   ROLE_VALUES,
-  INVITE_METHOD_VALUES,
-  INVITE_TTL_BY_METHOD,
+  INVITE_TTL_MS,
   ROLE_LABELS,
 } from './manage';
 
+const BRANCH_ID = '11111111-1111-1111-1111-111111111111';
+
 describe('inviteUserSchema', () => {
-  it('valid input — email + role + method', () => {
+  it('valid STAFF input — email + role (branchId opsiyonel)', () => {
     expect(
       inviteUserSchema.safeParse({
         email: 'staff@petshop.com',
         role: 'STAFF',
-        method: 'link',
       }).success,
     ).toBe(true);
+  });
+
+  it('valid SUBE_MUDURU input — branchId zorunlu', () => {
+    expect(
+      inviteUserSchema.safeParse({
+        email: 'mudur@petshop.com',
+        role: 'SUBE_MUDURU',
+        branchId: BRANCH_ID,
+      }).success,
+    ).toBe(true);
+  });
+
+  it('SUBE_MUDURU branchId yoksa reject', () => {
+    expect(
+      inviteUserSchema.safeParse({
+        email: 'mudur@petshop.com',
+        role: 'SUBE_MUDURU',
+      }).success,
+    ).toBe(false);
+  });
+
+  it('SUBE_MUDURU branchId boş string ise reject', () => {
+    expect(
+      inviteUserSchema.safeParse({
+        email: 'mudur@petshop.com',
+        role: 'SUBE_MUDURU',
+        branchId: '',
+      }).success,
+    ).toBe(false);
   });
 
   it('email lowercased', () => {
     const r = inviteUserSchema.safeParse({
       email: 'STAFF@PetShop.COM',
       role: 'STAFF',
-      method: 'email',
     });
     expect(r.success).toBe(true);
     if (r.success) expect(r.data.email).toBe('staff@petshop.com');
@@ -33,7 +61,6 @@ describe('inviteUserSchema', () => {
       inviteUserSchema.safeParse({
         email: 'not-an-email',
         role: 'STAFF',
-        method: 'email',
       }).success,
     ).toBe(false);
   });
@@ -43,7 +70,6 @@ describe('inviteUserSchema', () => {
       inviteUserSchema.safeParse({
         email: 'x@y.com',
         role: 'BAYI_SAHIBI',
-        method: 'email',
       }).success,
     ).toBe(false);
   });
@@ -53,17 +79,16 @@ describe('inviteUserSchema', () => {
       inviteUserSchema.safeParse({
         email: 'x@y.com',
         role: 'SUPERADMIN',
-        method: 'email',
       }).success,
     ).toBe(false);
   });
 
-  it('method dışında bir değer reject', () => {
+  it('branchId UUID değil → reject', () => {
     expect(
       inviteUserSchema.safeParse({
         email: 'x@y.com',
         role: 'STAFF',
-        method: 'sms',
+        branchId: 'not-uuid',
       }).success,
     ).toBe(false);
   });
@@ -73,14 +98,6 @@ describe('inviteUserSchema', () => {
       inviteUserSchema.safeParse({
         email: 'x@y.com',
         role: 'STAFF',
-        method: 'link',
-      }).success,
-    ).toBe(true);
-    expect(
-      inviteUserSchema.safeParse({
-        email: 'x@y.com',
-        role: 'STAFF',
-        method: 'link',
         name: 'Ahmet Yıldız',
       }).success,
     ).toBe(true);
@@ -91,32 +108,19 @@ describe('inviteUserSchema', () => {
       inviteUserSchema.safeParse({
         email: 'x@y.com',
         role: 'STAFF',
-        method: 'link',
         name: 'a'.repeat(121),
       }).success,
     ).toBe(false);
   });
 });
 
-describe('Davet constants', () => {
+describe('Davet constants (link-only, 2026-05-20 revize)', () => {
   it('ROLE_VALUES = SUBE_MUDURU + STAFF', () => {
     expect(ROLE_VALUES).toEqual(['SUBE_MUDURU', 'STAFF']);
   });
 
-  it('INVITE_METHOD_VALUES = email + link', () => {
-    expect(INVITE_METHOD_VALUES).toEqual(['email', 'link']);
-  });
-
-  it('Email TTL 7 gün', () => {
-    expect(INVITE_TTL_BY_METHOD.email).toBe(7 * 24 * 60 * 60 * 1000);
-  });
-
-  it('Link TTL 24 saat', () => {
-    expect(INVITE_TTL_BY_METHOD.link).toBe(24 * 60 * 60 * 1000);
-  });
-
-  it('Email TTL link TTL\'den 7x büyük', () => {
-    expect(INVITE_TTL_BY_METHOD.email / INVITE_TTL_BY_METHOD.link).toBe(7);
+  it('INVITE_TTL_MS = 24 saat (email kaldırıldı, link tek yöntem)', () => {
+    expect(INVITE_TTL_MS).toBe(24 * 60 * 60 * 1000);
   });
 
   it('ROLE_LABELS Türkçe', () => {
