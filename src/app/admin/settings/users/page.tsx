@@ -7,14 +7,17 @@ import { branches, users as usersTable } from '@/db/schema';
 import { SettingsShell } from '@/components/settings-shell';
 import { InviteUserForm } from './invite-form';
 
-// Faz 1 (2026-05-21) — SUBE_MUDURU → OBSERVER key rename (Migration 0021).
-// Türkçe etiket "Şube Müd." → "İzleyici" Faz 3'te değişecek.
+// Faz 3 (2026-05-21) — Türkçe rol etiketleri:
+//   BAYI_SAHIBI → "Bayi Admin"
+//   OBSERVER    → "İzleyici"
+//   STAFF       → "Çalışan"
+//   BAYI_ADMIN  → legacy (Faz 3 iptal — UI'da görünmez, schema'da kalıntı)
 const ROLE_BADGE: Record<string, { label: string; cls: string }> = {
-  BAYI_SAHIBI: { label: '🏪 Sahibi', cls: 'bg-arrow-soft text-arrow-7' },
-  OBSERVER: { label: '🏪 Şube Müd.', cls: 'bg-cat-soft text-cart' },
-  STAFF: { label: '💼 Kasiyer', cls: 'bg-line-soft text-ink-2' },
+  BAYI_SAHIBI: { label: '🏪 Bayi Admin', cls: 'bg-arrow-soft text-arrow-7' },
+  OBSERVER: { label: '🔍 İzleyici', cls: 'bg-cat-soft text-cart' },
+  STAFF: { label: '💼 Çalışan', cls: 'bg-line-soft text-ink-2' },
   SUPERADMIN: { label: '🛡 Super', cls: 'bg-danger-soft text-danger-7' },
-  BAYI_ADMIN: { label: '👥 Bayi Adm', cls: 'bg-cat-soft text-cart' },
+  BAYI_ADMIN: { label: '👥 Legacy', cls: 'bg-cat-soft text-cart' },
 };
 
 const METHOD_BADGE: Record<string, string> = {
@@ -28,7 +31,7 @@ export default async function UsersSettingsPage() {
 
   const users = await listCompanyUsers(session.user.companyId, db);
 
-  // Şubeler — her şube için mevcut OBSERVER (legacy "müdür") var mı bilgisi
+  // Şubeler — her şube için mevcut OBSERVER (legacy "İzleyici") var mı bilgisi
   const branchRows = await db
     .select({
       id: branches.id,
@@ -69,7 +72,7 @@ export default async function UsersSettingsPage() {
           <InviteUserForm branchOptions={branchOptions} />
         ) : (
           <div className="rounded-2xl border border-line bg-paper p-4 text-[13.5px] text-ink-3">
-            Davet etme yetkisi sadece <strong>Sahibi</strong>&apos;ndedir.
+            Davet etme yetkisi sadece <strong>Bayi Admin</strong>&apos;dedir.
           </div>
         )}
 

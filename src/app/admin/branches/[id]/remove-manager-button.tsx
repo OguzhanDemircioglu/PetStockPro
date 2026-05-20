@@ -10,20 +10,20 @@ interface Props {
 }
 
 /**
- * "Müdürü kaldır" butonu — BAYI_SAHIBI yetkisi server-side enforce.
- * Sadece kullanıcının branchId'sini NULL yapar; rol SUBE_MUDURU olarak korunur.
+ * "İzleyiciyi kaldır" butonu — BAYI_SAHIBI yetkisi server-side enforce.
+ * Sadece kullanıcının branchId'sini NULL yapar; rol OBSERVER olarak korunur.
  */
 export function RemoveManagerButton({ branchId, managerEmail }: Props) {
   const [pending, startTransition] = useTransition();
   const [okMsg, setOkMsg] = useState<string | null>(null);
   const [errMsg, setErrMsg] = useState<string | null>(null);
-  useSwalOnErrorString(errMsg, 'Müdür kaldırılamadı');
+  useSwalOnErrorString(errMsg, 'İzleyici kaldırılamadı');
 
   const handleClick = () => {
     const confirmed = confirm(
-      `Şubenin müdürlüğü kaldırılacak: ${managerEmail}\n\n` +
+      `Şubenin İzleyicisi kaldırılacak: ${managerEmail}\n\n` +
         '• Kullanıcı tenant\'a bağlı kalır.\n' +
-        '• Rolü "Şube Müdürü" olarak korunur (atanmamış).\n' +
+        '• Rolü "İzleyici" olarak korunur (atanmamış).\n' +
         '• Başka şubeye atanması için Kullanıcılar listesinden rol/şube güncelleyin.',
     );
     if (!confirmed) return;
@@ -32,9 +32,9 @@ export function RemoveManagerButton({ branchId, managerEmail }: Props) {
     startTransition(async () => {
       const result = await removeBranchManagerAction(branchId);
       if (result.ok) {
-        setOkMsg(result.message ?? 'Müdür kaldırıldı');
+        setOkMsg(result.message ?? 'İzleyici kaldırıldı');
       } else {
-        setErrMsg(result.message ?? 'Müdür kaldırılamadı');
+        setErrMsg(result.message ?? 'İzleyici kaldırılamadı');
       }
     });
   };
@@ -59,7 +59,7 @@ export function RemoveManagerButton({ branchId, managerEmail }: Props) {
         data-testid="remove-manager-button"
         className="rounded-lg border border-danger-soft bg-paper px-3 py-1.5 text-[12px] font-bold text-danger-7 transition-colors hover:bg-danger-soft disabled:opacity-50"
       >
-        {pending ? '...' : '✕ Müdürü kaldır'}
+        {pending ? '...' : '✕ İzleyiciyi kaldır'}
       </button>
     </div>
   );

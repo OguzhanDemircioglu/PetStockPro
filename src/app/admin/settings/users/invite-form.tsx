@@ -70,8 +70,7 @@ export function InviteUserForm({ branchOptions }: Props) {
     null,
   );
   useSwalOnError(state);
-  // Faz 1 (2026-05-21) — SUBE_MUDURU → OBSERVER rename (Migration 0021).
-  // Türkçe etiket "Şube Müdürü" → "İzleyici" Faz 3'te değişecek.
+  // Faz 3 (2026-05-21) — Rol etiketleri: OBSERVER="İzleyici", STAFF="Çalışan".
   const [role, setRole] = useState<'OBSERVER' | 'STAFF'>('STAFF');
   const [selectedBranchId, setSelectedBranchId] = useState<string>('');
 
@@ -156,8 +155,8 @@ export function InviteUserForm({ branchOptions }: Props) {
             aria-invalid={hasError || undefined}
             className="w-full rounded-lg border-[1.5px] border-line bg-paper px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
           >
-            <option value="STAFF">💼 Kasiyer (STAFF)</option>
-            <option value="OBSERVER">🏪 Şube Müdürü</option>
+            <option value="STAFF">💼 Çalışan</option>
+            <option value="OBSERVER">🔍 İzleyici</option>
           </select>
         </div>
         <div>
@@ -199,8 +198,8 @@ export function InviteUserForm({ branchOptions }: Props) {
 
       <div className="mt-4 flex items-center justify-between">
         <p className="text-[12px] text-ink-4">
-          Audit log&apos;a yazılır. Şube Müdürü atandığı şubenin tüm modüllerine
-          erişir; STAFF sadece satış kaydı + sayıma katılır.
+          Audit log&apos;a yazılır. İzleyici atandığı şubenin tüm modüllerini
+          görüntüler; Çalışan sadece satış kaydı + sayıma katılır.
         </p>
         <button
           type="submit"

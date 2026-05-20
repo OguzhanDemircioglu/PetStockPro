@@ -209,7 +209,7 @@ export async function removeBranchManagerAction(
   return {
     ok: true,
     branchId,
-    message: `Müdür kaldırıldı: ${result.email}`,
+    message: `İzleyici kaldırıldı: ${result.email}`,
     issues: [],
   };
 }

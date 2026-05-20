@@ -125,7 +125,7 @@ export async function listBranchRecentMovements(
 }
 
 // ─────────────────────────────────────────────────────────────────
-// ASSIGNED USERS (manager + staff) — Branch detail "👤 Şube müdürü" kart
+// ASSIGNED USERS (manager + staff) — Branch detail "🔍 İzleyici" kart
 // ─────────────────────────────────────────────────────────────────
 
 export interface BranchUserRow {

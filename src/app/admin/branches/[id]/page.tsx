@@ -113,7 +113,7 @@ export default async function BranchDetailPage({
           >
             <div className="flex items-center justify-between gap-2">
               <span className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
-                Şube müdürü
+                İzleyici
               </span>
               <span className="text-[10.5px] text-ink-4">en fazla 1</span>
             </div>
@@ -150,14 +150,14 @@ export default async function BranchDetailPage({
             ) : (
               <div className="flex flex-col gap-1">
                 <div className="text-sm text-ink-3">
-                  Henüz müdür atanmadı.
+                  Henüz İzleyici atanmadı.
                 </div>
                 {canManageUsers && (
                   <Link
                     href={'/admin/settings/users' as never}
                     className="text-[12.5px] font-bold text-cat hover:underline"
                   >
-                    + Müdür davet et
+                    + İzleyici davet et
                   </Link>
                 )}
               </div>
@@ -170,7 +170,7 @@ export default async function BranchDetailPage({
           >
             <div className="flex items-center justify-between gap-2">
               <span className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
-                Kasiyerler (STAFF)
+                Çalışanlar (STAFF)
               </span>
               <span className="rounded-full bg-paper px-2 py-0.5 text-[11px] font-bold text-ink-2">
                 {assigned.staff.length}
@@ -178,7 +178,7 @@ export default async function BranchDetailPage({
             </div>
             {assigned.staff.length === 0 ? (
               <div className="text-sm text-ink-3">
-                Bu şubeye atanmış kasiyer yok.
+                Bu şubeye atanmış çalışan yok.
               </div>
             ) : (
               <ul className="divide-y divide-line-soft" data-testid="branch-staff-rows">

@@ -123,8 +123,8 @@ describe('Davet constants (link-only, 2026-05-20 revize; Faz 1 OBSERVER rename)'
     expect(INVITE_TTL_MS).toBe(24 * 60 * 60 * 1000);
   });
 
-  it('ROLE_LABELS Türkçe — Faz 3\'te "İzleyici" olarak güncellenir', () => {
-    expect(ROLE_LABELS.OBSERVER).toBe('Şube Müdürü');
-    expect(ROLE_LABELS.STAFF).toBe('Kasiyer (STAFF)');
+  it('ROLE_LABELS Türkçe — Faz 3 etiket güncellemesi', () => {
+    expect(ROLE_LABELS.OBSERVER).toBe('İzleyici');
+    expect(ROLE_LABELS.STAFF).toBe('Çalışan');
   });
 });

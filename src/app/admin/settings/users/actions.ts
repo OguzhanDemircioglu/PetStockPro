@@ -69,7 +69,7 @@ export async function inviteUserAction(
       email_already_exists: 'Bu email zaten kullanılıyor — başka email deneyin',
       branch_not_found: 'Şube bulunamadı veya başka tenant\'a ait',
       branch_already_has_manager:
-        'Bu şubeye zaten bir Şube Müdürü atanmış — bir şubeye yalnız 1 müdür eklenebilir',
+        'Bu şubeye zaten bir İzleyici atanmış — bir şubeye yalnız 1 İzleyici eklenebilir',
       unknown: 'Bilinmeyen hata',
     };
     return { error: messages[result.reason] ?? 'Hata' };
