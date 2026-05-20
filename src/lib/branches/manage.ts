@@ -320,7 +320,8 @@ export async function setBranchActive(
 }
 
 // ─────────────────────────────────────────────────────────────────
-// MANAGER REMOVE — şubeye atanmış SUBE_MUDURU'nün branch ilişkisini koparır
+// MANAGER REMOVE — şubeye atanmış OBSERVER'ın branch ilişkisini koparır
+// (Faz 1: SUBE_MUDURU → OBSERVER rename, Migration 0021)
 // ─────────────────────────────────────────────────────────────────
 
 export type RemoveBranchManagerResult =
@@ -334,9 +335,9 @@ export type RemoveBranchManagerResult =
  * Belirtilen şubenin müdürünü kaldırır.
  *
  * - Sadece `branchId` field'ını NULL'a çeker — kullanıcı tenant'a bağlı kalır,
- *   rolü SUBE_MUDURU olarak korunur (rol değişimi BAYI_SAHIBI'nin ayrı kararı).
- * - DB partial unique constraint (`idx_users_one_sube_muduru_per_branch`)
- *   branchId NULL olunca devre dışı kalır → başka müdür atanabilir.
+ *   rolü OBSERVER olarak korunur (rol değişimi BAYI_SAHIBI'nin ayrı kararı).
+ * - Faz 1'de `idx_users_one_sube_muduru_per_branch` partial index drop edildi
+ *   (OBSERVER multi-branch viewer — 1 müdür/şube constraint anlamsız).
  * - BAYI_SAHIBI yetkisi server action'da kontrol edilir.
  */
 export async function removeBranchManager(
@@ -358,7 +359,7 @@ export async function removeBranchManager(
       and(
         eq(users.companyId, companyId),
         eq(users.branchId, branchId),
-        eq(users.role, 'SUBE_MUDURU'),
+        eq(users.role, 'OBSERVER'),
       ),
     )
     .limit(1);

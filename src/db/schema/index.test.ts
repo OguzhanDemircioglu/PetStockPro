@@ -36,11 +36,13 @@ describe('Schema — enum değerleri (Sprint 1A)', () => {
     expect(planEnum.enumValues).toEqual(['FREE', 'PRO', 'PRO_PLUS']);
   });
 
-  it('userRoleEnum: 5 rol (BAYI_ADMIN Faz 3 dahil)', () => {
+  it('userRoleEnum: 5 rol (BAYI_ADMIN legacy — UI gizli)', () => {
+    // Faz 1 (2026-05-21) — SUBE_MUDURU → OBSERVER rename (Migration 0021).
+    // BAYI_ADMIN değer Postgres enum drop limited olduğu için kaldı, UI'da yok.
     expect(userRoleEnum.enumValues).toEqual([
       'SUPERADMIN',
       'BAYI_SAHIBI',
-      'SUBE_MUDURU',
+      'OBSERVER',
       'STAFF',
       'BAYI_ADMIN',
     ]);

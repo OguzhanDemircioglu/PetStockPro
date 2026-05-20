@@ -36,7 +36,7 @@ describe('listBranchAssignedUsers', () => {
         id: MANAGER,
         email: 'mudur@petshop.test',
         name: 'Ahmet Müdür',
-        role: 'SUBE_MUDURU',
+        role: 'OBSERVER', // Faz 1 (2026-05-21) — SUBE_MUDURU rename
         emailVerifiedAt: new Date('2026-05-19T10:00:00Z'),
         createdAt: new Date('2026-05-18T10:00:00Z'),
       },

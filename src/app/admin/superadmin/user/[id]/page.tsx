@@ -10,10 +10,11 @@ import {
   UnlockAccountForm,
 } from './forms';
 
+// Faz 1 (2026-05-21) — SUBE_MUDURU → OBSERVER key rename (Migration 0021).
 const ROLE_BADGE: Record<string, string> = {
   SUPERADMIN: 'bg-cat-soft text-cart',
   BAYI_SAHIBI: 'bg-arrow-soft text-arrow-7',
-  SUBE_MUDURU: 'bg-line-soft text-ink-2',
+  OBSERVER: 'bg-line-soft text-ink-2',
   STAFF: 'bg-line-soft text-ink-3',
   BAYI_ADMIN: 'bg-cat-soft text-cart',
 };

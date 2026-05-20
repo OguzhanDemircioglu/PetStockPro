@@ -18,30 +18,30 @@ describe('inviteUserSchema', () => {
     ).toBe(true);
   });
 
-  it('valid SUBE_MUDURU input — branchId zorunlu', () => {
+  it('valid OBSERVER input — branchId zorunlu (legacy SUBE_MUDURU davranışı)', () => {
     expect(
       inviteUserSchema.safeParse({
         email: 'mudur@petshop.com',
-        role: 'SUBE_MUDURU',
+        role: 'OBSERVER',
         branchId: BRANCH_ID,
       }).success,
     ).toBe(true);
   });
 
-  it('SUBE_MUDURU branchId yoksa reject', () => {
+  it('OBSERVER branchId yoksa reject', () => {
     expect(
       inviteUserSchema.safeParse({
         email: 'mudur@petshop.com',
-        role: 'SUBE_MUDURU',
+        role: 'OBSERVER',
       }).success,
     ).toBe(false);
   });
 
-  it('SUBE_MUDURU branchId boş string ise reject', () => {
+  it('OBSERVER branchId boş string ise reject', () => {
     expect(
       inviteUserSchema.safeParse({
         email: 'mudur@petshop.com',
-        role: 'SUBE_MUDURU',
+        role: 'OBSERVER',
         branchId: '',
       }).success,
     ).toBe(false);
@@ -65,7 +65,7 @@ describe('inviteUserSchema', () => {
     ).toBe(false);
   });
 
-  it('BAYI_SAHIBI role reject (sadece SUBE_MUDURU/STAFF davet edilebilir)', () => {
+  it('BAYI_SAHIBI role reject (sadece OBSERVER/STAFF davet edilebilir)', () => {
     expect(
       inviteUserSchema.safeParse({
         email: 'x@y.com',
@@ -114,17 +114,17 @@ describe('inviteUserSchema', () => {
   });
 });
 
-describe('Davet constants (link-only, 2026-05-20 revize)', () => {
-  it('ROLE_VALUES = SUBE_MUDURU + STAFF', () => {
-    expect(ROLE_VALUES).toEqual(['SUBE_MUDURU', 'STAFF']);
+describe('Davet constants (link-only, 2026-05-20 revize; Faz 1 OBSERVER rename)', () => {
+  it('ROLE_VALUES = OBSERVER + STAFF', () => {
+    expect(ROLE_VALUES).toEqual(['OBSERVER', 'STAFF']);
   });
 
   it('INVITE_TTL_MS = 24 saat (email kaldırıldı, link tek yöntem)', () => {
     expect(INVITE_TTL_MS).toBe(24 * 60 * 60 * 1000);
   });
 
-  it('ROLE_LABELS Türkçe', () => {
-    expect(ROLE_LABELS.SUBE_MUDURU).toBe('Şube Müdürü');
+  it('ROLE_LABELS Türkçe — Faz 3\'te "İzleyici" olarak güncellenir', () => {
+    expect(ROLE_LABELS.OBSERVER).toBe('Şube Müdürü');
     expect(ROLE_LABELS.STAFF).toBe('Kasiyer (STAFF)');
   });
 });

@@ -141,6 +141,13 @@
       "when": 1779250000000,
       "tag": "0020_users_branch_id",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1779260000000,
+      "tag": "0021_observer_branch_status_permissions",
+      "breakpoints": true
     }
   ]
 }

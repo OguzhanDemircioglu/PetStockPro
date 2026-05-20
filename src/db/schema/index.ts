@@ -32,12 +32,22 @@ export const petstockproSchema = pgSchema('petstockpro');
 
 export const planEnum = petstockproSchema.enum('plan', ['FREE', 'PRO', 'PRO_PLUS']);
 
+// Faz 1 (2026-05-21) — SUBE_MUDURU → OBSERVER rename (Migration 0021).
+// OBSERVER = read-only multi-branch viewer (eski SUBE_MUDURU yetkileri iptal).
+// BAYI_ADMIN değeri Postgres enum drop limited olduğu için kaldı, UI'da yok (Faz 3 iptal).
 export const userRoleEnum = petstockproSchema.enum('user_role', [
   'SUPERADMIN',
   'BAYI_SAHIBI',
-  'SUBE_MUDURU',
+  'OBSERVER',
   'STAFF',
-  'BAYI_ADMIN', // Faz 3 — multi-tenant viewer
+  'BAYI_ADMIN', // legacy — Postgres enum value drop limited; UI'da gizli
+]);
+
+// Faz 1 — Şube 3-state (Migration 0021)
+export const branchStatusEnum = petstockproSchema.enum('branch_status', [
+  'active',   // normal — vitrin'de görünür, tüm aksiyonlar açık
+  'holiday',  // tatilde — vitrin "🏖" rozet + WhatsApp disabled, admin op açık
+  'inactive', // pasif — vitrin'den çekilir + admin read-only
 ]);
 
 export const userInviteMethodEnum = petstockproSchema.enum('user_invite_method', ['email', 'link']);
@@ -241,9 +251,9 @@ export const users = petstockproSchema.table('users', {
   inviteMethod: userInviteMethodEnum('invite_method'),
   invitedById: uuid('invited_by_id'),
   /**
-   * Şube ataması (SUBE_MUDURU + STAFF için).
-   * SUBE_MUDURU: zorunlu — bir şubeye atanır, 1 şube = 1 müdür constraint.
-   * STAFF: opsiyonel (belirli şubede çalışıyorsa atanabilir).
+   * Şube ataması (STAFF için opsiyonel).
+   * STAFF: belirli şubede çalışıyorsa atanır.
+   * OBSERVER: tenant geneli multi-branch viewer — null (Faz 1, 2026-05-21).
    * BAYI_SAHIBI / SUPERADMIN: null (tenant geneli).
    * ON DELETE SET NULL — şube silinince kullanıcı kalır, branchId null olur.
    */
@@ -293,6 +303,11 @@ export interface RecoveryCode {
 }
 
 // Şubeler (multi-location)
+//
+// Faz 1 (2026-05-21) — `status` 3-state enum eklendi (Migration 0021).
+// `isActive` geri uyumluluk için korunur, status ile sync edilir (status='active'
+// ↔ isActive=true; status='inactive' ↔ isActive=false; status='holiday' →
+// isActive=true ama vitrin disabled). Manage helper'ları status üzerinden çalışır.
 export const branches = petstockproSchema.table('branches', {
   id: uuid('id').defaultRandom().primaryKey(),
   companyId: uuid('company_id').notNull().references(() => companies.id),
@@ -304,6 +319,7 @@ export const branches = petstockproSchema.table('branches', {
   lng: text('lng'),
   whatsappPhone: varchar('whatsapp_phone', { length: 20 }),
   isActive: boolean('is_active').notNull().default(true),
+  status: branchStatusEnum('status').notNull().default('active'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index('idx_branches_company').on(t.companyId),
@@ -1042,6 +1058,35 @@ export const catalogSeedProducts = petstockproSchema.table(
       .using('gin', sql`lower(${t.name}) gin_trgm_ops`),
   ],
 );
+
+// ═══════════════════════════════════════════════════════════════
+// TABLES — Faz 1 (Observer + Yetki + Şube state, 2026-05-21)
+// ═══════════════════════════════════════════════════════════════
+// Otoritatif: docs/PLAN-OBSERVER-STAFF-BRANCH-STATE.md §FAZ 1
+
+/**
+ * USER_PERMISSIONS — Per-user granular permission grant (STAFF için)
+ *
+ * Plan §C — Çalışan (STAFF) default 3 yetki ON (sale.create, variant.view,
+ * customer_ref.write); diğer 10 yetki OFF, Bayi Admin tek tek açar
+ * /admin/settings/users yetki modal ile.
+ *
+ * BAYI_SAHIBI ve SUPERADMIN her zaman tüm yetkilere sahip — helper bypass eder.
+ * OBSERVER hiçbir mutation yapamaz — assertNotObserver gate (Faz 2).
+ *
+ * RLS: backend (service_role/postgres) bypass eder, anon REST default-deny.
+ */
+export const userPermissions = petstockproSchema.table('user_permissions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  permissionKey: varchar('permission_key', { length: 60 }).notNull(),
+  enabled: boolean('enabled').notNull().default(false),
+  grantedById: uuid('granted_by_id').references(() => users.id, { onDelete: 'set null' }),
+  grantedAt: timestamp('granted_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('user_permissions_user_key_unique').on(t.userId, t.permissionKey),
+  index('idx_user_permissions_user').on(t.userId),
+]);
 
 // ═══════════════════════════════════════════════════════════════
 // TODO Sprint 1B.3+ (sırayla eklenecek)

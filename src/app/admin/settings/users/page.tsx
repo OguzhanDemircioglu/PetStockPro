@@ -7,9 +7,11 @@ import { branches, users as usersTable } from '@/db/schema';
 import { SettingsShell } from '@/components/settings-shell';
 import { InviteUserForm } from './invite-form';
 
+// Faz 1 (2026-05-21) — SUBE_MUDURU → OBSERVER key rename (Migration 0021).
+// Türkçe etiket "Şube Müd." → "İzleyici" Faz 3'te değişecek.
 const ROLE_BADGE: Record<string, { label: string; cls: string }> = {
   BAYI_SAHIBI: { label: '🏪 Sahibi', cls: 'bg-arrow-soft text-arrow-7' },
-  SUBE_MUDURU: { label: '🏪 Şube Müd.', cls: 'bg-cat-soft text-cart' },
+  OBSERVER: { label: '🏪 Şube Müd.', cls: 'bg-cat-soft text-cart' },
   STAFF: { label: '💼 Kasiyer', cls: 'bg-line-soft text-ink-2' },
   SUPERADMIN: { label: '🛡 Super', cls: 'bg-danger-soft text-danger-7' },
   BAYI_ADMIN: { label: '👥 Bayi Adm', cls: 'bg-cat-soft text-cart' },
@@ -26,7 +28,7 @@ export default async function UsersSettingsPage() {
 
   const users = await listCompanyUsers(session.user.companyId, db);
 
-  // Şubeler — her şube için mevcut SUBE_MUDURU var mı bilgisi
+  // Şubeler — her şube için mevcut OBSERVER (legacy "müdür") var mı bilgisi
   const branchRows = await db
     .select({
       id: branches.id,
@@ -40,7 +42,7 @@ export default async function UsersSettingsPage() {
   const existingManagers = await db
     .select({ branchId: usersTable.branchId, name: usersTable.name, email: usersTable.email })
     .from(usersTable)
-    .where(and(eq(usersTable.companyId, session.user.companyId), eq(usersTable.role, 'SUBE_MUDURU')));
+    .where(and(eq(usersTable.companyId, session.user.companyId), eq(usersTable.role, 'OBSERVER')));
   for (const m of existingManagers) {
     if (m.branchId) managerByBranchId.set(m.branchId, m.name ?? m.email);
   }

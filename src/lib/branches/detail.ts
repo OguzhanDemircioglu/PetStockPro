@@ -145,9 +145,12 @@ export interface BranchAssignedUsers {
 }
 
 /**
- * Belirli şubeye atanmış kullanıcılar — SUBE_MUDURU (en fazla 1) + STAFF dizisi.
- * BAYI_SAHIBI / SUPERADMIN tenant geneli olduğu için branchId null'dur ve burada
- * görünmez.
+ * Belirli şubeye atanmış kullanıcılar — OBSERVER (en fazla 1, legacy "müdür")
+ * + STAFF dizisi. BAYI_SAHIBI / SUPERADMIN tenant geneli olduğu için
+ * branchId null'dur ve burada görünmez.
+ *
+ * Faz 1 (2026-05-21) — SUBE_MUDURU → OBSERVER rename (Migration 0021).
+ * Faz 2'de OBSERVER multi-branch viewer'a güncellenecek (branch atama kalkar).
  */
 export async function listBranchAssignedUsers(
   companyId: string,
@@ -167,7 +170,7 @@ export async function listBranchAssignedUsers(
     .where(and(eq(users.companyId, companyId), eq(users.branchId, branchId)))
     .orderBy(asc(users.role), asc(users.createdAt));
 
-  const manager = (rows.find((r) => r.role === 'SUBE_MUDURU') as BranchUserRow | undefined) ?? null;
+  const manager = (rows.find((r) => r.role === 'OBSERVER') as BranchUserRow | undefined) ?? null;
   const staff = rows.filter((r) => r.role === 'STAFF') as BranchUserRow[];
   return { manager, staff };
 }

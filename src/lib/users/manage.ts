@@ -22,14 +22,18 @@ import type { DbClient } from '@/lib/db/client';
 import { users, branches } from '@/db/schema';
 import { createResetToken } from '@/lib/auth/password-reset';
 
-export const ROLE_VALUES = ['SUBE_MUDURU', 'STAFF'] as const;
+// Faz 1 (2026-05-21) — SUBE_MUDURU → OBSERVER rename (Migration 0021).
+// İş mantığı (branchId zorunluluk, 1-müdür constraint) bu fazda eski davranışla
+// aynı kaldı — Faz 2'de OBSERVER multi-branch viewer davranışına uyumlu hale gelir.
+// Türkçe etiket "Şube Müdürü" → "İzleyici" Faz 3'te değiştirilir.
+export const ROLE_VALUES = ['OBSERVER', 'STAFF'] as const;
 export type InviteRole = (typeof ROLE_VALUES)[number];
 
 /** Davet TTL — link yöntemiyle 24 saat. */
 export const INVITE_TTL_MS = 24 * 60 * 60 * 1000;
 
 export const ROLE_LABELS: Record<InviteRole, string> = {
-  SUBE_MUDURU: 'Şube Müdürü',
+  OBSERVER: 'Şube Müdürü', // Faz 3'te "İzleyici" olacak
   STAFF: 'Kasiyer (STAFF)',
 };
 
@@ -41,7 +45,7 @@ export const inviteUserSchema = z
     branchId: z.string().uuid('Geçersiz şube id').nullable().optional(),
   })
   .refine(
-    (v) => v.role !== 'SUBE_MUDURU' || (v.branchId && v.branchId.length > 0),
+    (v) => v.role !== 'OBSERVER' || (v.branchId && v.branchId.length > 0),
     { message: 'Şube Müdürü için şube seçimi zorunlu', path: ['branchId'] },
   );
 export type InviteUserInput = z.input<typeof inviteUserSchema>;
@@ -89,8 +93,9 @@ export async function inviteUser(
     return { ok: false, reason: 'email_already_exists' };
   }
 
-  // Branch ownership + sube-müdürü constraint (SUBE_MUDURU rolü için)
-  if (data.role === 'SUBE_MUDURU' && branchIdValue) {
+  // Branch ownership + sube-müdürü constraint (OBSERVER rolü için — eski SUBE_MUDURU)
+  // Faz 2'de OBSERVER multi-branch viewer'a güncellenecek (branchId zorunlu YOK).
+  if (data.role === 'OBSERVER' && branchIdValue) {
     // 1. Branch tenant'a ait mi?
     const branchOwn = await db
       .select({ id: branches.id })
@@ -100,14 +105,14 @@ export async function inviteUser(
     if (branchOwn.length === 0) {
       return { ok: false, reason: 'branch_not_found' };
     }
-    // 2. Bu şubeye atanmış başka SUBE_MUDURU var mı? (1 şube = 1 müdür)
+    // 2. Bu şubeye atanmış başka OBSERVER var mı? (1 şube = 1 müdür — legacy)
     const existingManager = await db
       .select({ id: users.id })
       .from(users)
       .where(
         and(
           eq(users.branchId, branchIdValue),
-          eq(users.role, 'SUBE_MUDURU'),
+          eq(users.role, 'OBSERVER'),
         ),
       )
       .limit(1);

@@ -70,15 +70,17 @@ export function InviteUserForm({ branchOptions }: Props) {
     null,
   );
   useSwalOnError(state);
-  const [role, setRole] = useState<'SUBE_MUDURU' | 'STAFF'>('STAFF');
+  // Faz 1 (2026-05-21) — SUBE_MUDURU → OBSERVER rename (Migration 0021).
+  // Türkçe etiket "Şube Müdürü" → "İzleyici" Faz 3'te değişecek.
+  const [role, setRole] = useState<'OBSERVER' | 'STAFF'>('STAFF');
   const [selectedBranchId, setSelectedBranchId] = useState<string>('');
 
   const hasError = !!(state && state.ok !== true && state.error);
 
-  // SUBE_MUDURU rolündeyken: müdürü atanmamış şubeler seçilebilir
+  // OBSERVER rolündeyken: müdürü atanmamış şubeler seçilebilir
   // STAFF rolündeyken: tüm aktif şubeler seçilebilir (opsiyonel)
   const branchSelectOptions = useMemo(() => {
-    if (role === 'SUBE_MUDURU') {
+    if (role === 'OBSERVER') {
       // Sadece müdürsüz şubeler
       return branchOptions.map((b) => ({
         ...b,
@@ -93,9 +95,9 @@ export function InviteUserForm({ branchOptions }: Props) {
     }));
   }, [role, branchOptions]);
 
-  const branchRequired = role === 'SUBE_MUDURU';
+  const branchRequired = role === 'OBSERVER';
   const allBranchesHaveManager =
-    role === 'SUBE_MUDURU' && branchOptions.length > 0 &&
+    role === 'OBSERVER' && branchOptions.length > 0 &&
     branchOptions.every((b) => b.managerName !== null);
 
   return (
@@ -147,7 +149,7 @@ export function InviteUserForm({ branchOptions }: Props) {
             disabled={pending}
             value={role}
             onChange={(e) => {
-              setRole(e.target.value as 'SUBE_MUDURU' | 'STAFF');
+              setRole(e.target.value as 'OBSERVER' | 'STAFF');
               setSelectedBranchId('');
             }}
             data-testid="invite-role"
@@ -155,7 +157,7 @@ export function InviteUserForm({ branchOptions }: Props) {
             className="w-full rounded-lg border-[1.5px] border-line bg-paper px-3 py-2 text-sm focus:border-cat focus:outline-none focus:ring-2 focus:ring-cat/15"
           >
             <option value="STAFF">💼 Kasiyer (STAFF)</option>
-            <option value="SUBE_MUDURU">🏪 Şube Müdürü</option>
+            <option value="OBSERVER">🏪 Şube Müdürü</option>
           </select>
         </div>
         <div>
