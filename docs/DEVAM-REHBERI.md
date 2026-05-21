@@ -302,6 +302,21 @@ Mockup preview/ayarlar.html yok.
 
 ---
 
+### 🆕 Tur S: C iş kalemi #12 — raporlar brief sync (2026-05-21 gece)
+
+**Değişiklik:** [docs/UI-MOCKUP-PLAN.md §5.12](UI-MOCKUP-PLAN.md) — raporlar brief'i Sprint 11+ implementasyonuna göre yeniden listelendi:
+- Header — range-picker (7g/30g/90g `?days=`) + export-daily + export-top buton
+- 4-KPI grid + period-comparison + 5-kolon grid (daily-list bar + top-list 🏆 sıralı)
+- stocktake-history-list + activity-actions (audit count by type) + inventory-value trend
+- customers-report — KPI Veresiye + hourly-breakdown
+- open-credits section — 4-KPI + open-credits-bands aging + open-credits-list + SettleCreditButton
+
+Drilldown ayrı detay sayfası YOK — tek sayfa multi-section pattern (sade-tut). 6 rapor mapping: 4 ✓ implementli, Kâr-Zarar + Şube Karşılaştırma Faz 2'ye saklı.
+
+**Sıradaki C iş kalemi:** §5.13 vitrin-anasayfa brief sync.
+
+---
+
 ### 🆕 Geçmiş tur (2026-05-21 öğleden sonra) — referans
 
 | Commit | Konu |

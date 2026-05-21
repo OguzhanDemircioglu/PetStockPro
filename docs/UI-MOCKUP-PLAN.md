@@ -554,11 +554,42 @@ Sprint sırasına göre:
 
 ---
 
-### 5.12 raporlar.html (YENİ — Sprint 11 için)
+### 5.12 raporlar.html (yenile)
 
-**Doküman:** `EKRAN-RAPORLAR.md`
-**Bileşenler:** Hibrit kart grid (6 rapor özet kartı) + drilldown detay sayfası (filtre + ana chart + yan widget + tablo + export PDF/Excel)
-**6 rapor:** Satış / Kâr-Zarar / En Çok Satan / Ölü Stok / Şube Karşılaştırma / 💳 Açık Krediler (2026-05-14 S2)
+**Doküman:** `EKRAN-RAPORLAR.md` · **Kod:** [`src/app/admin/reports/page.tsx`](../src/app/admin/reports/page.tsx) (tek sayfa, çoklu section) + settle-credit-button.tsx + export/ route
+
+> **2026-05-21 brief sync:** Sprint 11+ implementasyon tamamlandı. Mockup `preview/raporlar.html` **yok** — Faz 2'ye saklı. Drilldown ayrı detay sayfası yerine tek sayfa çoklu section (sade-tut).
+
+**Liste sayfası (`/admin/reports`):**
+- Header — "Admin · Raporlar" + `range-picker` (7g / 30g / 90g — URL `?days=`)
+- 2 Export buton — `export-daily` (günlük satış xlsx) + `export-top` (top variant xlsx)
+- 4-KPI grid — toplam adet + ciro + satış sayısı + ortalama sepet (TR locale formatlı)
+- `period-comparison` section — önceki periyot vs şimdi karşılaştırma
+- 5-kolon grid (3-2 split):
+  - `daily-list` — 30g günlük satış çubuk grafik (date + count + revenue)
+  - `top-list` — top 10 variant 🏆 sıralı (adet + ciro)
+- **Sayım geçmişi** section — `stocktake-history-list` (son tamamlanan sayımlar + diff + valueImpact)
+- **Audit aktivitesi** — `activity-actions` action count by type + bar chart + 3 KPI (son 30g)
+- `inventory-value` section — envanter değeri trend chart
+- `customers-report` section — KPI Veresiye / Veresiye Tahsil Oranı / hourly breakdown
+- `open-credits` section (💳 Açık krediler — tüm zaman):
+  - 4-KPI — Toplam açık tutar + N kayıt + en eski / en yeni
+  - `open-credits-bands` — aging bands (0-30g / 31-60g / 61-90g / 90+g)
+  - `open-credits-list` — açık veresiye satış tablo + `SettleCreditButton` (tahsil et action)
+
+**Export:** `/admin/reports/export` route → .xlsx (daily veya top variant — `?type=daily|top`)
+
+**Drilldown detay sayfası YOK** (önceki brief'te plan vardı, tek sayfa multi-section pattern daha sade — tek geliştirici sade-tut).
+
+**6 rapor mapping:**
+- Satış ✓ (daily-list + top-list + period-comparison)
+- Kâr-Zarar — Faz 2'ye saklı (purchase price tracking deeper)
+- En Çok Satan ✓ (top-list)
+- Ölü Stok — `petpro-discount-suggestions` Pano'da (§5.1)
+- Şube Karşılaştırma — Faz 2'ye saklı
+- 💳 Açık Krediler ✓ (open-credits section)
+
+**Bağımlılık:** TASARIM-SISTEMI · stock_movements (sale subtype + payment_method credit) · `getOpenCredits` helper + aging bands · `settleCredit` action (payment_method güncelle + customerRef hash) · audit_logs · vat_no (Doğrula gate)
 
 ---
 
