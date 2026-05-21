@@ -1,16 +1,40 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-22 gece (uzun tur tamamlandı, tüm değişiklikler `origin/cray61`'de)
-**Mevcut Branch:** `cray61` — push tamam, 0 commit beklemede
-**Son commit:** `424a520` docs(perf): audit plan sonuç bölümü — 9 tur uygulandı
+**Tarih:** 2026-05-22 (7. mantık hata tarama tamamlandı)
+**Mevcut Branch:** `cray61` — commit'ler hazır (push 7 ayrı tur)
+**Son commit (önceki session sonu):** `ab3fbc6` docs: session handoff
 
 ---
 
-## 🚀 YENİ SESSION'A GİRDİĞİNDE — İLK OKUMA
+## 🆕 2026-05-22 — 7. Mantık Hata Tarama (10 bulgu, hepsi ✅)
 
-> Uzun bir session bitti (**39 commit pushed**, `88dfa8b → 424a520`). 0 commit beklemede.
+**Tetikleyici:** Performance Deep Audit + UX dürüstlük + 17 mockup brief sync sonrası ~23 commit'lik değişiklik delta'sı (`d6623b6` → `ab3fbc6`). 7 ekseni paralel scan.
 
-**Bu session yapılanlar (özet — detay için Tur E→Z+ aşağıda):**
+**🔴 Kritik 3 — production bloker ve güvenlik:**
+- **YT7-1**: `_journal.json`'da 0023 + 0024 YOK → bootstrap fresh DB'de migration uygulamaz (CONCURRENTLY transaction'a uyumsuz). Fix: DEPLOYMENT.md §5.2 step 1b "Manuel-apply migrations" + CLAUDE.md DB notu güçlendirildi.
+- **YT7-7**: `/api/vitrin/track` rate-limit YOK → 1K rps spam vektörü. Fix: in-memory IP rate-limit 60 req/dk + 10K entry leak guard.
+- **YT7-8**: Vitrin hero h1 koşulsuz "yakınındaki" iddiası. Fix: `location ? 'yakınındaki' : "Türkiye'deki"` (5f4ce60 atladığı satır).
+
+**🟡 Önemli 5 — dokümantasyon canonical + adoption:**
+- **YT7-2**: DATABASE-SCHEMA §6 `idx_products_name` (tsvector) hayalet — migration'larda yok. Fix: sil.
+- **YT7-3**: 3 yeni index doc'ta yok (idx_companies_storefront_approved + idx_products_name_trgm + idx_brands_name_trgm). Fix: §6'a eklendi + manuel-apply notu.
+- **YT7-4**: SUPABASE-SETUP §3 `prepare: false` STALE. Fix: `prepare: true` + Hyperdrive/PgBouncer notu.
+- **YT7-5**: `request-scoped.ts` test eksik. Fix: 8 unit test (1649 → 1657 pass).
+- **YT7-6**: `getAllCities` 0 caller. Fix: 4 sayfa migrate (onboarding + branches new/edit + settings company).
+
+**🟢 Düşük 2 — perf polish + doc:**
+- **YT7-9**: NotificationBell `cache.subscribe` global → notification key filter (pano açıkken re-render eliminated).
+- **YT7-10**: Vitrin ISR revalidate süreleri doc eksik. Fix: DEPLOYMENT.md §4.5 "Vitrin ISR & CDN Cache Stratejisi" tablo + 9 sayfa süre + neden.
+
+**Test:** 1649 → **1657 pass** (+8 request-scoped.test.ts). Typecheck + lint 0 error. Browser smoke ✓ (vitrin hero "Türkiye'deki" screenshot kanıt).
+
+**Detay:** [docs/MANTIK-HATALARI-2026-05-14.md §7. Tur](MANTIK-HATALARI-2026-05-14.md). Toplam 60 bulgu (19+14+2+5+8+10+10).
+
+---
+
+## 🚀 ÖNCEKİ TURLAR (özet — detay için Tur E→Z+ aşağıda)
+
+**Bu session yapılanlar:**
 
 1. **NotificationBell client + 6 test** (Tur D/E) — bulk Tümünü oku sonrası bell anlık 0 (useSyncExternalStore)
 2. **Bildirimler filtre sadeleştirme** (Tur F) — TYPE_GROUPS chip'leri kaldırıldı, "Hepsi + Okunmamış" yeterli
@@ -35,6 +59,8 @@
 
 **Test durumu:** 1649 pass · 0 lint · 0 typecheck (4 yeni unit test eklendi NotificationBell)
 
+**📖 Performance çalışması detay doc:** [docs/PERFORMANCE-PLAYBOOK.md](PERFORMANCE-PLAYBOOK.md) — felsefe + teknoloji haritası (Next.js ISR / React.cache / pg_trgm / postgres prepare / Suspense streaming / Cloudflare CDN) + 13 fix detay (bulgu → tanı → kanıt → uygulama → ölçüm) + skip gerekçeleri + production beklentileri.
+
 ---
 
 ## 🎯 SIRADAKI TERCİH EDİLENLER (yeni session)
@@ -45,7 +71,8 @@
 | 2 | **Performance marjinal fix'ler** (Tur 7/8/15/16 — Drizzle .prepare + query consolidation + relational query + revalidateTag) | 4-6 saat | Yok — ama ROI marjinal |
 | 3 | **Faz 2 performans** (marketing static group refactor, sitemap split, audit partition) | 3-4 saat | Yok — production'da gerek olunca |
 | 4 | **UI mockup HTML refresh** (preview/* legacy 6 dosya) | Çok uzun, her mockup ayrı tur | Yok — düşük ROI (brief sync zaten yapıldı) |
-| 5 | **7. Mantık Hata Tarama** (yeni değişiklikler için) | 2-3 saat | Yok |
+| ~~5~~ | ~~**7. Mantık Hata Tarama**~~ ✅ 2026-05-22 — TAMAMLANDI (10 bulgu, hepsi fix) | — | — |
+| 5 | **8. Mantık Hata Tarama** (sonraki büyük değişiklik dalgasından sonra) | 2-3 saat | Yok |
 | 6 | **Sprint 13/14 production deploy** | — | ⛔ Kullanıcı bloker (şirket kuruluş 2-4 hafta) |
 | 7 | **Beta soft launch** | — | ⛔ Sprint 13/14 sonrası |
 | 8 | **Pricing pilot anketi** (30-50 pet shop) | 1-2 hafta | ⛔ Kullanıcı bloker (anket dağıt) |
@@ -55,7 +82,7 @@
 cd D:\Projeler\PetStockPro
 claude
 İlk komut: "DEVAM-REHBERI.md oku ve sıradaki tercih edilenlerden seç"
-# Unblocked en yüksek değer iş: #2 (perf marjinal) veya #5 (7. mantık tarama)
+# Unblocked en yüksek değer iş: #2 (perf marjinal Tur 7/8/15/16) veya #3 (Faz 2 perf)
 ```
 
 ---
