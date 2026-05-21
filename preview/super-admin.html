@@ -394,7 +394,15 @@
         Ara: tenant, kullanıcı, e-posta...
         <kbd>⌘K</kbd>
       </div>
-      <a class="tb-btn" href="pano.html">↩ Normal panele dön</a>
+      <!--
+        2026-05-21 düzeltme: "↩ Normal panele dön" linki kaldırıldı.
+        Süperadmin'in kendi pet shop pano'su yok — sadece süperadmin işleri
+        (tenant izleme, audit, vitrin modlama, sistem ayarları) yapar.
+        Tenant'a girmek için tenant satırında "🎭 Gir" butonu kullanılır.
+        Impersonate aktifken üstte sticky ImpersonationBanner görünür +
+        "✕ Çıkış · Süperadmin'e dön" butonu (src/components/impersonation-banner.tsx).
+        Kod tarafında bu link zaten kaldırıldı (src/app/admin/superadmin/page.tsx:527 yorum).
+      -->
       <div class="tb-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9"/></svg><span class="dot" style="position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--danger);border:2px solid #fff;"></span></div>
       <div class="avatar" style="background:linear-gradient(135deg, var(--danger), var(--cat))">SK</div>
     </header>
