@@ -520,17 +520,37 @@ Sprint sırasına göre:
 
 ### 5.11 ayarlar.html (YENİ — Sprint 10 için)
 
-**Doküman:** `EKRAN-AYARLAR.md`
-**Bileşenler:** Stripe-style sol sidebar bölüm seçici + sağ içerik. **6 bölüm + 2 alt-tab:**
-- Şirket Profili (vergi no opsiyonel notu)
-- Plan + Fatura (3-tier B FREE/PRO/PRO+ — TR-only, Paddle Faz 2'ye saklı 2026-05-14 YT-7)
-- **Vitrin** (yeni alt-tab grup):
-  - **Vitrin Profili** (slug, logo, kapak, WhatsApp, çalışma saatleri, KVKK onay)
-  - **Vitrin Metrikleri** (KPI + en çok ilgi gören + şehir dağılımı)
-- Yerelleştirme (dil + currency + KDV)
-- Bildirim (Telegram bağlama 3 adım + bildirim tipleri toggle)
-- Güvenlik (2FA + şifre + aktif oturumlar)
-- Veri / KVKK (export + KVKK linkleri)
+**Doküman:** `EKRAN-AYARLAR.md` · **Kod:** [`src/app/admin/settings/`](../src/app/admin/settings/) + [`src/components/settings-shell.tsx`](../src/components/settings-shell.tsx) (sidebar layout shared)
+
+> **2026-05-21 brief sync:** Sprint 2.10 SettingsShell + Sprint 10+ implementasyon tamamlandı. Mockup `preview/ayarlar.html` **yok** — Faz 2'ye saklı.
+
+**SettingsShell ([settings-shell.tsx](../src/components/settings-shell.tsx)):** sol kalıcı sidebar nav (lg:sticky lg:top-6 desktop / mobile stack) + sağ içerik. 9 link:
+- 📊 Genel Bakış (`/admin/settings`)
+- 🏢 Firma (`/admin/settings/company`)
+- 🌐 Vitrin Profili (`/admin/settings/storefront`)
+- 👥 Kullanıcılar (`/admin/settings/users`) — §5.10
+- 🔔 Bildirimler (`/admin/settings/notifications`)
+- 👤 Hesap (`/admin/account`)
+- 🛡 Güvenlik (`/admin/security`)
+- 📜 Audit Log (`/admin/audit-log`)
+- ⬇ Verilerimi İndir (`/admin/settings/export`)
+
+`aria-current="page"` doğru aktif item highlight + `data-settings-link={key}` test selector.
+
+**Sayfalar:**
+- **Genel Bakış** (`/admin/settings`) — 4 StatusCard (Firma+VKN durumu / Hesap+pendingEmail / 2FA aktif/kapalı / Plan) + Veri yönetimi 4 DataLink (kategori/marka/şube/tedarikçi count)
+- **Firma** (`/admin/settings/company`) — companyProfileSchema form: name + VKN/TC (10-11 hane regex VKN+TC) + whatsappPhone (+90/0 prefix) + cityId (1-81) + districtId (cascade); İlk vat_no eklenince `vatRequiredAt=now` set (Satışa Aç validation gate ile ilişki)
+- **Vitrin Profili** (`/admin/settings/storefront`, [form.tsx](../src/app/admin/settings/storefront/form.tsx)) — slug edit + storefront açıklaması SEO helperText + logo + kapak + WhatsApp deep link + çalışma saatleri 7 gün + KVKK onay (Sprint 12)
+- **Kullanıcılar** — §5.10 (`/admin/settings/users`)
+- **Bildirimler** (`/admin/settings/notifications`, [telegram-form.tsx](../src/app/admin/settings/notifications/telegram-form.tsx)) — Telegram chat bağlama 3 adım (BotFather + chat_id + test mesaj) + bildirim tipi toggle (low_stock_critical/out_of_stock/high_sale/…)
+- **Hesap** (`/admin/account`) — email değiştir collapsible form (password re-auth + new email + dual-email Brevo notify + İptal Et CTA Telegram critical)
+- **Güvenlik** (`/admin/security`) — 2FA durum panel + disable + regenerate recovery codes
+- **Audit Log** (`/admin/audit-log`) — read-only viewer (100 son satır + 26 action label emoji+TR + süperadmin badge + JSON afterState disclosure)
+- **Verilerimi İndir** (`/admin/settings/export`) — KVKK Md.11 veri taşıma hub: 7 .xlsx export link (reports daily/top + audit-log + stock-movements + products + suppliers + branches)
+
+**Plan + Fatura, Yerelleştirme, KVKK linkleri** — Faz 2'ye saklı (Sprint 13 iyzico billing sonrası + lansman öncesi). Plan tier 3-tier B (1.000/2.000) süperadmin system-settings'te görünür.
+
+**Bağımlılık:** TASARIM-SISTEMI · SettingsShell sticky sidebar · `revalidatePath('/admin/products')` company update sonrası (Doğrula refresh) · audit_logs (company.vat_no_set ayrı action)
 
 ---
 

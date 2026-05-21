@@ -289,6 +289,19 @@ Rol mapping güncellendi: SUBE_MUDURU→OBSERVER (Faz 8 Migration 0021).
 
 ---
 
+### 🆕 Tur R: C iş kalemi #11 — ayarlar brief sync (2026-05-21 gece)
+
+**Değişiklik:** [docs/UI-MOCKUP-PLAN.md §5.11](UI-MOCKUP-PLAN.md) — ayarlar brief'i SettingsShell + 9 link route'a göre yeniden listelendi:
+- SettingsShell shared component (sticky sidebar + 9 link nav)
+- 9 sayfa — Genel Bakış (4 StatusCard + 4 DataLink) + Firma (vat_no first-set vatRequiredAt) + Vitrin Profili (slug + SEO helper + KVKK) + Kullanıcılar (§5.10) + Bildirimler (Telegram 3 adım + tip toggle) + Hesap (email değiştir) + Güvenlik (2FA disable + regen) + Audit Log + Verilerimi İndir (KVKK Md.11 7 xlsx export)
+- Plan + Fatura + Yerelleştirme Faz 2'ye saklı (Sprint 13 sonrası)
+
+Mockup preview/ayarlar.html yok.
+
+**Sıradaki C iş kalemi:** §5.12 raporlar.html brief sync.
+
+---
+
 ### 🆕 Geçmiş tur (2026-05-21 öğleden sonra) — referans
 
 | Commit | Konu |
