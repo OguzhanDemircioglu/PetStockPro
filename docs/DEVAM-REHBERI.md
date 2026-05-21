@@ -471,9 +471,21 @@ Mockup preview/vitrin-ana-petstockpro.html yok (implementli, gerek kalmadı).
 - P3-3: Middleware matcher tüm route'larda çalışıyor
 - P3-4: TanStack Query staleTime query-bazında tune
 
-**Detaylı plan:** [docs/PLAN-PERFORMANCE-DEEP-AUDIT-2026-05-21.md](PLAN-PERFORMANCE-DEEP-AUDIT-2026-05-21.md) — 11 fix + 10 tur + kabul kriterleri (Lighthouse 95+, TTFB < 100ms vitrin, 1K concurrent p99 < 500ms).
+**Detaylı plan:** [docs/PLAN-PERFORMANCE-DEEP-AUDIT-2026-05-21.md](PLAN-PERFORMANCE-DEEP-AUDIT-2026-05-21.md) — **23 fix** + 20 tur + kabul kriterleri (Lighthouse 95+, TTFB < 100ms vitrin, 1K concurrent p99 < 500ms).
 
-**Tahmini toplam süre:** 15-20 saat (10 tur).
+**🆕 İkinci tur ek bulgular (toplam 12 yeni):**
+- 🔴 **P0-3:** `postgres-js` config'de `prepare: false` — prepared statements explicit kapalı (P1-2'yi tamamlayıcı)
+- 🟠 **P1-4:** Vitrin arama `ILIKE %query%` leading wildcard → seq scan, **products.name + brands.name'de pg_trgm GIN index YOK** (catalog_seed'da var ama gerçek tabloda yok)
+- 🟠 **P1-5:** `next.config.ts` `experimental.optimizePackageImports` yok — büyük dep'ler tam import
+- 🟡 **P2-5:** TanStack `refetchOnWindowFocus: true` — 1K user × tab focus = burst (NotificationBell zaten setQueryData ile reactive, gerek yok)
+- 🟡 **P2-6:** Drizzle `db.query.X.findMany` (relational API) hiç kullanılmıyor — 264 manuel join, N+1 risk
+- 🟢 **P3-5:** TanStack Devtools tree-shake doğrulama
+- 🟢 **P3-6:** Cron route'ları wrangler.toml sync (deploy-time check)
+- 🟢 **P3-7:** Sitemap.xml index split (Faz 2 — 1K tenant ölçeği)
+- 🟢 **P3-8:** Audit log partition (Faz 2 — 6+ ay sonra)
+- 🟢 **P3-9:** Connection pool max=10 (Hyperdrive production'da yönetir)
+
+**Güncellenmiş tahmini:** 24-29 saat (20 tur, 23 fix). Süre öncelik: P0 3 tur (5-6 saat) ile kritik kazanımın %70'i. P1-P2 ile %95'e ulaşılır.
 
 **Sıradaki adım:** Tur 1 — P0-1 vitrin revalidate + cache headers (1-2 saat).
 
