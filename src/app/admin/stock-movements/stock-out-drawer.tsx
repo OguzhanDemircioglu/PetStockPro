@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useMemo, useState } from 'react';
 import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import type { BranchOption, VariantOption } from '@/lib/stock/options';
+import { PetSpinner } from '@/components/ui/pet-spinner';
 import { DrawerShell } from './drawer-shell';
 import { stockOutAction, type MovementActionState } from './actions';
 
@@ -235,9 +236,16 @@ export function StockOutDrawer({ branches, variants, onClose }: Props) {
             type="submit"
             disabled={pending}
             data-testid="submit-stock-out"
-            className="flex-1 rounded-xl bg-gradient-to-br from-cat to-cat-2 px-6 py-3 text-sm font-bold text-white shadow-sm disabled:opacity-60"
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-cat to-cat-2 px-6 py-3 text-sm font-bold text-white shadow-sm disabled:opacity-60"
           >
-            {pending ? 'Kaydediliyor...' : 'Çıkışı Kaydet'}
+            {pending ? (
+              <>
+                <PetSpinner size="sm" inline tone="cat" label="Kaydediliyor" />
+                Kaydediliyor…
+              </>
+            ) : (
+              'Çıkışı Kaydet'
+            )}
           </button>
           <button
             type="button"

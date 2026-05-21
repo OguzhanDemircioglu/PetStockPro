@@ -7,6 +7,7 @@ import type {
   VariantOption,
   SupplierOption,
 } from '@/lib/stock/options';
+import { PetSpinner } from '@/components/ui/pet-spinner';
 import { DrawerShell } from './drawer-shell';
 import { stockInAction, type MovementActionState } from './actions';
 
@@ -196,9 +197,16 @@ export function StockInDrawer({ branches, variants, suppliers, onClose }: Props)
             type="submit"
             disabled={pending}
             data-testid="submit-stock-in"
-            className="flex-1 rounded-xl bg-gradient-to-br from-arrow to-arrow-2 px-6 py-3 text-sm font-bold text-white shadow-sm disabled:opacity-60"
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-arrow to-arrow-2 px-6 py-3 text-sm font-bold text-white shadow-sm disabled:opacity-60"
           >
-            {pending ? 'Kaydediliyor...' : 'Stok Girişini Kaydet'}
+            {pending ? (
+              <>
+                <PetSpinner size="sm" inline tone="arrow" label="Kaydediliyor" />
+                Kaydediliyor…
+              </>
+            ) : (
+              'Stok Girişini Kaydet'
+            )}
           </button>
           <button
             type="button"

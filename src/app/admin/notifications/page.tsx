@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
-import { listForUser, type NotificationRow } from '@/lib/notifications/manage';
-import { markAsReadAction, markAllAsReadAction } from './actions';
+import { listForUser } from '@/lib/notifications/manage';
+import { NotificationsList } from './notifications-list';
 
 const TYPE_EMOJI: Record<string, string> = {
   low_stock_critical: '⚠',
@@ -77,8 +77,6 @@ export default async function NotificationsPage({
   const params = await searchParams;
   const unreadOnly = params.filter === 'unread';
   const activeGroup = params.group && TYPE_GROUPS[params.group] ? params.group : null;
-  // Fine-grain: ?type=<exact> param. Grup seçili olmasa bile çalışır,
-  // ama UI'da chip'ler sadece aktif grup içinde gösterilir (sade tut).
   const activeType =
     params.type && Object.keys(TYPE_LABEL).includes(params.type) ? params.type : null;
 
@@ -87,22 +85,17 @@ export default async function NotificationsPage({
     unreadOnly,
   });
 
-  // Filtre öncelik sırası: type > group > all
   const items = activeType
     ? allItems.filter((i) => i.type === activeType)
     : activeGroup
       ? allItems.filter((i) => TYPE_GROUPS[activeGroup].types.includes(i.type))
       : allItems;
 
-  const unreadCount = allItems.filter((i) => i.readAt === null).length;
-
-  // Group başına count (filter UI badge'i için)
   const groupCounts: Record<string, number> = {};
   for (const [key, def] of Object.entries(TYPE_GROUPS)) {
     groupCounts[key] = allItems.filter((i) => def.types.includes(i.type)).length;
   }
 
-  // Type başına count (sadece aktif grup için)
   const typeCounts: Record<string, number> = {};
   if (activeGroup) {
     for (const t of TYPE_GROUPS[activeGroup].types) {
@@ -110,35 +103,10 @@ export default async function NotificationsPage({
     }
   }
 
+  const unreadCount = allItems.filter((i) => i.readAt === null).length;
+
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-12">
-      <header className="flex items-end justify-between gap-4">
-        <div>
-          <div className="text-[13px] font-bold uppercase tracking-wider text-cat">
-            Admin · Bildirimler
-          </div>
-          <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-cart">
-            Bildirimler
-          </h1>
-          <p className="mt-1 text-sm text-ink-3">
-            {unreadOnly
-              ? `${items.length} okunmamış bildirim`
-              : `${items.length} bildirim · ${unreadCount} okunmamış`}
-          </p>
-        </div>
-        {unreadCount > 0 && (
-          <form action={markAllAsReadAction}>
-            <button
-              type="submit"
-              data-action="mark-all-read"
-              className="rounded-xl border border-line bg-paper px-4 py-2 text-xs font-bold text-ink-2 hover:bg-line-soft"
-            >
-              ✓ Tümünü okundu işaretle
-            </button>
-          </form>
-        )}
-      </header>
-
       <div className="flex flex-col gap-2" data-testid="notif-filter">
         <div className="flex gap-2">
           <Link
@@ -251,23 +219,12 @@ export default async function NotificationsPage({
         )}
       </div>
 
-      {items.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-line bg-paper py-16 text-center">
-          <div className="text-6xl">🔔</div>
-          <h2 className="mt-4 text-xl font-bold text-cart">
-            {unreadOnly ? 'Okunmamış bildirim yok' : 'Henüz bildirim yok'}
-          </h2>
-          <p className="mt-2 text-sm text-ink-3">
-            Sayım tamamlama, stok 0, abonelik gibi olaylar burada görünecek.
-          </p>
-        </div>
-      ) : (
-        <ul className="flex flex-col gap-2" data-testid="notif-list">
-          {items.map((n) => (
-            <NotificationItem key={n.id} item={n} />
-          ))}
-        </ul>
-      )}
+      <NotificationsList
+        initialItems={items}
+        unreadOnly={unreadOnly}
+        typeEmoji={TYPE_EMOJI}
+        typeLabel={TYPE_LABEL}
+      />
 
       <Link
         href={'/admin' as never}
@@ -276,68 +233,5 @@ export default async function NotificationsPage({
         ← Pano&apos;ya dön
       </Link>
     </main>
-  );
-}
-
-function NotificationItem({ item }: { item: NotificationRow }) {
-  const isUnread = item.readAt === null;
-  const emoji = item.content.emoji ?? TYPE_EMOJI[item.type] ?? '🔔';
-  const typeLabel = TYPE_LABEL[item.type] ?? item.type;
-  const link = item.content.link;
-
-  return (
-    <li
-      data-notification-id={item.id}
-      data-unread={isUnread ? '1' : '0'}
-      className={`flex items-start gap-3 rounded-2xl border p-4 ${
-        isUnread ? 'border-cat/40 bg-cat-soft/30' : 'border-line bg-paper'
-      }`}
-    >
-      <span className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl bg-paper text-xl">
-        {emoji}
-      </span>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <h3 className="truncate text-sm font-bold text-cart">{item.content.title}</h3>
-          {isUnread && (
-            <span className="rounded-full bg-cat px-1.5 py-0.5 text-[10.5px] font-bold text-white">
-              YENİ
-            </span>
-          )}
-        </div>
-        {item.content.body && (
-          <p className="mt-0.5 text-xs leading-relaxed text-ink-2">{item.content.body}</p>
-        )}
-        <div className="mt-1 flex items-center gap-3 text-[12px] text-ink-3">
-          <span>{typeLabel}</span>
-          <span>·</span>
-          <time>
-            {new Date(item.createdAt).toLocaleString('tr-TR', {
-              day: '2-digit',
-              month: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </time>
-          {link && (
-            <Link href={link as never} className="text-cat hover:underline">
-              Gör →
-            </Link>
-          )}
-        </div>
-      </div>
-      {isUnread && (
-        <form action={markAsReadAction.bind(null, item.id)}>
-          <button
-            type="submit"
-            data-action="mark-read"
-            aria-label="Okundu işaretle"
-            className="rounded-lg border border-line bg-paper px-2 py-1 text-[11.5px] font-bold text-ink-3 hover:bg-line-soft"
-          >
-            ✓
-          </button>
-        </form>
-      )}
-    </li>
   );
 }

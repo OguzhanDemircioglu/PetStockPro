@@ -1,7 +1,10 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { storefrontKeys, productKeys } from '@/lib/queries/keys';
+import { PetSpinner } from '@/components/ui/pet-spinner';
 import {
   publishProductAction,
   unpublishProductAction,
@@ -13,33 +16,53 @@ interface Props {
 }
 
 /**
- * Liste satırında hızlı Satışa Aç/Kapat toggle. Validation fail olursa
- * banner gösterip kullanıcıyı edit sayfasına yönlendirir (Doğrula gate görsün).
+ * Liste satırında hızlı Satışa Aç/Kapat — FAZ 5.3 optimistic toggle.
+ *
+ * onMutate → published flip ANINDA (UI tepkisi 200-500ms beklemez).
+ * Validation fail (issues) → revert + edit sayfasına yönlendir (Doğrula gör).
+ * Network fail → revert + alert.
  */
 export function ListRowToggle({ productId, initialPublished }: Props) {
   const [published, setPublished] = useState(initialPublished);
   const [issuesMsg, setIssuesMsg] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
-  const toggle = () => {
-    setIssuesMsg(null);
-    startTransition(async () => {
-      const action = published ? unpublishProductAction : publishProductAction;
+  const mutation = useMutation({
+    mutationFn: async (next: boolean) => {
+      const action = next ? publishProductAction : unpublishProductAction;
       const result = await action(productId);
-      if (result.ok) {
-        setPublished(!published);
-      } else if (result.issues.length > 0) {
-        setIssuesMsg(`${result.issues.length} eksik — Doğrula panelinden gör`);
-        // 2 sn sonra edit sayfasına yönlendir
-        setTimeout(() => {
-          router.push(`/admin/products/${productId}/edit` as never);
-        }, 1500);
+      return { result, next };
+    },
+    onMutate: async (next: boolean) => {
+      const previous = published;
+      setPublished(next);
+      setIssuesMsg(null);
+      return { previous };
+    },
+    onSuccess: ({ result, next }) => {
+      if (!result.ok) {
+        // Revert
+        setPublished(!next);
+        if (result.issues.length > 0) {
+          setIssuesMsg(`${result.issues.length} eksik — Doğrula panelinden gör`);
+          setTimeout(() => {
+            router.push(`/admin/products/${productId}/edit` as never);
+          }, 1500);
+        } else {
+          setIssuesMsg(result.message ?? 'Hata');
+        }
       } else {
-        setIssuesMsg(result.message ?? 'Hata');
+        // Başarılı — cache invalidate
+        queryClient.invalidateQueries({ queryKey: storefrontKeys.all });
+        queryClient.invalidateQueries({ queryKey: productKeys.lists() });
       }
-    });
-  };
+    },
+    onError: (_err, next, ctx) => {
+      if (ctx) setPublished(ctx.previous);
+      setIssuesMsg('Bağlantı hatası — tekrar dene');
+    },
+  });
 
   if (issuesMsg) {
     return (
@@ -55,16 +78,23 @@ export function ListRowToggle({ productId, initialPublished }: Props) {
   return (
     <button
       type="button"
-      onClick={toggle}
-      disabled={pending}
+      onClick={() => mutation.mutate(!published)}
+      disabled={mutation.isPending}
       title={published ? 'Satışa Kapat' : 'Satışa Aç (Doğrula kontrol eder)'}
+      data-storefront-published={published ? '1' : '0'}
       className={`inline-flex cursor-pointer items-center gap-1 rounded px-2 py-0.5 text-[11.5px] font-bold transition-colors ${
         published
           ? 'bg-arrow-soft text-arrow-7 hover:bg-arrow/30'
           : 'bg-line-soft text-ink-4 hover:bg-cat-soft hover:text-cart'
       } disabled:opacity-60`}
     >
-      {pending ? '...' : published ? '✓ Aktif' : 'Aç'}
+      {mutation.isPending ? (
+        <PetSpinner size="sm" inline tone={published ? 'arrow' : 'cat'} label="İşleniyor" />
+      ) : published ? (
+        '✓ Aktif'
+      ) : (
+        'Aç'
+      )}
     </button>
   );
 }

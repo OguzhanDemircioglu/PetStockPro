@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useSwalOnErrorString } from '@/lib/ui/use-swal-on-error';
+import { PetSpinner } from '@/components/ui/pet-spinner';
 import {
   updateCountAction,
   completeStocktakeAction,
@@ -565,9 +566,18 @@ function SwipeCard({
         onClick={submit}
         disabled={!editable || pending || counted === ''}
         data-action="save-card"
-        className="w-full rounded-xl bg-cat px-4 py-3 text-sm font-bold text-white hover:bg-cat-2 disabled:opacity-50"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-cat px-4 py-3 text-sm font-bold text-white hover:bg-cat-2 disabled:opacity-50"
       >
-        {pending ? '...' : completed ? '✓ Güncellendi — Kaydet (Enter)' : '✓ Kaydet (Enter)'}
+        {pending ? (
+          <>
+            <PetSpinner size="sm" inline tone="cat" label="Kaydediliyor" />
+            Kaydediliyor…
+          </>
+        ) : completed ? (
+          '✓ Güncellendi — Kaydet (Enter)'
+        ) : (
+          '✓ Kaydet (Enter)'
+        )}
       </button>
     </div>
   );
@@ -704,7 +714,7 @@ function ItemRow({
       </td>
       <td className="px-4 py-3 text-center">
         {pending ? (
-          <span className="text-ink-3">…</span>
+          <PetSpinner size="sm" inline tone="cat" label="Kaydediliyor" />
         ) : completed ? (
           <span className="text-arrow-7">✓</span>
         ) : (
@@ -743,9 +753,16 @@ function CompleteButton({ stocktakeId, disabled }: { stocktakeId: string; disabl
         onClick={submit}
         disabled={disabled || pending}
         data-action="complete"
-        className="rounded-xl bg-gradient-to-br from-cat to-cat-2 px-5 py-2.5 text-sm font-bold text-white shadow-[var(--shadow-cat)] disabled:opacity-50 hover:-translate-y-0.5 transition-transform"
+        className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-cat to-cat-2 px-5 py-2.5 text-sm font-bold text-white shadow-[var(--shadow-cat)] disabled:opacity-50 hover:-translate-y-0.5 transition-transform"
       >
-        {pending ? 'Tamamlanıyor...' : '✓ Sayımı tamamla'}
+        {pending ? (
+          <>
+            <PetSpinner size="sm" inline tone="cat" label="Tamamlanıyor" />
+            Tamamlanıyor…
+          </>
+        ) : (
+          '✓ Sayımı tamamla'
+        )}
       </button>
       {state?.ok && (
         <div className="rounded-lg bg-arrow-soft px-3 py-1.5 text-[12.5px] text-arrow-7">
