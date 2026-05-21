@@ -349,6 +349,22 @@ Mockup preview/vitrin-anasayfa.html 1093 satır var ama brand-listings + nearby-
 
 ---
 
+### 🆕 Tur V: C iş kalemi #15 — vitrin-urun brief sync (2026-05-21 gece)
+
+**Değişiklik:** [docs/UI-MOCKUP-PLAN.md §5.15](UI-MOCKUP-PLAN.md) — vitrin-urun brief'i Sprint 12 cross-tenant product page implementasyonuna göre yeniden listelendi:
+- cross-tenant-product-page + SEO title "Fiyat kıyasla"
+- product-hero + price-range-summary (min-max)
+- offers-list — her pet shop kart (name + city/district + mesafe + stok + fiyat + variantCount + offer-detail + offer-wa)
+- only-one-offer-note tek satıcıda
+- "Neden bu sırada" algoritma modal Faz 2'ye saklı
+- Aynı kategoriden öneri 4 kart + report-button 🚩
+
+Para akışı çizgisi vurgusu: WhatsApp deep link sadece, "Vitrin referans kodu" Karar B (a) ile eklenmedi (sade-tut).
+
+**Sıradaki C iş kalemi:** §5.16 vitrin-magaza brief sync.
+
+---
+
 ### 🆕 Geçmiş tur (2026-05-21 öğleden sonra) — referans
 
 | Commit | Konu |

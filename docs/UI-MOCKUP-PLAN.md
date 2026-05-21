@@ -664,17 +664,30 @@ Sprint sırasına göre:
 
 ---
 
-### 5.15 vitrin-urun.html (YENİ — Sprint 12 için)
+### 5.15 vitrin-urun.html (yenile)
 
-**Doküman:** `EKRAN-PUBLIC-VITRIN.md §7`
-**Bileşenler:**
-- Galeri (sol)
-- Ürün bilgi (sağ — variant tabs + fiyat aralığı)
-- **Cross-tenant kıyaslama tablo** (3-5 pet shop: mesafe + stok + fiyat + WhatsApp butonu)
-- "Neden bu sırada" link → algoritma açıklama modal
-- Ürün açıklaması + teknik bilgiler
-- Aynı kategoriden öneriler (4 kart)
-- Bildiri butonu (🚩)
+**Doküman:** `EKRAN-PUBLIC-VITRIN.md §7` · **Kod:** [`src/app/vitrin/urun/[slug]/page.tsx`](../src/app/vitrin/urun/[slug]/page.tsx) · **Helper:** `getCrossTenantProduct`
+
+> **2026-05-21 brief sync:** Sprint 12 cross-tenant product page tamamlandı. Mockup `preview/vitrin-urun.html` **yok** — Faz 2'ye saklı.
+
+**Ürün detay (`/vitrin/urun/[slug]`):**
+- `cross-tenant-product-page` ana wrapper + SEO title `"{productName} — Fiyat kıyasla | PetStockPro Vitrin"`
+- `product-hero` section — başlık (productName) + variant info + `price-range-summary` (min-max fiyat)
+- "Ürün hakkında" section — açıklama + teknik bilgiler
+- `offers-list` section — cross-tenant kıyaslama (her pet shop bir kart):
+  - Pet shop name + city/district + mesafe (konum varsa)
+  - Stok durumu rozet (var/yok) + fiyat
+  - Variant count (`{N} variant`)
+  - `offer-detail-${companyId}` link (storefront'a)
+  - `offer-wa-${companyId}` — WhatsApp deep link (referans kodu YOK — para akışı çizgisi 2026-05-14 K2-a)
+- `only-one-offer-note` — tek pet shop satıyorsa "fiyat kıyası için diğer pet shop'ları gözlemleyin" mesaj
+- "Neden bu sırada" link → algoritma açıklama modal **Faz 2'ye saklı**
+- Aynı kategoriden öneriler — 4 kart (cross-tenant)
+- `report-button.tsx` 🚩 şikayet (vitrin_reports tablo)
+
+**Para akışı vurgusu:** WhatsApp deep link `wa.me/{phone}?text=...` — biz aracı DEĞİLİZ. "Vitrin referans kodu" Karar B (a) ile **eklenmedi** (sade-tut).
+
+**Bağımlılık:** TASARIM-SISTEMI · `getCrossTenantProduct` helper (product+variant+stock+pet shop aggregate) · vitrin_events product_view + whatsapp_click log · report-button
 
 ---
 
