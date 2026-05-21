@@ -488,24 +488,33 @@ Sprint sırasına göre:
 
 ---
 
-### 5.10 kullanicilar.html (YENİ — Sprint 9 için)
+### 5.10 kullanicilar.html (yenile)
 
-**Doküman:** `EKRAN-KULLANICILAR.md`
-**Bileşenler:**
-- **KPI 3 kart:** Toplam kullanıcı + ADMIN sayısı + STAFF sayısı (kasiyer rolü MVP'de aktif, S1)
-- **Tablo:** ad-soyad, email, rol, şube, status, son giriş; hover satırda 👁/✏/🔑/⋯
-- **Davet mini modal (hibrit — 2026-05-14):**
-  - Email field + Gmail "+" alias notu (K3)
-  - Rol radio: Bayi sahibi / Şube müdürü / Kasiyer (STAFF)
-  - Şube dropdown (müdür/kasiyer için)
-  - **Davet yöntemi radio:**
-    - 📧 E-posta gönder (varsayılan, 7 gün TTL, Brevo otomatik)
-    - 🔗 Davet linki üret (24 saat TTL, admin elden iletir)
-  - Submit sonrası:
-    - Email yöntem: "✓ Davet email gönderildi" toast
-    - Link yöntem: Modal değişir → 🔗 URL + [📋 Linki Kopyala] butonu (clipboard write)
-- **Detay drawer:** aktif oturumlar + 2FA durum + rol/şube değiştir + yeniden davet (method seçici)
-- **Bekleyen davet badge'i:** "Davet bekliyor · 5 gün kaldı" sarı / "Süre doldu" kırmızı + "Yeniden Davet"
+**Doküman:** `EKRAN-KULLANICILAR.md` · **Kod:** [`src/app/admin/settings/users/`](../src/app/admin/settings/users/) — page.tsx + invite-form.tsx + permissions-modal.tsx + actions.ts
+
+> **2026-05-21 brief sync:** Sprint 9 + Faz 6 (Çalışan yetki modal 15 toggle) tamamlandı. URL `/admin/users` değil **`/admin/settings/users`** — settings sidebar grubunda. Mockup `preview/kullanicilar.html` **yok** — Faz 2'ye saklı.
+
+**Liste sayfası (`/admin/settings/users`, [page.tsx](../src/app/admin/settings/users/page.tsx)):**
+- `users-list` article — tablo:
+  - Ad-soyad + email + rol badge (BAYI_ADMIN/OBSERVER/STAFF — TR etiket "Bayi Admin"/"İzleyici"/"Çalışan") + şube + status + son giriş
+  - Bekleyen davet badge — invitePending (hasPassword=false) ise "Davet bekliyor · N gün kaldı" sarı / "Süre doldu" kırmızı + `inviteMethod` rozet (📧 Email / 🔗 Link)
+  - Hover satırda — yetki modal aç + rol değiştir + yeniden davet
+
+**Davet formu ([invite-form.tsx](../src/app/admin/settings/users/invite-form.tsx)):**
+- `invite-email` + `invite-name` + `invite-role` (OBSERVER/STAFF dropdown) + `invite-branch` (rol=OBSERVER ise zorunlu, STAFF=opsiyonel)
+- Davet yöntemi radio — 📧 E-posta (7 gün TTL, Brevo otomatik) / 🔗 Link (24 saat TTL, admin elden iletir)
+- Submit sonrası link yöntemde → `invite-accept-url` modal (clipboard copy + uyarı)
+- STAFF invite → `applyStaffDefaults` 3 ON yetki seed (`sale.create` / `variant.view` / `customer_ref.write`)
+
+**Yetki modal ([permissions-modal.tsx](../src/app/admin/settings/users/permissions-modal.tsx) — Faz 6):**
+- 15 yetki toggle (3 default ON STAFF + 12 OFF) — sale.create / sale.refund / variant.view / variant.edit / variant.create / customer_ref.write / stocktake.start / stock-in.create / stock-out.create / transfer.create / branch.edit / supplier.edit / report.view / audit.view / export.run
+- updateUserPermissionsAction → user_permissions tablo + audit log
+
+**Şube ekleme wizard 2-step (Faz 7):** `branches/new/step2-staff-invite.tsx` — "Çalışan ekle veya atla" SWAL uyarı (aynı inviteUserAction)
+
+**Bekleyen kararlar — Yapı 2026-05-14:** STAFF = "kasiyer" terimi ile aynı. Bayi Admin (BAYI_ADMIN) = pet shop sahibi rol. Şube müdürü → OBSERVER (read-only) Faz 8 rename.
+
+**Bağımlılık:** TASARIM-SISTEMI · users tablo (userRoleEnum + inviteMethodEnum + invitedById) · user_permissions tablo (Migration 0021) · Brevo invite email (7g TTL) · invite token (24h link TTL)
 
 ---
 

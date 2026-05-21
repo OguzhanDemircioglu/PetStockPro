@@ -275,6 +275,20 @@ Mockup preview/tedarikciler.html yok.
 
 ---
 
+### 🆕 Tur P: C iş kalemi #10 — kullanicilar brief sync (2026-05-21 gece)
+
+**Değişiklik:** [docs/UI-MOCKUP-PLAN.md §5.10](UI-MOCKUP-PLAN.md) — kullanicilar brief'i `src/app/admin/settings/users/` + Faz 6 (15 yetki modal) + Faz 8 (OBSERVER) implementasyonuna göre yeniden listelendi. **URL `/admin/users` değil `/admin/settings/users`** — settings sidebar grubunda.
+- Liste — users-list tablo (rol TR etiket Bayi Admin/İzleyici/Çalışan + bekleyen davet badge + invite method rozet 📧/🔗)
+- Invite form — invite-email/name/role/branch + davet yöntemi radio (📧 7g Brevo / 🔗 24h link clipboard) + applyStaffDefaults 3 ON
+- Permissions modal — 15 yetki toggle + updateUserPermissionsAction + audit
+- Şube wizard step 2 (Faz 7) — branches/new/step2-staff-invite.tsx
+
+Rol mapping güncellendi: SUBE_MUDURU→OBSERVER (Faz 8 Migration 0021).
+
+**Sıradaki C iş kalemi:** §5.11 ayarlar.html brief sync.
+
+---
+
 ### 🆕 Geçmiş tur (2026-05-21 öğleden sonra) — referans
 
 | Commit | Konu |
