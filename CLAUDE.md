@@ -33,26 +33,41 @@
 
 ## 🚀 YENİ SESSION'A GİRDİĞİNDE — İLK OKUMA SIRASI
 
-**2026-05-21 GECE — Tüm turlar push edildi.** Son commit `1addbcc`. 11 commit GitHub'da (ef45949..1addbcc). 0 bekleyen commit. Test 1643 pass · typecheck/lint 0 error.
+**2026-05-22 GECE — Uzun session bitti.** Son commit `424a520`. **39 commit GitHub'da** (88dfa8b..424a520). 0 bekleyen commit. Test **1649 pass** · typecheck/lint 0 error.
 
-**Yapılan büyük tur özetler (sırasıyla):**
-1. **PLAN-BETA-PERFORMANCE 6/6 FAZ** — Auto-bootstrap + Log retention + Error tracking (Sentry'siz, system_errors + Telegram burst) + PetSpinner + TanStack Query Provider + 5 CRUD optimistic. Detay: `docs/PLAN-BETA-PERFORMANCE.md` (6/6 ✅) + `docs/DEVAM-REHBERI.md`
-2. **Sprint 3.3 Image Upload Unblock** — `SUPABASE_SERVICE_ROLE_KEY` env eklendi + R2 strategy onaylandı (Supabase Storage iptal). `validateForStorefront.DEFAULT_OPTS.requireImage` false→true tutarsızlık çözüldü.
-3. **5. Mantık Hata Tarama** — 8 doc-kod uyumsuzluğu (DATABASE-SCHEMA toplam 35→37, Supabase Storage→R2 yansıt, PetSpinner TASARIM-SISTEMI'ye, auto-bootstrap doc'lara).
-4. **Pricing 1.000/2.000 revize** — "Fiyat artırmayalım" kararı. Karar C (1.250/2.250) → 1.000/2.000. Net gelir hedefi $10K → ~$8.240/ay.
-5. **Süperadmin mockup fix** — "Normal panele dön" linki kaldırıldı. Süperadmin'in kendi tenant pano'su YOK; sadece süperadmin işleri yapar, tenant'a impersonate ile girer, "✕ Çıkış · Süperadmin'e dön" ile çıkar.
+**Bu session'da yapılan büyük tur özetler (sırasıyla):**
+1. **NotificationBell client + 6 test** (commit `88dfa8b`) — bulk Tümünü oku sonrası bell anlık 0 (useSyncExternalStore). Cache-reactive.
+2. **Bildirimler filtre sadeleştirme** (commit `a69b95f`) — TYPE_GROUPS chip'leri (Stok/Sayım/Vitrin/Abonelik/Sistem) tamamen kaldırıldı. Sadece "Hepsi + Okunmamış" kaldı.
+3. **17 mockup brief sync — C iş kalemi** (Tur G→X, 17 commit) — UI-MOCKUP-PLAN.md §5.1-5.17 src/app/ implementasyonuna göre yeniden listelendi. Mockup HTML refresh skip — kod canonical.
+4. **Vitrin UX dürüstlük taraması** (commit `5f4ce60`) — 4 fix: hero "Yakınında" → "Türkiye'de" (konum yokken), /vitrin/ara lead şehir koşullu, popüler "🔥 460 görüntüleme" + tooltip, çok satan "🏆 85 satıldı" + tooltip.
+5. **Customer journey smoke + admin dürüstlük** (commit `ff332aa` + `57aa483`) — register şifre tekrar input + ürün detay tek-satıcı "fiyat" + Reports kart başlık "(son N gün)".
+6. **🏆 Performance Deep Audit — 23 fix planı + 9 tur uygulama** (Tur 1-12, 8 commit):
+   - **P0-1** Vitrin 9 sayfa `force-dynamic` → `revalidate` ISR + tracking client-side (`/api/vitrin/track` + `TrackPageView`)
+   - **P0-2** `src/lib/cache/request-scoped.ts` React.cache() (getCompanyById + 4 helper) + getAllCities unstable_cache
+   - **P0-3** postgres-js `prepare: true` (Hyperdrive uyumlu, planning 4-12ms → <1ms)
+   - **P1-1** Migration 0023 `companies.storefront_status` partial index (manuel apply edildi)
+   - **P1-4** Migration 0024 `products.name` + `brands.name` pg_trgm GIN partial (manuel apply edildi)
+   - **P1-5** next.config `experimental.optimizePackageImports` → **🎉 Bundle 928K → 228K (%75 azalma)**
+   - **P2-3** Pano Suspense streaming (`PanoExpiringSection` async deferred)
+   - **P2-5** TanStack `refetchOnWindowFocus: false` + staleTime 60s
+   - **P2-4 / P3-3/5/6/4** zaten OK (Image priority, middleware matcher, Devtools devDeps, wrangler cron, default staleTime)
 
 **Memory durumu:**
 - ✅ `feedback_commit_push_approval.md` aktif — her commit öncesi onay + push HER ZAMAN ayrı tur (toplu push yasak)
+- ✅ `feedback_commit_push_auto_repetitive.md` (yeni 2026-05-21) — repetitive doc/brief turlarda pattern bir kez onay → auto commit+push
 - ✅ `feedback_screenshot_required.md` — UI değişiklikleri preview_screenshot ile doğrula
 - ✅ `feedback_destructive_ask_via_chat.md` — DB mutation / destructive aksiyonlarda chat onay
 - ✅ Sorusuz akış sadece küçük adımlar arası geçerli; commit/push'ta askıya alınır
 
-**Sıradaki büyük iş seçenekleri (`docs/DEVAM-REHBERI.md` §Sıradaki tercih edilenler):**
-- **C** — 17 mockup brief'i sıralı (UI-MOCKUP-PLAN.md, her mockup ayrı tur)
-- **D** — NotificationBell client component (bulk Tümünü oku sonrası bell anlık 0 — Faz 5 smoke 6 bulgusu, 30-45dk)
-- **6. Mantık Hata Tarama** — yeni değişiklikler için (2-3 saat)
-- Sprint 13/14 production (şirket kuruluş bekliyor — ⛔ kullanıcı bloker)
+**Test:** 1649 pass (önceki 1643'ten +6 NotificationBell)
+**DB:** 24 migration, 2 yeni manuel apply (0023 + 0024 index'ler — auto-bootstrap journal'ında YOK, dosyalar audit için)
+**Bundle:** En büyük chunk **928K → 228K** (%75 azalma)
+
+**Sıradaki büyük iş seçenekleri (`docs/DEVAM-REHBERI.md` §SIRADAKI TERCİH EDİLENLER):**
+- **Production deploy gerçek metric ölçüm** (Lighthouse + artillery k6) — ⛔ Sprint 14 bloker (şirket kuruluş)
+- **Performance marjinal fix'ler** (Tur 7/8/15/16 — Drizzle prepare/query consolidation/relational/revalidateTag) — Yok bloker, ROI marjinal
+- **7. Mantık Hata Tarama** — yeni değişiklikler için (2-3 saat)
+- Sprint 13/14 production / Beta / Pricing pilot — ⛔ kullanıcı bloker
 
 ---
 

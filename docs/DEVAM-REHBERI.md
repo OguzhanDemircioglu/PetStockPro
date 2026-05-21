@@ -1,20 +1,62 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-21 gece (büyük tur tamamlandı, tüm değişiklikler `origin/cray61`'de)
+**Tarih:** 2026-05-22 gece (uzun tur tamamlandı, tüm değişiklikler `origin/cray61`'de)
 **Mevcut Branch:** `cray61` — push tamam, 0 commit beklemede
-**Son commit:** `1addbcc` fix(mockup): süperadmin "Normal panele dön" linki kaldırıldı
+**Son commit:** `424a520` docs(perf): audit plan sonuç bölümü — 9 tur uygulandı
 
 ---
 
 ## 🚀 YENİ SESSION'A GİRDİĞİNDE — İLK OKUMA
 
-> Tüm 2026-05-21 turları **bitti ve push edildi**. Bekleyen commit yok.
-> Sıradaki büyük iş CLAUDE.md "Sıradaki olası işler" listesinden ya da
-> aşağıdaki **"Sıradaki tercih edilenler"** bölümünden seçilir.
+> Uzun bir session bitti (**39 commit pushed**, `88dfa8b → 424a520`). 0 commit beklemede.
+
+**Bu session yapılanlar (özet — detay için Tur E→Z+ aşağıda):**
+
+1. **NotificationBell client + 6 test** (Tur D/E) — bulk Tümünü oku sonrası bell anlık 0 (useSyncExternalStore)
+2. **Bildirimler filtre sadeleştirme** (Tur F) — TYPE_GROUPS chip'leri kaldırıldı, "Hepsi + Okunmamış" yeterli
+3. **17 mockup brief sync — C iş kalemi** (Tur G→X) — UI-MOCKUP-PLAN.md §5.1-5.17 implementasyona göre yeniden listelendi
+4. **Vitrin UX dürüstlük taraması** (Tur Y/A) — 4 fix: "Yakınında" → "Türkiye'de" + ara lead şehir koşullu + popüler/best-seller rozet tooltip
+5. **Customer journey smoke + admin pages dürüstlük** (Tur Y/C + admin reports) — register şifre tekrar + fiyat aralığı + Reports kart başlık periyot
+6. **Süperadmin errors paneli canlı kontrol** (Tur Y/D) — sample 5 entry + filter + resolve toggle + PII strip ✓
+7. **🏆 Performance Deep Audit** (Tur Z + Tur 1-12) — **23 fix planı + 9 tur uygulama**:
+   - Vitrin CDN cache (revalidate + tracking client-side)
+   - React.cache() request-scoped (layout duplicate elim)
+   - postgres-js `prepare: true`
+   - Migration 0023 storefront_status partial index
+   - Migration 0024 products+brands pg_trgm GIN
+   - **🎉 Bundle 928K → 228K (%75)** optimizePackageImports
+   - Pano Suspense streaming (PanoExpiringSection)
+   - TanStack refetchOnWindowFocus: false
 
 **Memory durumu:**
-- ✅ `feedback_commit_push_approval.md` aktif — her commit öncesi onay + push HER ZAMAN ayrı tur
-- ✅ Sorusuz akış sadece küçük adımlar arası geçerli; commit/push'ta askıya alınır
+- ✅ `feedback_commit_push_approval.md` aktif (her commit öncesi onay + push ayrı tur)
+- ✅ `feedback_commit_push_auto_repetitive.md` (repetitive doc/brief turlarda pattern bir kez onay → auto)
+- ✅ Sorusuz akış sadece küçük adımlar arası geçerli
+
+**Test durumu:** 1649 pass · 0 lint · 0 typecheck (4 yeni unit test eklendi NotificationBell)
+
+---
+
+## 🎯 SIRADAKI TERCİH EDİLENLER (yeni session)
+
+| # | Konu | Süre | Bloker |
+|---|---|---|---|
+| 1 | **Production deploy gerçek metric ölçüm** (Lighthouse + artillery k6 1K concurrent) | 2-4 saat | ⛔ Sprint 14 deploy gerek (şirket kuruluş + Cloudflare account) |
+| 2 | **Performance marjinal fix'ler** (Tur 7/8/15/16 — Drizzle .prepare + query consolidation + relational query + revalidateTag) | 4-6 saat | Yok — ama ROI marjinal |
+| 3 | **Faz 2 performans** (marketing static group refactor, sitemap split, audit partition) | 3-4 saat | Yok — production'da gerek olunca |
+| 4 | **UI mockup HTML refresh** (preview/* legacy 6 dosya) | Çok uzun, her mockup ayrı tur | Yok — düşük ROI (brief sync zaten yapıldı) |
+| 5 | **7. Mantık Hata Tarama** (yeni değişiklikler için) | 2-3 saat | Yok |
+| 6 | **Sprint 13/14 production deploy** | — | ⛔ Kullanıcı bloker (şirket kuruluş 2-4 hafta) |
+| 7 | **Beta soft launch** | — | ⛔ Sprint 13/14 sonrası |
+| 8 | **Pricing pilot anketi** (30-50 pet shop) | 1-2 hafta | ⛔ Kullanıcı bloker (anket dağıt) |
+
+**Yeni session'a girdiğinde önerilen ilk komut:**
+```
+cd D:\Projeler\PetStockPro
+claude
+İlk komut: "DEVAM-REHBERI.md oku ve sıradaki tercih edilenlerden seç"
+# Unblocked en yüksek değer iş: #2 (perf marjinal) veya #5 (7. mantık tarama)
+```
 
 ---
 
