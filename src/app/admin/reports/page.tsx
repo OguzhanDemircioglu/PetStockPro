@@ -203,7 +203,7 @@ export default async function ReportsPage({
           )}
         </Card>
 
-        <Card className="lg:col-span-2" title="🏆 En çok satan">
+        <Card className="lg:col-span-2" title={`🏆 En çok satan (son ${days} gün)`}>
           {topVariants.length === 0 ? (
             <p className="rounded-lg bg-line-soft px-3 py-4 text-center text-xs text-ink-3">
               Satılan ürün yok.
@@ -303,7 +303,7 @@ export default async function ReportsPage({
           />
           <KPI title="Aktif kullanıcı" value={activityStats.uniqueUsers} emoji="👥" />
         </div>
-        <Card title="En çok kullanılan aksiyonlar" className="mt-4">
+        <Card title={`En çok kullanılan aksiyonlar (son ${days} gün)`} className="mt-4">
           {activityActions.length === 0 ? (
             <p className="rounded-lg bg-line-soft px-3 py-4 text-center text-xs text-ink-3">
               Bu dönemde audit kaydı yok.
