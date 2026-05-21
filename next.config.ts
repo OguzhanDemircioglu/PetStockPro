@@ -70,6 +70,19 @@ const nextConfig: NextConfig = {
   // Cloudflare Workers (OpenNext) için hazırlık — Sprint 14'te @opennextjs/cloudflare aktive edilecek
   typedRoutes: true,
 
+  // Tur 6 (P1-5): Tree-shake büyük paket import'ları — sadece kullanılan export'lar
+  // bundle'a dahil. 928K chunk küçültmek hedefli, modüler import barrel'ları optimize.
+  experimental: {
+    optimizePackageImports: [
+      'lucide-react',
+      'framer-motion',
+      '@tanstack/react-query',
+      '@tanstack/react-query-devtools',
+      'date-fns',
+      'recharts',
+    ],
+  },
+
   // Auto-bootstrap (PLAN-BETA-PERFORMANCE.md FAZ 1) — src/instrumentation.ts'i çalıştırır.
   // Next.js 16'da instrumentation hook stable (default-on); explicit dokümantasyon niyetiyle yazılır.
   // BOOTSTRAP_SKIP=1 ile devre dışı bırakılabilir (production CI/CD migration önceden çalıştırırsa).

@@ -17,11 +17,18 @@ if (!process.env.DATABASE_URL) {
  * NOT: LOCAL_DB_* env vars `.env`'de rezerve — production'a çıktıktan sonra
  * local Aiven/Postgres'e geçiş için. Şu an aktif değil.
  */
+/**
+ * Tur 3 (P0-3): `prepare: true` aktive — Postgres query plan cache,
+ * per-request planning 4-12ms → <1ms. Production'da Cloudflare Hyperdrive
+ * (Workers) prepared statements destekler. Local dev'de Supabase direct
+ * connection (PgBouncer session mode) prepare destekler. PgBouncer transaction
+ * mode için DATABASE_URL'e `?pgbouncer=true` query param eklenir.
+ */
 const queryClient = postgres(process.env.DATABASE_URL, {
   max: 10,
   idle_timeout: 20,
   connect_timeout: 10,
-  prepare: false,
+  prepare: true,
   connection: {
     search_path: 'petstockpro,public',
   },
