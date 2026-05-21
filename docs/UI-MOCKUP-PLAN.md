@@ -721,9 +721,30 @@ Sprint sırasına göre:
 
 ---
 
-### 5.17 vitrin-ana-petstockpro.html (YENİ — Faz 2)
+### 5.17 vitrin-ana-petstockpro.html (yenile)
 
-SaaS landing (`petstockpro.com/`) — pet shop sahibi geldiğinde gördüğü sayfa. Hero (FREE'den başla) + 3 değer önerisi + nasıl çalışır + müşteri kanıtı + fiyat tablosu (FREE/PRO) + son CTA. Standard SaaS landing pattern.
+**Kapsam:** SaaS landing (`petstockpro.com/`) — pet shop sahibi geldiğinde gördüğü sayfa · **Kod:** [`src/app/page.tsx`](../src/app/page.tsx) + [`src/app/fiyatlar/page.tsx`](../src/app/fiyatlar/page.tsx)
+
+> **2026-05-21 brief sync:** Sprint 0+ landing tamamlandı. Mockup `preview/vitrin-ana-petstockpro.html` **yok** — implementli, mockup'a gerek kalmadı.
+
+**Ana sayfa (`/`, [page.tsx](../src/app/page.tsx) — login değil/onboarded değil ise gösterilir):**
+- Hero section — başlık + FREE'den başla CTA + mascot
+- 3 değer önerisi (KPI özet — stok takip + vitrin + WhatsApp)
+- Nasıl çalışır section
+- Plan tablosu özet (FREE 50 / PRO 500 / PRO+ ∞) → /fiyatlar detay
+- Son CTA — kaydol
+
+**Fiyatlar sayfası (`/fiyatlar`, [page.tsx](../src/app/fiyatlar/page.tsx)):**
+- `plan-${key}` 3 plan kartı (FREE / PRO / PRO_PLUS):
+  - **FREE: 0 ₺/ay** — 50 ürün
+  - **PRO: 1.000 ₺/ay (KDV dahil)** — 500 ürün (2026-05-21 son revize)
+  - **PRO+: 2.000 ₺/ay (KDV dahil)** — Sınırsız ürün (2026-05-21 son revize)
+  - Tek farklılaşma stok limiti — diğer tüm özellikler her planda açık (vitrin / çoklu şube / audit / 2FA / asistan / raporlar / Nilvera e-Arşiv)
+- SSS section + iyzico + Nilvera açıklama
+
+**Auth + onboarded user için:** `/` ana sayfa kontrol → `/admin` redirect (auth.ts gate).
+
+**Bağımlılık:** TASARIM-SISTEMI · `planLimitDisplay` constant · iyzico billing flow (Sprint 13 sonrası aktif) · /mesafeli-satis-sozlesmesi + /kvkk-aydinlatma-metni linkleri
 
 ---
 

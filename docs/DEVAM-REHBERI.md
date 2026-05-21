@@ -100,18 +100,19 @@
 
 | # | Konu | Süre | Bloker |
 |---|---|---|---|
-| 1 | **C — 17 mockup brief'i sıralı** (UI-MOCKUP-PLAN.md) | Çok uzun, her mockup ayrı tur | Yok |
+| ~~1~~ | ~~C — 17 mockup brief'i sıralı (UI-MOCKUP-PLAN.md)~~ ✅ **2026-05-21 gece — TAMAMLANDI** (17/17 brief, Tur G→X) | — | — |
 | ~~2~~ | ~~D — Smoke bulgusu: NotificationBell client component~~ ✅ **2026-05-21 gece — TAMAMLANDI** | — | — |
-| 2 | **6. Mantık Hata Tarama** (yeni değişiklikler için) | 2-3 saat | Yok |
-| 3 | **Sprint 13/14 production deploy** | Şirket kuruluş bekliyor (2-4 hafta) | ⛔ Kullanıcı |
-| 4 | **Beta soft launch (CLAUDE.md "Sıradaki olası işler" #1)** | Sprint 13/14 sonrası | ⛔ Kullanıcı bloker |
-| 5 | **Pricing pilot anketi** (30-50 pet shop) | 1-2 hafta | ⛔ Kullanıcı bloker (anket dağıt) |
+| 1 | **6. Mantık Hata Tarama** (yeni değişiklikler için) | 2-3 saat | Yok |
+| 2 | **Sprint 13/14 production deploy** | Şirket kuruluş bekliyor (2-4 hafta) | ⛔ Kullanıcı |
+| 3 | **Beta soft launch (CLAUDE.md "Sıradaki olası işler" #1)** | Sprint 13/14 sonrası | ⛔ Kullanıcı bloker |
+| 4 | **Pricing pilot anketi** (30-50 pet shop) | 1-2 hafta | ⛔ Kullanıcı bloker (anket dağıt) |
 
 **Yeni session'a girdiğinde ilk komut (önerilen):**
 ```
 cd D:\Projeler\PetStockPro
 claude
 İlk komut: "DEVAM-REHBERI.md oku ve sıradaki tercih edilenlerden seç"
+# Tek unblocked iş: 6. Mantık Hata Tarama (2-3 saat)
 ```
 
 ---
@@ -378,6 +379,41 @@ Para akışı çizgisi vurgusu: WhatsApp deep link sadece, "Vitrin referans kodu
 - Şube seçici dropdown (multi-branch) + Çalışma saatleri 7 gün tablo Faz 2'ye saklı
 
 **Sıradaki C iş kalemi:** §5.17 vitrin-ana-petstockpro brief sync (son mockup).
+
+---
+
+### 🆕 Tur X: C iş kalemi #17 — vitrin-ana-petstockpro brief sync (2026-05-21 gece — SON)
+
+**Değişiklik:** [docs/UI-MOCKUP-PLAN.md §5.17](UI-MOCKUP-PLAN.md) — SaaS landing brief'i Sprint 0+ implementasyonuna göre yeniden listelendi:
+- `/` (page.tsx) — Hero + FREE'den başla CTA + 3 değer önerisi + Nasıl çalışır + plan tablosu özet + son CTA
+- `/fiyatlar` (page.tsx) — `plan-${key}` 3 plan kartı (FREE 0₺ / PRO 1.000₺ / PRO+ 2.000₺ KDV dahil, 2026-05-21 son revize) + SSS + iyzico/Nilvera açıklama
+- Auth + onboarded user için `/` → `/admin` redirect gate
+
+Mockup preview/vitrin-ana-petstockpro.html yok (implementli, gerek kalmadı).
+
+---
+
+## ✅ C İŞ KALEMİ TAMAMLANDI (17/17 brief sync)
+
+**Toplam tur:** G + H + I + J + K + L + M + N + O + P + R + S + T + U + V + W + X = 17 brief sync
+**Toplam commit:** 17 docs(ui-mockup-plan) commit (her biri ayrı push)
+**Yaklaşım kararı:** Mockup HTML rewrite değil, brief'leri implementasyona göre güncelle (kod canonical, mockup tasarım referansı). Mockup'lar Faz 2'ye saklı.
+**Faz 2'ye saklı UI özellikleri (mockup'larda not edildi):**
+- Bulk vitrine aç/çıkar (urunler)
+- Lat/lng harita pin (subeler)
+- softLock UI (sayim)
+- R6 Toplu Sipariş Hazırla (dusuk-stok)
+- Tedarikçi detay drawer (tedarikciler)
+- Plan + Fatura + Yerelleştirme (ayarlar — Sprint 13 sonrası)
+- Drilldown detay sayfa (raporlar — tek sayfa multi-section yeterli)
+- Sıralama mesafe/fiyat + harita arama (vitrin-arama)
+- "Neden bu sırada" algoritma modal (vitrin-urun)
+- Şube seçici dropdown + Çalışma saatleri 7 gün tablo (vitrin-magaza)
+
+**Sıradaki DEVAM-REHBERI tercih edilenler:**
+- ~~C — 17 mockup brief sıralı~~ ✅ **2026-05-21 gece — TAMAMLANDI**
+- **6. Mantık Hata Tarama** (2-3 saat) — sıradaki
+- Sprint 13/14 production deploy / Beta soft launch / Pricing pilot — ⛔ Kullanıcı bloker
 
 ---
 
