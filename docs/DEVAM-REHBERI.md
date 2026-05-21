@@ -444,6 +444,37 @@ Mockup preview/vitrin-ana-petstockpro.html yok (implementli, gerek kalmadı).
 
 ---
 
+### 🆕 Tur Y: A+B+C+D UX dürüstlük + journey + errors paneli (2026-05-21 gece)
+
+**A — Vitrin UX dürüstlük taraması 6 sayfa** (commit `5f4ce60`):
+- `/vitrin` hero floating card "📍 YAKIN" → "Türkiye'de"
+- `/vitrin/ara` lead konum koşullu ("{name} şehrindeki..." / "pet shop'tan...")
+- Popüler kart rozet "🔥 460" → "🔥 460 görüntüleme" + title "Son 7 günde 460 kez görüntülendi"
+- Çok satan rozet "🏆 85 adet" → "🏆 85 satıldı" + title "Son 30 günde 85 adet satıldı"
+- Diğer 5 sayfa temiz (urun zaten "Stok bilgisi sayım anına göre" disclaimer'lı)
+
+**B — Şeffaflık** (commit yok): A'da rozet tooltip'leri eklendi + Pano PetPro 4 öneri kartı zaten "neden bu öneri" alt-metnine sahip (transfer/indirim/SKT/sipariş) + vitrin popüler/best-seller kart başlıkları zaten alt-metinli. Ek değişiklik gerek yok.
+
+**C — Customer journey end-to-end smoke** (commit `ff332aa`):
+- Register UI sanity check → 2 bulgu fix:
+  - C-2 şifre tekrar input eklendi (passwordConfirm, action eşleşme kontrolü)
+  - C-3 ürün detay tek satıcıda "fiyat aralığı" → "fiyat" (lowest === highest)
+- Test hesabıyla journey: /vitrin/magaza/sprint-3-products-test → ürün detay → WA deep link → feedback balloon (5 sn gecikmeyle açıldı, 5 emoji + close + KVKK disclaimer) → feedback-good click → POST /api/vitrin/feedback → DB row (rating=good, ip_hash 64 hane SHA-256, status=submitted) ✓
+- C-1 (Turnstile widget yokluğu) bulgu DEĞİL — disclaimer "Sprint 2.3'te aktif olacak" doğru
+
+**D — Süperadmin errors sayfası canlı kontrol** (commit yok — bulgu yok):
+- Empty state ✓ ("🎉 Bu kriterlere uyan hata yok")
+- 5 sample DB insert sonrası dolu state: stats (5/5/2 unresolved/critical) + top-types (db.timeout ×2, iyzico/r2/brevo ×1) + 6 filter chip + 5 satır liste
+- Critical filter → 2 satır ✓
+- Resolve toggle UI → DB update (resolved=true + resolved_at + resolved_by_id) ✓
+- PII strip ✓ ("host: REDACTED", "received_signature: REDACTED", "key: REDACTED")
+- Threshold burst cron (`55 3 * * *`, 5+/saat → Telegram critical 6h dedup) — manuel trigger değer/maliyet düşük, prod nightly'de doğal test
+- Sample veri temizlendi
+
+**Net Tur Y bilanço:** 2 commit (A + C). B + D bulgu yok. UI dürüstlük + errors paneli production'a hazır.
+
+---
+
 ### 🆕 Geçmiş tur (2026-05-21 öğleden sonra) — referans
 
 | Commit | Konu |
