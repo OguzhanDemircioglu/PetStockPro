@@ -1,51 +1,65 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-21 sonu (**PLAN-BETA-PERFORMANCE ONAYLI** — implementasyon yeni session'da)
-**Mevcut Branch:** `cray61` — origin ile sync (son push `73c8bad`)
-**Son commit:** `73c8bad` docs(claude): PLAN-BETA-PERFORMANCE.md yeni session başlangıç dosyası
+**Tarih:** 2026-05-21 akşamı (**PLAN-BETA-PERFORMANCE 6/6 FAZ TAMAMLANDI**)
+**Mevcut Branch:** `cray61` — push beklemede (6 yeni commit local'de)
+**Son commit:** `1ad313b` feat(optimistic): 5 kritik CRUD optimistic UI (Faz 5)
 
 ---
 
-## 🆕 2026-05-21 sonu — PLAN-BETA-PERFORMANCE onaylı, implementasyon bekliyor
+## 🎉 2026-05-21 akşamı — PLAN-BETA-PERFORMANCE TAMAMLANDI
 
-**Otoritatif:** `docs/PLAN-BETA-PERFORMANCE.md` (yeni session başlangıç dosyası)
+**Otoritatif:** `docs/PLAN-BETA-PERFORMANCE.md` (durumu: 6/6 faz ✅)
 
-**Hedef:** Beta soft launch öncesi 5 ana altyapı eksiği kapatılır:
+### Commit zinciri (6 ana faz)
 
-| Faz | İçerik | Süre |
-|---|---|---|
-| 1 | Auto-bootstrap (`instrumentation.ts` + seed checker) | 1.5 saat |
-| 2.A | Log retention cron (`/api/cron/cleanup-old-logs` + Workers 04:00) | 1.5 saat |
-| 2.B | Error tracking + Telegram alert (Sentry'siz, `system_errors` + threshold burst) | 1.5 saat |
-| 3 | PetSpinner UI (3 variant + a11y + 🐾 paw SVG) | 1 saat |
-| 4 | TanStack Query Provider (devtools + key factory) | 1 saat |
-| 5 | 5 CRUD optimistic (stok / sayım / vitrin / ürün edit / bildirim) | 3-4 saat |
-| 6 | Test + smoke + doc + push | 1 saat |
-| **Toplam** | | **10-12 saat** |
+| Commit | Faz | İçerik | Süre |
+|---|---|---|---|
+| `dee4c09` | 1 | Auto-bootstrap (`instrumentation.ts` + 2 seed helper + run.ts orchestrator) | ~1.5h |
+| `7f9de60` | 2.A | Log retention (6 tablo TTL cron + Wrangler `0 4 * * *` + süperadmin kart + Telegram özet) | ~1.5h |
+| `52145f6` | 2.B | Error tracking (system_errors tablo + Migration 0022 + trackError PII strip + threshold burst + /admin/superadmin/errors sayfa + cron `55 3 * * *`) | ~2h |
+| `3cbd447` | 3 | PetSpinner (3 boyut + paw SVG + animate-paw-pulse + a11y + prefers-reduced-motion + 2 mevcut migrate) | ~1h |
+| `d840b0a` | 4 | TanStack Query Provider + 5 key factory + Devtools dev-only | ~1h |
+| `1ad313b` | 5 | 5 kritik CRUD optimistic (3 tam: bildirim oku 50ms flip / vitrin Aç-Kapat / bulk Tümünü oku; 2 PetSpinner pending: 4 stok-movements drawer + sayım workflow) | ~3h |
 
-**Önemli kararlar (plan'da otoritatif):**
-- **Sentry KULLANILMAYACAK** — in-app `system_errors` + Telegram alert pattern ($0 maliyet, KVKK temiz, Frankfurt veri)
-- **TanStack Query** zaten kurulu (5.62), Provider + 5 kritik mutation'la aktive
-- **PWA / Realtime / Storybook / Lottie / i18n EN / SSR streaming** lansman sonrasına ertelendi (tek geliştirici kuralı + bilinçli kapsam)
-- **Concurrent edit problem değil** — POS-tarzı tek kasa; `refetchOnWindowFocus` (TanStack Query default) yeter, 5 dk poll YOK
+**Test:** 1567 → **1643 pass** (+76 yeni). Typecheck + lint 0 error.
+
+**Performans bilançosu:**
+- Bildirim okuma: 200-500ms full reload → **~50ms optimistic flip** (browser smoke kanıtlı)
+- Vitrin Aç/Kapat: useTransition + revalidate → **anında badge flip** + rollback
+- Stok hareketi: text pending → **PetSpinner inline + tone color**
+- Sayım Kaydet: "..." → **PetSpinner sm inline** (per-row + tamamla + iptal)
+- Hata izleme: prod kör → **system_errors + Telegram critical burst** alert
+- Disk doluluk: sınırsız → **6 tablo TTL cron + audit guard regression test**
+- Boot süresi: manuel migrate → **auto-bootstrap 885ms** (idempotent seed)
+
+**DB değişiklikleri:**
+- Migration 0022 `system_errors` tablo + `system_error_severity` enum (bootstrap migrator otomatik apply ✅)
+- Drizzle history senkron (21. + 22. satır INSERT — kullanıcı A seçti / otomatik flow)
+
+**Plan'dan bilinçli sapmalar:**
+- **5.4 ürün edit** optimistic FAZ 2'ye saklandı — mevcut redirect+revalidate UX yeterli, büyük refactor değer/maliyet düşük (tek geliştirici sade-tut)
+- **5.1 stok hareketi** tam optimistic ledger prepend YOK — movements-table client refactor maliyetli; PetSpinner pending + 800ms close + revalidate yeterli
 
 **Yeni session'a girdiğinde ilk komut:**
 ```
-PLAN-BETA-PERFORMANCE.md oku ve Faz 1'e başla
+git push origin cray61  # bekleyen 6 commit'i remote'a push et
+# sonra:
+docs/DEVAM-REHBERI.md oku
 ```
 
-### 🆕 Bu Turun Ek Rotuş Commit'leri (2026-05-21 öğleden sonra)
+---
+
+### 🆕 Geçmiş tur (2026-05-21 öğleden sonra) — referans
 
 | Commit | Konu |
 |---|---|
-| `378b603` | feat(storefront): SEO açıklaması alanına helperText (Field component genişletildi) |
-| `a849d54` | chore(ui): Vitrin Profili Hesap grubuna + Title Case düzeltme (Düşük Stok / Audit Log / Vitrin Profili / Vitrin Moderasyon / Sistem Ayarları / Genel Bakış) |
-| `a3bf9b8` | fix(lint): import-execute.test.ts prefer-rest-params + /admin/bayi sil (BAYI_ADMIN iptal, Observer aldı) |
-| `b57b36c` | feat(sitemap): süperadmin durum kartı + Telegram fail/stale alert (8 stat + 2 banner + 2 alert builder + 14 test) |
-| `9902912` | docs(plan): PLAN-BETA-PERFORMANCE.md (onaylı 6 fazlı plan, 651 satır) |
+| `378b603` | feat(storefront): SEO açıklaması alanına helperText |
+| `a849d54` | chore(ui): Title Case düzeltme |
+| `a3bf9b8` | fix(lint): import-execute.test.ts prefer-rest-params + /admin/bayi sil |
+| `b57b36c` | feat(sitemap): süperadmin durum kartı + Telegram alert |
+| `9902912` | docs(plan): PLAN-BETA-PERFORMANCE.md (onaylı 6 fazlı plan) |
 | `73c8bad` | docs(claude): yeni session başlangıç dosyası işaret |
-
-**Test:** 1567 pass / typecheck 0 / lint 0 error / origin ile sync.
+| `ef45949` | docs: PLAN-BETA-PERFORMANCE referansları 4 ana dokümana |
 
 ---
 

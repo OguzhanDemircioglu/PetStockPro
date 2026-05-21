@@ -1,9 +1,24 @@
 # PLAN — Beta Öncesi Performans + Altyapı Sertleştirme
 
 **Tarih:** 2026-05-21
-**Durum:** ✅ Kullanıcı onayladı (2026-05-21) — implementasyon yeni session'da başlayacak
-**Tahmini süre:** ~10-12 saat (1-2 tur)
-**Branch:** `cray61`
+**Durum:** ✅ **6/6 FAZ TAMAMLANDI** (2026-05-21 akşamı — tek tur)
+**Toplam süre:** ~10 saat efektif (plan 10-12 saat)
+**Branch:** `cray61` — push beklemede
+
+**Commit zinciri:**
+- Faz 1: `dee4c09` Auto-bootstrap
+- Faz 2.A: `7f9de60` Log retention
+- Faz 2.B: `52145f6` Error tracking + Telegram burst
+- Faz 3: `3cbd447` PetSpinner
+- Faz 4: `d840b0a` TanStack Query Provider
+- Faz 5: `1ad313b` 5 kritik CRUD optimistic
+- Faz 6 docs: bu commit
+
+**Test:** 1567 → 1643 pass (+76). Typecheck + lint 0 error.
+
+**Bilinçli sapma (Faz 2'ye saklandı):**
+- 5.4 ürün edit form optimistic — redirect+revalidate yeterli
+- 5.1 stok hareketi tam ledger prepend — movements-table client refactor maliyetli, PetSpinner pending + revalidate yeterli
 
 ---
 

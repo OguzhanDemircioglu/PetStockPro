@@ -474,9 +474,13 @@ export async function verifyTurnstile(token: string, ip: string): Promise<boolea
 
 ### 3.14 State Management
 - **TanStack Query 5.62** — server state (data fetching, cache, mutation)
-  - **Durum:** Kurulu ama Provider henüz aktive edilmedi. Mevcut SSR + `revalidatePath` pattern'i çalışıyor.
-  - **Aktivasyon:** `PLAN-BETA-PERFORMANCE.md` Faz 4-5 ile beta lansman öncesi tamamlanır.
-  - **Hibrit model:** Server Component'te `initialData` SSR + Client Component'te `useQuery({ initialData })` + `useMutation` ile optimistic update.
+  - **Durum:** ✅ **Aktif (2026-05-21, PLAN-BETA-PERFORMANCE Faz 4 + 5)**.
+  - **Provider:** `src/app/providers.tsx` (client) → `src/app/layout.tsx`'a sarmal (Theme dış, Query iç).
+  - **Default options:** `staleTime: 30s` + `refetchOnWindowFocus: true` + `retry: queries=1, mutations=0`.
+  - **Devtools:** Sadece dev mode (`NODE_ENV !== 'production'`), bottom-left köşe.
+  - **Key factory:** `src/lib/queries/keys.ts` — `productKeys` / `stockMovementKeys` / `stocktakeKeys` / `notificationKeys` / `storefrontKeys` (hierarchical invalidate).
+  - **Optimistic CRUD:** Faz 5 ile 3 tam optimistic (bildirim oku 50ms flip + bell -1, vitrin Aç/Kapat badge flip + revert, bulk Tümünü oku 0 anında) + 2 PetSpinner pending (stok hareketi 4 drawer + sayım workflow).
+  - **Hibrit model:** Server Component'te `initialData` SSR + Client Component'te `useState`+`useMutation` ile optimistic update + `revalidatePath` server-side cache refresh ile flicker'sız reconcile.
   - **Polling YOK** — `refetchOnWindowFocus: true` (default) yeter (POS-tarzı tek kasa, concurrent edit problem değil).
 - **Zustand 5.0** — client UI state (sidebar collapse, modal, drawer, theme)
   - **Durum:** Kurulu ama henüz minimal kullanım. UI state için yeterli.
