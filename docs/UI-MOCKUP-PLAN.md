@@ -691,20 +691,33 @@ Sprint sırasına göre:
 
 ---
 
-### 5.16 vitrin-magaza.html (YENİ — Sprint 12 için)
+### 5.16 vitrin-magaza.html (yenile)
 
-**Doküman:** `EKRAN-PUBLIC-VITRIN.md §8`
-**Bileşenler:**
-- Kapak fotoğrafı + logo + isim
-- Bilgi bandı (adres + saatler + WhatsApp)
-- **Şube seçici dropdown** (multi-branch için)
-- Harita (Leaflet, şube pin)
-- Hakkımızda
-- Bu pet shop'ta arama + filtre
-- Ürün grid (sadece bu pet shop'un vitrin'e açtığı ürünler)
-- Çalışma saatleri 7 gün tablo
-- İletişim
-- Bildiri butonu
+**Doküman:** `EKRAN-PUBLIC-VITRIN.md §8` · **Kod:** [`src/app/vitrin/magaza/[slug]/page.tsx`](../src/app/vitrin/magaza/[slug]/page.tsx) + feedback-balloon.tsx + whatsapp-link-script.tsx + [slug]/urun/
+
+> **2026-05-21 brief sync:** Sprint 12 + Faz 8 (branch holiday banner) tamamlandı. Mockup `preview/vitrin-magaza.html` **yok** — Faz 2'ye saklı.
+
+**Pet shop profili (`/vitrin/magaza/[slug]`):**
+- SEO — `ld-local-business` (LocalBusiness JSON-LD schema.org) + `ld-breadcrumb`
+- `back-link` — geri navigation
+- `storefront-holiday-banner` — tüm aktif şubeler tatildeyse "🌴 Tatildeyiz, dönüş tarihi: ..." banner (Faz 8)
+- `storefront-hero` — kapak fotoğrafı + logo + `data-storefront-name` başlık + `storefront-holiday-badge` (kısmi tatil) + `hero-whatsapp` ana WhatsApp link
+- `storefront-about` — Hakkımızda metni
+- `contact-grid` — 3-kolon (adres + saatler + WhatsApp/telefon)
+- `products-section`:
+  - `brand-groups` — marka bazında grupla
+  - `brand-anchor-nav` — marka chip'leri (sayfa içi anchor scroll)
+  - Ürün grid (sadece bu pet shop'un vitrin'e açtığı ürünler)
+- `storefront-report-section` — `report-button` 🚩 (vitrin_reports tablo)
+- `feedback-balloon.tsx` — WhatsApp tıklama sonrası sağ alt sticky 5 emoji feedback balonu (Sprint 12.10 + 2026-05-15 onay):
+  - 😊/🙂/😐/😕/😞 tek-tık submit (submit buton YOK)
+  - Anti-spam: 1 IP × 1 tenant × 24h
+  - Closed manually + dismissed bile değerli sinyal (counter felsefesi)
+- `whatsapp-link-script.tsx` — WA click track + feedback balloon trigger
+- Şube seçici dropdown (multi-branch) — Faz 2'ye saklı (şu an ana adres yeterli)
+- Çalışma saatleri 7 gün tablo — `contact-grid`'de özet, detay Faz 2
+
+**Bağımlılık:** TASARIM-SISTEMI · `getStorefrontProfile` + `getStorefrontProducts` helper · vitrin_whatsapp_feedback tablo (1y retention) · vitrin_events whatsapp_click + balloon_event log · branch_status (Faz 8 holiday banner)
 
 ---
 

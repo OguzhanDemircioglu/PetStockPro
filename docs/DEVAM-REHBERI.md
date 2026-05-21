@@ -365,6 +365,22 @@ Para akışı çizgisi vurgusu: WhatsApp deep link sadece, "Vitrin referans kodu
 
 ---
 
+### 🆕 Tur W: C iş kalemi #16 — vitrin-magaza brief sync (2026-05-21 gece)
+
+**Değişiklik:** [docs/UI-MOCKUP-PLAN.md §5.16](UI-MOCKUP-PLAN.md) — vitrin-magaza brief'i Sprint 12 + Faz 8 (branch holiday banner) implementasyonuna göre yeniden listelendi:
+- SEO ld-local-business + ld-breadcrumb (schema.org JSON-LD)
+- storefront-holiday-banner (Faz 8 tüm aktif şubeler tatil)
+- storefront-hero — kapak + logo + storefront-name + storefront-holiday-badge (kısmi tatil) + hero-whatsapp
+- storefront-about + contact-grid 3-kolon
+- products-section — brand-groups + brand-anchor-nav (marka chip + anchor scroll) + ürün grid
+- feedback-balloon.tsx — WA tıklama sonrası 5 emoji sticky balon (Sprint 12.10 + 2026-05-15 onay, 1 IP × 1 tenant × 24h anti-spam)
+- whatsapp-link-script.tsx — WA click track + balloon trigger
+- Şube seçici dropdown (multi-branch) + Çalışma saatleri 7 gün tablo Faz 2'ye saklı
+
+**Sıradaki C iş kalemi:** §5.17 vitrin-ana-petstockpro brief sync (son mockup).
+
+---
+
 ### 🆕 Geçmiş tur (2026-05-21 öğleden sonra) — referans
 
 | Commit | Konu |
