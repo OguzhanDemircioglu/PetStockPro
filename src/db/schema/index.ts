@@ -1089,8 +1089,56 @@ export const userPermissions = petstockproSchema.table('user_permissions', {
 ]);
 
 // ═══════════════════════════════════════════════════════════════
+// TABLES — FAZ 2.B (Error tracking, PLAN-BETA-PERFORMANCE 2026-05-21)
+// ═══════════════════════════════════════════════════════════════
+
+export const systemErrorSeverityEnum = petstockproSchema.enum('system_error_severity', [
+  'info',
+  'warning',
+  'error',
+  'critical',
+]);
+
+/**
+ * SYSTEM_ERRORS — Sentry replacement (in-app error tracking).
+ *
+ * Server action / API route catch'lerinden trackError() ile beslenir.
+ * 90 gün retention (FAZ 2.A cleanup-old-logs cron).
+ * RLS: backend service-role bypass, anon REST default-deny. Süperadmin'e
+ * /admin/superadmin/errors sayfasından sunulur.
+ *
+ * Burst alert: aynı errorType 60 dk içinde 5+ kez → Telegram critical alert
+ * (6 saat dedup, Faz 2.B threshold-check cron).
+ */
+export const systemErrors = petstockproSchema.table('system_errors', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  errorType: varchar('error_type', { length: 80 }).notNull(),
+  message: text('message').notNull(),
+  stack: text('stack'),
+  severity: systemErrorSeverityEnum('severity').notNull().default('error'),
+  context: jsonb('context'),
+
+  companyId: uuid('company_id').references(() => companies.id, { onDelete: 'set null' }),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  route: varchar('route', { length: 200 }),
+  action: varchar('action', { length: 80 }),
+
+  resolved: boolean('resolved').notNull().default(false),
+  resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+  resolvedById: uuid('resolved_by_id').references(() => users.id, { onDelete: 'set null' }),
+  alertSentAt: timestamp('alert_sent_at', { withTimezone: true }),
+
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('idx_system_errors_created_at').on(t.createdAt.desc()),
+  index('idx_system_errors_type_time').on(t.errorType, t.createdAt.desc()),
+  index('idx_system_errors_severity_resolved').on(t.severity, t.resolved, t.createdAt.desc()),
+  index('idx_system_errors_company').on(t.companyId, t.createdAt.desc()),
+]);
+
+// ═══════════════════════════════════════════════════════════════
 // TODO Sprint 1B.3+ (sırayla eklenecek)
 // ═══════════════════════════════════════════════════════════════
 // telegram_bindings (Faz 2 binding flow), system_settings, system_broadcasts,
-// system_errors, bayi_admin_relations (Faz 3), storefront_messages, ...
+// bayi_admin_relations (Faz 3), storefront_messages, ...
 // storefront_settings image alanları (hero/about/og) — Faz 2 (service-role key)

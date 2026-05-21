@@ -68,6 +68,8 @@ NEXT_PUBLIC_SITE_URL = "https://petstockpro.com"
 [triggers]
 crons = [
   "0 3 * * *",  # sitemap pre-build (R2'ya XML yaz) — 06:00 TR (03:00 UTC)
+  "55 3 * * *", # error burst threshold check — 06:55 TR (03:55 UTC) — Faz 2.B
+  "0 4 * * *",  # log retention cleanup — 07:00 TR (04:00 UTC) — Faz 2.A
   "0 6 * * *",  # günlük vitrin şikayet özeti — 09:00 TR (06:00 UTC)
 ]
 

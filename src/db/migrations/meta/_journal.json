@@ -148,6 +148,13 @@
       "when": 1779260000000,
       "tag": "0021_observer_branch_status_permissions",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1779270000000,
+      "tag": "0022_system_errors",
+      "breakpoints": true
     }
   ]
 }

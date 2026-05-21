@@ -14,6 +14,7 @@ import {
   getSitemapStatus,
   SITEMAP_STALE_THRESHOLD_HOURS,
 } from '@/lib/vitrin/sitemap-status';
+import { getRetentionStats } from '@/lib/cleanup/retention';
 
 interface EnvCheck {
   key: string;
@@ -55,10 +56,11 @@ async function getTableCount() {
 export default async function SystemSettingsPage() {
   await requireSuperadmin();
 
-  const [extensions, tableCount, sitemapStatus] = await Promise.all([
+  const [extensions, tableCount, sitemapStatus, retentionStats] = await Promise.all([
     getDbExtensions(),
     getTableCount(),
     getSitemapStatus(),
+    getRetentionStats(db),
   ]);
 
   const envChecks: EnvCheck[] = [
@@ -351,6 +353,51 @@ export default async function SystemSettingsPage() {
             switch aktive olur (Faz 2).
           </p>
         </div>
+      </section>
+
+      <section data-testid="log-retention">
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
+          🧹 Log retention (Faz 2.A)
+        </h2>
+        <div className="overflow-x-auto rounded-2xl border border-line bg-paper">
+          <table className="w-full border-collapse text-[13px]">
+            <thead>
+              <tr>
+                <th className="border-b-2 border-line bg-paper px-3 py-2 text-left font-bold text-cart">Tablo</th>
+                <th className="border-b-2 border-line bg-paper px-3 py-2 text-left font-bold text-cart">TTL</th>
+                <th className="border-b-2 border-line bg-paper px-3 py-2 text-left font-bold text-cart">Açıklama</th>
+                <th className="border-b-2 border-line bg-paper px-3 py-2 text-right font-bold text-cart">Satır</th>
+                <th className="border-b-2 border-line bg-paper px-3 py-2 text-left font-bold text-cart">En eski</th>
+                <th className="border-b-2 border-line bg-paper px-3 py-2 text-left font-bold text-cart">Durum</th>
+              </tr>
+            </thead>
+            <tbody>
+              {retentionStats.map((r) => (
+                <tr key={r.table} className="border-b border-line-soft">
+                  <td className="px-3 py-2 font-mono text-[12.5px] text-cart">{r.table}</td>
+                  <td className="px-3 py-2 text-ink-2">{r.ageDays} gün</td>
+                  <td className="px-3 py-2 text-ink-3">{r.description}</td>
+                  <td className="px-3 py-2 text-right font-bold text-ink">
+                    {r.rowCount.toLocaleString('tr-TR')}
+                  </td>
+                  <td className="px-3 py-2 text-ink-4 text-[12px]">
+                    {r.oldestCreatedAt
+                      ? new Date(r.oldestCreatedAt).toLocaleDateString('tr-TR')
+                      : '—'}
+                  </td>
+                  <td className={`px-3 py-2 font-bold ${r.hasExpired ? 'text-cat' : 'text-arrow-7'}`}>
+                    {r.hasExpired ? '⏳ Beklemede' : '✓ Temiz'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-3 rounded-lg border border-arrow/30 bg-arrow-soft px-3 py-2 text-[12px] text-ink-2">
+          🛡 <strong>audit_logs / invoices / subscriptions</strong> ASLA silinmez —
+          KVKK 5 yıl + vergi 10 yıl saklama (regression test guard eder).
+          Cron 04:00 UTC (07:00 TR) günlük çalışır, Telegram özet alert gönderir.
+        </p>
       </section>
 
       <p className="text-center text-[12.5px] text-ink-4">

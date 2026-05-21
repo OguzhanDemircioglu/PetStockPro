@@ -379,3 +379,65 @@ export function buildSitemapCacheStaleAlert(
     severity: 'warning',
   };
 }
+
+// ─────────────────────────────────────────────────────────────────
+// PLAN-BETA-PERFORMANCE FAZ 2.A — Retention cleanup özetleri
+// ─────────────────────────────────────────────────────────────────
+
+export interface RetentionCleanupSummaryInput {
+  triggeredAt: string;
+  totalDeleted: number;
+  totalDurationMs: number;
+  rules: Array<{
+    table: string;
+    ageDays: number;
+    deletedCount: number;
+    error?: string;
+  }>;
+  panelUrl?: string;
+}
+
+/**
+ * Daily cleanup özet: 10K+ silinen → info, hata içeriyorsa → critical.
+ * Boş tur (totalDeleted=0) sessiz bildirim (disableNotification=true).
+ */
+export function buildRetentionCleanupSummary(
+  input: RetentionCleanupSummaryInput,
+): TelegramSendRequest {
+  const hasErrors = input.rules.some((r) => r.error);
+  const severity = hasErrors ? 'critical' : input.totalDeleted > 0 ? 'info' : 'info';
+  const headline = hasErrors
+    ? '🚨 <b>Log retention cleanup — HATA</b>'
+    : input.totalDeleted >= 10_000
+      ? '🧹 <b>Log retention cleanup — büyük temizlik</b>'
+      : '🧹 <b>Log retention cleanup</b>';
+
+  const lines: string[] = [
+    headline,
+    '',
+    `<b>Zaman:</b> <code>${input.triggeredAt}</code>`,
+    `<b>Toplam silinen:</b> ${input.totalDeleted.toLocaleString('tr-TR')} satır`,
+    `<b>Süre:</b> ${Math.round(input.totalDurationMs)}ms`,
+    '',
+  ];
+
+  for (const r of input.rules) {
+    const label = r.error
+      ? `❌ <code>${r.table}</code> (${r.ageDays}g) — HATA: ${r.error.slice(0, 80).replace(/[<>]/g, '')}`
+      : r.deletedCount > 0
+        ? `✓ <code>${r.table}</code> (${r.ageDays}g) — ${r.deletedCount.toLocaleString('tr-TR')}`
+        : `· <code>${r.table}</code> (${r.ageDays}g) — temiz`;
+    lines.push(label);
+  }
+
+  if (input.panelUrl) {
+    lines.push('', `<a href="${input.panelUrl}">Süperadmin panelinde gör →</a>`);
+  }
+
+  return {
+    text: lines.join('\n'),
+    parseMode: 'HTML',
+    severity,
+    disableNotification: severity === 'info' && input.totalDeleted < 10_000,
+  };
+}

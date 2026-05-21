@@ -6,6 +6,7 @@ import {
   buildTwoFactorDisabledAlert,
   buildSitemapRebuildFailedAlert,
   buildSitemapCacheStaleAlert,
+  buildRetentionCleanupSummary,
 } from './messages';
 
 describe('buildAccountLockedAlert', () => {
@@ -291,5 +292,61 @@ describe('buildSitemapCacheStaleAlert', () => {
     expect(req.text).toContain('29 saat'); // round
     expect(req.text).toContain('2026-05-19T23:00:00Z');
     expect(req.text).toContain('https://x.com/admin');
+  });
+});
+
+describe('buildRetentionCleanupSummary', () => {
+  it('happy path — info severity + tablo özet satırları', () => {
+    const req = buildRetentionCleanupSummary({
+      triggeredAt: '2026-05-21T04:00:00Z',
+      totalDeleted: 137,
+      totalDurationMs: 850,
+      rules: [
+        { table: 'system_errors', ageDays: 90, deletedCount: 12 },
+        { table: 'vitrin_events', ageDays: 365, deletedCount: 125 },
+      ],
+    });
+    expect(req.severity).toBe('info');
+    expect(req.text).toContain('Log retention cleanup');
+    expect(req.text).toContain('system_errors');
+    expect(req.text).toContain('vitrin_events');
+    expect(req.text).toContain('137');
+    expect(req.text).toContain('850ms');
+  });
+
+  it('hata içeriyorsa critical severity', () => {
+    const req = buildRetentionCleanupSummary({
+      triggeredAt: '2026-05-21T04:00:00Z',
+      totalDeleted: 5,
+      totalDurationMs: 100,
+      rules: [
+        { table: 'system_errors', ageDays: 90, deletedCount: 5 },
+        { table: 'vitrin_events', ageDays: 365, deletedCount: 0, error: 'relation does not exist' },
+      ],
+    });
+    expect(req.severity).toBe('critical');
+    expect(req.text).toContain('HATA');
+    expect(req.text).toContain('relation does not exist');
+  });
+
+  it('10K+ silinen — büyük temizlik başlığı', () => {
+    const req = buildRetentionCleanupSummary({
+      triggeredAt: '2026-05-21T04:00:00Z',
+      totalDeleted: 25_000,
+      totalDurationMs: 5000,
+      rules: [{ table: 'system_errors', ageDays: 90, deletedCount: 25_000 }],
+    });
+    expect(req.text).toContain('büyük temizlik');
+    expect(req.disableNotification).toBe(false);
+  });
+
+  it('boş tur sessiz bildirim (disableNotification=true)', () => {
+    const req = buildRetentionCleanupSummary({
+      triggeredAt: '2026-05-21T04:00:00Z',
+      totalDeleted: 0,
+      totalDurationMs: 50,
+      rules: [{ table: 'system_errors', ageDays: 90, deletedCount: 0 }],
+    });
+    expect(req.disableNotification).toBe(true);
   });
 });
