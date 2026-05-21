@@ -154,6 +154,20 @@ claude
 
 ---
 
+### 🆕 Tur H: C iş kalemi #2 — urunler.html brief sync (2026-05-21 gece)
+
+**Değişiklik:** [docs/UI-MOCKUP-PLAN.md §5.2](UI-MOCKUP-PLAN.md) — urunler brief'i `src/app/admin/products/` implementasyonuna göre kapsamlı yeniden listelendi. 4 ana sayfa ayrı bölüm:
+- **Liste** ([page.tsx](../src/app/admin/products/page.tsx)) — FilterBar 5 alan + tablo 7 kolon + ListRowToggle optimistic + 4 banner (justCreated/moderation/updated/deleted) + Excel import CTA
+- **Detay** ([id]/page.tsx) — 4 KPI + variant-matrix + product-movements + auto-unpublish reason banner
+- **Yeni** (new/form.tsx) — auto-brand-hint + parent/child kategori + Stok birimi + pending-images-grid (R2 upload sonrası kayıt)
+- **Düzenle** ([id]/edit/, 6 section) — Temel bilgiler / Default variant / storefront-section (Doğrula + storefront-toggle + requireImage=true) / Variantlar / product-images-section / Ürünü sil
+
+Import (`import/client.tsx` — 11 kolon xlsx + 15+ validation + SWAL) + Export route (`export/route.ts` → .xlsx) ek section'lar olarak işaretlendi. Bulk vitrine aç/çıkar **Faz 2'ye saklı** (single-toggle yeterli — sade-tut).
+
+**Sıradaki C iş kalemi:** §5.3 stok-hareketleri.html brief sync.
+
+---
+
 ### 🆕 Geçmiş tur (2026-05-21 öğleden sonra) — referans
 
 | Commit | Konu |

@@ -182,17 +182,46 @@ Sprint sırasına göre:
 
 ### 5.2 urunler.html (yenile)
 
-**Doküman:** `EKRAN-URUNLER.md`
-**Yeni eklenenler (Verdana geçişi yanında):**
-- **§5.5 Satışa Aç toggle** — her satırın sağında, açılırsa Doğrula buton (disabled→enabled validation pass sonrası)
-- **§5.6 Stok 0 davranışı** — toggle OFF + tooltip "Stok bittiği için otomatik çekildi"
-- **§8.8 Bulk vitrine aç/çıkar** — bulk action bar'da yeni buton
-- Plan progress bar `FREE 47/50` (eski 18/20'den dönüştü)
-- Validation hata göstergesi (eksik görsel/fiyat tooltip)
+**Doküman:** `EKRAN-URUNLER.md` · **Kod:** [`src/app/admin/products/`](../src/app/admin/products/) — page.tsx + filter-bar.tsx + list-row-toggle.tsx + new/ + [id]/ + [id]/edit/ + import/ + export/
 
-**Bileşenler:** 4 KPI üst şerit + filtre paneli + ürün tablo (sticky kolon Satışa Aç) + stok matrix expand + detay drawer + yeni/düzenle 2-kolon form
-**Data:** Royal Canin Adult Kedi 2kg variant'lı + 35 ürün liste
-**Etkileşim:** Toggle açıldığında AJAX validation çağrı, modal vergi no tetikleyici, bulk işlem onay
+> **2026-05-21 brief sync:** Implementasyon mockup'tan ileri. Mockup `preview/urunler.html` Faz 2'ye saklı (kod canonical, sade-tut).
+
+**Liste sayfası (`/admin/products`, [page.tsx](../src/app/admin/products/page.tsx)):**
+- Header — "Admin · Ürünler" + sayı (filtreli/FREE plan limit metni) + 2 buton: `📥 Excel'den içeri aktar` + `+ Yeni ürün`
+- Result banner'lar: justCreated (✅ + seed_image durumu) + `moderation-warning` (uygunsuz ifade flagged) + updated + deleted (soft delete)
+- `FilterBar` — q + parent kategori + alt kategori + marka + status + vitrin durumu
+- Tablo — Ürün (name + slug mono) + Kategori + Marka + Variant count + Stok (toplam, 0 ise danger) + Fiyat default variant + Vitrin (`ListRowToggle` optimistic flip)
+- Soft delete satır opacity-50
+- Empty state — logo mascot + "İlk ürününü ekle" CTA veya "Filtreyi temizle"
+
+**Detay sayfası (`/admin/products/[id]`, [page.tsx](../src/app/admin/products/[id]/page.tsx)):**
+- Header — name + slug + auto-unpublish reason banner (varsa: stock_zero / missing_image / vat_no)
+- 4 KPI kart grid
+- `variant-matrix` — variant × şube stok cross-table
+- `product-movements` — son 10 stok hareketi feed
+
+**Yeni ürün (`/admin/products/new`, [form.tsx](../src/app/admin/products/new/form.tsx)):**
+- Auto-brand-hint section — `auto-brand-hint` (katalog seed marka önerisi, hayvan tipi ile)
+- "📦 Temel bilgiler" — name + slug + animal type + `parent-category-select` + `child-category-select` + brand + description
+- "🏷 Stok birimi" — default variant (SKU + variantLabel + barkod + cost/sale price + threshold per branch JSON)
+- Çoklu görsel yükleme — `product-image-input` + `pending-images-grid` (submit öncesi pending queue, kayıt sonrası R2'ye upload)
+
+**Düzenle (`/admin/products/[id]/edit`, 6 section):**
+- "📦 Temel bilgiler" — same fields editable + isActive checkbox
+- "🏷 Default variant — hızlı düzenleme" — default variant inline edit
+- `storefront-section` ([storefront-section.tsx](../src/app/admin/products/[id]/edit/storefront-section.tsx)) — heading "Vitrin'de yayında/kapalı" + meta (publishedAt + reason) + sticky `storefront-toggle` + ValidationPanel (5 check ✓/✕: vat_no / active / variant / price / image) + opts.requireImage=true (2026-05-21)
+- "📋 Variantlar" ([variants-section.tsx](../src/app/admin/products/[id]/edit/variants-section.tsx)) — multi-variant editor inline + default işaretle + sil (son aktif koruma)
+- `product-images-section` ([images-section.tsx](../src/app/admin/products/[id]/edit/images-section.tsx)) — upload + reorder + set primary + delete + image-action-status feedback
+- "🗑 Ürünü sil" danger section — soft delete confirm
+
+**Import sayfası (`/admin/products/import`, [client.tsx](../src/app/admin/products/import/client.tsx)):**
+- Drag-drop xlsx + 11 kolon şablon (template/ klasör) + 15+ validation (sınır + duplicate + DB cross-check) + SWAL özet modal + vitrinPublished=false zorunlu
+
+**Export route:** `/admin/products/export` `route.ts` → .xlsx (TR header, ₺ para, auto-filter, freeze pane, zebra) — Verilerimi İndir hub'tan tetiklenir.
+
+**Data örnek:** Royal Canin Adult Kedi 2kg variant'lı + 35 ürün liste
+**Etkileşim:** ListRowToggle satır içi optimistic flip (Faz 5), Doğrula validation gate (storefront-section), bulk vitrine aç/çıkar **Faz 2'ye saklı** (single-toggle yeterli)
+**Bağımlılık:** TASARIM-SISTEMI · `storefrontKeys` query cache · R2 image storage · Cloudflare Workers AI moderation
 
 ---
 
