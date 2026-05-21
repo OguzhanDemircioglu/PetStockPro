@@ -1,16 +1,28 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-21 akşamı (**PLAN-BETA-PERFORMANCE 6/6 FAZ TAMAMLANDI**)
-**Mevcut Branch:** `cray61` — push beklemede (6 yeni commit local'de)
-**Son commit:** `1ad313b` feat(optimistic): 5 kritik CRUD optimistic UI (Faz 5)
+**Tarih:** 2026-05-21 gece (büyük tur tamamlandı, tüm değişiklikler `origin/cray61`'de)
+**Mevcut Branch:** `cray61` — push tamam, 0 commit beklemede
+**Son commit:** `1addbcc` fix(mockup): süperadmin "Normal panele dön" linki kaldırıldı
 
 ---
 
-## 🎉 2026-05-21 akşamı — PLAN-BETA-PERFORMANCE TAMAMLANDI
+## 🚀 YENİ SESSION'A GİRDİĞİNDE — İLK OKUMA
+
+> Tüm 2026-05-21 turları **bitti ve push edildi**. Bekleyen commit yok.
+> Sıradaki büyük iş CLAUDE.md "Sıradaki olası işler" listesinden ya da
+> aşağıdaki **"Sıradaki tercih edilenler"** bölümünden seçilir.
+
+**Memory durumu:**
+- ✅ `feedback_commit_push_approval.md` aktif — her commit öncesi onay + push HER ZAMAN ayrı tur
+- ✅ Sorusuz akış sadece küçük adımlar arası geçerli; commit/push'ta askıya alınır
+
+---
+
+## 🎉 2026-05-21 — TÜM TURLARIN ÖZETİ
+
+### Tur A: PLAN-BETA-PERFORMANCE 6/6 FAZ
 
 **Otoritatif:** `docs/PLAN-BETA-PERFORMANCE.md` (durumu: 6/6 faz ✅)
-
-### Commit zinciri (6 ana faz)
 
 | Commit | Faz | İçerik | Süre |
 |---|---|---|---|
@@ -20,31 +32,87 @@
 | `3cbd447` | 3 | PetSpinner (3 boyut + paw SVG + animate-paw-pulse + a11y + prefers-reduced-motion + 2 mevcut migrate) | ~1h |
 | `d840b0a` | 4 | TanStack Query Provider + 5 key factory + Devtools dev-only | ~1h |
 | `1ad313b` | 5 | 5 kritik CRUD optimistic (3 tam: bildirim oku 50ms flip / vitrin Aç-Kapat / bulk Tümünü oku; 2 PetSpinner pending: 4 stok-movements drawer + sayım workflow) | ~3h |
+| `551474b` | 6 docs | TECH-STACK + DEPLOYMENT + DEVAM-REHBERI yansıttı | ~30dk |
 
-**Test:** 1567 → **1643 pass** (+76 yeni). Typecheck + lint 0 error.
+### Tur B: Sprint 3.3 Image Upload Unblock
 
-**Performans bilançosu:**
-- Bildirim okuma: 200-500ms full reload → **~50ms optimistic flip** (browser smoke kanıtlı)
+| Commit | Konu |
+|---|---|
+| `602ec86` | `SUPABASE_SERVICE_ROLE_KEY` .env'e eklendi — Sprint 3.3 bloker kalktı |
+| `39ddec8` | `validateForStorefront.DEFAULT_OPTS.requireImage` false→true tutarsızlık fix + 19 test güncellendi |
+
+### Tur C: 5. Mantık Hata Tarama
+
+| Commit | Konu |
+|---|---|
+| `d226105` | 5. tur 8 bulgu (DATABASE-SCHEMA toplam 35→37, Supabase Storage→R2, requireImage default, auto-bootstrap doc, PetSpinner TASARIM-SISTEMI) |
+
+### Tur D: Pricing Revize + Mockup Fix
+
+| Commit | Konu |
+|---|---|
+| `d6623b6` | Pricing 1.250/2.250 → **1.000/2.000** ("fiyat artırmayalım") — 18 dosya |
+| `1addbcc` | Süperadmin mockup "↩ Normal panele dön" linki kaldırıldı — süperadmin kendi tenant pano'su yok |
+
+---
+
+### 📊 Tur metrikleri
+
+| Metric | Başlangıç | Son |
+|---|---|---|
+| Test | 1567 pass | **1643 pass** (+76) |
+| Commit (origin) | `ef45949` | `1addbcc` (11 yeni commit) |
+| Pricing | 1.250 / 2.250 | **1.000 / 2.000** |
+| Net gelir (1K tenant) | ~$10K/ay | **~$8.240/ay** |
+| Toplam DB tablo | 35 | **37** (user_permissions + system_errors) |
+
+---
+
+### Performans bilançosu
+
+- Bildirim okuma: 200-500ms full reload → **~50ms optimistic flip** (browser smoke kanıtlı, 50ms screenshot)
 - Vitrin Aç/Kapat: useTransition + revalidate → **anında badge flip** + rollback
-- Stok hareketi: text pending → **PetSpinner inline + tone color**
+- Stok hareketi: text pending → **PetSpinner inline + tone color** (4 drawer)
 - Sayım Kaydet: "..." → **PetSpinner sm inline** (per-row + tamamla + iptal)
 - Hata izleme: prod kör → **system_errors + Telegram critical burst** alert
-- Disk doluluk: sınırsız → **6 tablo TTL cron + audit guard regression test**
-- Boot süresi: manuel migrate → **auto-bootstrap 885ms** (idempotent seed)
+- Disk doluluk: sınırsız → **6 tablo TTL cron + audit_logs/invoices/subscriptions guard regression test**
+- Boot süresi (dev): manuel migrate → **auto-bootstrap 885ms** (idempotent seed)
+- Sprint 3.3: image upload bloker → **R2 strategy aktif** + requireImage=true default
 
-**DB değişiklikleri:**
+---
+
+### DB değişiklikleri
+
 - Migration 0022 `system_errors` tablo + `system_error_severity` enum (bootstrap migrator otomatik apply ✅)
 - Drizzle history senkron (21. + 22. satır INSERT — kullanıcı A seçti / otomatik flow)
 
-**Plan'dan bilinçli sapmalar:**
+---
+
+### Plan'dan bilinçli sapmalar
+
 - **5.4 ürün edit** optimistic FAZ 2'ye saklandı — mevcut redirect+revalidate UX yeterli, büyük refactor değer/maliyet düşük (tek geliştirici sade-tut)
 - **5.1 stok hareketi** tam optimistic ledger prepend YOK — movements-table client refactor maliyetli; PetSpinner pending + 800ms close + revalidate yeterli
+- **Pricing 1.000/2.000** (önceki Karar C 1.250/2.250 → "fiyat artırmayalım") — kullanıcı kararıyla orta seviyeye düşürüldü
 
-**Yeni session'a girdiğinde ilk komut:**
+---
+
+## 🎯 Sıradaki tercih edilenler (yeni session'da seç)
+
+| # | Konu | Süre | Bloker |
+|---|---|---|---|
+| 1 | **C — 17 mockup brief'i sıralı** (UI-MOCKUP-PLAN.md) | Çok uzun, her mockup ayrı tur | Yok |
+| 2 | **D — Smoke bulgusu: NotificationBell client component** (bulk Tümünü oku sonrası bell badge anlık 0) | 30-45dk | Yok |
+| 3 | **4. tur Mantık Hata Tarama 5. — sonraki tur** (yeni değişiklikler için) | 2-3 saat | Yok |
+| 4 | **Sprint 13/14 production deploy** | Şirket kuruluş bekliyor (2-4 hafta) | ⛔ Kullanıcı |
+| 5 | **Beta soft launch (CLAUDE.md "Sıradaki olası işler" #1)** | Sprint 13/14 sonrası | ⛔ Kullanıcı bloker |
+| 6 | **Pricing pilot anketi** (30-50 pet shop) | 1-2 hafta | ⛔ Kullanıcı bloker (anket dağıt) |
+
+**Yeni session'a girdiğinde ilk komut (önerilen):**
 ```
-git push origin cray61  # bekleyen 6 commit'i remote'a push et
-# sonra:
-docs/DEVAM-REHBERI.md oku
+cd D:\Projeler\PetStockPro
+claude
+İlk komut: "DEVAM-REHBERI.md oku ve sıradaki tercih edilenlerden #2 ile başla"
+# veya: "C ile başla, ilk mockup'ı planla"
 ```
 
 ---

@@ -33,7 +33,32 @@
 
 ## 🚀 YENİ SESSION'A GİRDİĞİNDE — İLK OKUMA SIRASI
 
-**2026-05-21 (Sprint 3.3 SON TEMİZLİK):** R2 image upload zaten implementli (r2-client.ts + product-images.ts + images-section.tsx + image-actions.ts + R2 env'leri eksiksiz ✓). **Tutarsızlık çözüldü:** `validateForStorefront.DEFAULT_OPTS.requireImage = false → true`. Önceden edit sayfası `requireImage: true` geçiriyordu ama `publishProductAction` (list-row-toggle) opts geçmiyordu → görselsiz ürün vitrin'e açılabiliyordu. Artık default true, eski "Aç" akışları "missing_image" issue verir. `storefront.test.ts` 2 test güncellendi (`requireImage true (default)` + `false override`), `VALID_ROW.imageCount: 0 → 1`. 19 storefront test pass. **Toplam 1643 test pass.** SUPABASE_SERVICE_ROLE_KEY artık Sprint 3.3 için zorunlu değil (R2 strategy mevcut).
+**2026-05-21 GECE — Tüm turlar push edildi.** Son commit `1addbcc`. 11 commit GitHub'da (ef45949..1addbcc). 0 bekleyen commit. Test 1643 pass · typecheck/lint 0 error.
+
+**Yapılan büyük tur özetler (sırasıyla):**
+1. **PLAN-BETA-PERFORMANCE 6/6 FAZ** — Auto-bootstrap + Log retention + Error tracking (Sentry'siz, system_errors + Telegram burst) + PetSpinner + TanStack Query Provider + 5 CRUD optimistic. Detay: `docs/PLAN-BETA-PERFORMANCE.md` (6/6 ✅) + `docs/DEVAM-REHBERI.md`
+2. **Sprint 3.3 Image Upload Unblock** — `SUPABASE_SERVICE_ROLE_KEY` env eklendi + R2 strategy onaylandı (Supabase Storage iptal). `validateForStorefront.DEFAULT_OPTS.requireImage` false→true tutarsızlık çözüldü.
+3. **5. Mantık Hata Tarama** — 8 doc-kod uyumsuzluğu (DATABASE-SCHEMA toplam 35→37, Supabase Storage→R2 yansıt, PetSpinner TASARIM-SISTEMI'ye, auto-bootstrap doc'lara).
+4. **Pricing 1.000/2.000 revize** — "Fiyat artırmayalım" kararı. Karar C (1.250/2.250) → 1.000/2.000. Net gelir hedefi $10K → ~$8.240/ay.
+5. **Süperadmin mockup fix** — "Normal panele dön" linki kaldırıldı. Süperadmin'in kendi tenant pano'su YOK; sadece süperadmin işleri yapar, tenant'a impersonate ile girer, "✕ Çıkış · Süperadmin'e dön" ile çıkar.
+
+**Memory durumu:**
+- ✅ `feedback_commit_push_approval.md` aktif — her commit öncesi onay + push HER ZAMAN ayrı tur (toplu push yasak)
+- ✅ `feedback_screenshot_required.md` — UI değişiklikleri preview_screenshot ile doğrula
+- ✅ `feedback_destructive_ask_via_chat.md` — DB mutation / destructive aksiyonlarda chat onay
+- ✅ Sorusuz akış sadece küçük adımlar arası geçerli; commit/push'ta askıya alınır
+
+**Sıradaki büyük iş seçenekleri (`docs/DEVAM-REHBERI.md` §Sıradaki tercih edilenler):**
+- **C** — 17 mockup brief'i sıralı (UI-MOCKUP-PLAN.md, her mockup ayrı tur)
+- **D** — NotificationBell client component (bulk Tümünü oku sonrası bell anlık 0 — Faz 5 smoke 6 bulgusu, 30-45dk)
+- **6. Mantık Hata Tarama** — yeni değişiklikler için (2-3 saat)
+- Sprint 13/14 production (şirket kuruluş bekliyor — ⛔ kullanıcı bloker)
+
+---
+
+### Eski tur özetleri (referans için)
+
+**2026-05-21 öğleden sonra (Sprint 3.3 SON TEMİZLİK):** R2 image upload zaten implementli (r2-client.ts + product-images.ts + images-section.tsx + image-actions.ts + R2 env'leri eksiksiz ✓). **Tutarsızlık çözüldü:** `validateForStorefront.DEFAULT_OPTS.requireImage = false → true`. Önceden edit sayfası `requireImage: true` geçiriyordu ama `publishProductAction` (list-row-toggle) opts geçmiyordu → görselsiz ürün vitrin'e açılabiliyordu. Artık default true, eski "Aç" akışları "missing_image" issue verir. `storefront.test.ts` 2 test güncellendi (`requireImage true (default)` + `false override`), `VALID_ROW.imageCount: 0 → 1`. 19 storefront test pass.
 
 **2026-05-21 (Faz 3-5 BETA-PERFORMANCE):** Algılanan gecikme iyileştirildi. **Faz 3** (commit `3cbd447`): `PetSpinner` 3 boyut + paw SVG + animate-paw-pulse + prefers-reduced-motion + a11y (role=status + aria-busy + sr-only). 2 mevcut spinner migrate (seed catalog + nearby-map). 6 yeni test. **Faz 4** (commit `d840b0a`): TanStack Query Provider + 5 key factory (`productKeys`/`stockMovementKeys`/`stocktakeKeys`/`notificationKeys`/`storefrontKeys`) + Devtools dev-only. Layout sarmal ThemeProvider iç. **Faz 5**: 5 kritik CRUD optimistic — 3 tam optimistic (5.5 bildirim oku → 50ms flip + bell badge -1 + rollback test; 5.3 vitrin Aç/Kapat toggle → setPublished onMutate + PetSpinner pending; bildirim bulk Tümünü oku → 0 anında) + 2 PetSpinner pending (5.1 stok hareketi 4 drawer button içi sm spinner + tone color; 5.2 sayım workflow card + table + complete + cancel buton). 5.4 ürün edit Faz 2'ye saklandı (redirect+revalidate yeterli, tek geliştirici sade-tut). 12 mutation test (notifications-list 6 + list-row-toggle 6). Browser smoke: /admin/notifications mark-read 50ms optimistic flip + bell 3→2 + opacity transition (screenshot kanıt). **Toplam Faz 3-5: 18 yeni test, 1625 → 1643 pass.** **Sıradaki:** FAZ 6 doc + push.
 
