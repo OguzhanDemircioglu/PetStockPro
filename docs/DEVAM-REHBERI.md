@@ -247,6 +247,20 @@ softLock UI Faz 2'ye saklı. Mockup `preview/sayim.html` yok.
 
 ---
 
+### 🆕 Tur N: C iş kalemi #8 — dusuk-stok brief sync (2026-05-21 gece)
+
+**Değişiklik:** [docs/UI-MOCKUP-PLAN.md §5.8](UI-MOCKUP-PLAN.md) — dusuk-stok brief'i Sprint 8+ implementasyonuna göre yeniden listelendi:
+- Liste — ls-category + ls-branch + ls-clear filter
+- Variant bazında grupla — productName + stock-in + history linkleri + branch grid (sıfır stokta danger + auto-unpublish uyarı)
+- `transfer-suggestion-${variantId}` — `getTransferSuggestionsBulk` ile öneri panel + `open-transfer-${src}-${dst}` (transfer drawer query-param auto-open + prefill — tek tıkla)
+- Empty state — "Tüm stoklar yeterli ✓"
+
+R6 "Toplu Sipariş Hazırla" tek-tedarikçi-tek-drawer Faz 2'ye saklı. Mockup yok.
+
+**Sıradaki C iş kalemi:** §5.9 tedarikciler.html brief sync.
+
+---
+
 ### 🆕 Geçmiş tur (2026-05-21 öğleden sonra) — referans
 
 | Commit | Konu |

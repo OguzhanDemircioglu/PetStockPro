@@ -441,10 +441,24 @@ Sprint sırasına göre:
 
 ---
 
-### 5.8 dusuk-stok.html (YENİ — Sprint 8 için)
+### 5.8 dusuk-stok.html (yenile)
 
-**Doküman:** `EKRAN-DUSUK-STOK.md`
-**Bileşenler:** 3 KPI üst + filtre + tablo (kritiklik dot + öneri sipariş) + Toplu Sipariş Hazırla (R6 sade-tut: tek tedarikçi tek drawer, çoklu sıralı drawer)
+**Doküman:** `EKRAN-DUSUK-STOK.md` · **Kod:** [`src/app/admin/low-stock/page.tsx`](../src/app/admin/low-stock/page.tsx) (tek sayfa)
+
+> **2026-05-21 brief sync:** Sprint 8+ Düşük Stok + transfer önerisi tamamlandı. Mockup `preview/dusuk-stok.html` **henüz yok** — Faz 2'ye saklı.
+
+**Liste sayfası (`/admin/low-stock`):**
+- Header — "Admin · Düşük Stok" + sayı (filtreli/toplam)
+- `low-stock-filter` section — `ls-category` (kategori multi-select) + `ls-branch` (şube multi-select) + `ls-clear` temizle
+- Empty state (tüm stoklar yeterli) — "Tüm stoklar yeterli ✓" + arrow renk + dashed border
+- Liste — variant bazında grupla (aynı variant farklı şubelerde olabilir):
+  - Grup kartı — productName + variantLabel + SKU
+  - `stock-in-${variantId}` — "Stok girişi yap →" arrow link (stok-movements drawer auto-open)
+  - `history-${variantId}` — variant geçmişi link
+  - Branch grid — şube/stok / eşik kartı (sıfır stokta danger border + "Vitrin'den otomatik düşmüş olabilir" uyarı)
+  - `transfer-suggestion-${variantId}` panel — `getTransferSuggestionsBulk` ile "Önerilen transfer X→Y +N adet" link + `open-transfer-${sourceBranchId}-${targetBranchId}` (stok-movements/transfer drawer query-param auto-open + prefill — tek tıkla)
+
+**Bağımlılık:** TASARIM-SISTEMI · branch_inventory + productVariants + branches + branchThresholds jsonb · `getTransferSuggestionsBulk` helper · transfer drawer query-param prefill
 
 ---
 
