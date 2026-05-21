@@ -462,10 +462,29 @@ Sprint sırasına göre:
 
 ---
 
-### 5.9 tedarikciler.html (YENİ — Sprint 9 için)
+### 5.9 tedarikciler.html (yenile)
 
-**Doküman:** `EKRAN-TEDARIKCILER.md`
-**Bileşenler:** KPI + tablo + yeni/düzenle form (vergi no + tedarik süresi + ödeme koşulları + IBAN) + detay drawer (son alımlar + toplam alım stat)
+**Doküman:** `EKRAN-TEDARIKCILER.md` · **Kod:** [`src/app/admin/suppliers/`](../src/app/admin/suppliers/) — page.tsx + supplier-form.tsx + toggle-supplier-active.tsx + new/ + [id]/ + export/
+
+> **2026-05-21 brief sync:** Sprint 9 tedarikçi CRUD tamamlandı. Mockup `preview/tedarikciler.html` **henüz yok** — Faz 2'ye saklı.
+
+**Liste sayfası (`/admin/suppliers`, [page.tsx](../src/app/admin/suppliers/page.tsx)):**
+- Header — "Admin · Tedarikçiler" + sayı + `add-supplier` "Yeni Tedarikçi" CTA
+- Tablo — Ad+contact + VKN mono + 📞 telefon + ✉ email + Lead gün + Ödeme koşulları emoji-label (💵 Peşin / 📆 30 gün / 📆 60 gün / ➕ Diğer) + Toplam giriş (SUM stock_movements stock_in subquery) + `toggle-supplier-active` (aktif/pasif soft delete)
+- Empty state — "Henüz tedarikçi yok" + ilk ekle CTA
+
+**Form ([supplier-form.tsx](../src/app/admin/suppliers/supplier-form.tsx), 4 section):**
+- Firma — `supplier-name` + VKN/TC (10-11 hane regex) + slug auto
+- İletişim — `+90` veya `0` prefix phone regex + email + adres + cityId
+- Ticari koşullar — `leadTimeDays` (0-365) + paymentTerms enum (cash/net_30/net_60/other) + IBAN (TR + 24 hane regex) + opening_balance
+- Not — internal_note ≤500 char
+- `supplier-alert` validation hata + `supplier-submit` PetSpinner pending
+
+**Detay (`/admin/suppliers/[id]`, ileride drawer veya ayrı sayfa olabilir) — şu an tablo'dan inline edit yeterli.**
+
+**Export:** `/admin/suppliers/export` route → .xlsx
+
+**Bağımlılık:** TASARIM-SISTEMI · suppliers tablo (supplier_payment_terms enum) · cities + districts seed · stock-movements stock_in → supplier dropdown dependency · Toplam giriş istatistiği SUM subquery
 
 ---
 

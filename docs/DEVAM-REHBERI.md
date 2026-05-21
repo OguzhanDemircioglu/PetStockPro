@@ -261,6 +261,20 @@ R6 "Toplu Sipariş Hazırla" tek-tedarikçi-tek-drawer Faz 2'ye saklı. Mockup y
 
 ---
 
+### 🆕 Tur O: C iş kalemi #9 — tedarikciler brief sync (2026-05-21 gece)
+
+**Değişiklik:** [docs/UI-MOCKUP-PLAN.md §5.9](UI-MOCKUP-PLAN.md) — tedarikciler brief'i Sprint 9 implementasyonuna göre yeniden listelendi:
+- Liste — add-supplier + tablo 7 kolon (Ad/VKN/Tel/Email/Lead gün/Ödeme emoji label/Toplam giriş) + toggle-supplier-active
+- Form 4 section — Firma (supplier-name + VKN 10-11 regex) + İletişim (+90/0 phone + email + city) + Ticari (lead 0-365 + paymentTerms enum + IBAN TR+24 regex) + Not
+- Export → .xlsx
+- Stock-movements stock_in → supplier dropdown dependency
+
+Mockup preview/tedarikciler.html yok.
+
+**Sıradaki C iş kalemi:** §5.10 kullanicilar.html brief sync.
+
+---
+
 ### 🆕 Geçmiş tur (2026-05-21 öğleden sonra) — referans
 
 | Commit | Konu |
