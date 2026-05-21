@@ -35,8 +35,9 @@
 
 **2026-05-20 sonu:** SWAL toast + aria-invalid + Excel ürün import tamamlandı. **Sıradaki büyük iş: Observer/Yetki/Şube-state refactor** — plan: `docs/PLAN-OBSERVER-STAFF-BRANCH-STATE.md` ⭐
 
-1. **`docs/PLAN-OBSERVER-STAFF-BRANCH-STATE.md`** 🆕 — 9 fazlı kapsamlı plan, yeni session başlangıç dosyası
-2. **`docs/DEVAM-REHBERI.md`** ⭐ — kararlar listesi + bekleyen açık noktalar
+1. **`docs/PLAN-BETA-PERFORMANCE.md`** 🆕🆕 — **YENİ SESSION BAŞLANGIÇ DOSYASI (2026-05-21 onaylı)** — 6 fazlı altyapı planı: auto-bootstrap + log retention + error tracking (Sentry'siz, system_errors + Telegram) + PetSpinner + TanStack Query Provider + 5 CRUD optimistic. Toplam 10-12 saat.
+2. **`docs/PLAN-OBSERVER-STAFF-BRANCH-STATE.md`** — 9 fazlı önceki plan (tamamlandı 2026-05-21)
+3. **`docs/DEVAM-REHBERI.md`** ⭐ — kararlar listesi + bekleyen açık noktalar
 3. **`docs/MANTIK-HATALARI-2026-05-14.md`** — 40 mantık hatası çözüldü (4 tur)
 4. Bu CLAUDE.md (proje genel durumu)
 4. `docs/PLAN-KADEMELERI.md` (**3-tier B — FREE 50 / PRO 500 750₺ / PRO+ ∞ 1.750₺, TR-only** — 2026-05-14 revize, otoritatif)
