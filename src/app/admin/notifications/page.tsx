@@ -43,180 +43,47 @@ const TYPE_LABEL: Record<string, string> = {
   vitrin_auto_unpublished: 'Vitrin otomatik kapatıldı',
 };
 
-const TYPE_GROUPS: Record<string, { label: string; types: string[] }> = {
-  stock: {
-    label: '📦 Stok',
-    types: ['low_stock_critical', 'out_of_stock', 'high_sale', 'transfer_received'],
-  },
-  stocktake: {
-    label: '📋 Sayım',
-    types: ['stocktake_completed'],
-  },
-  vitrin: {
-    label: '🌐 Vitrin',
-    types: ['vitrin_approved', 'vitrin_auto_unpublished', 'vitrin_report_received'],
-  },
-  billing: {
-    label: '💳 Abonelik',
-    types: ['subscription_payment_failed', 'subscription_renewed', 'invoice_issued', 'plan_limit_warning'],
-  },
-  system: {
-    label: '⚙ Sistem',
-    types: ['new_user', 'daily_summary', 'weekly_summary', 'superadmin_session'],
-  },
-};
-
 export default async function NotificationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filter?: string; group?: string; type?: string }>;
+  searchParams: Promise<{ filter?: string }>;
 }) {
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
 
   const params = await searchParams;
   const unreadOnly = params.filter === 'unread';
-  const activeGroup = params.group && TYPE_GROUPS[params.group] ? params.group : null;
-  const activeType =
-    params.type && Object.keys(TYPE_LABEL).includes(params.type) ? params.type : null;
 
-  const allItems = await listForUser(session.user.companyId, session.user.id, db, {
+  const items = await listForUser(session.user.companyId, session.user.id, db, {
     limit: 100,
     unreadOnly,
   });
 
-  const items = activeType
-    ? allItems.filter((i) => i.type === activeType)
-    : activeGroup
-      ? allItems.filter((i) => TYPE_GROUPS[activeGroup].types.includes(i.type))
-      : allItems;
-
-  const groupCounts: Record<string, number> = {};
-  for (const [key, def] of Object.entries(TYPE_GROUPS)) {
-    groupCounts[key] = allItems.filter((i) => def.types.includes(i.type)).length;
-  }
-
-  const typeCounts: Record<string, number> = {};
-  if (activeGroup) {
-    for (const t of TYPE_GROUPS[activeGroup].types) {
-      typeCounts[t] = allItems.filter((i) => i.type === t).length;
-    }
-  }
-
-  const unreadCount = allItems.filter((i) => i.readAt === null).length;
+  const unreadCount = items.filter((i) => i.readAt === null).length;
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-12">
-      <div className="flex flex-col gap-2" data-testid="notif-filter">
-        <div className="flex gap-2">
-          <Link
-            href={'/admin/notifications' as never}
-            className={`rounded-xl border px-3 py-1.5 text-xs font-bold ${
-              !unreadOnly
-                ? 'border-cat bg-cat text-white'
-                : 'border-line bg-paper text-ink-3 hover:bg-line-soft'
-            }`}
-          >
-            Hepsi
-          </Link>
-          <Link
-            href={'/admin/notifications?filter=unread' as never}
-            className={`rounded-xl border px-3 py-1.5 text-xs font-bold ${
-              unreadOnly
-                ? 'border-cat bg-cat text-white'
-                : 'border-line bg-paper text-ink-3 hover:bg-line-soft'
-            }`}
-          >
-            Okunmamış ({unreadCount})
-          </Link>
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          <Link
-            href={`/admin/notifications${unreadOnly ? '?filter=unread' : ''}` as never}
-            data-group="all"
-            data-active={activeGroup === null ? '1' : '0'}
-            className={`rounded-full border px-2.5 py-1 text-[12px] font-bold ${
-              activeGroup === null
-                ? 'border-cart bg-cart-soft text-cart'
-                : 'border-line bg-paper text-ink-3 hover:bg-line-soft'
-            }`}
-          >
-            Tüm türler
-          </Link>
-          {Object.entries(TYPE_GROUPS).map(([key, def]) => {
-            const count = groupCounts[key] ?? 0;
-            if (count === 0 && activeGroup !== key) return null;
-            const params = new URLSearchParams();
-            if (unreadOnly) params.set('filter', 'unread');
-            params.set('group', key);
-            return (
-              <Link
-                key={key}
-                href={`/admin/notifications?${params.toString()}` as never}
-                data-group={key}
-                data-active={activeGroup === key ? '1' : '0'}
-                className={`rounded-full border px-2.5 py-1 text-[12px] font-bold ${
-                  activeGroup === key
-                    ? 'border-cat bg-cat-soft text-cart'
-                    : 'border-line bg-paper text-ink-3 hover:bg-line-soft'
-                }`}
-              >
-                {def.label} ({count})
-              </Link>
-            );
-          })}
-        </div>
-
-        {activeGroup && (
-          <div
-            className="flex flex-wrap gap-1.5 rounded-2xl border border-line bg-paper p-3"
-            data-testid="notif-type-filter"
-          >
-            <span className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3 self-center">
-              {TYPE_GROUPS[activeGroup].label} alt-tipler:
-            </span>
-            <Link
-              href={
-                `/admin/notifications?${new URLSearchParams({
-                  ...(unreadOnly ? { filter: 'unread' } : {}),
-                  group: activeGroup,
-                }).toString()}` as never
-              }
-              data-type="all"
-              data-active={activeType === null ? '1' : '0'}
-              className={`rounded-full border px-2.5 py-1 text-[12px] font-bold ${
-                activeType === null
-                  ? 'border-cart bg-cart-soft text-cart'
-                  : 'border-line bg-paper text-ink-3 hover:bg-line-soft'
-              }`}
-            >
-              Tümü ({groupCounts[activeGroup] ?? 0})
-            </Link>
-            {TYPE_GROUPS[activeGroup].types.map((t) => {
-              const count = typeCounts[t] ?? 0;
-              if (count === 0 && activeType !== t) return null;
-              const params = new URLSearchParams();
-              if (unreadOnly) params.set('filter', 'unread');
-              params.set('group', activeGroup);
-              params.set('type', t);
-              return (
-                <Link
-                  key={t}
-                  href={`/admin/notifications?${params.toString()}` as never}
-                  data-type={t}
-                  data-active={activeType === t ? '1' : '0'}
-                  className={`rounded-full border px-2.5 py-1 text-[12px] font-bold ${
-                    activeType === t
-                      ? 'border-cat bg-cat text-white'
-                      : 'border-line bg-paper text-ink-3 hover:bg-line-soft'
-                  }`}
-                >
-                  {TYPE_EMOJI[t] ?? '🔔'} {TYPE_LABEL[t] ?? t} ({count})
-                </Link>
-              );
-            })}
-          </div>
-        )}
+      <div className="flex gap-2" data-testid="notif-filter">
+        <Link
+          href={'/admin/notifications' as never}
+          className={`rounded-xl border px-3 py-1.5 text-xs font-bold ${
+            !unreadOnly
+              ? 'border-cat bg-cat text-white'
+              : 'border-line bg-paper text-ink-3 hover:bg-line-soft'
+          }`}
+        >
+          Hepsi
+        </Link>
+        <Link
+          href={'/admin/notifications?filter=unread' as never}
+          className={`rounded-xl border px-3 py-1.5 text-xs font-bold ${
+            unreadOnly
+              ? 'border-cat bg-cat text-white'
+              : 'border-line bg-paper text-ink-3 hover:bg-line-soft'
+          }`}
+        >
+          Okunmamış ({unreadCount})
+        </Link>
       </div>
 
       <NotificationsList
