@@ -444,6 +444,41 @@ Mockup preview/vitrin-ana-petstockpro.html yok (implementli, gerek kalmadı).
 
 ---
 
+### 🆕 Tur Z: Performance Deep Audit — plan doc (2026-05-21 gece)
+
+**Hedef:** "Daha iyisi olamaz" performans. PLAN-BETA-PERFORMANCE 6/6 yapıldı ama derin audit yeni darboğazlar çıkardı.
+
+**Audit bulgu (toplam 11 alan, 4 öncelik):**
+
+🔴 **P0 — Kritik (lansman bloker):**
+- P0-1: 9 vitrin sayfası `force-dynamic` → Cloudflare CDN bypass (her request DB+SSR)
+- P0-2: `react.cache()` HİÇ kullanılmamış (Layout 4 + Pano 10 helper duplicate query)
+
+🟠 **P1 — Önemli (1K tenant scale kritik):**
+- P1-1: `companies.storefront_status` index YOK → Seq Scan (vitrin'in en sık filter'ı)
+- P1-2: Drizzle `.prepare()` HİÇ kullanılmamış — query planning per-request 4-12ms
+- P1-3: Pano 14+ paralel query consolidate edilebilir
+
+🟡 **P2 — Orta:**
+- P2-1: Bundle 928K tek chunk, analyzer eklenmedi
+- P2-2: Marketing pages (`/fiyatlar`, `/kvkk`, vb.) static yapılabilir
+- P2-3: Pano Suspense streaming yok
+- P2-4: Image priority/sizes audit eksik
+
+🟢 **P3 — Polish:**
+- P3-1: `revalidatePath` geniş scope (tag-based daha doğru)
+- P3-2: `font-variant-numeric: tabular-nums` audit
+- P3-3: Middleware matcher tüm route'larda çalışıyor
+- P3-4: TanStack Query staleTime query-bazında tune
+
+**Detaylı plan:** [docs/PLAN-PERFORMANCE-DEEP-AUDIT-2026-05-21.md](PLAN-PERFORMANCE-DEEP-AUDIT-2026-05-21.md) — 11 fix + 10 tur + kabul kriterleri (Lighthouse 95+, TTFB < 100ms vitrin, 1K concurrent p99 < 500ms).
+
+**Tahmini toplam süre:** 15-20 saat (10 tur).
+
+**Sıradaki adım:** Tur 1 — P0-1 vitrin revalidate + cache headers (1-2 saat).
+
+---
+
 ### 🆕 Tur Y: A+B+C+D UX dürüstlük + journey + errors paneli (2026-05-21 gece)
 
 **A — Vitrin UX dürüstlük taraması 6 sayfa** (commit `5f4ce60`):
