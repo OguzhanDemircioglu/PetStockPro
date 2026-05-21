@@ -8,6 +8,7 @@ import { writeAuditLogAsync } from '@/lib/audit/log';
 import { assertNotObserver, ObserverReadOnlyError } from '@/lib/auth/role-gate';
 import { hasAnyPermission } from '@/lib/users/permissions';
 import { PERMISSION_KEYS } from '@/lib/users/permission-keys';
+import { trackUnexpected } from '@/lib/errors/wrap';
 
 export interface EditProductState {
   ok: boolean;
@@ -18,7 +19,7 @@ export interface EditProductState {
 export async function updateProductAction(
   productId: string,
   variantId: string,
-  _prevState: EditProductState | null,
+  prevState: EditProductState | null,
   formData: FormData,
 ): Promise<EditProductState> {
   const session = await auth();
@@ -26,6 +27,25 @@ export async function updateProductAction(
     redirect('/login' as never);
   }
 
+  return trackUnexpected(
+    {
+      companyId: session.user.companyId,
+      userId: session.user.id,
+      route: '/admin/products/[id]/edit',
+      action: 'product.update',
+      metadata: { productId, variantId },
+    },
+    () => updateProductInner(session!, productId, variantId, prevState, formData),
+  );
+}
+
+async function updateProductInner(
+  session: NonNullable<Awaited<ReturnType<typeof auth>>>,
+  productId: string,
+  variantId: string,
+  _prevState: EditProductState | null,
+  formData: FormData,
+): Promise<EditProductState> {
   // Faz 2 — Observer reject + STAFF için price.edit yetkisi (BAYI_SAHIBI bypass).
   try {
     assertNotObserver(session);
@@ -36,7 +56,7 @@ export async function updateProductAction(
     throw e;
   }
   const canEdit = await hasAnyPermission(
-    session.user.id,
+    session.user!.id!,
     [PERMISSION_KEYS.PRICE_EDIT],
     db,
   );
@@ -77,7 +97,7 @@ export async function updateProductAction(
       : 5;
 
   const result = await updateProduct(
-    session.user.companyId,
+    session.user!.companyId!,
     productId,
     variantId,
     {
@@ -110,8 +130,8 @@ export async function updateProductAction(
 
   writeAuditLogAsync(
     {
-      companyId: session.user.companyId,
-      userId: session.user.id,
+      companyId: session.user!.companyId!,
+      userId: session.user!.id!,
       action: 'product.updated',
       entityType: 'product',
       entityId: productId,

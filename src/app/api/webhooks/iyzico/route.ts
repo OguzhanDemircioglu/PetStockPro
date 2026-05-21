@@ -26,6 +26,7 @@ import {
 import { processIyzicoWebhookEvent } from '@/lib/billing/orchestrator';
 import { createNilveraInvoice } from '@/lib/nilvera/invoice';
 import { db } from '@/lib/db/client';
+import { trackErrorAsync } from '@/lib/errors/track';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs'; // crypto.timingSafeEqual + postgres-js Node API
@@ -64,8 +65,21 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     outcome = result.outcome;
   } catch (err) {
     // Beklenmedik exception: 500 değil 200 dön (iyzico retry spam'i engelle).
-    // Audit yazılmamış olabilir, Sentry/Logflare manuel inspection için bayrak.
+    // Audit yazılmamış olabilir, in-app trackError bayrak (FAZ 2.B Sentry replacement).
     console.error('[iyzico webhook] orchestration failed:', err);
+    trackErrorAsync(
+      err,
+      {
+        route: '/api/webhooks/iyzico',
+        action: 'iyzico.webhook.orchestrate',
+        metadata: {
+          eventId: (payload as { eventId?: string }).eventId ?? null,
+          eventType: (payload as { eventType?: string }).eventType ?? null,
+        },
+      },
+      db,
+      { severity: 'critical', errorTypeOverride: 'IyzicoWebhookOrchestrationError' },
+    );
     return NextResponse.json({ ok: false, error: 'orchestration_failed' }, { status: 200 });
   }
 

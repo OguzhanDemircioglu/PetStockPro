@@ -20,6 +20,7 @@ import { assertNotObserver, ObserverReadOnlyError } from '@/lib/auth/role-gate';
 import { hasPermission } from '@/lib/users/permissions';
 import { PERMISSION_KEYS, type PermissionKey } from '@/lib/users/permission-keys';
 import { assertBranchOperational, BranchNotOperationalError } from '@/lib/branches/status';
+import { trackUnexpected } from '@/lib/errors/wrap';
 
 export interface MovementActionState {
   ok: boolean;
@@ -169,71 +170,81 @@ export async function stockInAction(
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
 
-  const branchId = asStr(formData.get('branchId'));
-  const variantId = asStr(formData.get('variantId'));
-  const quantity = asInt(formData.get('quantity'));
-  const unitCost = asStr(formData.get('unitCost'));
-  const supplierId = asStr(formData.get('supplierId'));
-  const documentNo = asStr(formData.get('documentNo'));
-  const lotNumber = asStr(formData.get('lotNumber'));
-  const expiryDate = asStr(formData.get('expiryDate'));
-  const note = asStr(formData.get('note'));
-
-  if (!branchId || !variantId || !quantity) {
-    return {
-      ...EMPTY,
-      scope: 'stock_in',
-      message: 'Şube, variant ve miktar zorunlu',
-    };
-  }
-
-  const gate = await guardMutation(
-    'stock_in',
-    session.user.id,
-    session,
-    PERMISSION_KEYS.STOCK_IN_CREATE,
-    branchId,
-  );
-  if (gate) return gate;
-
-  const result = await recordStockIn(
-    session.user.companyId,
-    session.user.id,
+  return trackUnexpected(
     {
-      branchId,
-      variantId,
-      quantity,
-      unitCost: unitCost ?? undefined,
-      supplierId,
-      documentNo,
-      lotNumber,
-      expiryDate,
-      note,
+      companyId: session.user.companyId,
+      userId: session.user.id,
+      route: '/admin/stock-movements',
+      action: 'stock.in',
     },
-    db,
-  );
+    async () => {
+      const branchId = asStr(formData.get('branchId'));
+      const variantId = asStr(formData.get('variantId'));
+      const quantity = asInt(formData.get('quantity'));
+      const unitCost = asStr(formData.get('unitCost'));
+      const supplierId = asStr(formData.get('supplierId'));
+      const documentNo = asStr(formData.get('documentNo'));
+      const lotNumber = asStr(formData.get('lotNumber'));
+      const expiryDate = asStr(formData.get('expiryDate'));
+      const note = asStr(formData.get('note'));
 
-  if (result.ok) {
-    writeAuditLogAsync(
-      {
-        companyId: session.user.companyId,
-        userId: session.user.id,
-        action: 'stock.in',
-        entityType: 'stock_movement',
-        entityId: result.movementId,
-        afterState: {
+      if (!branchId || !variantId || !quantity) {
+        return {
+          ...EMPTY,
+          scope: 'stock_in',
+          message: 'Şube, variant ve miktar zorunlu',
+        };
+      }
+
+      const gate = await guardMutation(
+        'stock_in',
+        session.user!.id!,
+        session,
+        PERMISSION_KEYS.STOCK_IN_CREATE,
+        branchId,
+      );
+      if (gate) return gate;
+
+      const result = await recordStockIn(
+        session.user!.companyId!,
+        session.user!.id!,
+        {
           branchId,
           variantId,
           quantity,
-          afterQty: result.afterQty,
+          unitCost: unitCost ?? undefined,
+          supplierId,
+          documentNo,
+          lotNumber,
+          expiryDate,
+          note,
         },
-      },
-      db,
-    );
-    revalidatePath('/admin/stock-movements');
-    revalidatePath('/admin/products');
-  }
-  return buildState('stock_in', result);
+        db,
+      );
+
+      if (result.ok) {
+        writeAuditLogAsync(
+          {
+            companyId: session.user!.companyId!,
+            userId: session.user!.id!,
+            action: 'stock.in',
+            entityType: 'stock_movement',
+            entityId: result.movementId,
+            afterState: {
+              branchId,
+              variantId,
+              quantity,
+              afterQty: result.afterQty,
+            },
+          },
+          db,
+        );
+        revalidatePath('/admin/stock-movements');
+        revalidatePath('/admin/products');
+      }
+      return buildState('stock_in', result);
+    },
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────

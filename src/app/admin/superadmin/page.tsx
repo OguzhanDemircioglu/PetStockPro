@@ -71,6 +71,9 @@ export default async function SuperadminTenantsPage() {
             <SupChip href="/admin/superadmin/vitrin-moderation" emoji="📋">
               Vitrin moderasyon
             </SupChip>
+            <SupChip href="/admin/superadmin/errors" emoji="🐛">
+              Hatalar
+            </SupChip>
             <SupChip href="/admin/superadmin/db-inspector" emoji="🔍">
               DB Inspector
             </SupChip>

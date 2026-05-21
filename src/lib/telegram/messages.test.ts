@@ -7,6 +7,7 @@ import {
   buildSitemapRebuildFailedAlert,
   buildSitemapCacheStaleAlert,
   buildRetentionCleanupSummary,
+  buildErrorBurstAlert,
 } from './messages';
 
 describe('buildAccountLockedAlert', () => {
@@ -292,6 +293,50 @@ describe('buildSitemapCacheStaleAlert', () => {
     expect(req.text).toContain('29 saat'); // round
     expect(req.text).toContain('2026-05-19T23:00:00Z');
     expect(req.text).toContain('https://x.com/admin');
+  });
+});
+
+describe('buildErrorBurstAlert', () => {
+  it('critical severity + sesli bildirim + panel link', () => {
+    const req = buildErrorBurstAlert({
+      errorType: 'PaymentValidationError',
+      count: 7,
+      windowMinutes: 60,
+      firstOccurredAt: '2026-05-21T03:00:00Z',
+      lastSampleMessage: 'Invalid card token',
+      panelUrl: 'https://petstockpro.com/admin/superadmin/errors',
+    });
+    expect(req.severity).toBe('critical');
+    expect(req.disableNotification).toBe(false);
+    expect(req.text).toContain('PaymentValidationError');
+    expect(req.text).toContain('7');
+    expect(req.text).toContain('60 dk');
+    expect(req.text).toContain('Invalid card token');
+    expect(req.text).toContain('https://petstockpro.com/admin/superadmin/errors');
+  });
+
+  it('lastSampleMessage 250 char ile trim', () => {
+    const long = 'x'.repeat(400);
+    const req = buildErrorBurstAlert({
+      errorType: 'A',
+      count: 5,
+      windowMinutes: 60,
+      firstOccurredAt: '2026-05-21T03:00:00Z',
+      lastSampleMessage: long,
+    });
+    expect(req.text).toContain('x'.repeat(250));
+    expect(req.text).not.toContain('x'.repeat(251));
+  });
+
+  it('HTML tag escape (< > strip)', () => {
+    const req = buildErrorBurstAlert({
+      errorType: 'A',
+      count: 5,
+      windowMinutes: 60,
+      firstOccurredAt: '2026-05-21T03:00:00Z',
+      lastSampleMessage: 'oh no <script>alert</script>',
+    });
+    expect(req.text).not.toContain('<script>');
   });
 });
 

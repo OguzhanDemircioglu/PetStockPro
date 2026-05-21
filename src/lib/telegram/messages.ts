@@ -381,6 +381,45 @@ export function buildSitemapCacheStaleAlert(
 }
 
 // ─────────────────────────────────────────────────────────────────
+// PLAN-BETA-PERFORMANCE FAZ 2.B — Error burst alert
+// ─────────────────────────────────────────────────────────────────
+
+export interface ErrorBurstAlertInput {
+  errorType: string;
+  count: number;
+  windowMinutes: number;
+  firstOccurredAt: string;
+  lastSampleMessage: string;
+  panelUrl?: string;
+}
+
+/**
+ * Aynı errorType N+ kez 60 dk içinde — Sentry replacement.
+ * Critical severity, sesli bildirim.
+ */
+export function buildErrorBurstAlert(input: ErrorBurstAlertInput): TelegramSendRequest {
+  const sample = input.lastSampleMessage.slice(0, 250).replace(/[<>]/g, '');
+  return {
+    text: [
+      '🐛 <b>Hata patlaması (burst)</b>',
+      '',
+      `<b>Tür:</b> <code>${input.errorType}</code>`,
+      `<b>Adet:</b> ${input.count} (son ${input.windowMinutes} dk)`,
+      `<b>İlk görülme:</b> <code>${input.firstOccurredAt}</code>`,
+      `<b>Örnek mesaj:</b> <code>${sample}</code>`,
+      '',
+      '<i>Acil incele — aynı hata 5+ kez tekrarladı. Sentry yerine in-app tracking.</i>',
+      input.panelUrl ? `<a href="${input.panelUrl}">Hata panelinde gör →</a>` : '',
+    ]
+      .filter(Boolean)
+      .join('\n'),
+    parseMode: 'HTML',
+    severity: 'critical',
+    disableNotification: false,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────
 // PLAN-BETA-PERFORMANCE FAZ 2.A — Retention cleanup özetleri
 // ─────────────────────────────────────────────────────────────────
 
