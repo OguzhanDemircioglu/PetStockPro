@@ -491,6 +491,40 @@ Mockup preview/vitrin-ana-petstockpro.html yok (implementli, gerek kalmadı).
 
 ---
 
+### 🆕 Tur AA-AG: Performance Audit Tur 1-5-6-11-13-14-17 uygulama (2026-05-21 gece geç)
+
+**Toplam 8 tur uygulandı, 8 commit pushed:**
+
+| Tur | Konu | Commit | Etki |
+|---|---|---|---|
+| **1** | P0-1 Vitrin 9 sayfa `force-dynamic` → revalidate (60s/300s/600s) + tracking client-side (`/api/vitrin/track` + `TrackPageView` component) | `a264ca4` | Cloudflare CDN aktive — production TTFB <100ms hedef |
+| **2** | P0-2 React.cache() request-scoped DB layer (`src/lib/cache/request-scoped.ts` — getCompanyById + getProductCountForCompany + getLowStockCountForCompany + getUnreadNotificationCount + getAllCities unstable_cache 24h) + layout + pano refactor | `a87bd7a` | Layout 4 + pano 1 duplicate elim → ~14 → 10-12 DB call/pano |
+| **3** | P0-3 postgres-js `prepare: false → true` (Hyperdrive uyumlu) | `370827d` | Planning Time 4-12ms → <1ms (production'da görünür) |
+| **4** | P1-1 Migration 0023 `companies.storefront_status` partial index `WHERE = 'approved'` | `370827d` | Vitrin filter Seq Scan → Index Scan (1K tenant ready) |
+| **5** | P1-4 Migration 0024 `products.name` + `brands.name` pg_trgm GIN index (partial: deleted_at IS NULL AND vitrin_published) | `8bcfdfa` | ILIKE `%query%` seq scan → trigram match (1K-10K ürün ready) |
+| **6** | P1-5 `next.config.ts` `experimental.optimizePackageImports` (lucide-react, framer-motion, @tanstack/react-query, date-fns, recharts) | `370827d` | **🎉 Bundle 928K → 228K (%75 azalma)** |
+| **11** | P2-2 Marketing static — root layout `cookies()` cascade → Faz 2'ye saklı (group refactor) | — | Skip |
+| **13** | P2-4 Image priority/sizes audit — vitrin'de above-fold logo `priority` ✓ + popüler/best-seller kart `sizes` ✓ | — | Fix gerek yok |
+| **14** | P2-5 TanStack `refetchOnWindowFocus: true → false` + staleTime 30s → 60s | `063957c` | 1K user × tab focus burst eliminated |
+| **17** | P3-3 middleware matcher — `/admin/superadmin/:path*` only ✓ | — | Fix gerek yok |
+
+**Migration apply:** Migration 0023 + 0024 kullanıcı tarafından manuel uygulandı, EXPLAIN ANALYZE doğrulama (small table planner küçük tabloda Seq Scan tercih etmeye devam; 1K+ row'da otomatik index'e geçer).
+
+**Kalan turlar (15-20 saat tahmin):**
+- Tur 7: P1-2 Drizzle `.prepare()` hot path (2 saat)
+- Tur 8: P1-3 query consolidation + relational query pilot (2 saat)
+- Tur 9: P2-1 bundle analyzer detay audit (1 saat)
+- Tur 10: P2-1 fix — Magic UI / Leaflet / exceljs lazy load (2-3 saat)
+- Tur 12: P2-3 Pano Suspense streaming (2 saat)
+- Tur 15: P2-6 relational query — 3 hot path helper (3-4 saat)
+- Tur 16: P3-1 revalidateTag granular (1-2 saat)
+- Tur 18: P3-4 staleTime query-bazında ek tune (1 saat)
+- Tur 19: P3-5+6+7 polish (1 saat)
+
+---
+
+---
+
 ### 🆕 Tur Y: A+B+C+D UX dürüstlük + journey + errors paneli (2026-05-21 gece)
 
 **A — Vitrin UX dürüstlük taraması 6 sayfa** (commit `5f4ce60`):
