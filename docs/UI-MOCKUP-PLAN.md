@@ -633,10 +633,34 @@ Sprint sırasına göre:
 
 ---
 
-### 5.14 vitrin-arama.html (YENİ — Sprint 12 için)
+### 5.14 vitrin-arama.html (yenile)
 
-**Doküman:** `EKRAN-PUBLIC-VITRIN.md §5-6`
-**Bileşenler:** Header + breadcrumb + filtre (sol sidebar) + üst bar (sıralama: mesafe/fiyat/yeni) + ürün grid (4 sütun, mesafe rozeti) + harita opsiyonel + pagination
+**Doküman:** `EKRAN-PUBLIC-VITRIN.md §5-6` · **Kod:** [`src/app/vitrin/ara/page.tsx`](../src/app/vitrin/ara/page.tsx) + [`src/app/vitrin/[il]/`](../src/app/vitrin/[il])
+
+> **2026-05-21 brief sync:** Sprint 12 implementasyon tamamlandı. Mockup `preview/vitrin-arama.html` **yok** — Faz 2'ye saklı.
+
+**Arama sayfası (`/vitrin/ara`, [page.tsx](../src/app/vitrin/ara/page.tsx)):**
+- Header — başlık + breadcrumb
+- `vitrin-search-form` — `vitrin-search-input` (q) + `vitrin-search-city` (il dropdown 81 + slug) + `vitrin-search-category` (kategori dropdown DEFAULT_CATEGORIES + slug)
+- Aktif filter chip'leri — `vitrin-search-clear-city` + `vitrin-search-clear-category` (tek tıkla kaldır)
+- Empty states — `empty-no-query` (form sadece + öneri text) / `empty-no-result` (filtre eşleşmeyen)
+- `search-results-grid` — ürün kartları (`search-result-card` her satır):
+  - Ürün adı + variant label + fiyat (range veya tek)
+  - Pet shop name + city/district (location string)
+  - WhatsApp deep link buton + storefront link
+- `search-pagination` — sayfa nav (prev/next + sayı)
+
+**İl/ilçe sayfa (`/vitrin/[il]/page.tsx` + `/vitrin/[il]/[ilce]/page.tsx`):** aynı arama componenti, city/district pre-filter
+
+**Kategori sayfa (`/vitrin/kategori/[slug]/page.tsx`):** kategori pre-filter
+
+**Marka sayfa (`/vitrin/marka/[slug]/page.tsx`):** marka pre-filter (brand-listings.tsx referansı)
+
+**Sıralama:** **Faz 2'ye saklı** — şu an default order (relevance / yeni eklenen). mesafe/fiyat sort harita+lat/lng aktif olunca geliyor.
+
+**Harita opsiyonel:** Faz 2'ye saklı (vitrin-anasayfa'da nearby-map var, listede yok).
+
+**Bağımlılık:** TASARIM-SISTEMI · `searchVitrinProducts` helper · cities + districts seed · vitrin_events search_query log (KVKK anonim)
 
 ---
 

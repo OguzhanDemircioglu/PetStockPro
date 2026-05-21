@@ -334,6 +334,21 @@ Mockup preview/vitrin-anasayfa.html 1093 satır var ama brand-listings + nearby-
 
 ---
 
+### 🆕 Tur U: C iş kalemi #14 — vitrin-arama brief sync (2026-05-21 gece)
+
+**Değişiklik:** [docs/UI-MOCKUP-PLAN.md §5.14](UI-MOCKUP-PLAN.md) — vitrin-arama brief'i Sprint 12 implementasyonuna göre yeniden listelendi:
+- vitrin-search-form (q + city + category dropdown + slug)
+- Aktif filter chip'leri (vitrin-search-clear-city/category tek tıkla)
+- Empty states (empty-no-query + empty-no-result)
+- search-results-grid + search-result-card (ürün adı + variant + fiyat + pet shop + city/district + WhatsApp + storefront link)
+- search-pagination
+- /vitrin/[il] + [il]/[ilce] + /vitrin/kategori/[slug] + /vitrin/marka/[slug] — aynı component pre-filter
+- Sıralama (mesafe/fiyat) + harita Faz 2'ye saklı
+
+**Sıradaki C iş kalemi:** §5.15 vitrin-urun brief sync.
+
+---
+
 ### 🆕 Geçmiş tur (2026-05-21 öğleden sonra) — referans
 
 | Commit | Konu |
