@@ -1,10 +1,9 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
-import { companies } from '@/db/schema';
+import { getCompanyById } from '@/lib/cache/request-scoped';
 import { Snowfall } from '@/components/magicui/snowfall';
 import { NumberTicker } from '@/components/magicui/number-ticker';
 import { PulsatingButton } from '@/components/magicui/pulsating-button';
@@ -50,8 +49,9 @@ export default async function AdminDashboardPage() {
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
 
+  // Tur 2 (P0-2): companyRow request-scoped cache (layout zaten çağırdı, 0 DB call)
   const [
-    companyRow,
+    company,
     stats,
     lowStock,
     activity,
@@ -62,11 +62,7 @@ export default async function AdminDashboardPage() {
     expiringSuggestions,
     feedback,
   ] = await Promise.all([
-    db
-      .select({ name: companies.name, plan: companies.plan })
-      .from(companies)
-      .where(eq(companies.id, session.user.companyId))
-      .limit(1),
+    getCompanyById(session.user.companyId),
     getDashboardStats(session.user.companyId, db),
     listLowStock(session.user.companyId, db, 6),
     listRecentActivity(session.user.companyId, db, 8),
@@ -92,7 +88,7 @@ export default async function AdminDashboardPage() {
         100
       : null;
 
-  const company = companyRow[0];
+  // company artık direkt getCompanyById return — null veya { id, name, plan, ... }
   const rawPlanLimit = planProductLimit(company?.plan ?? 'FREE');
   // KPI ring progress bar 0 = sınırsız (bar gösterimini gizler)
   const planLimit = rawPlanLimit === Infinity ? 0 : rawPlanLimit;

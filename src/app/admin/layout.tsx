@@ -1,8 +1,5 @@
 import { redirect } from 'next/navigation';
-import { and, eq, isNull, sql } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
-import { companies, productVariants, products, branchInventory } from '@/db/schema';
 import { isSuperadmin } from '@/lib/superadmin/access';
 import { readImpersonation } from '@/lib/superadmin/impersonate';
 import { AdminSidebar } from '@/components/admin-sidebar';
@@ -10,7 +7,13 @@ import { AdminTopbar } from '@/components/admin-topbar';
 import { ImpersonationBanner } from '@/components/impersonation-banner';
 import { SuperadminToolbox } from '@/components/superadmin-toolbox';
 import { planProductLimit } from '@/lib/constants/plan-limits';
-import { unreadCountForUser } from '@/lib/notifications/manage';
+// Tur 2 (P0-2): request-scoped cache — layout + pano duplicate query elimine
+import {
+  getCompanyById,
+  getProductCountForCompany,
+  getLowStockCountForCompany,
+  getUnreadNotificationCount,
+} from '@/lib/cache/request-scoped';
 
 /**
  * /admin/* layout — sidebar (brand + nav + plan) + main content area.
@@ -37,48 +40,19 @@ export default async function AdminLayout({
     : null;
   const effectiveCompanyId = impersonation?.companyId ?? session.user.companyId;
 
-  const [companyRow, productCountRow, lowStockRow, unreadCount] = await Promise.all([
-    db
-      .select({ name: companies.name, plan: companies.plan })
-      .from(companies)
-      .where(eq(companies.id, effectiveCompanyId))
-      .limit(1),
-    db
-      .select({ count: sql<number>`COUNT(*)::int` })
-      .from(products)
-      .where(
-        and(
-          eq(products.companyId, effectiveCompanyId),
-          isNull(products.deletedAt),
-        ),
-      ),
-    db
-      .select({ count: sql<number>`COUNT(*)::int` })
-      .from(branchInventory)
-      .innerJoin(
-        productVariants,
-        eq(productVariants.id, branchInventory.variantId),
-      )
-      .where(
-        and(
-          eq(branchInventory.companyId, effectiveCompanyId),
-          eq(productVariants.isActive, true),
-          sql`${branchInventory.stockQty} <= COALESCE(
-            (${productVariants.branchThresholds} ->> ${branchInventory.branchId}::text)::int,
-            ${productVariants.threshold}
-          )`,
-        ),
-      ),
-    unreadCountForUser(effectiveCompanyId, session.user.id, db),
+  // Tur 2 (P0-2): React.cache wrap'li helper'lar — pano helper'larıyla request-scoped
+  // dedupe, aynı request içinde ikinci çağrı 0 DB roundtrip.
+  const [company, productCount, lowStockCount, unreadCount] = await Promise.all([
+    getCompanyById(effectiveCompanyId),
+    getProductCountForCompany(effectiveCompanyId),
+    getLowStockCountForCompany(effectiveCompanyId),
+    getUnreadNotificationCount(effectiveCompanyId, session.user.id),
   ]);
 
-  const company = companyRow[0];
   const tenantName = company?.name ?? 'Pet shop';
   const plan = company?.plan ?? 'FREE';
   const rawLimit = planProductLimit(plan);
   const productLimit = rawLimit === Infinity ? 0 : rawLimit;
-  const productCount = productCountRow[0]?.count ?? 0;
-  const lowStockCount = lowStockRow[0]?.count ?? 0;
 
   return (
     <div className="flex min-h-screen bg-bg text-ink">
