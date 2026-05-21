@@ -2,8 +2,9 @@ import { redirect } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
-import { cities, companies } from '@/db/schema';
+import { companies } from '@/db/schema';
 import { countCatalogBrands } from '@/lib/brands/seed-catalog';
+import { getAllCities } from '@/lib/cache/request-scoped';
 import { OnboardingWizard } from './wizard';
 
 /**
@@ -26,11 +27,11 @@ export default async function OnboardingPage() {
   // Onboarding zaten tamamlandıysa /'a redirect — middleware yedek, burada da kontrol
   // (middleware Sprint 2.6'da pratik olarak gerek olmayabilir, ama defansif)
 
+  // 2026-05-22 Tur 7 YT7-6: getAllCities (unstable_cache 24h, name alfabetik)
+  // Önceki cities.id sıralaması (TR resmi il kodu) alfabetiğe geçirildi —
+  // diğer 3 sayfayla tutarlı + UX standart.
   const [cityRows, companyRows, catalogBrandCount] = await Promise.all([
-    db
-      .select({ id: cities.id, name: cities.name })
-      .from(cities)
-      .orderBy(cities.id),
+    getAllCities(),
     db
       .select({ name: companies.name, slug: companies.slug })
       .from(companies)

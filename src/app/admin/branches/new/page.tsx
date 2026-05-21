@@ -2,11 +2,10 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
-import { cities } from '@/db/schema';
+import { getAllCities } from '@/lib/cache/request-scoped';
 import { BranchForm } from '../branch-form';
 import { addBranchAction } from '../actions';
 import { getBranchDetail } from '@/lib/branches/manage';
-import { asc } from 'drizzle-orm';
 import { Step2StaffInvite } from './step2-staff-invite';
 
 /**
@@ -58,10 +57,9 @@ export default async function NewBranchPage({
   }
 
   // Step 1 — şube bilgileri formu (varsayılan)
-  const cityList = await db
-    .select({ id: cities.id, name: cities.name })
-    .from(cities)
-    .orderBy(asc(cities.name));
+  // 2026-05-22 Tur 7 YT7-6: getAllCities (unstable_cache 24h) — Türkiye 81 il
+  // sabit data, request-bağımsız ortak cache. orderBy name (alfabetik) içinde.
+  const cityList = await getAllCities();
 
   return (
     <main className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-12">

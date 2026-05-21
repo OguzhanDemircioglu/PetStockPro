@@ -2,8 +2,9 @@ import { notFound, redirect } from 'next/navigation';
 import { asc, eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
-import { cities, districts } from '@/db/schema';
+import { districts } from '@/db/schema';
 import { getCompanyProfile } from '@/lib/company/settings';
+import { getAllCities } from '@/lib/cache/request-scoped';
 import { SettingsShell } from '@/components/settings-shell';
 import { CompanyForm } from './company-form';
 
@@ -14,10 +15,8 @@ export default async function CompanySettingsPage() {
   const profile = await getCompanyProfile(session.user.companyId, db);
   if (!profile) notFound();
 
-  const cityList = await db
-    .select({ id: cities.id, name: cities.name })
-    .from(cities)
-    .orderBy(asc(cities.name));
+  // 2026-05-22 Tur 7 YT7-6: getAllCities (unstable_cache 24h)
+  const cityList = await getAllCities();
 
   const districtList = profile.cityId
     ? await db
