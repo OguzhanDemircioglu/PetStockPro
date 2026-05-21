@@ -601,25 +601,26 @@ export async function middleware(request: NextRequest) {
 
 #### Senaryo: Growth — 1.000 tenant, 3-tier B Kompozisyonu
 
-Tenant dağılımı varsayımı (TR pet shop pazar segmenti — §6.5 verisi):
+Tenant dağılımı varsayımı (TR pet shop pazar segmenti — §6.5 verisi). **Pricing 2026-05-21 son revize (1.000/2.000):**
 - %70 FREE (700 tenant × 0 ₺ = 0 ₺) — küçük mahalle, denemelik
-- %25 PRO (250 tenant × 750 ₺ = 187.500 ₺) — mahalle olgun + küçük zincir
-- %5 PRO+ (50 tenant × 1.750 ₺ = 87.500 ₺) — büyük zincirler
+- %25 PRO (250 tenant × 1.000 ₺ = 250.000 ₺) — mahalle olgun + küçük zincir
+- %5 PRO+ (50 tenant × 2.000 ₺ = 100.000 ₺) — büyük zincirler
 
 | Kalem | Tutar (aylık) | Not |
 |---|---:|---|
-| **Brüt tahsilat (PRO + PRO+)** | **+275.000 ₺** | 187.500 + 87.500 |
-| iyzico tahsilat ücreti (%3) | −8.250 ₺ | POS işlem ücreti — iyzico bizim PRO/PRO+ abonelik tahsilatımızdan keser. Pet shop'un kasa satışlarıyla SIFIR bağlantı (B2C dahil değiliz, bkz. üst not bloğu). |
-| OPEX — Cloudflare + Supabase Pro + Brevo Pro + Sentry | −7.500 ₺ | §6.2 toplamı |
+| **Brüt tahsilat (PRO + PRO+)** | **+350.000 ₺** | 250.000 + 100.000 |
+| iyzico tahsilat ücreti (%3) | −10.500 ₺ | POS işlem ücreti — iyzico bizim PRO/PRO+ abonelik tahsilatımızdan keser. Pet shop'un kasa satışlarıyla SIFIR bağlantı (B2C dahil değiliz, bkz. üst not bloğu). |
+| OPEX — Cloudflare + Supabase Pro + Brevo Pro (Sentry'siz, system_errors in-app) | −7.500 ₺ | §6.2 toplamı |
 | Mali müşavir + muhasebe + Nilvera mali mühür yıllık | −2.500 ₺ | TR küçük ölçek ortalama |
-| **Vergi öncesi kâr** | **+256.750 ₺** | |
-| Kurumlar vergisi (%25, 2026 oranı) | −64.000 ₺ | Yıllık kârın %25'inin 12 aya bölünmüş ortalaması |
-| **NET** | **~193.000 ₺/ay** | **≈ $6.400/ay** ($1 ≈ 30 ₺ varsayım) |
+| **Vergi öncesi kâr** | **+329.500 ₺** | |
+| Kurumlar vergisi (%25, 2026 oranı) | −82.375 ₺ | Yıllık kârın %25'inin 12 aya bölünmüş ortalaması |
+| **NET** | **~247.125 ₺/ay** | **≈ $8.240/ay** ($1 ≈ 30 ₺ varsayım) |
 
-**Önceki tek-tier hesapla karşılaştırma:**
-- 2-tier %10 conversion × 750 ₺ tekti: brüt 75.000 ₺, net ~47.000 ₺ ≈ $1.560
-- 3-tier B kompozisyon: brüt 275.000 ₺, net ~193.000 ₺ ≈ $6.400
-- **4× iyileşme** — PRO+ tier büyük tenant'ları yakalamayı sağlıyor
+**Pricing tarihçesi karşılaştırma (3-tier B sabit):**
+- 2026-05-14 ilk pricing 750/1.750: brüt 275.000 ₺, net ~193.000 ₺ ≈ **$6.400**
+- 2026-05-20 Karar C 1.250/2.250: brüt 425.000 ₺, net ~301.000 ₺ ≈ **$10.000**
+- 2026-05-21 son revize **1.000/2.000**: brüt 350.000 ₺, net ~247.000 ₺ ≈ **$8.240** ← güncel
+- (önceki 2-tier %10×750: brüt 75K, net ~47K ≈ $1.560 — historical)
 
 #### Senaryo: Scale — 5.000 tenant, 3-tier B
 
@@ -627,33 +628,33 @@ Aynı %70/%25/%5 dağılım korunarak:
 
 | Kalem | Tutar (aylık) |
 |---|---:|
-| PRO tahsilat (1.250 × 750 ₺) | +937.500 ₺ |
-| PRO+ tahsilat (250 × 1.750 ₺) | +437.500 ₺ |
-| **Brüt toplam** | **+1.375.000 ₺** |
-| iyzico tahsilat ücreti (%3) | −41.250 ₺ |
+| PRO tahsilat (1.250 × 1.000 ₺) | +1.250.000 ₺ |
+| PRO+ tahsilat (250 × 2.000 ₺) | +500.000 ₺ |
+| **Brüt toplam** | **+1.750.000 ₺** |
+| iyzico tahsilat ücreti (%3) | −52.500 ₺ |
 | OPEX (§6.3 Scale tier $235-305 → ~10K₺) | −10.000 ₺ |
 | Mali müşavir + ekip muhasebesi | −8.000 ₺ |
-| **Vergi öncesi kâr** | **+1.315.750 ₺** |
-| Kurumlar vergisi (%25) | −329.000 ₺/ay ort. |
-| **NET** | **~986.000 ₺/ay (≈ $32.900)** |
+| **Vergi öncesi kâr** | **+1.679.500 ₺** |
+| Kurumlar vergisi (%25) | −419.875 ₺/ay ort. |
+| **NET** | **~1.259.625 ₺/ay (≈ $42.000)** |
 
 #### Önemli Notlar
 
-1. **3-tier kompozisyon avantajı:** Tek-tier %10 × 750 ₺ ile karşılaştırınca 3-tier B'nin gücü PRO+ tier'da büyük tenant'lardan **ek %50 brüt** çekmesi. %5 PRO+ × 1.750 ₺ = 87.500 ₺ — bu %25 PRO'nun yarısı kadar.
+1. **3-tier kompozisyon avantajı:** Tek-tier %10 × 1.000 ₺ ile karşılaştırınca 3-tier B'nin gücü PRO+ tier'da büyük tenant'lardan **ek %40 brüt** çekmesi. %5 PRO+ × 2.000 ₺ = 100.000 ₺ — bu %25 PRO'nun (250.000 ₺) ~%40'ı kadar.
 
 2. **TR-only kararı (2026-05-14):** Paddle yurt dışı kaldırıldı. Tüm tahsilat iyzico üzerinden, blended komisyon tek %3 (bayi sözleşmesi). Detay: `PAYMENT-INTEGRATION.md`.
 
 3. **KDV ayrı satır (2026 %20):**
-   - PRO 750 ₺ KDV dahil = **625 ₺ matrah + 125 ₺ KDV**
-   - PRO+ 1.750 ₺ KDV dahil = **1.458 ₺ matrah + 292 ₺ KDV**
+   - PRO 1.000 ₺ KDV dahil = **833 ₺ matrah + 167 ₺ KDV**
+   - PRO+ 2.000 ₺ KDV dahil = **1.667 ₺ matrah + 333 ₺ KDV**
    - "Brüt tahsilat" KDV dahil; **KDV ayrı vergi dairesine ödenir**. Pet shop vergi mükellefi ise KDV indirebilir.
-   - Gerçek brüt matrah (1K tenant Growth): 187.500/1,2 + 87.500/1,2 ≈ **229.000 ₺**
+   - Gerçek brüt matrah (1K tenant Growth): 250.000/1,2 + 100.000/1,2 ≈ **291.667 ₺**
 
 4. **Nilvera mali mühür:** TÜBİTAK SM yıllık ~1.500 ₺ → aylık ~125 ₺ (mali müşavir kalemine dahil).
 
-5. **Tek geliştirici geçim eşikleri (yeni hesap):**
-   - **Growth (~$6.400/ay):** TR'de **tam zamanlı + ekip büyütme + pazarlama bütçesi mümkün**. Önceki dar marjlı $1.560 değil. PRO+ tier büyük fark yarattı.
-   - **Scale (~$32.900/ay):** Büyük çaplı operasyon (5-6 kişilik ekip, agresif pazarlama, R&D bütçesi).
+5. **Tek geliştirici geçim eşikleri (2026-05-21 son hesap, 1.000/2.000 pricing):**
+   - **Growth (~$8.240/ay):** TR'de **tam zamanlı + ekip büyütme + makul pazarlama bütçesi mümkün**. Önceki dar marjlı $1.560 değil. PRO+ tier büyük fark yarattı, "fiyat artırmayalım" kararı ile orta segmente uygun.
+   - **Scale (~$42.000/ay):** Büyük çaplı operasyon (5-6 kişilik ekip, agresif pazarlama, R&D bütçesi). 5K tenant senaryosu.
 
 6. **Açık varsayımlar:**
    - Dağılım %70/%25/%5 → conversion oranları realist ama tek noktasından doğrulanmadı. Lansmandan sonra 6-12 ay gerçek veriyle kalibre edilecek.
@@ -663,15 +664,17 @@ Aynı %70/%25/%5 dağılım korunarak:
 
 #### Pricing Kararı (DEVAM-REHBERI Karar C — 2026-05-14'te netleştirildi)
 
-> **Karar:** 3-tier B kabul edildi.
+> **Karar (2026-05-21 son revize):** 3-tier B kabul edildi.
 >   - **FREE 50 ürün** (0 ₺) — denemelik
->   - **PRO 500 ürün** (750 ₺/ay KDV dahil) — esas pazar
->   - **PRO+ Sınırsız** (1.750 ₺/ay KDV dahil) — büyük zincirler
+>   - **PRO 500 ürün** (1.000 ₺/ay KDV dahil) — esas pazar
+>   - **PRO+ Sınırsız** (2.000 ₺/ay KDV dahil) — büyük zincirler
+>
+> **Pricing tarihçesi:** 750/1.750 (2026-05-14 ilk) → 1.250/2.250 (2026-05-20 Karar C) → **1.000/2.000 (2026-05-21 son, "fiyat artırmayalım")**.
 >
 > **Doğrulama gerekenler (lansman sonrası):**
 > - Tier dağılımı %70/%25/%5 gerçek miydi?
-> - PRO 750 ₺ pet shop için sürdürülebilir mi?
-> - PRO+ 1.750 ₺ premium fiyat segmenti yakalıyor mu?
+> - PRO 1.000 ₺ pet shop için sürdürülebilir mi?
+> - PRO+ 2.000 ₺ premium fiyat segmenti yakalıyor mu?
 > - Lansman öncesi 30-50 pet shop pilot anketle ön-doğrulama önerilir.
 
 ### 6.5 TR Pazar Büyüklüğü Doğrulaması (2026-05-14 agent araştırması)
@@ -716,8 +719,8 @@ Yukarıdaki realist senaryonun dayanağı. DEVAM-REHBERI mantık hatası #2 düz
 | Senaryo | Tenant | Conversion | Fiyat | **Brüt/ay** | **Net/ay (vergi sonrası)** |
 |---|---:|---:|---:|---:|---:|
 | Pesimist | 500 | %5 | 500 ₺ | 12.500 ₺ | ~10.000 ₺ (~$330) |
-| **Realist (§6.4)** | **1.000** | **%10** | **750 ₺** | **75.000 ₺** | **~47.000 ₺ (~$1.560)** |
-| Optimist | 5.000 | %15 | 750 ₺ | 562.500 ₺ | ~390.000 ₺ (~$13.000) |
+| **Realist (§6.4 — 2026-05-21 1.000/2.000)** | **1.000** | **%30** (3-tier B) | **1.000/2.000 ₺** | **350.000 ₺** | **~247.000 ₺ (~$8.240)** |
+| Optimist | 5.000 | %30 (3-tier B) | 1.000/2.000 ₺ | 1.750.000 ₺ | ~1.260.000 ₺ (~$42.000) |
 
 **Belirsizlik notları:**
 - TÜİK NACE 47.76 pet shop alt-kırılımı kamuya açık değil (kod "çiçek+bitki+pet" birleşik).
@@ -822,7 +825,7 @@ Supabase düşerse:
 - 📦 Toplam ürün × tenant × plan (3-tier B kompozisyon)
 - 🚪 Davet conversion (gönderilen vs kabul edilen, email vs link breakdown — 2026-05-14 hibrit)
 - 🚩 Vitrin şikayet hacmi (son 7 gün, otomatik gizlenen sayı)
-- 💰 MRR tahmini (PRO × 750₺ + PRO+ × 1.750₺)
+- 💰 MRR tahmini (PRO × 1.000₺ + PRO+ × 2.000₺ — 2026-05-21 pricing)
 
 #### Operasyonel
 - 🔴 Past-due abonelik sayısı (kaç tenant ödeme bekliyor)

@@ -18,7 +18,7 @@
 ```
 Pet Shop (TR tenant)
     │
-    │  Aylık 750 ₺ (PRO) veya 1.750 ₺ (PRO+) — KDV dahil
+    │  Aylık 1.000 ₺ (PRO) veya 2.000 ₺ (PRO+) — KDV dahil (2026-05-21 pricing)
     ▼
 ┌────────────────┐
 │  iyzico (TR)   │
@@ -321,7 +321,7 @@ NILVERA_WEBHOOK_SECRET=
 - [ ] 3D Secure flow test (gerçek kart, küçük tutar)
 - [ ] Vergi numarası + IBAN PetStockPro adına kayıtlı
 - [ ] KKDF/BSMV otomatik kesinti doğrulandı
-- [ ] PRO (750 ₺/ay KDV dahil) ve PRO+ (1.750 ₺/ay KDV dahil) abonelik ürünleri iyzico paneline tanımlı
+- [ ] PRO (1.000 ₺/ay KDV dahil) ve PRO+ (2.000 ₺/ay KDV dahil) abonelik ürünleri iyzico paneline tanımlı
 
 ### 7.2 Nilvera
 - [ ] Nilvera kurumsal hesap aktif
@@ -349,7 +349,7 @@ NILVERA_WEBHOOK_SECRET=
 
 ### 8.1 PetStockPro Hizmet Sözleşmesi
 - Hizmet kapsamı (stok takip + vitrin)
-- Ücret (FREE / PRO 750 ₺ KDV dahil / PRO+ 1.750 ₺ KDV dahil — detay: `PLAN-KADEMELERI.md`)
+- Ücret (FREE / PRO 1.000 ₺ KDV dahil / PRO+ 2.000 ₺ KDV dahil — 2026-05-21 son, detay: `PLAN-KADEMELERI.md`)
 - Cayma hakkı (14 gün)
 - Otomatik yenileme
 - Veri sahipliği (tenant'ın verisi)

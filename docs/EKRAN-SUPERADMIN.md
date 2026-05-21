@@ -115,7 +115,7 @@ UI'da bu yetkiler **Süperadmin Toolbox FAB** (sağ alt floating button) üzerin
    📦 Toplam ürün × plan — 3-tier B kompozisyon
    🚪 Davet conversion — gönderilen vs kabul (email vs link breakdown)
    🚩 Vitrin şikayet hacmi — son 7 gün, otomatik gizlenen sayı
-   💰 MRR tahmini — PRO × 750₺ + PRO+ × 1.750₺
+   💰 MRR tahmini — PRO × 1.000₺ + PRO+ × 2.000₺ (2026-05-21 pricing)
    📊 AI image moderation success — LLaVA Workers AI accept/reject ratio
    🌟 Müşteri Memnuniyeti — WhatsApp Feedback Balonu ortalama puan + tenant ranking (2026-05-15 eklendi)
 ```

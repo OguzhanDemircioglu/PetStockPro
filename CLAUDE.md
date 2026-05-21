@@ -48,7 +48,7 @@
 3. **`docs/DEVAM-REHBERI.md`** ⭐ — kararlar listesi + bekleyen açık noktalar
 3. **`docs/MANTIK-HATALARI-2026-05-14.md`** — 40 mantık hatası çözüldü (4 tur)
 4. Bu CLAUDE.md (proje genel durumu)
-4. `docs/PLAN-KADEMELERI.md` (**3-tier B — FREE 50 / PRO 500 750₺ / PRO+ ∞ 1.750₺, TR-only** — 2026-05-14 revize, otoritatif)
+4. `docs/PLAN-KADEMELERI.md` (**3-tier B — FREE 50 / PRO 500 1.000₺ / PRO+ ∞ 2.000₺, TR-only** — 2026-05-21 son revize, otoritatif)
 5. `docs/DATABASE-SCHEMA.md` (36 tablo MVP — 6 yeni: subscriptions/invoices/processed_webhooks/vitrin_reports/system_errors/vitrin_whatsapp_feedback; storefrontStatus enum; user_role JWT claim)
 6. `docs/EKRAN-PUBLIC-VITRIN.md` (merkezi tek vitrin, hibrit fotoğraf moderation YT-1)
 7. `docs/PAYMENT-INTEGRATION.md` (iyzico + Nilvera — Paddle Faz 2'de pasif, TR-only)
@@ -60,7 +60,7 @@
 
 | Konu | Sonuç | Otoritatif Belge |
 |---|---|---|
-| **3-tier B + TR-only** | FREE 50/PRO 500 1.250₺/PRO+ ∞ 2.250₺, KDV dahil. **2026-05-20 Karar C ile pricing yükseltildi** (önceki 750/1.750 → geçim hedefi yetersizdi). Paddle Faz 2'de saklı. | `PLAN-KADEMELERI.md` |
+| **3-tier B + TR-only** | FREE 50/PRO 500 **1.000₺**/PRO+ ∞ **2.000₺**, KDV dahil. **2026-05-21 son revize** (1.250/2.250 → 1.000/2.000, kullanıcı kararı "fiyat artırmayalım"). Önceki: 2026-05-20 Karar C 750/1.750 → 1.250/2.250. Paddle Faz 2'de saklı. | `PLAN-KADEMELERI.md` |
 | **Süperadmin URL kaldırıldı** | Tek `/admin` URL, role-based sidebar menü. SUPERADMIN role'lü kullanıcı ek menüleri görür. JWT `user_role='SUPERADMIN'` claim. | `EKRAN-SUPERADMIN.md` + `SUPABASE-SETUP.md` |
 | **Net gelir tablosu** | 1K tenant × (%70 FREE / %25 PRO / %5 PRO+) = 275K₺ brüt, **~193K₺ net ≈ $6.400/ay**. iyzico "tahsilat ücreti" (POS işlem). B2C komisyon YOK. | `DEPLOYMENT.md §6.4` |
 | **Pazar verisi (TR pet shop)** | TAM 5-15K, SAM 3-4K, SOM 500-1.500 tenant (2-3 yıl). %0-5 SaaS = YEŞİL ALAN. | `DEPLOYMENT.md §6.5` |
@@ -239,8 +239,8 @@
 
 1. **3-tier (FREE / PRO / PRO+) geri açıldı** — *"FREE, PRO, PRO+ — sadece stok sayısına insanların artırmalarını istiyorum."*
    - **FREE 50 ürün** (0 ₺) — denemelik, mahalle pet shop
-   - **PRO 500 ürün** (750 ₺/ay KDV dahil) — orta segment, esas pazar
-   - **PRO+ Sınırsız** (1.750 ₺/ay KDV dahil) — büyük zincirler
+   - **PRO 500 ürün** (1.000 ₺/ay KDV dahil) — orta segment, esas pazar
+   - **PRO+ Sınırsız** (2.000 ₺/ay KDV dahil) — büyük zincirler
    - Tek farklılaşma stok limiti — diğer tüm özellikler (vitrin, çoklu şube, audit, 2FA, asistan, raporlar, Nilvera e-Arşiv) tüm planlarda açık
    - PRO+ özellikleri (custom domain, custom CSS, API, white-label, öncelikli destek) **YOK** — proje kapsamı dışı kalıyor
    - Bkz. `PLAN-KADEMELERI.md` (otoritatif belge, tamamen yeniden yazıldı)
@@ -255,7 +255,7 @@
    - Sprint 14 sadeleşti: sadece Nilvera (Paddle yok)
 
 3. **Net gelir yeniden hesaplandı** (3-tier B kompozisyonu, 1K tenant):
-   - %70 FREE × 0₺ + %25 PRO × 750₺ + %5 PRO+ × 1750₺ = **275.000 ₺/ay brüt**
+   - %70 FREE × 0₺ + %25 PRO × 1.000₺ + %5 PRO+ × 2.000₺ = **350.000 ₺/ay brüt** (2026-05-21 güncel)
    - Net (vergi sonrası): **~193.000 ₺/ay ≈ $6.400/ay** — önceki realist $1.560'tan 4× iyi
    - Bkz. `DEPLOYMENT.md §6.4`
 
@@ -271,7 +271,7 @@ Tartışmadan çıkan kararlar dokümanlara entegre edildi. **Önceki PetStockPr
 
 1. **PRO+ tier RAFA kaldırıldı** ⚠ *İPTAL 2026-05-14* — *"PRO+ planını şimdilik rafa kaldıralım, satış olmasın, sadece stok takip uygulaması olarak ilerleyelim."*
    - ~~Önceki 20/100/sınırsız (3-tier) → **YENİ: FREE 50 / PRO sınırsız (2-tier)**~~
-   - **2026-05-14 revize:** 3-tier B (FREE 50 / PRO 500 750₺ / PRO+ ∞ 1.750₺) geri açıldı
+   - **2026-05-14 revize:** 3-tier B (FREE 50 / PRO 500 / PRO+ ∞) geri açıldı (pricing 750/1.750 → 2026-05-20 Karar C 1.250/2.250 → 2026-05-21 son 1.000/2.000)
    - Bkz. `PLAN-KADEMELERI.md`
 
 2. **Vitrin yapısı: Tenant subdomain → Merkezi tek vitrin** — *"Tek bir vitrin var, her kullanıcının ortak kullandığı tek bir vitrin var."*
@@ -356,9 +356,9 @@ Aşağıdakilerin hepsi **teknik değil ticari/stratejik** kararlar — Sprint 1
 
 **Sorun:** 1K tenant × %5 PRO × 750₺ = 25K₺/ay (~$833) → maliyet sonrası net $500 → tek geliştirici geçim parası bile değil.
 
-**Karar:** ✅ **(a) Pricing yükselt** — PRO 750₺ → **1.250₺**, PRO+ 1.750₺ → **2.250₺**. Orta nokta tercih edildi (1.000-1.500₺ aralığında):
-- 1K tenant × %25 PRO × 1.250₺ = 312.500₺
-- 1K tenant × %5 PRO+ × 2.250₺ = 112.500₺
+**Karar:** ✅ **(a) Pricing yükselt** — PRO 750₺ → **1.250₺** (2026-05-20) → **1.000₺** (2026-05-21 revize), PRO+ 1.750₺ → **2.250₺** (2026-05-20) → **2.000₺** (2026-05-21 revize). "Fiyat artırmayalım" kullanıcı kararıyla Karar C revize'den orta seviyeye düşürüldü:
+- 1K tenant × %25 PRO × 1.000₺ = 250.000₺
+- 1K tenant × %5 PRO+ × 2.000₺ = 100.000₺
 - Toplam brüt ~425.000₺/ay, net ~298K₺/ay = **~$9.900/ay net** (önceki ~$6.400'den iyileşti)
 
 **Hedef tenant:** 1K tenant (2-3 yılda). 5K hedefe geçiş ise lansman sonrası 12 aylık conversion ölçümü ile yeniden değerlendirilir.
@@ -384,7 +384,7 @@ EKRAN-SUPERADMIN.md §2.5 yeniden yazıldı — Vitrin Modlama 5 alt-sekme (Manu
 | `TECH-STACK.md` | Next.js 16 + Supabase + Drizzle + Auth.js v5 + shadcn/ui + Cloudflare Workers |
 | `TASARIM-SISTEMI.md` | Verdana font + 5 logo paleti + glass + mesh + paw + hayvan mascot |
 | `MARKA-VARLIKLARI.md` | Logo + favicon + OG image + e-posta template |
-| `PLAN-KADEMELERI.md` | **3-tier B (2026-05-14): FREE 50 / PRO 500 750₺ / PRO+ ∞ 1.750₺, TR-only** — tek farklılaşma stok limiti |
+| `PLAN-KADEMELERI.md` | **3-tier B (2026-05-21 son revize): FREE 50 / PRO 500 1.000₺ / PRO+ ∞ 2.000₺, TR-only** — tek farklılaşma stok limiti |
 | `DATABASE-SCHEMA.md` | 26 tablo + Drizzle TS + RLS politikaları + trigger'lar + index'ler |
 | `SPRINT-PLAN.md` | 19 sprint × ~24 hafta (Sprint 7 → 7a/7b/7c) |
 | `DEPLOYMENT.md` | Cloudflare Workers + OpenNext + Hyperdrive (custom domain YOK — kapsam dışı) |

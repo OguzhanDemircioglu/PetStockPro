@@ -233,7 +233,7 @@ Detay: `docs/PLAN-OBSERVER-STAFF-BRANCH-STATE.md`
 |---|---|
 | Yeni commit | **2** (Karar A/C + Bayi Admin iskelet) |
 | Pricing değişen yer | **10 dosya** (UI 3 + lib 3 + docs 2 + schema 1 + test 1) |
-| Pricing yeni | PRO **1.250₺** + PRO+ **2.250₺** (önceki 750/1.750) |
+| Pricing (2026-05-20 Karar C, **2026-05-21 revize**) | PRO **1.000₺** + PRO+ **2.000₺** — önceki sıra: 750/1.750 (2026-05-14) → 1.250/2.250 (Karar C 2026-05-20) → **1.000/2.000 (son 2026-05-21, kullanıcı kararı "fiyat artırmayalım")** |
 | Yeni placeholder sayfa | `/admin/bayi` (Faz 3) |
 | DB rollback | 1 user (oguzhanturgut SUPERADMIN→BAYI_SAHIBI) |
 | Disk temizliği | 16 MB (41 dosya, yeni-resimler/) |
@@ -1432,8 +1432,8 @@ Kararlar referansı için gerektikçe oku (kod yazma için her seferinde okumana
 > 2026-05-13 "2-tier, PRO+ rafa" kararı **iptal edildi**. Yeni karar:
 
 - ✅ **FREE 50 ürün** (0 ₺) — denemelik
-- ✅ **PRO 500 ürün** (750 ₺/ay KDV dahil) — orta segment esas pazar
-- ✅ **PRO+ Sınırsız** (1.750 ₺/ay KDV dahil) — büyük zincirler
+- ✅ **PRO 500 ürün** (1.000 ₺/ay KDV dahil — 2026-05-21 revize, önceki 750/1.250) — orta segment esas pazar
+- ✅ **PRO+ Sınırsız** (2.000 ₺/ay KDV dahil — 2026-05-21 revize, önceki 1.750/2.250) — büyük zincirler
 - ✅ Tek farklılaşma stok limiti — tüm özellikler her planda açık
 - ✅ Custom domain, custom CSS, API erişimi, white-label, öncelikli destek hâlâ **YOK** (kapsam dışı)
 - ✅ **TR-only:** Paddle MoR kaldırıldı, EN locale gizlendi, Frankfurter kur kaldırıldı, sadece iyzico + Nilvera
@@ -1876,7 +1876,7 @@ Mockup'lar bittikten **veya** paralel olarak başlatılabilir. `SPRINT-PLAN.md �
 ## 🚦 KARAR VERİLEN VS BEKLEYEN — Tek Bakışta
 
 ### ✅ Karar Verildi (artık tartışılmaz)
-- **Plan tier 3-tier B (2026-05-14): FREE 50 / PRO 500 750₺ / PRO+ ∞ 1.750₺ — TR-only**
+- **Plan tier 3-tier B (2026-05-14 yapı, 2026-05-21 son pricing): FREE 50 / PRO 500 1.000₺ / PRO+ ∞ 2.000₺ — TR-only**
 - Vitrin merkezi tek (`/vitrin`)
 - Para akışı çizgisi (B2C'de YOK)
 - Stok 0 → vitrin'den çekme

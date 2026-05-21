@@ -15,7 +15,7 @@
 
 > **2026-05-13 ek:** Vitrin Metrikleri ekranı **Ayarlar > Vitrin > Metrikler alt-tab** olarak yer alır. Sidebar'a ayrı item eklenmez (sade tutmak için). Bkz. §2.1c Vitrin Metrikleri.
 
-> **🚨 2026-05-14 revize:** **3-tier B geri açıldı, TR-only.** Plan tablosu: **FREE 50 ürün (0 ₺) / PRO 500 ürün (750 ₺) / PRO+ Sınırsız (1.750 ₺)**, KDV dahil. Önceki 2-tier (PRO+ rafa, 2026-05-13) **iptal edildi**. Yurt dışı ödeme (Paddle/USD/EUR) ve EN locale **kapsam dışı**. Detay: `PLAN-KADEMELERI §1` + `DEPLOYMENT §6.4`. Bkz. §2.2 Plan + Fatura.
+> **🚨 2026-05-14 revize (pricing 2026-05-21 son):** **3-tier B geri açıldı, TR-only.** Plan tablosu: **FREE 50 ürün (0 ₺) / PRO 500 ürün (1.000 ₺) / PRO+ Sınırsız (2.000 ₺)**, KDV dahil. Önceki 2-tier (PRO+ rafa, 2026-05-13) **iptal edildi**. Pricing tarihçesi: 750/1.750 (2026-05-14) → 1.250/2.250 (Karar C 2026-05-20) → **1.000/2.000 (2026-05-21 son, "fiyat artırmayalım")**. Yurt dışı ödeme (Paddle/USD/EUR) ve EN locale **kapsam dışı**. Detay: `PLAN-KADEMELERI §1` + `DEPLOYMENT §6.4`. Bkz. §2.2 Plan + Fatura.
 
 > Tek sayfa tenant-level configuration. Sol sidebar 6 bölüm seçici, sağda içerik.
 
@@ -250,7 +250,7 @@ Plan karşılaştırma (3 sütun grid — 3-tier B, TR-only)
 ┌──────────────────┬──────────────────┬──────────────────┐
 │  FREE            │  PRO             │  PRO+            │
 │  ───────────     │  ───────────     │  ───────────     │
-│  0 ₺ / ay        │  750 ₺ / ay      │  1.750 ₺ / ay    │
+│  0 ₺ / ay        │  1.000 ₺ / ay    │  2.000 ₺ / ay    │
 │  (KDV dahil)     │  (KDV dahil)     │  (KDV dahil)     │
 │                  │                  │                  │
 │  📦 50 ürün      │  📦 500 ürün     │  📦 Sınırsız     │
@@ -286,10 +286,10 @@ Felsefe: "Tüm özellikler tüm planlarda açık. Sadece stok limiti farklı."
 Fatura geçmişi (Nilvera e-Arşiv — TR yasal zorunluluk)
   Tarih │ Plan │ Tutar      │ Durum    │ İşlem
   ──────────────────────────────────────────────
-  07Apr │ PRO  │ ₺750       │ Ödendi   │ [PDF e-Arşiv]
-  07Mar │ PRO  │ ₺750       │ Ödendi   │ [PDF e-Arşiv]
+  07Apr │ PRO  │ ₺1.000     │ Ödendi   │ [PDF e-Arşiv]
+  07Mar │ PRO  │ ₺1.000     │ Ödendi   │ [PDF e-Arşiv]
 
-  (PRO+ örneği: ₺1.750 — sınırsız stok)
+  (PRO+ örneği: ₺2.000 — sınırsız stok)
 
 Aboneliği iptal et
   [⛔ Aboneliği Sonlandır]

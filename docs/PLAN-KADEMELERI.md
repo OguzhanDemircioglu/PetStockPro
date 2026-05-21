@@ -7,7 +7,7 @@
 > **🚨 2026-05-14 KARAR REVİZYONU — 3-tier geri açıldı, TR-only:**
 > *"FREE, PRO, PRO+ — sadece stok sayısına insanların artırmalarını istiyorum. Şimdilik sadece TR'de kullanılacak."* — kullanıcı.
 >
-> **Yeni 3-tier:** FREE **50** / PRO **500** (1.250 ₺) / PRO+ **Sınırsız** (2.250 ₺). _2026-05-20 Karar C ile pricing yükseltildi._
+> **Yeni 3-tier:** FREE **50** / PRO **500** (1.000 ₺) / PRO+ **Sınırsız** (2.000 ₺). _2026-05-21 revize — pricing 1.250/2.250'den 1.000/2.000'e düşürüldü (kullanıcı kararı: fiyat artırma)._
 > Farklılaşma **tek boyutta** — ürün limiti. Diğer tüm özellikler (vitrin, çoklu şube, audit, 2FA, asistan, raporlar, KVKK, Telegram, e-Arşiv vb.) **tüm planlarda açık**.
 >
 > **Önceki kararlar:**
@@ -23,8 +23,8 @@
 | Plan | Stok limiti | Aylık fiyat | Hedef segment |
 |---|---:|---:|---|
 | **FREE** | **50 ürün** | 0 ₺ | Denemelik, mahalle pet shop |
-| **PRO** | **500 ürün** | 1.250 ₺ | Orta segment, esas pazar (mahalle olgun + küçük zincir) |
-| **PRO+** | **Sınırsız** | 2.250 ₺ | Büyük zincirler (500+ ürün, çoklu şube) |
+| **PRO** | **500 ürün** | 1.000 ₺ | Orta segment, esas pazar (mahalle olgun + küçük zincir) |
+| **PRO+** | **Sınırsız** | 2.000 ₺ | Büyük zincirler (500+ ürün, çoklu şube) |
 
 **Fiyat KDV dahil** (2026 oranı %20):
 - PRO matrah = 625 ₺ + KDV 125 ₺
@@ -51,7 +51,7 @@
 
 - **Doğal segment ayrımı** — Mahalle 50'de fit, olgun mahalle PRO'ya geçer, büyük chain PRO+ alır
 - **Tek farklılaşma stok sayısı** — Pazarlama mesajı net: *"Büyüdükçe öde"*
-- **PRO+ pricing premium** — Büyük chain (500+ ürün) için 2.250 ₺ orta-piyasa POS yıllık ücretinin altı (rakip Logo Go ~2-3K ₺/ay)
+- **PRO+ pricing premium** — Büyük chain (500+ ürün) için 2.000 ₺ orta-piyasa POS yıllık ücretinin altı (rakip Logo Go ~2-3K ₺/ay)
 - **Yeşil alan avantajı** — TR'de pet shop'a özel SaaS yok (TESK 2024 + DEPLOYMENT.md §6.5)
 
 ---
@@ -231,21 +231,21 @@ if (activeCount + 1 > limit) {
 ```
 FREE %80 banner:
 "⚠ Plan limitine yaklaştın: {used}/50.
- PRO'ya yükselt — 500 ürün, 1.250 ₺/ay (KDV dahil)."
+ PRO'ya yükselt — 500 ürün, 1.000 ₺/ay (KDV dahil)."
 
 FREE %100 modal:
 "FREE plan 50 ürün limitine ulaştın. Yeni ürün ekleyebilmek için:
- ○ PRO'ya yükselt (500 ürün — 1.250 ₺/ay)
+ ○ PRO'ya yükselt (500 ürün — 1.000 ₺/ay)
  ○ Bir ürünü arşivle (limit altına in)
  Taslak olarak kaydedebilirsin (yayına alınmaz)"
 
 PRO %80 banner:
 "⚠ Plan limitine yaklaştın: {used}/500.
- PRO+'ya yükselt — sınırsız ürün, 2.250 ₺/ay (KDV dahil)."
+ PRO+'ya yükselt — sınırsız ürün, 2.000 ₺/ay (KDV dahil)."
 
 PRO %100 modal:
 "PRO plan 500 ürün limitine ulaştın. Yeni ürün ekleyebilmek için:
- ○ PRO+'ya yükselt (sınırsız ürün — 2.250 ₺/ay)
+ ○ PRO+'ya yükselt (sınırsız ürün — 2.000 ₺/ay)
  ○ Bir ürünü arşivle (limit altına in)"
 
 PRO+ — limit mesajı yok (∞)
@@ -289,13 +289,13 @@ Sprint 0 öncesi henüz veri yok (yeni proje) → migration gerek yok, yeni limi
 | Tier | Tenant payı | Tenant sayısı | Aylık fiyat | Brüt/ay |
 |---|---:|---:|---:|---:|
 | FREE | %70 | 700 | 0 ₺ | 0 ₺ |
-| PRO | %25 | 250 | 1.250 ₺ | 312.500 ₺ |
-| PRO+ | %5 | 50 | 2.250 ₺ | 112.500 ₺ |
-| **Toplam** | — | **1.000** | — | **425.000 ₺** |
+| PRO | %25 | 250 | 1.000 ₺ | 250.000 ₺ |
+| PRO+ | %5 | 50 | 2.000 ₺ | 100.000 ₺ |
+| **Toplam** | — | **1.000** | — | **350.000 ₺** |
 
-iyzico tahsilat ücreti %3 (-12.750) + OPEX (-7.500) + Mali müşavir (-2.500) = -22.750 ₺
-Vergi öncesi kâr: 402.250 ₺ → Kurumlar vergisi %25 = -100.500 ₺
-**NET: ~301.750 ₺/ay ≈ $10.000/ay** (2026-05-20 Karar C ile pricing yükseltme — önceki net $6.400/ay)
+iyzico tahsilat ücreti %3 (-10.500) + OPEX (-7.500) + Mali müşavir (-2.500) = -20.500 ₺
+Vergi öncesi kâr: 329.500 ₺ → Kurumlar vergisi %25 = -82.375 ₺
+**NET: ~247.125 ₺/ay ≈ $8.240/ay** (2026-05-21 pricing 1.000/2.000 revize — önceki 1.250/2.250'de $10K, 750/1.750'de $6.4K)
 
 > **Not (para akışı çizgisi):** "iyzico tahsilat ücreti %3" = iyzico'nun **bizim** PRO/PRO+ abonelik kart işlem ücreti (POS komisyonu eşdeğer). Pet shop'un müşterilerine sattığı ürünlerden komisyon almıyoruz — B2C para akışına dahil değiliz (bkz. `EKRAN-PUBLIC-VITRIN.md §13.4`).
 
@@ -303,4 +303,4 @@ Detay: `DEPLOYMENT.md §6.4`.
 
 ---
 
-*Son güncelleme: 2026-05-20. **3-tier B (FREE 50 / PRO 500 / PRO+ Sınırsız) onaylandı. Pricing 2026-05-20 Karar C ile revize: PRO 1.250₺, PRO+ 2.250₺. TR-only.***
+*Son güncelleme: 2026-05-21. **3-tier B (FREE 50 / PRO 500 / PRO+ Sınırsız) onaylandı. Pricing 2026-05-21 revize: PRO 1.000₺, PRO+ 2.000₺ (önceki Karar C 1.250/2.250'den düşürüldü, "fiyat artırmayalım" kullanıcı kararı). TR-only.***

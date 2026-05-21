@@ -93,7 +93,8 @@ Multi-tenant SaaS — Tek DB, Row-Level Security
 import { pgTable, uuid, varchar, text, integer, boolean, timestamp, jsonb, pgEnum } from 'drizzle-orm/pg-core';
 
 // 2026-05-14 KARAR REVİZYONU: 3-tier (FREE + PRO + PRO_PLUS) geri açıldı, TR-only.
-//   FREE 50 ürün (0₺) / PRO 500 ürün (750₺/ay KDV dahil) / PRO+ Sınırsız (1.750₺/ay KDV dahil)
+// 2026-05-21 pricing son revize: 1.000/2.000 (önceki 750/1.750 → 1.250/2.250 → 1.000/2.000).
+//   FREE 50 ürün (0₺) / PRO 500 ürün (1.000₺/ay KDV dahil) / PRO+ Sınırsız (2.000₺/ay KDV dahil)
 //   Tek farklılaşma stok limiti — diğer tüm özellikler tüm planlarda açık.
 //   Detay: PLAN-KADEMELERI.md (3-tier B onaylandı)
 //   Önceki 2026-05-13 "2-tier, PRO+ rafa" kararı iptal edildi.
@@ -177,8 +178,8 @@ export const plans = pgTable('plans', {
 });
 // Seed (2026-05-14 — 3-tier B onaylandı):
 //   FREE     | productLimit: 50    | priceTryMonthly: 0     | priceUsdMonthly: 0
-//   PRO      | productLimit: 500   | priceTryMonthly: 750   | priceUsdMonthly: 0
-//   PRO_PLUS | productLimit: NULL  | priceTryMonthly: 1750  | priceUsdMonthly: 0
+//   PRO      | productLimit: 500   | priceTryMonthly: 1000  | priceUsdMonthly: 0
+//   PRO_PLUS | productLimit: NULL  | priceTryMonthly: 2000  | priceUsdMonthly: 0
 // TR-only kararı: priceUsdMonthly = 0 (Faz 2 yurt dışı açılışında doldurulur).
 
 // 2026-05-21 — Migration 0021 (Observer + Yetki + Şube state refactor):
@@ -1438,9 +1439,9 @@ export const invoices = pgTable('invoices', {
   periodEnd: timestamp('period_end', { withTimezone: true }).notNull(),
 
   // Tutar (2026 %20 KDV)
-  amountMatrah: decimal('amount_matrah', { precision: 10, scale: 2 }).notNull(),    // KDV hariç (örn. 625 ₺ PRO için)
-  vatAmount: decimal('vat_amount', { precision: 10, scale: 2 }).notNull(),          // KDV (örn. 125 ₺)
-  amountTotal: decimal('amount_total', { precision: 10, scale: 2 }).notNull(),      // KDV dahil (örn. 750 ₺)
+  amountMatrah: decimal('amount_matrah', { precision: 10, scale: 2 }).notNull(),    // KDV hariç (örn. 833 ₺ PRO için)
+  vatAmount: decimal('vat_amount', { precision: 10, scale: 2 }).notNull(),          // KDV (örn. 167 ₺)
+  amountTotal: decimal('amount_total', { precision: 10, scale: 2 }).notNull(),      // KDV dahil (örn. 1.000 ₺)
 
   // Nilvera e-Arşiv referansları
   nilveraInvoiceId: varchar('nilvera_invoice_id', { length: 100 }),       // Nilvera UUID
@@ -2003,8 +2004,8 @@ CREATE INDEX idx_movements_realtime ON stock_movements(company_id, created_at) W
 -- price_try_monthly KDV dahil. price_usd_monthly = 0 (TR-only, Faz 2'de doldurulur).
 INSERT INTO plans (tier, product_limit, price_try_monthly, price_usd_monthly, features) VALUES
   ('FREE',     50,   0,    0, '{"all_features": true}'),
-  ('PRO',      500,  750,  0, '{"all_features": true}'),
-  ('PRO_PLUS', NULL, 1750, 0, '{"all_features": true}');
+  ('PRO',      500,  1000, 0, '{"all_features": true}'),
+  ('PRO_PLUS', NULL, 2000, 0, '{"all_features": true}');
 
 -- Default kategoriler (tenant başına copy template — onboarding'de)
 -- 2026-05-14 MANTIK-HATALARI YT-3: KDV %18 → %20 (TR 2024 Temmuz oranı). Mama %10 gıda, Sağlık %8 özel oran.

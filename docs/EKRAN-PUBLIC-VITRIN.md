@@ -22,8 +22,8 @@
 | Plan | Stok limiti | Aylık fiyat | Vitrin'e dahil olma |
 |---|---|---|---|
 | **FREE** | 50 ürün | 0 ₺ | ✅ Otomatik (KVKK onayı + süperadmin onayı sonrası) |
-| **PRO** | 500 ürün | 750 ₺ (KDV dahil) | ✅ Aynı |
-| **PRO+** | Sınırsız | 1.750 ₺ (KDV dahil) | ✅ Aynı |
+| **PRO** | 500 ürün | 1.000 ₺ (KDV dahil) | ✅ Aynı |
+| **PRO+** | Sınırsız | 2.000 ₺ (KDV dahil) | ✅ Aynı |
 
 **Tüm planlar vitrin'e açık.** Plan kısıtlaması YOK — sadece stok limiti farklı.
 
@@ -1244,8 +1244,8 @@ export async function POST(req: Request) {
 | Plan | Vitrin |
 |---|---|
 | FREE (50 ürün) | ✅ Aktif (KVKK + süperadmin onay sonrası) |
-| PRO (500 ürün, 750 ₺/ay) | ✅ Aynı |
-| PRO+ (sınırsız, 1.750 ₺/ay) | ✅ Aynı |
+| PRO (500 ürün, 1.000 ₺/ay) | ✅ Aynı |
+| PRO+ (sınırsız, 2.000 ₺/ay) | ✅ Aynı |
 
 **Tüm planlar aynı görünür** — vitrin'de "öne çıkma" / "Sponsored" özelliği YOK (rekabet eşit, tek tema, eşit görünüm). Plan farkı sadece pet shop'un kataloga kaç ürün ekleyebileceğini etkiler, vitrin sıralamasına etkisi YOK.
 

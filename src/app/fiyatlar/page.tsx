@@ -6,7 +6,7 @@ import { MarketingFooter } from '@/components/marketing/footer';
 export const metadata: Metadata = {
   title: 'Fiyatlar — PetStockPro',
   description:
-    'PetStockPro plan kademeleri: FREE 50 ürün ücretsiz · PRO 500 ürün 1.250₺/ay · PRO+ Sınırsız 2.250₺/ay. KDV dahil, TR yerleşik pet shop\'lara özel.',
+    'PetStockPro plan kademeleri: FREE 50 ürün ücretsiz · PRO 500 ürün 1.000₺/ay · PRO+ Sınırsız 2.000₺/ay. KDV dahil, TR yerleşik pet shop\'lara özel.',
 };
 
 interface Plan {
@@ -39,7 +39,7 @@ const PLANS: Plan[] = [
   {
     key: 'PRO',
     name: 'PRO',
-    price: '1.250 ₺',
+    price: '1.000 ₺',
     priceNote: 'aylık, KDV dahil',
     limit: '500 ürüne kadar',
     highlight: true,
@@ -54,7 +54,7 @@ const PLANS: Plan[] = [
   {
     key: 'PRO_PLUS',
     name: 'PRO+',
-    price: '2.250 ₺',
+    price: '2.000 ₺',
     priceNote: 'aylık, KDV dahil',
     limit: 'Sınırsız ürün',
     features: [
