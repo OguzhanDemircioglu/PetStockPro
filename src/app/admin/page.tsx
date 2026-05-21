@@ -1,9 +1,12 @@
+import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { getCompanyById } from '@/lib/cache/request-scoped';
+import { PetSpinner } from '@/components/ui/pet-spinner';
+import { PanoExpiringSection } from './_pano-expiring-section';
 import { Snowfall } from '@/components/magicui/snowfall';
 import { NumberTicker } from '@/components/magicui/number-ticker';
 import { PulsatingButton } from '@/components/magicui/pulsating-button';
@@ -19,11 +22,7 @@ import {
   listDiscountSuggestions,
   formatMonthsOfInventory,
 } from '@/lib/assistant/discount-suggestions';
-import {
-  listExpiringSuggestions,
-  formatExpiryLabel,
-  type ExpirySeverity,
-} from '@/lib/assistant/expiring-suggestions';
+// Tur 12: listExpiringSuggestions PanoExpiringSection'a taşındı (Suspense)
 import { getFeedbackSummary } from '@/lib/vitrin/feedback';
 import { planProductLimit, planLimitDisplay } from '@/lib/constants/plan-limits';
 
@@ -49,7 +48,9 @@ export default async function AdminDashboardPage() {
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
 
-  // Tur 2 (P0-2): companyRow request-scoped cache (layout zaten çağırdı, 0 DB call)
+  // Tur 2 (P0-2) + Tur 12 (P2-3): companyRow request-scoped cache + Suspense
+  // streaming. listExpiringSuggestions (JSONB-heavy) ayrı async component'ta
+  // <Suspense> altında stream → pano hero/KPI/alert anında render.
   const [
     company,
     stats,
@@ -59,7 +60,6 @@ export default async function AdminDashboardPage() {
     orderSuggestions,
     transferSuggestions,
     discountSuggestions,
-    expiringSuggestions,
     feedback,
   ] = await Promise.all([
     getCompanyById(session.user.companyId),
@@ -70,7 +70,6 @@ export default async function AdminDashboardPage() {
     listOrderSuggestions(session.user.companyId, db, 5),
     listTopTransferSuggestions(session.user.companyId, db, 5),
     listDiscountSuggestions(session.user.companyId, db, 5),
-    listExpiringSuggestions(session.user.companyId, db, 6),
     getFeedbackSummary(session.user.companyId, db, 30),
   ]);
 
@@ -634,87 +633,17 @@ export default async function AdminDashboardPage() {
         </section>
       )}
 
-      {expiringSuggestions.length > 0 && (
-        <section data-testid="petpro-expiring-suggestions">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-cat">
-              🤖 PetPro Asistanı · SKT Yaklaşan
-            </h2>
-            <Link
-              href={'/admin/stock-movements' as never}
-              className="text-[12.5px] font-bold text-cat hover:underline"
-            >
-              Hareketleri aç →
-            </Link>
+      {/* Tur 12 (P2-3): Suspense streaming — JSONB-heavy expiring query
+          arka planda yüklenir, üst section'lar bekletmez */}
+      <Suspense
+        fallback={
+          <div className="flex items-center justify-center py-6">
+            <PetSpinner size="sm" inline tone="cat" label="SKT öneriler yükleniyor" />
           </div>
-          <article className="rounded-2xl border-2 border-danger/30 bg-gradient-to-br from-danger-soft/30 to-cat-soft/20 p-4">
-            <p className="mb-3 text-[12.5px] text-ink-3">
-              SKT&apos;si yaklaşan (≤30 gün) veya geçmiş stok satırları — fire kaydı al veya indirimle hızlandır:
-            </p>
-            <ul className="divide-y divide-line-soft text-xs">
-              {expiringSuggestions.map((e) => {
-                const toneClass: Record<ExpirySeverity, string> = {
-                  expired: 'text-danger-7 font-bold',
-                  critical: 'text-danger-7 font-bold',
-                  warning: 'text-cart font-bold',
-                };
-                const badgeClass: Record<ExpirySeverity, string> = {
-                  expired: 'bg-danger text-white',
-                  critical: 'bg-danger-soft text-danger-7',
-                  warning: 'bg-cat-soft text-cart',
-                };
-                const badgeLabel: Record<ExpirySeverity, string> = {
-                  expired: '🚨 GEÇTİ',
-                  critical: '⏱ ≤7 gün',
-                  warning: '⚠ ≤30 gün',
-                };
-                return (
-                  <li
-                    key={`${e.variantId}-${e.branchId}`}
-                    data-expiring-suggestion={e.variantId}
-                    data-severity={e.severity}
-                    className="flex items-center gap-3 py-2.5"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-[13.5px] font-bold text-ink">
-                        {e.productName}{' '}
-                        {e.variantLabel && (
-                          <span className="text-[11.5px] font-normal text-ink-3">
-                            · {e.variantLabel}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-1.5 text-[12px] text-ink-3">
-                        <span>📍 {e.branchName}</span>
-                        <span>·</span>
-                        <span className="font-bold text-cart">📦 {e.stockQty} adet</span>
-                        <span>·</span>
-                        <span className={toneClass[e.severity]}>
-                          📅 {e.expiryDate} · {formatExpiryLabel(e.daysUntilExpiry)}
-                        </span>
-                      </div>
-                    </div>
-                    <span
-                      data-expiring-badge
-                      className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${badgeClass[e.severity]}`}
-                    >
-                      {badgeLabel[e.severity]}
-                    </span>
-                    <Link
-                      href={
-                        `/admin/stock-movements?variant=${e.variantId}&branch=${e.branchId}` as never
-                      }
-                      className="rounded-lg border border-danger/40 bg-paper px-2.5 py-1.5 text-[12px] font-bold text-danger-7 hover:bg-danger hover:text-white transition-colors"
-                    >
-                      📤 Fire kaydı
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </article>
-        </section>
-      )}
+        }
+      >
+        <PanoExpiringSection companyId={session.user.companyId} />
+      </Suspense>
 
       {orderSuggestions.length > 0 && (
         <section data-testid="petpro-assistant">
