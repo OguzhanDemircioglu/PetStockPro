@@ -15,9 +15,16 @@ export function NotificationBell({ unreadCount: serverCount }: { unreadCount: nu
     queryClient.setQueryData<number>(notificationKeys.unreadCount(), serverCount);
   }, [serverCount, queryClient]);
 
+  // 2026-05-22 Tur 7 YT7-9: cache.subscribe global → notification key filtre.
+  // Önceki: tüm cache event'leri (product/stock/audit/notification 5+ query)
+  // bell'i re-render ediyordu (pano açıkken excessive). Şimdi sadece
+  // 'notifications' namespace cache değişiklikleri tetikler.
   const cache = queryClient.getQueryCache();
   const unreadCount = useSyncExternalStore(
-    (notify) => cache.subscribe(notify),
+    (notify) =>
+      cache.subscribe((event) => {
+        if (event.query.queryKey[0] === 'notifications') notify();
+      }),
     () =>
       queryClient.getQueryData<number>(notificationKeys.unreadCount()) ?? serverCount,
     () => serverCount,
