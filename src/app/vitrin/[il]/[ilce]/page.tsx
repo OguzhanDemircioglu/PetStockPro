@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { headers } from 'next/headers';
+import { TrackPageView } from '@/components/vitrin/track-page-view';
 import { db } from '@/lib/db/client';
 import {
   buildWhatsappLink,
@@ -12,13 +12,14 @@ import {
   type ListStorefrontsFilters,
   type StorefrontSort,
 } from '@/lib/vitrin/public';
-import { trackVitrinEventAsync } from '@/lib/vitrin/track';
+// Tur 1: tracking client-side TrackPageView ile
 import { WhatsappButton } from '@/components/vitrin/whatsapp-button';
 import { buildVitrinPageMetadata } from '@/lib/vitrin/page-metadata';
 import { buildBreadcrumbLd } from '@/lib/vitrin/schema-org';
 import { getPublicBaseUrl } from '@/lib/vitrin/sitemap-data';
 
-export const dynamic = 'force-dynamic';
+// Tur 1 (P0-1): force-dynamic kaldırıldı, CDN cache aktive
+export const revalidate = 300; // 5 dk ISR — ilçe ürün listesi
 
 interface SearchParams {
   q?: string;
@@ -95,25 +96,7 @@ export default async function VitrinDistrictPage({
   const isFirstPage = page <= 1;
   const isLastPage = page >= totalPages;
 
-  // Search tracking — KVKK anonim
-  const hdrs = await headers();
-  const xff = hdrs.get('x-forwarded-for') ?? hdrs.get('x-real-ip');
-  const ip = xff ? xff.split(',')[0].trim() : undefined;
-  const ua = hdrs.get('user-agent') ?? undefined;
-  if (filters.q) {
-    for (const sf of storefronts.slice(0, 5)) {
-      trackVitrinEventAsync(
-        {
-          companyId: sf.companyId,
-          eventType: 'search',
-          searchQuery: filters.q,
-          ipAddress: ip,
-          userAgent: ua,
-        },
-        db,
-      );
-    }
-  }
+  // Tracking client-side TrackPageView JSX'te (force-dynamic'i tetiklemez).
 
   function buildPageUrl(p: number): string {
     const qs = new URLSearchParams();
@@ -137,6 +120,16 @@ export default async function VitrinDistrictPage({
 
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-8">
+      {/* Tur 1: client-side search tracking — q varsa ilk 5 storefront */}
+      {filters.q &&
+        storefronts.slice(0, 5).map((sf) => (
+          <TrackPageView
+            key={`track-${sf.companyId}`}
+            companyId={sf.companyId}
+            eventType="search"
+            searchQuery={filters.q}
+          />
+        ))}
       <script
         type="application/ld+json"
         data-testid="ld-breadcrumb"

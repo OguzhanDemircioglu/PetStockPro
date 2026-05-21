@@ -13,7 +13,8 @@ import { buildVitrinPageMetadata } from '@/lib/vitrin/page-metadata';
 import { buildBreadcrumbLd } from '@/lib/vitrin/schema-org';
 import { getPublicBaseUrl } from '@/lib/vitrin/sitemap-data';
 
-export const dynamic = 'force-dynamic';
+// Tur 1 (P0-1): force-dynamic kaldırıldı, CDN cache aktive
+export const revalidate = 300; // 5 dk ISR — kategori ürün listesi
 
 interface SearchParams {
   page?: string;

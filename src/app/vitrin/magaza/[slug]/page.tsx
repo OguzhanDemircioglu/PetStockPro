@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { headers } from 'next/headers';
+import { TrackPageView } from '@/components/vitrin/track-page-view';
 import type { Metadata } from 'next';
 import { db } from '@/lib/db/client';
 import {
@@ -10,7 +10,7 @@ import {
   listStorefrontProducts,
   groupStorefrontProductsByBrand,
 } from '@/lib/vitrin/public';
-import { trackVitrinEventAsync } from '@/lib/vitrin/track';
+// Tur 1: tracking client-side TrackPageView ile
 import {
   buildLocalBusinessLd,
   buildBreadcrumbLd,
@@ -22,7 +22,8 @@ import { ReportButton } from '@/app/vitrin/report-button';
 import { WhatsappButton } from '@/components/vitrin/whatsapp-button';
 import { buildVitrinPageMetadata } from '@/lib/vitrin/page-metadata';
 
-export const dynamic = 'force-dynamic';
+// Tur 1 (P0-1): force-dynamic kaldırıldı, CDN cache aktive
+export const revalidate = 300; // 5 dk ISR — pet shop profili
 
 export async function generateMetadata({
   params,
@@ -61,23 +62,7 @@ export default async function StorefrontProfilePage({
 
   const products = await listStorefrontProducts(sf.companyId, db, 48);
 
-  // KVKK anonim tracking — profile_view + product_view (ilk 5 ürün listelendi)
-  const hdrs = await headers();
-  const xff = hdrs.get('x-forwarded-for') ?? hdrs.get('x-real-ip');
-  const ip = xff ? xff.split(',')[0].trim() : undefined;
-  const ua = hdrs.get('user-agent') ?? undefined;
-  const referrer = hdrs.get('referer') ?? undefined;
-
-  trackVitrinEventAsync(
-    {
-      companyId: sf.companyId,
-      eventType: 'profile_view',
-      ipAddress: ip,
-      userAgent: ua,
-      referrerUrl: referrer,
-    },
-    db,
-  );
+  // Tracking client-side TrackPageView ile JSX'te.
 
   const waPhone = sf.contactWhatsapp ?? sf.companyWhatsapp;
   const whatsappUrl = buildWhatsappLink(
@@ -97,6 +82,8 @@ export default async function StorefrontProfilePage({
 
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8">
+      {/* Tur 1: client-side profile_view tracking */}
+      <TrackPageView companyId={sf.companyId} eventType="profile_view" />
       <script
         type="application/ld+json"
         data-testid="ld-local-business"

@@ -1,12 +1,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { db } from '@/lib/db/client';
 import {
   listPublicStorefronts,
   type ListStorefrontsFilters,
 } from '@/lib/vitrin/public';
-import { trackVitrinEventAsync } from '@/lib/vitrin/track';
 import { listCategoriesWithStorefrontProducts } from '@/lib/vitrin/category-listings';
 import { parseLocationQuery } from '@/lib/vitrin/geolocation';
 import {
@@ -20,7 +19,10 @@ import { NearbyMapWrapper } from '@/components/vitrin/nearby-map-wrapper';
 import { cities as citiesTable, companies, storefrontSettings } from '@/db/schema';
 import { and, eq, sql } from 'drizzle-orm';
 
-export const dynamic = 'force-dynamic';
+// Tur 1 (P0-1): force-dynamic kaldırıldı, Cloudflare CDN cache aktive.
+// /vitrin?q=... → /vitrin/ara'ya redirect (search tracking orada zaten).
+// Konum query (?lat=&lng=&r=) URL-bazlı cache key, her permütasyon ayrı cache.
+export const revalidate = 60; // 1 dk ISR — popüler products + nearby
 
 export const metadata = buildVitrinPageMetadata({
   title: 'PetStockPro Vitrin — Yakınındaki pet shop\'tan al',
@@ -89,6 +91,13 @@ export default async function VitrinHomePage({
 }) {
   const params = await searchParams;
   const q = params.q?.trim().slice(0, 100) ?? '';
+
+  // /vitrin?q=foo → /vitrin/ara redirect (search tracking orada). Bu sayede
+  // /vitrin ana sayfası tamamen cache-able, headers() çağrısı gereksiz.
+  if (q) {
+    redirect(`/vitrin/ara?q=${encodeURIComponent(q)}` as never);
+  }
+
   const location = parseLocationQuery(params.lat, params.lng, params.r);
 
   // Nearby pet shop'lar — konum varsa ona göre, yoksa name_asc top 6
@@ -97,7 +106,6 @@ export default async function VitrinHomePage({
     offset: 0,
     sort: 'name_asc',
   };
-  if (q) nearbyFilters.q = q;
   if (location) nearbyFilters.location = location;
 
   const [
@@ -116,25 +124,7 @@ export default async function VitrinHomePage({
     listCategoriesWithStorefrontProducts(db),
   ]);
 
-  // Search event tracking (q varsa)
-  if (q) {
-    const hdrs = await headers();
-    const xff = hdrs.get('x-forwarded-for') ?? hdrs.get('x-real-ip');
-    const ip = xff ? xff.split(',')[0].trim() : undefined;
-    const ua = hdrs.get('user-agent') ?? undefined;
-    for (const sf of nearbyStorefronts.slice(0, 5)) {
-      trackVitrinEventAsync(
-        {
-          companyId: sf.companyId,
-          eventType: 'search',
-          searchQuery: q,
-          ipAddress: ip,
-          userAgent: ua,
-        },
-        db,
-      );
-    }
-  }
+  // Search tracking /vitrin/ara'da yapılır (q geldiğinde yukarıda redirect).
 
   const totalCategoryCount = categoryStats.reduce(
     (sum, c) => sum + c.productCount,

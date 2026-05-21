@@ -15,7 +15,9 @@ import {
   listCategoriesWithStorefrontProducts,
 } from '@/lib/vitrin/category-listings';
 
-export const dynamic = 'force-dynamic';
+// Tur 1 (P0-1): /vitrin/ara per-search query'ye göre cache key — 60s OK
+// Aynı q+il+kategori kombosu sık tekrarlanmaz, 60s revalidate dengeli.
+export const revalidate = 60;
 
 interface SearchParams {
   q?: string;

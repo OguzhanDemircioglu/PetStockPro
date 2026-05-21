@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { headers } from 'next/headers';
+import { TrackPageView } from '@/components/vitrin/track-page-view';
 import type { Metadata } from 'next';
 import { db } from '@/lib/db/client';
 import {
@@ -8,7 +8,7 @@ import {
   getStorefrontBySlug,
   getStorefrontProductDetail,
 } from '@/lib/vitrin/public';
-import { trackVitrinEventAsync } from '@/lib/vitrin/track';
+// Tur 1: tracking client-side TrackPageView ile
 import {
   buildProductLd,
   buildLocalBusinessLd,
@@ -21,7 +21,8 @@ import { ReportButton } from '@/app/vitrin/report-button';
 import { WhatsappButton } from '@/components/vitrin/whatsapp-button';
 import { buildVitrinPageMetadata } from '@/lib/vitrin/page-metadata';
 
-export const dynamic = 'force-dynamic';
+// Tur 1 (P0-1): force-dynamic kaldırıldı, CDN cache aktive
+export const revalidate = 600; // 10 dk ISR — ürün detay (fiyat nadir değişir)
 
 export async function generateMetadata({
   params,
@@ -63,23 +64,7 @@ export default async function VitrinProductDetailPage({
   ]);
   if (!storefront || !product) notFound();
 
-  const hdrs = await headers();
-  const xff = hdrs.get('x-forwarded-for') ?? hdrs.get('x-real-ip');
-  const ip = xff ? xff.split(',')[0].trim() : undefined;
-  const ua = hdrs.get('user-agent') ?? undefined;
-  const referrer = hdrs.get('referer') ?? undefined;
-
-  trackVitrinEventAsync(
-    {
-      companyId: product.companyId,
-      productId: product.productId,
-      eventType: 'product_view',
-      ipAddress: ip,
-      userAgent: ua,
-      referrerUrl: referrer,
-    },
-    db,
-  );
+  // Tracking client-side TrackPageView ile JSX'te.
 
   const defaultVariant =
     product.variants.find((v) => v.isDefault) ?? product.variants[0];
@@ -113,6 +98,12 @@ export default async function VitrinProductDetailPage({
 
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-8">
+      {/* Tur 1: client-side product_view tracking */}
+      <TrackPageView
+        companyId={product.companyId}
+        productId={product.productId}
+        eventType="product_view"
+      />
       <script
         type="application/ld+json"
         data-testid="ld-product"
