@@ -233,6 +233,20 @@ Lat/lng harita pin Faz 2'ye saklı (mockup `preview/subeler.html` yok).
 
 ---
 
+### 🆕 Tur M: C iş kalemi #7 — sayim brief sync (2026-05-21 gece)
+
+**Değişiklik:** [docs/UI-MOCKUP-PLAN.md §5.7](UI-MOCKUP-PLAN.md) — sayim brief'i Sprint 4.7 Guided Stocktake implementasyonuna göre yeniden listelendi:
+- Liste — aktif kartlar (progress bar gradient) + geçmiş tablo (diff + valueImpact + reason emoji)
+- Başlatıcı — şube + mod="Tam" + note + snapshot transaction
+- Workflow tam-sayfa — header counter + 4 filter pill + arama + per-row Save (dirty + Enter) + reason 7 enum + complete (has_uncounted reject + ledger entries + audit + auto-unpublish chain) + cancel
+- 25 unit test geçti
+
+softLock UI Faz 2'ye saklı. Mockup `preview/sayim.html` yok.
+
+**Sıradaki C iş kalemi:** §5.8 dusuk-stok.html brief sync.
+
+---
+
 ### 🆕 Geçmiş tur (2026-05-21 öğleden sonra) — referans
 
 | Commit | Konu |

@@ -409,10 +409,35 @@ Sprint sırasına göre:
 
 ---
 
-### 5.7 sayim.html (YENİ — Sprint 5 için)
+### 5.7 sayim.html (yenile)
 
-**Doküman:** `EKRAN-SAYIM.md`
-**Bileşenler:** Drawer (başlatıcı: şube + mod + yumuşak kilit) + tam-sayfa workflow (parent grup + variant satırlar + sayım input + fark sebepleri + Tab/Enter atlama + onay modal)
+**Doküman:** `EKRAN-SAYIM.md` · **Kod:** [`src/app/admin/stocktake/`](../src/app/admin/stocktake/) — page.tsx (liste) + new/ (form) + [id]/ (workflow)
+
+> **2026-05-21 brief sync:** Sprint 4.7 Guided Stocktake tamamlandı (browser smoke E2E geçti). Mockup `preview/sayim.html` **henüz yok** — Faz 2'ye saklı.
+
+**Liste sayfası (`/admin/stocktake`, [page.tsx](../src/app/admin/stocktake/page.tsx)):**
+- Header — "Admin · Sayım" + "Yeni Sayım Başlat" CTA → `/admin/stocktake/new`
+- **Aktif sayımlar section** (status=in_progress) — kartlar: branch + mod + startedAt + counter (countedItems/totalItems progress bar gradient) + "Devam et →"
+- **Geçmiş tablo** (status=completed | cancelled) — tarih + şube + counter + diffItems + valueImpact + status badge + reason emoji label TR
+- Empty state — "Henüz sayım yok" + ilk sayım CTA
+
+**Başlatıcı (`/admin/stocktake/new`, [form.tsx](../src/app/admin/stocktake/new/form.tsx)):**
+- Form — şube select (aktif şubeler) + mod sabit "Tam" (kategori + manuel Faz 2'ye saklı) + opsiyonel note ≤500 char
+- Submit → snapshot tüm aktif variant + branch_inventory leftJoin + bulk INSERT stocktake_items (transaction) + redirect `/admin/stocktake/[id]`
+
+**Workflow (`/admin/stocktake/[id]`, [workflow.tsx](../src/app/admin/stocktake/[id]/workflow.tsx) — client tam-sayfa):**
+- Header — başlık + branch + mod + status + closedAt + counter (countedItems/totalItems + diffItems + valueImpact)
+- Filtre/arama section — 4 pill: tümü / sayılmadı / sayıldı / farklı + arama input
+- Tablo section — ürün adı + variant label + systemQty + countedQty (large input + dirty state işareti) + diff (auto-calculated) + reason dropdown (loss/overage/wrong_entry/expired/damage/theft/other 7 enum + disabled if hasDiff=false) + customReason text "other" için
+- Per-row Save buton — dirty olunca enabled + Enter handler ile submit (`updateStocktakeItemCount`)
+- ✓/○ completed badge + isSkipped işareti
+- Footer buttonlar — CompleteButton (has_uncounted reject + confirm + useTransition) + CancelButton (confirm + useTransition)
+- Tamamlandı: ledger'a "📋 Sayım Catit XL 52→50 reason='Sayım: loss'" entries (her diff !== 0 item için stock_movements + branch_inventory upsert + product.totalStockQty SUM + auto-unpublish chain) + status='completed' + closedAt set + audit log
+
+**Test:** 25 unit test (startStocktakeSchema 4 + updateItemCountSchema 4 + startStocktake 5 + updateStocktakeItemCount 4 + completeStocktake 4 + cancelStocktake 4)
+
+**Yumuşak kilit (softLock):** schema'da var ama UI Faz 2'ye saklı (concurrent sayım çakışma çözümü)
+**Bağımlılık:** TASARIM-SISTEMI · stocktakes + stocktake_items tablolar (Migration 0008) · stock_movements integration · auto-unpublish chain · audit_logs
 
 ---
 
