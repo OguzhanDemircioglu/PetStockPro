@@ -60,7 +60,7 @@
 - ✅ Sorusuz akış sadece küçük adımlar arası geçerli; commit/push'ta askıya alınır
 
 **Test:** 1649 pass (önceki 1643'ten +6 NotificationBell)
-**DB:** 24 migration, 2 yeni manuel apply (0023 + 0024 index'ler — auto-bootstrap journal'ında YOK, dosyalar audit için)
+**DB:** 24 migration · 0023+0024 `CONCURRENTLY` modifier kullandığı için Drizzle migrator transaction'ında çalışmaz → **manuel apply** (`_journal.json`'a EKLENMEZ, production deploy `psql` ile uygulanır — bkz. [DEPLOYMENT.md §5.2 step 1b](docs/DEPLOYMENT.md))
 **Bundle:** En büyük chunk **928K → 228K** (%75 azalma)
 
 **Sıradaki büyük iş seçenekleri (`docs/DEVAM-REHBERI.md` §SIRADAKI TERCİH EDİLENLER):**

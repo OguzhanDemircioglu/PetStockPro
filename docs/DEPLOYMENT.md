@@ -454,6 +454,32 @@ export async function middleware(request: NextRequest) {
 
 ---
 
+## 4.5 Vitrin ISR & CDN Cache Stratejisi (2026-05-21 Tur 1 P0-1 Performance Deep Audit)
+
+> **Karar:** 9 vitrin sayfası `force-dynamic` (her request DB+SSR) → `revalidate` ISR (Cloudflare CDN cache aktive).
+
+**Tracking client-side'a taşındı** ([src/components/vitrin/track-page-view.tsx](../src/components/vitrin/track-page-view.tsx) — `useEffect` ile mount sonrası `/api/vitrin/track` POST, `keepalive: true`). Önceki server-side `trackVitrinEventAsync` + `headers()` çağrıları sayfaları zorunlu dynamic'e zorluyordu. Client-side fetch ile sayfa fully cacheable.
+
+| Sayfa | revalidate | Neden |
+|---|---|---|
+| `/vitrin` | **60 sn** | Popüler ürünler (7g) + nearby — sık değişen veri |
+| `/vitrin/ara` | **60 sn** | Arama sonuç sayfası, freshness öncelik |
+| `/vitrin/marka/[brand]` | **300 sn** | Marka ürün listesi — orta sıklık |
+| `/vitrin/[il]` | **300 sn** | İl sayfası ürün listesi |
+| `/vitrin/[il]/[ilce]` | **300 sn** | İlçe sayfası |
+| `/vitrin/magaza/[slug]` | **300 sn** | Pet shop profili (storefront) |
+| `/vitrin/kategori/[slug]` | **300 sn** | Kategori ürün listesi |
+| `/vitrin/urun/[slug]` | **600 sn** | Cross-tenant ürün detay — fiyat nadir değişir |
+| `/vitrin/magaza/[slug]/urun/[productSlug]` | **600 sn** | Pet shop ürün detay |
+
+**Cache invalidation:** `revalidatePath('/vitrin')` mutation sonrası (vitrin Aç/Kapat toggle, fiyat değişikliği). Faz 2'de granular `revalidateTag` ile sadece etkilenen sayfalar invalidate edilir.
+
+**Production beklenen TTFB:** <100 ms (cache hit), <600 ms (cache miss + revalidate). 1K tenant'ta cache hit oranı %85+ olmalı (popüler sayfa konsantrasyonu).
+
+**Tracking endpoint rate-limit:** `/api/vitrin/track` IP başına 60 req/dk in-memory limit (Tur 7 YT7-7). Production Cloudflare KV / Durable Object ile genişletilir.
+
+---
+
 ## 5. Deploy Stratejisi (Sprint 16'da)
 
 ### 5.1 Pre-Production Checklist
@@ -474,10 +500,31 @@ export async function middleware(request: NextRequest) {
 
 1. **Database migration (Supabase)**
    ```bash
+   # (a) Drizzle journal-tracked migrations
    npx drizzle-kit migrate --config=drizzle.production.config.ts
    psql $DATABASE_URL_DIRECT -f drizzle/rls/*.sql
    psql $DATABASE_URL_DIRECT -f drizzle/triggers/*.sql
+
+   # (b) Manuel-apply migrations (CONCURRENTLY — Drizzle migrator ile uyumsuz)
+   # Bu migration'lar `_journal.json`'a EKLENMEZ — Drizzle migrator default
+   # transaction içinde çalıştırır, `CREATE INDEX CONCURRENTLY` transaction'da
+   # reddedilir. Manuel psql ile uygulanır + `__drizzle_migrations` history
+   # tablosuna INSERT (idempotent, IF NOT EXISTS guard ile).
+   psql $DATABASE_URL_DIRECT -f src/db/migrations/0023_storefront_status_index.sql
+   psql $DATABASE_URL_DIRECT -f src/db/migrations/0024_vitrin_search_trgm_indexes.sql
    ```
+
+   **Manuel-apply migration listesi (lansman öncesi mutlak şart):**
+   | Migration | Konu | Bootstrap apply? |
+   |---|---|---|
+   | 0023 | `idx_companies_storefront_approved` partial index | ❌ Manuel |
+   | 0024 | `idx_products_name_trgm` + `idx_brands_name_trgm` GIN pg_trgm | ❌ Manuel |
+
+   **Neden:** Production DB ölçeğinde `CREATE INDEX` table lock alır → uzun
+   süreli yazma blokajı. `CONCURRENTLY` modifier lock'suz oluşturur ama
+   transaction içinde reddedilir (Postgres kuralı). Drizzle migrator default
+   transaction wrap'ler. Çözüm: manuel `psql` execute + `IF NOT EXISTS` guard
+   (idempotent re-run güvenli).
 
 2. **Cloudflare Worker deploy**
    ```bash

@@ -148,9 +148,15 @@ import postgres from 'postgres';
 import * as schema from './schema';
 
 // Connection — pooled (DATABASE_URL Supabase pooler kullanıyor)
+// 2026-05-21 Tur 3 P0-3 Performance Deep Audit: prepare: false → true
 const client = postgres(process.env.DATABASE_URL!, {
-  prepare: false,    // Supabase pooler "Transaction" mode için
-  max: 1,            // serverless için tek connection
+  prepare: true,     // Hyperdrive (Cloudflare Workers production) + Supabase
+                     // pooler "Session" mode destekler. PgBouncer "Transaction"
+                     // mode için DATABASE_URL'e `?pgbouncer=true` query param
+                     // eklenir → prepare statement leak korunur.
+                     // Etki: per-request planning 4-12ms → <1ms.
+  max: 10,           // Hyperdrive max connection — single connection serverless
+                     // varsayımı geçersiz, Hyperdrive Worker per-request pool
 });
 
 export const db = drizzle(client, { schema });

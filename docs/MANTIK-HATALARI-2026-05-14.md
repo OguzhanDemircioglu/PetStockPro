@@ -755,4 +755,82 @@
 
 ---
 
-*Son güncelleme: 2026-05-21 gece (6. tur Claude self-tarama). 50 toplam bulgu — 19 (1.) + 14 (2.) + 2 (3.) + 5 (4.) + 8 (5.) + 10 (6.) = ✅ hepsi çözüldü/korundu.*
+## 7. Tur (2026-05-22) — 10 Bulgu
+
+**Tetikleyici:** 6. tur'dan sonraki ~23 commit (`d6623b6` → `ab3fbc6`) — NotificationBell client + bildirimler filtre sadeleştirme + 17 mockup brief sync (Tur G→X) + vitrin UX dürüstlük (5f4ce60) + customer journey smoke (ff332aa) + reports periyot (57aa483) + Performance Deep Audit plan + 9 tur uygulama (Tur 1-14).
+
+### 🔴 Kritik (production deploy + güvenlik)
+
+### YT7-1: ✅ `_journal.json`'da 0023 + 0024 YOK → bootstrap fresh DB'de migration uygulamaz
+- **Sorun:** `src/db/migrations/meta/_journal.json` 21 entry (son `0022_system_errors`). `0023_storefront_status_index.sql` + `0024_vitrin_search_trgm_indexes.sql` dosyaları VAR ama journal'da yok. Bootstrap (`src/lib/bootstrap/run.ts:100` Drizzle `migrate(client)`) journal-based — bir başka makinedeki fresh DB'de bu migration'lar **otomatik uygulanmaz**. Production deploy bloker.
+- **Sebep:** Her iki migration `CREATE INDEX CONCURRENTLY` modifier kullanıyor — Postgres kuralı: transaction içinde reddedilir. Drizzle migrator default transaction wrap → manuel uygulanmak zorunda.
+- **Aksiyon:** `_journal.json`'a EKLEMEME (CONCURRENTLY Drizzle'la uyumsuz). [DEPLOYMENT.md §5.2 step 1b](DEPLOYMENT.md) → "Manuel-apply migrations" bölümü eklendi (psql ile uygula + `__drizzle_migrations` history tablosuna INSERT idempotent guard). CLAUDE.md DB notu güçlendirildi.
+
+### YT7-7: ✅ `/api/vitrin/track` endpoint rate-limit + auth YOK → spam vektörü
+- **Sorun:** Zod parse ediyor ama: (a) companyId existence check yok (FK fail sessizce yutulur), (b) IP/dk rate limit yok, (c) tek bot 1K rps spam → DB CPU + vitrin metrik zehirlenmesi (Süperadmin KPI dashboard çarpıtılır)
+- **Aksiyon:** In-memory IP rate-limit eklendi — 60 req/dk/IP, sliding window. 10K entry memory leak guard ile. Production'da Cloudflare KV / Durable Object'e taşınır (Sprint 14 deploy sonrası).
+
+### YT7-8: ✅ Vitrin hero h1 koşulsuz "Mamasını yakınındaki pet shop'tan al"
+- **Sorun:** [src/app/vitrin/page.tsx:162](../src/app/vitrin/page.tsx) h1 başlığı location izni yokken bile "yakınındaki" iddia ediyor. 5f4ce60 commit "Yakınında" → "Türkiye'de" sadece eye-rozet (satır 149-159) için koşullu yapmış, h1 atlanmış.
+- **Aksiyon:** h1'i koşullu yaptım — `location ? 'yakınındaki' : "Türkiye'deki"`.
+
+### 🟡 Önemli (dokümantasyon canonical sapma)
+
+### YT7-2: ✅ DATABASE-SCHEMA §6 `idx_products_name` (tsvector) hayalet — migration'larda yok
+- **Sorun:** Doc'ta `CREATE INDEX idx_products_name ON products USING gin (to_tsvector('turkish', name))` listeleniyor ama hiçbir migration'da yok. Migration 0024 farklı yaklaşım kullandı (pg_trgm GIN — ILIKE kısmi metin için, tsvector tam kelime için).
+- **Aksiyon:** Hayalet index silindi, Migration 0024 ile uyumlu pg_trgm GIN listesi eklendi.
+
+### YT7-3: ✅ 3 yeni index DATABASE-SCHEMA §6'da YOK
+- `idx_companies_storefront_approved` (Migration 0023 partial WHERE approved)
+- `idx_products_name_trgm` (Migration 0024 GIN partial WHERE vitrin_published)
+- `idx_brands_name_trgm` (Migration 0024 GIN)
+- **Aksiyon:** §6'a eklendi + "⚠ MANUEL APPLY" notu + DEPLOYMENT.md referansı.
+
+### YT7-4: ✅ SUPABASE-SETUP.md §3 `prepare: false` STALE
+- **Sorun:** Yeni karar `prepare: true` (commit `370827d` Tur 3 P0-3) ama SUPABASE-SETUP.md hâlâ eski yaklaşımı + eski yorum gösteriyordu.
+- **Aksiyon:** §3 güncellendi — `prepare: true` + Hyperdrive/PgBouncer Session vs Transaction mode açıklaması + `?pgbouncer=true` query param notu + `max: 10` Hyperdrive uyumu.
+
+### YT7-5: ✅ `src/lib/cache/request-scoped.ts` unit test eksik (test-first kuralı ihlal)
+- **Sorun:** Layout + pano critical path'te kullanılan 5 cache helper (P0-2 Performance Deep Audit) testsiz commit'lenmişti.
+- **Aksiyon:** [src/lib/cache/request-scoped.test.ts](../src/lib/cache/request-scoped.test.ts) — 8 unit test (getCompanyById row var/yok + getProductCountForCompany count/empty + getLowStockCountForCompany count/empty + getUnreadNotificationCount happy/empty). React.cache framework davranışı test sorumluluğumuz değil — sadece helper shape + null guard kapsamı.
+
+### YT7-6: ✅ `getAllCities` 24h cache helper 0 caller — kazanım kaçırıldı
+- **Sorun:** P0-2'de helper tanımlı (unstable_cache 24h, tag invalidation hazır) ama onboarding + 3 admin sayfa hâlâ direct `from(cities)` query (5+ DB hit/request kaçırılan kazanç).
+- **Aksiyon:** 4 sayfa migrate edildi — [onboarding/page.tsx](../src/app/onboarding/page.tsx) + [admin/branches/new/page.tsx](../src/app/admin/branches/new/page.tsx) + [admin/branches/[id]/edit/page.tsx](../src/app/admin/branches/[id]/edit/page.tsx) + [admin/settings/company/page.tsx](../src/app/admin/settings/company/page.tsx). Onboarding orderBy `cities.id` → `cities.name` alfabetik (diğer 3 sayfayla tutarlı, UX standart). Vitrin home cross-table aggregate sorgusu olduğu için migrate edilmedi (farklı veri shape).
+
+### 🟢 Düşük (perf polish + doc)
+
+### YT7-9: ✅ NotificationBell `cache.subscribe` global → excessive re-render
+- **Sorun:** [src/components/notification-bell.tsx:20](../src/components/notification-bell.tsx) `cache.subscribe(notify)` bütün cache event'leri için notify yapıyordu. Pano açıkken 5+ query (product/stock/audit/notification) varken her cache update bell'i re-render ediyordu.
+- **Aksiyon:** Filtre eklendi — `event.query.queryKey[0] === 'notifications'` only. 6 mevcut bell test'i pass kalmaya devam etti.
+
+### YT7-10: ✅ Vitrin ISR revalidate süreleri dokümante değil
+- **Sorun:** Tur 1 P0-1 ile 9 vitrin sayfası 60s/300s/600s revalidate'e geçti ama DEPLOYMENT.md veya TECH-STACK.md'de strateji yansımamış. Production deploy ekibi için belirsiz.
+- **Aksiyon:** [DEPLOYMENT.md §4.5](DEPLOYMENT.md) "Vitrin ISR & CDN Cache Stratejisi" bölümü eklendi — 9 sayfa tablo + revalidate süre + neden + cache invalidation + production TTFB beklentisi + tracking rate-limit notu.
+
+---
+
+## 7. Tur Özet (2026-05-22)
+
+**10 yeni bulgu — 10 ✅ çözüldü (toplam tüm turlar: 60 bulgu)**
+
+| Tür | Adet | Detay |
+|---|---|---|
+| 🔴 Kritik | 3 | YT7-1 production deploy bloker / YT7-7 spam vektörü / YT7-8 UX yarım yayılım |
+| 🟡 Önemli | 5 | YT7-2 hayalet sil / YT7-3 schema doc / YT7-4 SUPABASE-SETUP / YT7-5 test eksik / YT7-6 adoption eksik |
+| 🟢 Düşük | 2 | YT7-9 re-render perf / YT7-10 doc eksik |
+
+**Tarama yöntemi:**
+- 23 commit delta (`d6623b6` → `ab3fbc6`) 7 ekseni paralel scan: migration sync · postgres prepare · React.cache · vitrin tracking · NotificationBell · 17 mockup brief · UX dürüstlük yayılım
+- 6 önceki turun yaymadığı: 0023/0024 journal + cache layer test + tracking abuse + UX dürüstlük h1 atlama
+
+**Etkilenen dosya:**
+- 5 doc (CLAUDE + DEPLOYMENT + DATABASE-SCHEMA + SUPABASE-SETUP + MANTIK-HATALARI)
+- 6 kod (db/client + notification-bell + vitrin/page + api/vitrin/track + 4 cities adoption)
+- 1 yeni test (request-scoped.test.ts — 8 unit, toplam 1649 → 1657 pass)
+
+**Sonuç:** Production deploy bloker (YT7-1) ve spam vektörü (YT7-7) kapatıldı. Cache helper adoption tamamlandı. Doc canonical sync sağlandı.
+
+---
+
+*Son güncelleme: 2026-05-22 (7. tur Claude self-tarama). 60 toplam bulgu — 19 (1.) + 14 (2.) + 2 (3.) + 5 (4.) + 8 (5.) + 10 (6.) + 10 (7.) = ✅ hepsi çözüldü/korundu.*

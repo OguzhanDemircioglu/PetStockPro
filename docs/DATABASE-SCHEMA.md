@@ -1950,8 +1950,16 @@ CREATE INDEX idx_movements_transfer_group ON stock_movements(transfer_group_id) 
 -- Düşük stok query
 CREATE INDEX idx_inventory_low_stock ON branch_inventory(company_id, stock_qty);
 
--- Ürün arama (full-text search Faz 2'de)
-CREATE INDEX idx_products_name ON products USING gin (to_tsvector('turkish', name));
+-- Ürün arama (2026-05-21 Tur 5 P1-4 Performance Deep Audit — Migration 0024)
+-- pg_trgm GIN — `ILIKE %query%` leading wildcard için. tsvector tam kelime
+-- arar, trigram kısmi metin arar. Vitrin search.ts ILIKE kullanır → pg_trgm
+-- canon. Partial WHERE: sadece vitrin'de görünen ürün (deleted_at IS NULL
+-- AND vitrin_published = true) → küçük index, sıkı match.
+-- ⚠ MANUEL APPLY — CONCURRENTLY transaction içinde çalışmaz, Drizzle migrator
+-- _journal.json'a EKLENMEZ. Production deploy: bkz. DEPLOYMENT.md §5.2 step 1b
+CREATE INDEX CONCURRENTLY idx_products_name_trgm ON products USING GIN (name gin_trgm_ops)
+  WHERE deleted_at IS NULL AND vitrin_published = true;
+CREATE INDEX CONCURRENTLY idx_brands_name_trgm ON brands USING GIN (name gin_trgm_ops);
 CREATE INDEX idx_variants_sku ON product_variants(sku);
 CREATE INDEX idx_variants_barcode ON product_variants(barcode) WHERE barcode IS NOT NULL;
 
@@ -1965,6 +1973,14 @@ CREATE INDEX idx_storefront_slug ON companies(slug) WHERE slug IS NOT NULL;
 CREATE INDEX idx_products_published ON products(company_id, is_published, is_active);
 CREATE INDEX idx_products_vitrin ON products(company_id, vitrin_published, is_active) WHERE vitrin_published = true;  -- vitrin'de gösterilenler
 CREATE INDEX idx_storefront_messages_company ON storefront_messages(company_id, created_at DESC);
+-- 2026-05-21 Tur 4 P1-1 Performance Deep Audit — Migration 0023
+-- Vitrin'in en sık filter'ı `storefront_status = 'approved'`. Partial index
+-- sadece 'approved' tenant'ı index'ler — küçük + hızlı. Diğer state'ler seq
+-- scan (süperadmin moderation panel, seyrek).
+-- ⚠ MANUEL APPLY — CONCURRENTLY transaction'da çalışmaz. DEPLOYMENT.md §5.2 step 1b
+CREATE INDEX CONCURRENTLY idx_companies_storefront_approved
+  ON companies(storefront_status)
+  WHERE storefront_status = 'approved';
 
 -- Konum (Cities + Districts seed)
 CREATE INDEX idx_districts_city ON districts(city_id);
