@@ -1,6 +1,28 @@
-import Link from 'next/link';
+'use client';
 
-export function NotificationBell({ unreadCount }: { unreadCount: number }) {
+import Link from 'next/link';
+import { useEffect, useSyncExternalStore } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { notificationKeys } from '@/lib/queries/keys';
+
+// Layout SSR'da güncel sayıyı prop olarak verir; bulk "Tümünü oku" + tek satır
+// mark-read mutation'ları setQueryData ile cache'i günceller → bell anında flip.
+export function NotificationBell({ unreadCount: serverCount }: { unreadCount: number }) {
+  const queryClient = useQueryClient();
+
+  // Layout yeni SSR'de farklı prop gönderirse cache'i taze değere senkronla.
+  useEffect(() => {
+    queryClient.setQueryData<number>(notificationKeys.unreadCount(), serverCount);
+  }, [serverCount, queryClient]);
+
+  const cache = queryClient.getQueryCache();
+  const unreadCount = useSyncExternalStore(
+    (notify) => cache.subscribe(notify),
+    () =>
+      queryClient.getQueryData<number>(notificationKeys.unreadCount()) ?? serverCount,
+    () => serverCount,
+  );
+
   return (
     <Link
       href={'/admin/notifications' as never}

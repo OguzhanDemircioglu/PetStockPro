@@ -101,19 +101,34 @@
 | # | Konu | Süre | Bloker |
 |---|---|---|---|
 | 1 | **C — 17 mockup brief'i sıralı** (UI-MOCKUP-PLAN.md) | Çok uzun, her mockup ayrı tur | Yok |
-| 2 | **D — Smoke bulgusu: NotificationBell client component** (bulk Tümünü oku sonrası bell badge anlık 0) | 30-45dk | Yok |
-| 3 | **4. tur Mantık Hata Tarama 5. — sonraki tur** (yeni değişiklikler için) | 2-3 saat | Yok |
-| 4 | **Sprint 13/14 production deploy** | Şirket kuruluş bekliyor (2-4 hafta) | ⛔ Kullanıcı |
-| 5 | **Beta soft launch (CLAUDE.md "Sıradaki olası işler" #1)** | Sprint 13/14 sonrası | ⛔ Kullanıcı bloker |
-| 6 | **Pricing pilot anketi** (30-50 pet shop) | 1-2 hafta | ⛔ Kullanıcı bloker (anket dağıt) |
+| ~~2~~ | ~~D — Smoke bulgusu: NotificationBell client component~~ ✅ **2026-05-21 gece — TAMAMLANDI** | — | — |
+| 2 | **6. Mantık Hata Tarama** (yeni değişiklikler için) | 2-3 saat | Yok |
+| 3 | **Sprint 13/14 production deploy** | Şirket kuruluş bekliyor (2-4 hafta) | ⛔ Kullanıcı |
+| 4 | **Beta soft launch (CLAUDE.md "Sıradaki olası işler" #1)** | Sprint 13/14 sonrası | ⛔ Kullanıcı bloker |
+| 5 | **Pricing pilot anketi** (30-50 pet shop) | 1-2 hafta | ⛔ Kullanıcı bloker (anket dağıt) |
 
 **Yeni session'a girdiğinde ilk komut (önerilen):**
 ```
 cd D:\Projeler\PetStockPro
 claude
-İlk komut: "DEVAM-REHBERI.md oku ve sıradaki tercih edilenlerden #2 ile başla"
-# veya: "C ile başla, ilk mockup'ı planla"
+İlk komut: "DEVAM-REHBERI.md oku ve sıradaki tercih edilenlerden seç"
 ```
+
+---
+
+### 🆕 Tur E: NotificationBell client component (2026-05-21 gece)
+
+**Konu:** Faz 5 smoke 6 bulgusu — `/admin/notifications` üzerinde "Tümünü okundu işaretle" sonrası bell badge anlık 0'a düşmüyor, sadece sonraki navigasyonda yenileniyordu.
+
+**Kök neden:** `NotificationBell` server component'ti, layout SSR'den `unreadCount` prop alıyordu. `notifications-list.tsx`'teki `markAllMutation.onMutate` `queryClient.setQueryData(notificationKeys.unreadCount(), 0)` çağırıyor ama bell cache'i okumuyordu.
+
+**Fix:** [src/components/notification-bell.tsx](../src/components/notification-bell.tsx) — `'use client'` + `useSyncExternalStore` ile doğrudan `queryClient.getQueryCache().subscribe(...)` aboneliği. `useEffect` ile yeni SSR prop'unu cache'e seed eder; mutation'ların `setQueryData` çağrıları bell'i otomatik re-render eder.
+
+**Neden useSyncExternalStore:** v5'te `useQuery` + `enabled:false` + `initialData` kombinasyonunda observer cache değişikliklerine subscribe olmuyor (`initialData` observer-local state'e gidiyor, cache'e değil). queryFn ile fetch'in async race'i ise `setQueryData(0)`'ı kendi sonucuyla geri yazıyor. Cache cache subscription en deterministik yol.
+
+**Test:** 6 yeni `src/components/notification-bell.test.tsx` (0/3/120 render + setQueryData 2→0 / 0→5 / prop yeniden render seed). **Toplam 1643 → 1649 pass.**
+
+**Browser smoke:** dev server up, 3 unread test notification eklendi → bell="3" rozet → "Tümünü okundu işaretle" tık → ~100ms sonra bell rozet kayboldu, count="0", liste YENİ rozetleri silindi (screenshot kanıt). Test notification'lar temizlendi.
 
 ---
 
