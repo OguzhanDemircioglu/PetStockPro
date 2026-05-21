@@ -1,8 +1,51 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-21 (**Observer + Yetki + Şube state refactor TAMAMLANDI**, Faz 1-8 + final docs)
-**Mevcut Branch:** `cray61` — push pending (8+ commit ahead)
-**Son commit:** `b597c1a` feat(faz8): Observer davet + login UI — banner + rozet + branches gate
+**Tarih:** 2026-05-21 sonu (**PLAN-BETA-PERFORMANCE ONAYLI** — implementasyon yeni session'da)
+**Mevcut Branch:** `cray61` — origin ile sync (son push `73c8bad`)
+**Son commit:** `73c8bad` docs(claude): PLAN-BETA-PERFORMANCE.md yeni session başlangıç dosyası
+
+---
+
+## 🆕 2026-05-21 sonu — PLAN-BETA-PERFORMANCE onaylı, implementasyon bekliyor
+
+**Otoritatif:** `docs/PLAN-BETA-PERFORMANCE.md` (yeni session başlangıç dosyası)
+
+**Hedef:** Beta soft launch öncesi 5 ana altyapı eksiği kapatılır:
+
+| Faz | İçerik | Süre |
+|---|---|---|
+| 1 | Auto-bootstrap (`instrumentation.ts` + seed checker) | 1.5 saat |
+| 2.A | Log retention cron (`/api/cron/cleanup-old-logs` + Workers 04:00) | 1.5 saat |
+| 2.B | Error tracking + Telegram alert (Sentry'siz, `system_errors` + threshold burst) | 1.5 saat |
+| 3 | PetSpinner UI (3 variant + a11y + 🐾 paw SVG) | 1 saat |
+| 4 | TanStack Query Provider (devtools + key factory) | 1 saat |
+| 5 | 5 CRUD optimistic (stok / sayım / vitrin / ürün edit / bildirim) | 3-4 saat |
+| 6 | Test + smoke + doc + push | 1 saat |
+| **Toplam** | | **10-12 saat** |
+
+**Önemli kararlar (plan'da otoritatif):**
+- **Sentry KULLANILMAYACAK** — in-app `system_errors` + Telegram alert pattern ($0 maliyet, KVKK temiz, Frankfurt veri)
+- **TanStack Query** zaten kurulu (5.62), Provider + 5 kritik mutation'la aktive
+- **PWA / Realtime / Storybook / Lottie / i18n EN / SSR streaming** lansman sonrasına ertelendi (tek geliştirici kuralı + bilinçli kapsam)
+- **Concurrent edit problem değil** — POS-tarzı tek kasa; `refetchOnWindowFocus` (TanStack Query default) yeter, 5 dk poll YOK
+
+**Yeni session'a girdiğinde ilk komut:**
+```
+PLAN-BETA-PERFORMANCE.md oku ve Faz 1'e başla
+```
+
+### 🆕 Bu Turun Ek Rotuş Commit'leri (2026-05-21 öğleden sonra)
+
+| Commit | Konu |
+|---|---|
+| `378b603` | feat(storefront): SEO açıklaması alanına helperText (Field component genişletildi) |
+| `a849d54` | chore(ui): Vitrin Profili Hesap grubuna + Title Case düzeltme (Düşük Stok / Audit Log / Vitrin Profili / Vitrin Moderasyon / Sistem Ayarları / Genel Bakış) |
+| `a3bf9b8` | fix(lint): import-execute.test.ts prefer-rest-params + /admin/bayi sil (BAYI_ADMIN iptal, Observer aldı) |
+| `b57b36c` | feat(sitemap): süperadmin durum kartı + Telegram fail/stale alert (8 stat + 2 banner + 2 alert builder + 14 test) |
+| `9902912` | docs(plan): PLAN-BETA-PERFORMANCE.md (onaylı 6 fazlı plan, 651 satır) |
+| `73c8bad` | docs(claude): yeni session başlangıç dosyası işaret |
+
+**Test:** 1567 pass / typecheck 0 / lint 0 error / origin ile sync.
 
 ---
 
@@ -1891,4 +1934,4 @@ Kullanıcı (Oğuzhan) tek geliştirici. Kararları net verir, "rafa kaldır" gi
 
 ---
 
-*Son güncelleme: 2026-05-15 (4. tur Claude self-tarama + 5 yayılım hatası + 6 yeni mimari karar: Supabase Frankfurt region + davet hibrit + backend dil/framework gerekçesi `TECH-STACK §6` + Monitoring/Observability Stratejisi `DEPLOYMENT §8` + EKRAN-SUPERADMIN KPI dashboard zenginleştirme + `system_errors` tablo + WhatsApp Geri Bildirim Balonu `EKRAN-PUBLIC-VITRIN §15` + `vitrin_whatsapp_feedback` tablo + **EKRAN-AUTH.md yeni doc + Cloudflare Turnstile bot koruması** `TECH-STACK §3.9c` + users tablosuna 10 yeni auth field). Bu doküman yeni session başlangıç noktasıdır. CLAUDE.md → DEVAM-REHBERI.md → MANTIK-HATALARI-2026-05-14.md → diğer dokümanlar sırasıyla okunmalı. **40 mantık hatası + 6 mimari karar işlendi (36 tablo, 26 doc), Sprint 0 bootstrap'e hazır.***
+*Son güncelleme: 2026-05-21 sonu — PLAN-BETA-PERFORMANCE.md onaylı (6 fazlı altyapı sertleştirme, 10-12 saat). Yeni session'da `PLAN-BETA-PERFORMANCE.md oku ve Faz 1'e başla` ile başlat. CLAUDE.md → PLAN-BETA-PERFORMANCE.md → DEVAM-REHBERI.md sırasıyla okunmalı.*

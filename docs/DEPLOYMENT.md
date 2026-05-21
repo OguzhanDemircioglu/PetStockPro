@@ -181,9 +181,13 @@ NEXT_PUBLIC_APP_URL = "https://petstockpro.com"
 NEXT_PUBLIC_APP_DOMAIN = "petstockpro.com"
 NEXT_PUBLIC_SITE_URL = "https://petstockpro.com"
 
-# Cron Triggers (Workers Scheduled Events) — Sprint 12 ext daily summary
+# Cron Triggers (Workers Scheduled Events) — final schedule
+# PLAN-BETA-PERFORMANCE.md Faz 2 ile son şekil aşağı yazıldı.
 [triggers]
 crons = [
+  "0 3 * * *",   # 03:00 UTC = 06:00 TR — sitemap pre-build rebuild (/api/cron/sitemap-rebuild)
+  "55 3 * * *",  # 03:55 UTC = 06:55 TR — error burst threshold check (/api/cron/errors-threshold-check) — PLAN-BETA Faz 2.B
+  "0 4 * * *",   # 04:00 UTC = 07:00 TR — log retention cleanup (/api/cron/cleanup-old-logs) — PLAN-BETA Faz 2.A
   "0 6 * * *",   # 06:00 UTC = 09:00 TR — günlük vitrin şikayet özeti (süperadmin Telegram alert)
 ]
 
@@ -857,9 +861,11 @@ Mevcut `notificationTypeEnum` event'leri (DATABASE-SCHEMA §3.5):
 - `low_stock_critical` / `out_of_stock` — ürün stok seviyesi
 - `daily_summary` / `weekly_summary`
 
-### 8.5 Hata İzleme Stratejisi (Sentry Faz 2'de)
+### 8.5 Hata İzleme Stratejisi (Sentry'siz, in-app pattern)
 
-> **Karar (2026-05-15):** Sentry MVP'de **opsiyonel** — Free tier'da bırak veya hiç kullanma. Lansman sonrası 500+ tenant veya 100+ event/gün olursa Sentry Team plan ($26/ay) değerlendirilir. Detaylı gerekçe: `TECH-STACK §6` bağlamında ek bir alt-karar.
+> **Karar revizyonu (2026-05-21):** Sentry **KULLANILMAYACAK**. In-app `system_errors` + Telegram burst alert pattern beta öncesi `PLAN-BETA-PERFORMANCE.md` Faz 2.B ile aktive olur. $0 maliyet, KVKK temiz, Frankfurt veri, bizim kontrolde. Detay: `TECH-STACK §3.7`.
+>
+> **Lansman sonrası reconsider:** 100+ event/gün veya Web Vitals ihtiyacı → Sentry Team plan ($26/ay) eklenir. MVP için gerek yok.
 
 #### Mevcut Hata İzleme Pattern'i (Sentry'siz $0)
 
@@ -907,11 +913,37 @@ export default {
 };
 ```
 
-#### Sentry'ye Geçiş Tetikleyicileri (Sprint 16 sonrası)
+#### Sentry'ye Geçiş Tetikleyicileri (Lansman sonrası)
 
 - 100+ event/gün — manuel inceleme zorlaşır, dedup şart
 - Frontend karmaşık JS hatası — kullanıcı reproduce edemediği
 - Multi-developer ekip — kim hangi hatayı çözüyor takip
+
+### 8.5.1 Log Retention TTL'leri (PLAN-BETA-PERFORMANCE Faz 2.A)
+
+**Workers cron 04:00 UTC** — `/api/cron/cleanup-old-logs` günlük tetiklenir. Her tablo için `DELETE WHERE created_at < NOW() - INTERVAL`:
+
+| Tablo | TTL | Sebep |
+|---|---|---|
+| `system_errors` | 90 gün | Hata izleme retention |
+| `vitrin_events` | 365 gün | KVKK anonim analytics |
+| `processed_webhooks` | 90 gün | Idempotency guard yeter |
+| `notifications` (`is_read=true`) | 90 gün | Okunmuş bildirim arşivi |
+| `vitrin_reports` (`status≠pending`) | 365 gün | Resolved arşiv |
+| `vitrin_whatsapp_feedback` | 365 gün | Pet shop dashboard trend |
+
+**ASLA SİLİNMEZ (yasal saklama):**
+
+| Tablo | Saklama | Yasal sebep |
+|---|---|---|
+| **`audit_logs`** | ∞ | KVKK 5 yıl + Vergi 10 yıl |
+| **`invoices`** | ∞ | TR vergi kanunu 10 yıl |
+| **`subscriptions`** | ∞ | Geçmiş abonelik audit + iyzico dispute |
+| **`stock_movements`** | ∞ | Immutable ledger (R1 reversal pattern) |
+
+**Regression test:** `retention.test.ts` içinde `audit_logs`, `invoices`, `subscriptions`, `stock_movements` RETENTION_RULES'a girmemesi explicit doğrulanır.
+
+**Cleanup raporu:** her cron çalışmasında Telegram'a "🧹 X tablodan Y satır temizlendi" info alert (10K+ ise warning).
 
 ### 8.6 Uptime Monitor
 

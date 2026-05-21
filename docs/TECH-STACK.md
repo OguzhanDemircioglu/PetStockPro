@@ -263,11 +263,29 @@ Cloudflare DNS (petstockpro.com)
 - **pg_cron** (Postgres extension) — günlük/haftalık özet bildirimleri, plan limit kontrolleri
 - Inngest gerekli değil — Supabase native yeter
 
-### 3.7 Monitoring: **Sentry**
-- Error tracking (frontend + server)
-- Free tier 5K event/ay MVP için yeter
-- Performance monitoring (Web Vitals)
-- Cloudflare/Vercel Analytics deploy sonrası eklenir
+### 3.7 Monitoring: **In-app error tracking + Telegram alert (Sentry yerine)**
+
+**Karar revizyonu (2026-05-21):** Sentry'e gerek yok. In-app `system_errors` tablosu + threshold-based Telegram burst alert pattern yeter:
+
+- **`system_errors` tablosu** — `errorType`, `message` (PII strip'li), `stack`, `severity`, `companyId`, `userId`, `route`, `action`, `metadata` jsonb, `createdAt` (90 gün retention, KVKK uyumlu Frankfurt).
+- **`lib/errors/track.ts` helper** — `trackError(err, context, db)` server action catch'lerinde fire-and-forget INSERT.
+- **Threshold burst alert** — son 60 dk içinde aynı errorType 5+ kez → critical Telegram alert (`buildErrorBurstAlert`). 6h dedup (anti-spam).
+- **Süperadmin `/admin/superadmin/errors` sayfası** — liste + detay drawer + resolve toggle.
+- **Workers cron 03:55 UTC** — günlük threshold check + alert tetikleme.
+
+**Sentry vs. bu pattern:**
+
+| Sentry | In-app pattern |
+|---|---|
+| $26/ay Team plan | **$0** |
+| 3. parti dependency + KVKK risk (ABD veri) | Frankfurt EU, kontrolün sende |
+| Bundle +50KB | Bundle +0 |
+| Stack trace zengin | Stack trace + context jsonb yeter |
+| Web Vitals dahil | CF Analytics + Cloudflare/Vercel deploy sonrası eklenir |
+
+**Aktivasyon:** `PLAN-BETA-PERFORMANCE.md` Faz 2.B ile beta öncesi.
+
+**Lansman sonrası reconsider:** 100+ event/gün üretiyorsak veya Web Vitals'a ihtiyaç olursa Sentry Team plan ($26/ay) eklenir. MVP için **gerek yok**.
 
 ### 3.8 Telegram Bot — ADMIN BİLDİRİM KANALI (2026-05-13 netleştirme)
 
@@ -455,9 +473,14 @@ export async function verifyTurnstile(token: string, ip: string): Promise<boolea
 **Faz 2 açma yöntemi:** `locales: ['tr', 'en']` listesine `en` eklenir, `messages/en.json` doldurulur, language switcher UI'da görünür.
 
 ### 3.14 State Management
-- **TanStack Query** — server state (data fetching, cache, mutation)
-- **Zustand** — client UI state (sidebar collapse, modal, drawer, theme)
-- Redux yok (Faz 1'deki kararı geri çekiyoruz — Zustand yeterli)
+- **TanStack Query 5.62** — server state (data fetching, cache, mutation)
+  - **Durum:** Kurulu ama Provider henüz aktive edilmedi. Mevcut SSR + `revalidatePath` pattern'i çalışıyor.
+  - **Aktivasyon:** `PLAN-BETA-PERFORMANCE.md` Faz 4-5 ile beta lansman öncesi tamamlanır.
+  - **Hibrit model:** Server Component'te `initialData` SSR + Client Component'te `useQuery({ initialData })` + `useMutation` ile optimistic update.
+  - **Polling YOK** — `refetchOnWindowFocus: true` (default) yeter (POS-tarzı tek kasa, concurrent edit problem değil).
+- **Zustand 5.0** — client UI state (sidebar collapse, modal, drawer, theme)
+  - **Durum:** Kurulu ama henüz minimal kullanım. UI state için yeterli.
+- **Redux YOK** — TanStack Query (server state) + Zustand (UI state) ikilisi yeter, 3. layer gereksiz.
 
 ---
 

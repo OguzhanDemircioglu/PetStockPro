@@ -846,9 +846,15 @@ export const systemErrors = pgTable('system_errors', {
 // RLS: §4.3'te POLICY tanımlı — sadece SUPERADMIN okur+yazar. Tenant kendi hatalarını GÖREMEZ
 // (forensics — kullanıcı hatalı request gönderirse stack trace görmemeli, güvenlik).
 
-// pg_cron retention (90 gün):
-//   SELECT cron.schedule('cleanup_system_errors', '0 3 * * *',
-//     $$ DELETE FROM petstockpro.system_errors WHERE created_at < NOW() - INTERVAL '90 days' $$);
+// Retention (90 gün) — PLAN-BETA-PERFORMANCE.md Faz 2.A ile aktive olur.
+// Workers cron 04:00 UTC `/api/cron/cleanup-old-logs` endpoint günlük tetiklenir.
+// Implementation: `src/lib/cleanup/retention.ts` RETENTION_RULES tablosu:
+//   { table: 'system_errors', ageDays: 90, description: 'Hata izleme retention' }
+// Test: `retention.test.ts` audit_logs / invoices ASLA bu listede olmaması doğrulanır.
+//
+// Error tracking helper: `src/lib/errors/track.ts` — `trackError(err, context, db)` PII strip + INSERT
+// Threshold burst alert: 60dk içinde 5+ aynı errorType → critical Telegram (`buildErrorBurstAlert`)
+// 6h dedup penceresi (anti-spam). Detay: PLAN-BETA Faz 2.B.
 
 // Plan onay (manuel havale)
 export const planApprovalStatusEnum = pgEnum('plan_approval_status', ['pending', 'approved', 'rejected']);
