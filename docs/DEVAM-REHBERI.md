@@ -168,6 +168,20 @@ Import (`import/client.tsx` — 11 kolon xlsx + 15+ validation + SWAL) + Export 
 
 ---
 
+### 🆕 Tur I: C iş kalemi #3 — stok-hareketleri brief sync (2026-05-21 gece)
+
+**Değişiklik:** [docs/UI-MOCKUP-PLAN.md §5.3](UI-MOCKUP-PLAN.md) — stok-hareketleri brief'i `src/app/admin/stock-movements/` implementasyonuna göre kapsamlı yeniden listelendi:
+- **Liste** (page.tsx) — Ledger başlığı + DrawerLauncher 4 buton + movements-filter-bar (mv-branch/variant/type/clear/export) + tablo 9 kolon (Tarih/Tür/Ürün/Şube/Önce/Δ/Sonra/Notlar/İşlem) + reverseButton 24h + transfer pair atomik
+- **4 Drawer** (stock-in/stock-out/transfer/stocktake) — dynamic field visibility (stock-out subtype), credit+customerRef invalid_state guard, auto-unpublish trigger (stock=0), query-param auto-open + prefill (transfer-drawer low-stock'tan)
+- **Export** — `/admin/stock-movements/export` route → .xlsx (filtre URL param)
+- **Sayım workflow** ayrı sayfa `/admin/stocktake` (EKRAN-SAYIM.md), drawer Quick Add only
+
+Bağımlılıklar: `stockMovementKeys` cache + audit_logs + branch_inventory denormalize.
+
+**Sıradaki C iş kalemi:** §5.4 super-admin.html brief sync.
+
+---
+
 ### 🆕 Geçmiş tur (2026-05-21 öğleden sonra) — referans
 
 | Commit | Konu |

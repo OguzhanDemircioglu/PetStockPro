@@ -227,11 +227,29 @@ Sprint sırasına göre:
 
 ### 5.3 stok-hareketleri.html (yenile)
 
-**Doküman:** `EKRAN-STOK-HAREKETLERI.md`
-**Bileşenler:** Üst bar (Yeni Hareket dropdown 4 tip) + filtre paneli + özet bar sticky + ana tablo + 4 hareket drawer (Giriş/Çıkış/Transfer/Sayım) + detay drawer + geri alma 24h + audit hash basit
-**Data:** Son 30g 850 hareket
-**Etkileşim:** Drawer'lar slide-in, Sayım drawer tam-sayfa workflow'a yönlendirir
-**Yenilik:** Sadece minor — eski font + son düzeltmeler
+**Doküman:** `EKRAN-STOK-HAREKETLERI.md` · **Kod:** [`src/app/admin/stock-movements/`](../src/app/admin/stock-movements/) — page.tsx + movements-filter-bar.tsx + movements-table.tsx + drawer-launcher.tsx + 4 drawer + reverse-button.tsx + export/
+
+> **2026-05-21 brief sync:** Implementasyon mockup'tan ileri. Mockup `preview/stok-hareketleri.html` Faz 2'ye saklı.
+
+**Liste sayfası (`/admin/stock-movements`, [page.tsx](../src/app/admin/stock-movements/page.tsx)):**
+- Header — "Admin · Stok Hareketleri" + Ledger başlığı + "Son 100 hareket · Append-only" alt-metin + `DrawerLauncher` 4 buton (4 hareket tipi)
+- `DrawerLauncher` ([drawer-launcher.tsx](../src/app/admin/stock-movements/drawer-launcher.tsx)) — 4 buton: `open-stock-in` (📥 Stok Girişi, arrow renk) · `open-stock-out` (📤 Çıkış/Satış, cat renk) · `open-transfer` (🔁 Transfer, 2+ şube zorunlu) · `open-stocktake` (📋 Sayım). Şube/variant yoksa disabled hint
+- `movements-filter-bar` ([movements-filter-bar.tsx](../src/app/admin/stock-movements/movements-filter-bar.tsx)) — `mv-branch` + `mv-variant` + `mv-type` (giriş/çıkış/transfer/sayım) + `mv-filter-clear` + `mv-export` (xlsx download)
+- Tablo ([movements-table.tsx](../src/app/admin/stock-movements/movements-table.tsx)) — Tarih · Tür (📥/📤/🔁/📋 + subtype TR etiket) · Ürün · Şube · Önce · Δ · Sonra · Notlar (customerRef/documentNo/reason/transferGroup chip'ler) · İşlem (`reverse-button`)
+- Reversed satır opacity-50 + line-through · reversal satır "↶ Geri alma" rozet · reverseButton 24h pencere içinde, transfer pair otomatik birlikte geri alır
+- Empty state — 📦 icon + filtre temizle CTA
+
+**4 Drawer (sağdan slide-in, DrawerShell shared):**
+- `StockInDrawer` ([stock-in-drawer.tsx](../src/app/admin/stock-movements/stock-in-drawer.tsx)) — şube + variant + qty + cost + supplier + documentNo + lot + SKT + note · PetSpinner pending (Faz 5)
+- `StockOutDrawer` ([stock-out-drawer.tsx](../src/app/admin/stock-movements/stock-out-drawer.tsx)) — şube + variant + subtype dynamic field (sale=priceField+customerField+paymentMethod / waste=reason / gift+sample=customerField / internal_use=yok) · credit + customerRef boş → "Veresiye satışta müşteri zorunlu" UI guard · auto-unpublish trigger (stock=0 + vitrinPublished)
+- `TransferDrawer` ([transfer-drawer.tsx](../src/app/admin/stock-movements/transfer-drawer.tsx)) — kaynak + hedef şube + variant + qty + note · query-param auto-open + prefill (low-stock'tan tek tıkla)
+- `StocktakeDrawer` ([stocktake-drawer.tsx](../src/app/admin/stock-movements/stocktake-drawer.tsx)) — şube + variant + countedQty (large bold input) + reason 7 enum + note · "Sistemdeki miktarla aynı" → no_change kayıt yok · countedQty=0 + vitrinPublished → auto-unpublish
+
+**Export:** `/admin/stock-movements/export` route → .xlsx (filtre param'larını URL'den okur, TR header, dd/mm/yyyy locale)
+
+**Data örnek:** Son 100 hareket — 15 stok giriş + 30 satış + 8 transfer + 12 sayım + 35 sayım initial
+**Etkileşim:** Drawer'lar slide-in (DrawerShell — Escape kapat + body lock + backdrop blur), Sayım workflow için `/admin/stocktake` ayrı sayfa (drawer + tam-sayfa, EKRAN-SAYIM.md), reverseButton 24h pencere + transfer pair atomik
+**Bağımlılık:** TASARIM-SISTEMI · `stockMovementKeys` query cache · audit_logs (movement.created entry) · branch_inventory denormalize + product.totalStockQty SUM
 
 ---
 
