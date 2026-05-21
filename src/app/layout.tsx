@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { cookies } from 'next/headers';
 import { ThemeProvider } from '@/components/theme/theme-provider';
+import { Providers } from './providers';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -54,7 +55,10 @@ export default async function RootLayout({
     <html lang="tr" className={htmlClass} suppressHydrationWarning>
       <body className="min-h-full flex flex-col">
         <ThemeProvider initialTheme={isDark ? 'dark' : 'light'}>
-          {children}
+          {/* TanStack Query — client component'lerde useQuery/useMutation
+              (FAZ 4 + FAZ 5 — 5 kritik CRUD optimistic). Theme dış, Query iç:
+              theme cookie-driven SSR, query client-only. */}
+          <Providers>{children}</Providers>
         </ThemeProvider>
       </body>
     </html>
