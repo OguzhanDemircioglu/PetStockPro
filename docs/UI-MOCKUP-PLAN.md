@@ -255,17 +255,58 @@ Sprint sırasına göre:
 
 ### 5.4 super-admin.html (yenile)
 
-**Doküman:** `EKRAN-SUPERADMIN.md` + `SUPERADMIN-YETKILERI.md`
+**Doküman:** `EKRAN-SUPERADMIN.md` + `SUPERADMIN-YETKILERI.md` · **Kod:** [`src/app/admin/superadmin/`](../src/app/admin/superadmin/) — 7 alt URL
 
-> **🚀 2026-05-14 not — Mockup dosya adı kalır, ama URL artık ayrı sayfa değil:** `preview/super-admin.html` dosya adı (mevcut mockup'a referans) **korunuyor**, ancak gerçek implementasyonda bu sayfa ayrı bir URL/sayfa **DEĞİL** — ANA `/admin` panelinin SUPERADMIN-only sidebar alt grubudur (`/admin/tenants`, `/admin/audit`, `/admin/plan-approval`, `/admin/db-inspector`, `/admin/system-settings`). Mockup HTML'i bu route'lardan herhangi birinin görsel önizlemesi olarak yorumlanır. Brief: "URL `/admin`, role-based menü, ayrı sayfa değil; sidebar SUPERADMIN için ek grup render eder."
+> **URL mimarisi (2026-05-14 onay + 2026-05-21 mockup fix):** Süperadmin **ayrı subdomain veya ayrı login DEĞİL** — `/admin/superadmin/*` alt route'lar, SUPERADMIN role'lü kullanıcı topbar'da "🛡 Süperadmin" linki görür. Süperadmin'in kendi tenant pano'su **YOK** — sadece süperadmin işleri yapar, tenant'a impersonate ile girer ("✕ Çıkış · Süperadmin'e dön" ile çıkar). Mockup `preview/super-admin.html` Faz 2'ye saklı.
 
-**Yeni eklenenler:**
-- **4 sekme:** Tenant'lar / Audit / Plan Onay / **Vitrin Modlama** (yeni)
-- Vitrin Modlama 5 alt-sekme: Manuel İnceleme / Bildirimler / Otomatik Filter / Onay Logları / Bayi Admin (Faz 3 disable)
-- Otomatik onay vurgusu (KPI: %94 oto-onay)
-- Süperadmin felsefe banner (kişisel kontrol/müdahale, operasyonel müdür değil)
-- Toolbox FAB (sağ alt, 4 kategori yetki)
-- 3-tier B plan tablosu (FREE 50 / PRO 500 750₺ / PRO+ ∞ 1.750₺, 2026-05-14 YT-7) — preview/super-admin.html güncellenmesi gerekir (önceki 2-tier mockup geçersiz)
+**Ana sayfa (`/admin/superadmin`, [page.tsx](../src/app/admin/superadmin/page.tsx)):**
+- `superadmin-hero` — başlık + felsefe banner (kişisel kontrol/müdahale, operasyonel müdür değil)
+- 4-kolon KPI grid (toplam tenant + approved storefront + total users + total products)
+- 4-kolon KPI grid 2 (24h movements + unread notifs + PRO subs + PRO+ subs)
+- `vitrin-metrics` — 7g profile_view / product_view / listing_impression / whatsapp_click
+- 2-kolon recent activity (audit son 5 + son aktif tenant son 5)
+- `tenant-activity-metrics` — 7g top 5 tenant traffic (impressions + WA clicks)
+- 2-kolon detail (en yeni tenant + top vitrin tenants)
+- `db-stats` 2-kolon — DB size + connection count + capacity bar (`db-usage-bar`) + `top-tables` top 8 büyüklük
+- `tenant-table` — 50 tenant tablosu (name + slug + plan + storefront status + users + products + branches + total stock + createdAt + impersonate buton `impersonate-${id}`)
+
+**Tenant detay (`/admin/superadmin/tenant/[id]`, [page.tsx](../src/app/admin/superadmin/tenant/[id]/page.tsx)):**
+- Header (name + plan + storefront_status)
+- 5-kolon KPI grid (users + products + branches + total stock + last activity)
+- `tenant-actions` — destructive (reset categories + impersonate + plan-override + hard-delete linkler)
+- 2-kolon (`tenant-users` son 10 user + `tenant-audit` son 20 audit entry)
+- `tenant-movements` — son 50 stok hareketi
+
+**Vitrin Moderation (`/admin/superadmin/vitrin-moderation`, [page.tsx](../src/app/admin/superadmin/vitrin-moderation/page.tsx)):**
+- 4-KPI grid (Manuel İnceleme bekleyen + Onaylanmış + Reddedilmiş + Auto-suspended)
+- `moderation-tabs` — Manuel İnceleme / Şikayet Raporları (otomatik onay vurgusu — %X oto-onay)
+- Reports tab: `reports-results` + `reports-filter-bar` + `reports-table` (company + product + report_type + status + reporter IP hash + reviewed_by + actions)
+- Moderation tab: `moderation-results` + `moderation-table` (pending_review tenant'lar — onayla/reddet butonları)
+
+**Errors (`/admin/superadmin/errors`, [page.tsx](../src/app/admin/superadmin/errors/page.tsx)):**
+- 4-stat `error-stats` (Today / 7g / 30g critical / Toplam unresolved)
+- `top-types` — en sık 5 error type (critical alert burst)
+- `filters` — 7 filter (severity + type + resolved + date + user + tenant + search)
+- `error-list` — son 100 system_errors entry + resolve toggle (PII stripped)
+
+**DB Inspector (`/admin/superadmin/db-inspector`, [page.tsx](../src/app/admin/superadmin/db-inspector/page.tsx)):** SQL read-only inspector client + SQL execute (SUPERADMIN-only, audit log)
+
+**System Settings (`/admin/superadmin/system-settings`, [page.tsx](../src/app/admin/superadmin/system-settings/page.tsx)):**
+- `plan-tiers` — 3-tier B tablo (FREE 50 / **PRO 500 1.000₺ / PRO+ ∞ 2.000₺**, 2026-05-21 pricing son revize)
+- `env-checks` — Brevo/iyzico/Nilvera/Telegram/Cloudflare key durumları
+- 2-kolon — `db-extensions` (PostGIS/pg_trgm/moddatetime…) + Log retention kartı (6 TTL tablo + Sentry-replacement system_errors stat)
+
+**6 Bypass aksiyon (`/admin/superadmin/bypass/*`):**
+- `hard-delete` — tenant hard delete (audit + Telegram critical)
+- `plan-override` — manuel plan up/downgrade
+- `negative-stock` — eksi stok zorla onay
+- `reverse-expired` — 24h sonrası movement geri al
+- `stocktake-undo` — completed sayım geri al
+- `metadata-fix` — JSON content alanları düzeltme
+
+**Toolbox FAB** ([components/superadmin-toolbox.tsx](../src/components/superadmin-toolbox.tsx)) — sağ alt sticky FAB, 4 kategori yetki erişim (bypass / DB fix / sistem config / uzak kullanıcı)
+
+**Bağımlılık:** TASARIM-SISTEMI · isSuperadmin gate her sayfa başında · impersonation cookie + banner · audit_logs (tüm aksiyonlar) · Telegram critical alert
 
 ---
 

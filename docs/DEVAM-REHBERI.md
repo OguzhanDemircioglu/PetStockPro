@@ -182,6 +182,24 @@ Bağımlılıklar: `stockMovementKeys` cache + audit_logs + branch_inventory den
 
 ---
 
+### 🆕 Tur J: C iş kalemi #4 — super-admin brief sync (2026-05-21 gece)
+
+**Değişiklik:** [docs/UI-MOCKUP-PLAN.md §5.4](UI-MOCKUP-PLAN.md) — süperadmin brief'i `src/app/admin/superadmin/` 7 alt route + Toolbox FAB'a göre kapsamlı yeniden listelendi:
+- **Ana sayfa** (page.tsx) — superadmin-hero felsefe banner + 4+4 KPI grid + vitrin-metrics 7g + db-stats (db-usage-bar + top-tables) + tenant-table 50 satır
+- **Tenant detay** (tenant/[id]) — 5-KPI + tenant-actions (destructive) + 2-kolon tenant-users + tenant-audit + tenant-movements
+- **Vitrin Moderation** (vitrin-moderation) — moderation-tabs (Manuel İnceleme / Şikayet) + reports-table + moderation-table
+- **Errors** (errors) — error-stats + top-types + 7 filter + error-list (PII stripped + resolve toggle)
+- **DB Inspector** (db-inspector) — SQL read-only client (SUPERADMIN-only, audit)
+- **System Settings** (system-settings) — plan-tiers 3-tier B (**1.000/2.000 pricing 2026-05-21**) + env-checks + db-extensions + Log retention kartı
+- **6 Bypass aksiyon** (bypass/*) — hard-delete / plan-override / negative-stock / reverse-expired / stocktake-undo / metadata-fix
+- **Toolbox FAB** (components/superadmin-toolbox.tsx) — sağ alt sticky, 4 kategori yetki
+
+URL mimarisi notu güncellendi: süperadmin ayrı subdomain veya ayrı login değil, `/admin/superadmin/*` alt route'lar — süperadmin'in kendi tenant pano'su YOK (2026-05-21 mockup fix yansıdı).
+
+**Sıradaki C iş kalemi:** §5.5 auth.html brief sync.
+
+---
+
 ### 🆕 Geçmiş tur (2026-05-21 öğleden sonra) — referans
 
 | Commit | Konu |
