@@ -593,22 +593,43 @@ Sprint sırasına göre:
 
 ---
 
-### 5.13 vitrin-anasayfa.html (YENİ — Sprint 12 için)
+### 5.13 vitrin-anasayfa.html (yenile)
 
-**Doküman:** `EKRAN-PUBLIC-VITRIN.md §4`
-**Bileşenler:**
-- Header (logo + arama + il dropdown + TR/EN + Pet shop sahibi misin? CTA)
-- Info bar (3 mesaj rotation: "1.247 ürün · 47 şehir")
-- Hero (slogan + konum izni prompt + il seç)
-- Kategori grid (6 ana kategori)
-- Yakındaki pet shop'lar (harita + 4 kart, konum varsa)
-- Popüler ürünler (8 kart cross-tenant)
-- Şehir grid (6 ana şehir)
-- İletişim CTA (Pet shop kayıt)
-- Footer
-- Cookie banner (KVKK + GDPR opt-in)
+**Doküman:** `EKRAN-PUBLIC-VITRIN.md §4` · **Kod:** [`src/app/vitrin/page.tsx`](../src/app/vitrin/page.tsx) + layout.tsx + cookie-banner.tsx + nearby-toggle.tsx + report-button.tsx + admin-return-link.tsx
 
-**Önemli:** **Tek tema PetStockPro markası** (eski 5 hazır tema kaldırıldı). Tüm pet shop'lar eşit görünür.
+> **2026-05-21 brief sync:** Sprint 12 vitrin tamamlandı. Mockup `preview/vitrin-anasayfa.html` 1093 satır (mevcut tasarım referansı — fakat brand-listings.tsx + nearby-map.tsx live data ile zenginleşmiş, kod canonical).
+
+**Ana sayfa (`/vitrin`, [page.tsx](../src/app/vitrin/page.tsx)):**
+- Layout — admin'den gelmişse "↩ Admin'e dön" link (`admin-return-link.tsx`)
+- `vitrin-hero` section — `vitrin-hero-eye` (mascot) + başlık + `vitrin-hero-search` form (`vitrin-search-input` arama → `/vitrin/ara?q=`) + il select cascade + `vitrin-hero-logo-card`
+- `vitrin-trust-strip` — KVKK uyumlu rozet + "WhatsApp deep link, biz sipariş almıyoruz" sade banner (para akışı çizgisi)
+- `vitrin-nearby-section` — konum izni varsa Yakındaki pet shop'lar (`nearby-toggle`):
+  - `vitrin-nearby-list` — 4 kart (mesafe + isim + WhatsApp + adres + storefront link)
+  - `vitrin-nearby-map` — Leaflet harita pin'lerle (lazy load)
+- `vitrin-popular-products` — son 7g popüler ürün cross-tenant (8 kart)
+- `vitrin-best-sellers` — son 30g en çok satılan ürün cross-tenant
+- `vitrin-city-grid` — 6 ana şehir grid + diğer şehir count link
+- `vitrin-category-chips` — 6 ana kategori chip + diğer kategori count
+- `vitrin-owner-cta` — Pet shop sahibi misin? FREE 50 ürün başla CTA → /register
+- Footer + KVKK politika link + iletişim
+- `cookie-banner` (KVKK opt-in; GDPR YOK — TR-only 2026-05-14)
+
+**Alt sayfalar (Sprint 12):**
+- `/vitrin/ara` ([ara/](../src/app/vitrin/ara)) — arama sonuçları (§5.14)
+- `/vitrin/[il]` + `/vitrin/[il]/[ilce]` — il/ilçe sayfa
+- `/vitrin/kategori/[slug]` — kategori sayfa
+- `/vitrin/marka/[slug]` — marka sayfa
+- `/vitrin/urun/[slug]` — ürün detay + cross-tenant kıyaslama (§5.15)
+- `/vitrin/magaza/[slug]` — pet shop profili (§5.16)
+
+**Önemli:**
+- **Tek tema PetStockPro markası** (eski 5 hazır tema kaldırıldı)
+- Tüm pet shop'lar eşit görünür (Karar A: sponsorship/rozet YOK)
+- WhatsApp deep link `wa.me/...` — biz API kullanmıyoruz, sipariş almıyoruz, para akışında DEĞİLİZ
+- `report-button.tsx` — ürün/pet shop için 🚩 şikayet butonu (vitrin_reports tablo)
+- WhatsApp tıklama sonrası sticky feedback balonu (Sprint 12.10 — 5 emoji tek-tık submit, 1 IP × 1 tenant × 24h)
+
+**Bağımlılık:** TASARIM-SISTEMI · vitrin_events tablo (KVKK anonim ipHash + city) · `getNearbyStorefronts` PostGIS + ST_DWithin · brand-listings.tsx · nearby-map.tsx Leaflet lazy · cities + districts seed
 
 ---
 

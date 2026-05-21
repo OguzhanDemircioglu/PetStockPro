@@ -317,6 +317,23 @@ Drilldown ayrı detay sayfası YOK — tek sayfa multi-section pattern (sade-tut
 
 ---
 
+### 🆕 Tur T: C iş kalemi #13 — vitrin-anasayfa brief sync (2026-05-21 gece)
+
+**Değişiklik:** [docs/UI-MOCKUP-PLAN.md §5.13](UI-MOCKUP-PLAN.md) — vitrin-anasayfa brief'i Sprint 12 implementasyonuna göre yeniden listelendi:
+- vitrin-hero (eye + search + il + logo-card) + trust-strip (KVKK + WhatsApp deep link sade banner)
+- vitrin-nearby-section — nearby-toggle + nearby-list (4 kart mesafe + WA) + nearby-map Leaflet lazy
+- vitrin-popular-products (7g) + vitrin-best-sellers (30g) cross-tenant
+- vitrin-city-grid (6 şehir) + vitrin-category-chips (6 kategori)
+- vitrin-owner-cta (FREE 50 başla → /register) + cookie-banner (KVKK opt-in, GDPR YOK)
+- Alt sayfalar: /vitrin/ara + /vitrin/[il] + /vitrin/kategori/[slug] + /vitrin/marka/[slug] + /vitrin/urun/[slug] + /vitrin/magaza/[slug]
+- report-button.tsx 🚩 (vitrin_reports tablo) + WhatsApp feedback sticky balon (Sprint 12.10)
+
+Mockup preview/vitrin-anasayfa.html 1093 satır var ama brand-listings + nearby-map live data ile zenginleşmiş, kod canonical.
+
+**Sıradaki C iş kalemi:** §5.14 vitrin-arama brief sync.
+
+---
+
 ### 🆕 Geçmiş tur (2026-05-21 öğleden sonra) — referans
 
 | Commit | Konu |
