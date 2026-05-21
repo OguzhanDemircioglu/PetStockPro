@@ -156,8 +156,17 @@ export default async function VitrinHomePage({
             <span className="grid h-2 w-2 place-items-center">
               <span className="h-2 w-2 animate-ping rounded-full bg-cat" />
             </span>
-            Yakınında {nearbyStorefronts.length} pet shop ·{' '}
-            {TR_NUMBER.format(stats.productCount)} ürün canlı
+            {location ? (
+              <>
+                Yakınında {nearbyStorefronts.length} pet shop ·{' '}
+                {TR_NUMBER.format(stats.productCount)} ürün canlı
+              </>
+            ) : (
+              <>
+                {TR_NUMBER.format(stats.storefrontCount)} pet shop ·{' '}
+                {TR_NUMBER.format(stats.productCount)} ürün canlı
+              </>
+            )}
           </div>
           <h1 className="text-4xl font-bold leading-tight tracking-tight text-cart lg:text-5xl">
             Mamasını <span className="text-cat">yakınındaki</span>
@@ -317,12 +326,12 @@ export default async function VitrinHomePage({
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-[22px] font-bold tracking-tight text-cart">
-              📍 Yakındaki pet shop&apos;lar
+              {location ? '📍 Yakındaki pet shop\'lar' : '🐾 Pet shop\'lar'}
             </h2>
             <p className="mt-0.5 text-[13px] text-ink-3">
               {location
                 ? `Konumuna göre · en yakın ${nearbyStorefronts.length}`
-                : 'Konum iznine göre sıralanır'}
+                : 'Konum izni verirsen yakındakileri sıralarız'}
             </p>
           </div>
         </div>
