@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { moderateText, moderateFields } from './check';
 
-const NO_OP_FETCH = vi.fn().mockResolvedValue(new Response('not used', { status: 500 }));
+const _NO_OP_FETCH = vi.fn().mockResolvedValue(new Response('not used', { status: 500 }));
 
 describe('moderateText', () => {
   it('boş/null input → flagged=false', async () => {

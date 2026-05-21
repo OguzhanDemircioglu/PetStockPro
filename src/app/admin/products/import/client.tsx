@@ -10,7 +10,7 @@ import {
   type ValidationContext,
   type NormalizedRow,
 } from '@/lib/products/import-validate';
-import { swalError, swalHtml, swalSuccess, swalToast } from '@/lib/ui/swal';
+import { swalError, swalHtml, swalSuccess } from '@/lib/ui/swal';
 
 interface Props {
   existingCategoryNames: string[];

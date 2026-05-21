@@ -24,7 +24,6 @@
 
 import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -223,7 +222,7 @@ const BRAND_MAP: Array<{ slug: string; canonical: string }> = [
 ];
 
 // ---------- Slug helpers ----------
-function slugToWords(slug: string): string {
+function _slugToWords(slug: string): string {
   return slug
     .replace(/-/g, ' ')
     .replace(/\s+/g, ' ')

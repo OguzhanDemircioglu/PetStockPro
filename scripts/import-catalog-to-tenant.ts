@@ -16,10 +16,7 @@
  */
 
 import 'dotenv/config';
-import { sql, eq } from 'drizzle-orm';
 import postgres from 'postgres';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import * as schema from '../src/db/schema';
 import { fetchFromR2, uploadToR2 } from '../src/lib/storage/r2-client';
 import { makeSlug } from '../src/lib/utils/slug';
 
@@ -31,7 +28,6 @@ const queryClient = postgres(process.env.DATABASE_URL, {
   prepare: false,
   connection: { search_path: 'petstockpro,public' },
 });
-const db = drizzle(queryClient, { schema });
 
 interface CatalogRow {
   id: number;
@@ -175,9 +171,8 @@ async function main(): Promise<void> {
 
     // Variant insert (default)
     const variantSku = generateSku(item.brand, item.name, item.weight);
-    let variantId: string | null = null;
     try {
-      const v = await queryClient`
+      await queryClient`
         INSERT INTO petstockpro.product_variants (
           product_id, sku, value_label, cost_price, sale_price, threshold,
           is_default, is_active
@@ -185,9 +180,7 @@ async function main(): Promise<void> {
         VALUES (
           ${productId}, ${variantSku}, ${item.weight}, '0', '0', 5, true, true
         )
-        RETURNING id
       `;
-      variantId = v[0]?.id as string;
     } catch (e) {
       console.log(`  ⚠ Variant fail for ${item.name.slice(0, 40)}: ${(e as Error).message.slice(0, 80)}`);
     }
@@ -215,7 +208,7 @@ async function main(): Promise<void> {
         `;
         imagesTransferred++;
       }
-    } catch (e) {
+    } catch {
       imageFailures++;
     }
 

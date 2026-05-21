@@ -11,7 +11,7 @@ import { resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 
 const TARGETS_PATH = resolve(tmpdir(), 'seed-data/scrape-targets.txt');
-const SCRAPE_OUTPUT = resolve(process.cwd(), 'scripts/data/scrape-output.json');
+const _SCRAPE_OUTPUT = resolve(process.cwd(), 'scripts/data/scrape-output.json');
 
 // Aynı BRAND_MAP'i import edemeyiz (TS olarak da olur ama hızlı olsun); inline dupliçe
 const BRAND_SLUGS = [

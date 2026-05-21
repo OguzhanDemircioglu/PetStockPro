@@ -141,7 +141,12 @@ export function ReportButton({
         <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-ink-3">
           Sebep *
         </label>
-        <div className="grid grid-cols-2 gap-1.5">
+        <div
+          role="radiogroup"
+          aria-label="Bildirim sebebi"
+          aria-invalid={hasError || undefined}
+          className="grid grid-cols-2 gap-1.5"
+        >
           {REASON_OPTIONS.map((opt) => (
             <label
               key={opt.value}
@@ -158,7 +163,6 @@ export function ReportButton({
                 checked={reason === opt.value}
                 onChange={(e) => setReason(e.target.value)}
                 data-reason={opt.value}
-                aria-invalid={hasError || undefined}
                 className="sr-only"
               />
               <span>{opt.emoji}</span>

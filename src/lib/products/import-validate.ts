@@ -13,7 +13,7 @@
  *   `Satır {N} · {Alan} — {kısa açıklama}`
  */
 
-import { IMPORT_TEMPLATE_HEADERS, REQUIRED_HEADERS, HEADER_TO_FIELD } from './import-template';
+import { IMPORT_TEMPLATE_HEADERS, HEADER_TO_FIELD } from './import-template';
 
 // ────────────────────────────────────────────────────────────
 // TIPLER

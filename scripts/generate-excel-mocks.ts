@@ -248,7 +248,7 @@ async function genUrunler() {
   return { name: '1-urunler.xlsx', buf };
 }
 
-async function genMarkalar() {
+async function _genMarkalar() {
   const buf = await buildXlsxBuffer<typeof brands[number]>({
     sheetName: 'Markalar',
     title: '🏷 Marka Listesi',
@@ -266,7 +266,7 @@ async function genMarkalar() {
   return { name: '2-markalar.xlsx', buf };
 }
 
-async function genKategoriler() {
+async function _genKategoriler() {
   const buf = await buildXlsxBuffer<typeof categories[number]>({
     sheetName: 'Kategoriler',
     title: '📂 Kategori Listesi',

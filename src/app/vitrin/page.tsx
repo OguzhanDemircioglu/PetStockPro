@@ -458,11 +458,12 @@ export default async function VitrinHomePage({
                   >
                     <div className="relative h-32 overflow-hidden bg-gradient-to-br from-cat-soft/40 to-arrow-soft/40">
                       {p.primaryImageUrl ? (
-                        <img
+                        <Image
                           src={p.primaryImageUrl}
                           alt={p.productName}
-                          loading="lazy"
-                          className="h-full w-full object-cover"
+                          fill
+                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 200px"
+                          className="object-cover"
                         />
                       ) : (
                         <div className="grid h-full place-items-center text-5xl">
@@ -538,11 +539,12 @@ export default async function VitrinHomePage({
                   >
                     <div className="relative h-32 overflow-hidden bg-gradient-to-br from-arrow-soft/40 to-cat-soft/30">
                       {p.primaryImageUrl ? (
-                        <img
+                        <Image
                           src={p.primaryImageUrl}
                           alt={p.productName}
-                          loading="lazy"
-                          className="h-full w-full object-cover"
+                          fill
+                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 200px"
+                          className="object-cover"
                         />
                       ) : (
                         <div className="grid h-full place-items-center text-5xl">

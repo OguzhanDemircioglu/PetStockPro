@@ -77,10 +77,11 @@ const nextConfig: NextConfig = {
 
   images: {
     remotePatterns: [
-      // Supabase Storage (Frankfurt)
+      // Supabase Storage (Frankfurt) — e-Arşiv PDF
       { protocol: 'https', hostname: '*.supabase.co' },
-      // Cloudflare R2 / Images (gelecek için yer tutucu)
+      // Cloudflare R2 — ürün görselleri (2026-05-21 R2 strategy)
       { protocol: 'https', hostname: '*.r2.cloudflarestorage.com' },
+      { protocol: 'https', hostname: '*.r2.dev' },
       { protocol: 'https', hostname: 'imagedelivery.net' },
     ],
     formats: ['image/avif', 'image/webp'],

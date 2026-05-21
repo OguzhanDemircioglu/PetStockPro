@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useTransition, useRef } from 'react';
+import Image from 'next/image';
 import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import {
   uploadImagesAction,
@@ -177,11 +178,12 @@ export function ImagesSection({ productId, images }: Props) {
             >
               {/* Thumb */}
               <div className="relative aspect-square overflow-hidden bg-line-soft">
-                <img
+                <Image
                   src={img.url}
                   alt={img.altText ?? ''}
-                  className="h-full w-full object-cover"
-                  loading="lazy"
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover"
                 />
                 {img.isPrimary && (
                   <span className="absolute left-2 top-2 rounded-full bg-cat px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider text-white shadow-sm">

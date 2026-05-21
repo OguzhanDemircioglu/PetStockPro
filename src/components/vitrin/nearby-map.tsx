@@ -189,11 +189,14 @@ export default function NearbyMap({
   // useEffect içinde setState — React/Next 19 'set-state-in-effect' kuralı genellikle
   // derive-state-from-props anti-pattern'i için. Burada watchPosition akışı ile prop
   // akışını birleştiriyoruz (gerçek senkronizasyon) — false positive, disable.
+  // exhaustive-deps: userLocation referansı her render'da değişir; .lat/.lng primitives
+  // ile değer-eşitliği yapıyoruz (reference equality değil) — kasıtlı, disable.
   useEffect(() => {
     if (userLocation) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setLiveLocation(userLocation);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userLocation?.lat, userLocation?.lng]);
 
   // DeviceOrientation — mobile'da pusulayı dinle (kuzey 0°)

@@ -18,9 +18,9 @@
  *   npx tsx scripts/convert-images-to-webp.ts
  */
 
-import { readFile, writeFile, readdir, rename, mkdir, stat, copyFile } from 'node:fs/promises';
+import { readFile, writeFile, readdir, rename, mkdir, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { resolve, parse, basename } from 'node:path';
+import { resolve, parse } from 'node:path';
 import sharp from 'sharp';
 
 const IMAGES_DIR = resolve(process.cwd(), 'scripts/data/images');
