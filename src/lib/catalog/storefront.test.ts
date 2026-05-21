@@ -52,7 +52,9 @@ const VALID_ROW = {
   activeVariantCount: 2,
   minSalePrice: '180.50',
   maxSalePrice: '3499.00',
-  imageCount: 0,
+  // Sprint 3.3 — image upload aktif, default requireImage=true.
+  // VALID_ROW her testte happy path için en az 1 görsel olmalı.
+  imageCount: 1,
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -153,21 +155,23 @@ describe('validateForStorefront', () => {
     expect(result.issues.some((i) => i.code === 'invalid_sale_price')).toBe(true);
   });
 
-  it('requireImage true + imageCount 0 → missing_image issue', async () => {
+  it('requireImage true (default) + imageCount 0 → missing_image issue', async () => {
     const select = makeSelectChain([[{ ...VALID_ROW, imageCount: 0 }]]);
     const db = { select } as unknown as DbClient;
 
-    const result = await validateForStorefront(COMPANY, PRODUCT, db, {
-      requireImage: true,
-    });
+    // Sprint 3.3 — default requireImage=true (opts geçmeden).
+    const result = await validateForStorefront(COMPANY, PRODUCT, db);
     expect(result.issues.some((i) => i.code === 'missing_image')).toBe(true);
   });
 
-  it('requireImage false (default) + imageCount 0 → missing_image YOK', async () => {
+  it('requireImage false override + imageCount 0 → missing_image YOK', async () => {
     const select = makeSelectChain([[{ ...VALID_ROW, imageCount: 0 }]]);
     const db = { select } as unknown as DbClient;
 
-    const result = await validateForStorefront(COMPANY, PRODUCT, db);
+    // Explicit false override — test/önizleme senaryosu.
+    const result = await validateForStorefront(COMPANY, PRODUCT, db, {
+      requireImage: false,
+    });
     expect(result.issues.some((i) => i.code === 'missing_image')).toBe(false);
   });
 

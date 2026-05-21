@@ -1,5 +1,5 @@
 /**
- * Storefront (Satışa Aç) Helpers — Sprint 3.4
+ * Storefront (Satışa Aç) Helpers — Sprint 3.4 + Sprint 3.3 (image upload aktif)
  *
  * validateForStorefront: vitrin'e açılabilir mi? Çoklu issue döner.
  * publishProduct: validation pass → vitrin'e aç (idempotent, audit alanları doldur).
@@ -8,7 +8,8 @@
  * İnvariantlar:
  * - Pet shop'un vergi numarası zorunlu (B2B muhasebe için).
  * - Ürünün en az 1 aktif variant'ı + makul satış fiyatı.
- * - Sprint 3.3 sonrası: en az 1 görsel zorunlu (şimdilik `requireImage` flag false).
+ * - **En az 1 görsel zorunlu** (`requireImage: true` default, Sprint 3.3 R2 image
+ *   upload aktif). Test'lerde `requireImage: false` geçilerek devre dışı bırakılır.
  * - Manuel publish: validation tüm issue temiz → ancak başarılı.
  */
 
@@ -55,8 +56,8 @@ export interface StorefrontValidationResult {
 
 export interface ValidateOptions {
   /**
-   * Sprint 3.3 öncesi false — image upload UI henüz yok. Sprint 3.3 sonrası true.
-   * Test'lerde her iki yön için kontrol edilir.
+   * En az 1 görsel zorunlu mu? Sprint 3.3 R2 image upload aktif (default true).
+   * `requireImage: false` geçilirse görsel kontrolü atlanır — test/önizleme için.
    */
   requireImage?: boolean;
   /** Min satış fiyatı (₺) — varsayılan 1 */
@@ -66,7 +67,7 @@ export interface ValidateOptions {
 }
 
 const DEFAULT_OPTS: Required<ValidateOptions> = {
-  requireImage: false,
+  requireImage: true,
   minSalePrice: 1,
   maxSalePrice: 50000,
 };
