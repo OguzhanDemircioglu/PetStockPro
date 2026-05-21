@@ -158,8 +158,13 @@ export default async function VitrinHomePage({
               </>
             )}
           </div>
+          {/* 2026-05-22 Tur 7 YT7-8: konum yokken "yakınındaki" iddiası yanlış —
+              koşullu metin. UX dürüstlük 5f4ce60'in atladığı h1 satırı. */}
           <h1 className="text-4xl font-bold leading-tight tracking-tight text-cart lg:text-5xl">
-            Mamasını <span className="text-cat">yakınındaki</span>
+            Mamasını{' '}
+            <span className="text-cat">
+              {location ? 'yakınındaki' : "Türkiye'deki"}
+            </span>
             <br />
             pet shop&apos;tan al<span className="text-arrow">.</span>
           </h1>
