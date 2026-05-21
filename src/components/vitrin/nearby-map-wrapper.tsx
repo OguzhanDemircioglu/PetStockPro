@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import type { NearbyStorefrontMapPoint } from './nearby-map';
+import { PetSpinner } from '@/components/ui/pet-spinner';
 
 /**
  * Leaflet SSR-incompatible (window/document erişimi). Bu wrapper ile
@@ -18,10 +19,8 @@ const NearbyMap = dynamic(() => import('./nearby-map'), {
       data-testid="nearby-map-loading"
       className="grid h-[360px] place-items-center rounded-2xl border border-line bg-paper text-center"
     >
-      <div>
-        <span className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-cat/30 border-t-cat" />
-        <p className="mt-2 text-[12.5px] text-ink-4">Harita yükleniyor...</p>
-      </div>
+      <PetSpinner size="md" tone="cat" label="Harita yükleniyor…" />
+      <p className="mt-2 text-[12.5px] text-ink-4">Harita yükleniyor...</p>
     </div>
   ),
 });

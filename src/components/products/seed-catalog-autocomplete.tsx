@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { SearchResult } from '@/lib/catalog/seed-catalog';
+import { PetSpinner } from '@/components/ui/pet-spinner';
 
 interface Props {
   /** Bir öneri seçildiğinde tetiklenir; parent form alanlarını doldurur. */
@@ -127,10 +128,9 @@ export function SeedCatalogAutocomplete({ onSelect, disabled }: Props) {
           className="w-full rounded-xl border-[1.5px] border-cat/40 bg-paper px-4 py-3 pr-10 text-sm text-ink transition-colors focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15 disabled:opacity-60"
         />
         {loading && (
-          <span
-            aria-hidden="true"
-            className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-cat/30 border-t-cat"
-          />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2">
+            <PetSpinner size="sm" inline tone="cat" label="Katalog aranıyor" />
+          </span>
         )}
       </div>
 

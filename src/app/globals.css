@@ -258,6 +258,26 @@ html.dark body::before {
 .tabular-nums { font-variant-numeric: tabular-nums; }
 
 /* ============================================================
+   PetSpinner — paw pulse (FAZ 3 BETA-PERFORMANCE)
+   Tema: --cat gradient + rotate + scale pulse
+   A11y: prefers-reduced-motion → animasyon kapanır
+   ============================================================ */
+@keyframes paw-pulse {
+  0%, 100% { transform: rotate(0deg)   scale(1);   }
+  50%      { transform: rotate(180deg) scale(1.1); }
+}
+.animate-paw-pulse {
+  animation: paw-pulse 1.4s ease-in-out infinite;
+  transform-origin: center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-paw-pulse,
+  .animate-spin {
+    animation: none !important;
+  }
+}
+
+/* ============================================================
    Vitrin Category Bar — yatay nav + hover dropdown
    ============================================================ */
 .pt-cat-bar {
