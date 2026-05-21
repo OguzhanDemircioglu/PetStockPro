@@ -247,7 +247,7 @@ export default async function VitrinHomePage({
             <span className="text-lg">📍</span>
             <div className="leading-tight">
               <div className="text-[10px] font-normal uppercase tracking-wider text-ink-4">
-                Yakın
+                Türkiye&apos;de
               </div>
               <div className="text-cart">{stats.cityCount} şehir</div>
             </div>
@@ -479,8 +479,12 @@ export default async function VitrinHomePage({
                           
                         </div>
                       )}
-                      <span className="absolute right-2 top-2 rounded-full bg-paper/95 px-2 py-0.5 text-[10.5px] font-bold text-cat shadow-sm">
-                        🔥 {p.viewCount}
+                      <span
+                        className="absolute right-2 top-2 rounded-full bg-paper/95 px-2 py-0.5 text-[10.5px] font-bold text-cat shadow-sm"
+                        title={`Son 7 günde ${TR_NUMBER.format(p.viewCount)} kez görüntülendi`}
+                        aria-label={`Son 7 günde ${TR_NUMBER.format(p.viewCount)} görüntülenme`}
+                      >
+                        🔥 {TR_NUMBER.format(p.viewCount)} görüntüleme
                       </span>
                     </div>
                     <div className="flex flex-col gap-1 p-3">
@@ -560,8 +564,12 @@ export default async function VitrinHomePage({
                           
                         </div>
                       )}
-                      <span className="absolute right-2 top-2 rounded-full bg-arrow/90 px-2 py-0.5 text-[10.5px] font-bold text-white shadow-sm">
-                        🏆 {TR_NUMBER.format(p.totalSold)} adet
+                      <span
+                        className="absolute right-2 top-2 rounded-full bg-arrow/90 px-2 py-0.5 text-[10.5px] font-bold text-white shadow-sm"
+                        title={`Son 30 günde ${TR_NUMBER.format(p.totalSold)} adet satıldı`}
+                        aria-label={`Son 30 günde ${TR_NUMBER.format(p.totalSold)} adet satış`}
+                      >
+                        🏆 {TR_NUMBER.format(p.totalSold)} satıldı
                       </span>
                     </div>
                     <div className="flex flex-col gap-1 p-3">

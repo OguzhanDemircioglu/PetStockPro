@@ -145,7 +145,10 @@ export default async function VitrinSearchPage({
           )}
         </h1>
         <p className="mt-1.5 text-[14px] opacity-85">
-          Ürün adı veya marka yazın — yakınındaki pet shop&apos;tan WhatsApp ile sorabilirsin.
+          Ürün adı veya marka yazın —{' '}
+          {cityFilter
+            ? `${cityFilter.name} şehrindeki pet shop'tan WhatsApp ile sorabilirsin.`
+            : 'pet shop\'tan WhatsApp ile sorabilirsin.'}
         </p>
 
         <form
