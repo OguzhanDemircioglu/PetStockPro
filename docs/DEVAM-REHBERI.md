@@ -218,6 +218,21 @@ Brute-force: 5 fail → 1h lock + Brevo + Telegram + cookie state; 3 lock → 24
 
 ---
 
+### 🆕 Tur L: C iş kalemi #6 — subeler brief sync (2026-05-21 gece)
+
+**Değişiklik:** [docs/UI-MOCKUP-PLAN.md §5.6](UI-MOCKUP-PLAN.md) — subeler brief'i `src/app/admin/branches/` + Faz 8 (Observer + branch 3-state) implementasyonuna göre yeniden listelendi:
+- Liste — `add-branch` + kart grid + `branch-status-${status}` rozet (🟢/🌴/🔴) + ToggleActiveButton + last-active koruma
+- Form — `branch-name` + `branch-city` (81 cascade) + `branch-district` (974 fetch + AbortController) + WhatsApp regex + `branch-alert` + `branch-submit`
+- `branch-status-control` 3-state — radio + quick buttons + holiday banner + WhatsApp disabled + inactive=vitrin 404
+- Detay — branch-inactive-banner + branch-holiday-banner + 4-KPI + `branch-team-card` (manager + staff-block + staff-rows + remove-manager-button) + branch-variant-list + branch-movements
+- Export → .xlsx
+
+Lat/lng harita pin Faz 2'ye saklı (mockup `preview/subeler.html` yok).
+
+**Sıradaki C iş kalemi:** §5.7 sayim.html brief sync.
+
+---
+
 ### 🆕 Geçmiş tur (2026-05-21 öğleden sonra) — referans
 
 | Commit | Konu |

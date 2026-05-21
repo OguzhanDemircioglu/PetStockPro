@@ -373,11 +373,39 @@ Sprint sırasına göre:
 
 ---
 
-### 5.6 subeler.html (YENİ — Sprint 6 için)
+### 5.6 subeler.html (yenile)
 
-**Doküman:** `EKRAN-SUBELER.md`
-**Bileşenler:** Kart grid (default) + tablo alternative + harita opsiyonel toggle + yeni şube form (lat/lng harita pin) + detay drawer + branch_inventory matrix
-**Yeni vurgu:** **Vitrin için lat/lng zorunlu** banner — "Vitrin'de görünmek için en az bir şubenin haritada konumu olmalı"
+**Doküman:** `EKRAN-SUBELER.md` · **Kod:** [`src/app/admin/branches/`](../src/app/admin/branches/) — page.tsx + branch-form.tsx + branch-status-control.tsx + toggle-active-button.tsx + [id]/page.tsx + [id]/edit/ + new/ + export/
+
+> **2026-05-21 brief sync:** Sprint 6 implementasyon + Faz 8 (Observer + 3-state branch) tamamlandı. Mockup `preview/subeler.html` **henüz yok** — Faz 2'ye saklı (lat/lng harita pin daha sonra eklenecek).
+
+**Liste sayfası (`/admin/branches`, [page.tsx](../src/app/admin/branches/page.tsx)):**
+- Header — "Admin · Şubeler" başlığı + sayı + `add-branch` "Yeni Şube" CTA
+- Kart grid (3-kolon responsive) — her kart: name → edit link + `branch-status-${status}` rozet (🟢 Aktif / 🌴 Tatil / 🔴 Pasif) + 📍 city/district + 📞 WhatsApp + variant count + total stock + `ToggleActiveButton`
+- Empty state — "Henüz şube yok" + ilk şube ekle CTA
+
+**Yeni/düzenle form ([branch-form.tsx](../src/app/admin/branches/branch-form.tsx)):**
+- `branch-name` + `branch-city` (81 il cascade) + `branch-district` (974 ilçe fetch + AbortController yarış kontrolü) + adres + WhatsApp `+90 / 0` prefix regex
+- `branch-alert` validation hata + `branch-submit` PetSpinner pending
+- Last-active koruma — son aktif şube pasifleştirilemez (transfer için en az 1 aktif kalmalı)
+
+**Branch Status Control ([branch-status-control.tsx](../src/app/admin/branches/branch-status-control.tsx) — Faz 8):**
+- 3-state radio (Aktif / Tatil / Pasif) — `branch-status-control-radio` + `status-radio-${s}` per state
+- Quick buttons variant — `branch-status-control-buttons` + `status-quick-${s}`
+- status=holiday + vitrin → "🌴 Tatildeyiz, şubat 30'da dönüyoruz" banner + WhatsApp disabled
+- status=inactive + tüm şubeler → vitrin 404 (anyOperational=false guard)
+
+**Detay sayfası (`/admin/branches/[id]`, [page.tsx](../src/app/admin/branches/[id]/page.tsx)):**
+- Header — name + `branch-inactive-banner` (pasif uyarısı) veya `branch-holiday-banner` (tatil uyarısı)
+- 4-kolon KPI grid
+- `branch-team-card` — `branch-manager-block` (OBSERVER izleyici varsa rozet) + `branch-staff-block` + `branch-staff-rows` (kasiyer listesi) + `remove-manager-button`
+- 2-kolon: `branch-variant-list` + `branch-variant-rows` (variant stok + threshold per branch) + `branch-movements` + `branch-movement-rows` (son 50 hareket)
+
+**Export:** `/admin/branches/export` route → .xlsx
+
+**Vitrin görünürlük:** lat/lng zorunlu **henüz aktif değil** (harita pin UI Faz 2'de eklenecek). Şu an city + district + adres yeterli.
+
+**Bağımlılık:** TASARIM-SISTEMI · cities (81) + districts (974) seed · branch_status enum (active/holiday/inactive Migration 0021) · user_permissions tablo (OBSERVER read-only Faz 8) · branches/[id]/edit/page.tsx şube ekleme wizard 2-step "Çalışan ekle" (Faz 7)
 
 ---
 
