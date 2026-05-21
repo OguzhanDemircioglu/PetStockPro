@@ -154,22 +154,29 @@ Sprint sırasına göre:
 
 ### 5.1 pano.html (yenile)
 
-**Doküman:** `EKRAN-PANO.md`
-**Bileşenler:**
-- Topbar (logo + ⌘K arama + 🌐 Vitrin link + 🔔 + 🌓 + avatar)
-- Sidebar (Envanter / Operasyon / Kaynaklar / Analiz / 🏪 Vitrin / Ayarlar gruplar)
-- Hero karşılama (welcome + plan badge `FREE 47/50` ring)
-- Hızlı Eylem 4 buton (Stok Girişi / Yeni Satış / Transfer / Sayım)
-- Dikkat Bandı (kritik/dikkat/bilgi uyarıları) veya Onboarding kartı
-- 4 KPI Şeridi (Bugün Satış / Bugün Giriş / Aktif Ürün / Envanter Değeri)
-- Trend grafiği (sol 2/3) — line chart envanter değer 30g
-- Düşük Stok widget (sağ 1/3)
-- Son Hareketler feed (10 ledger entry, 30s polling, 🚨 superadmin işareti)
-- PetPro Asistanı kartı (sipariş öneri, transfer öneri, indirim öneri — rule-based)
+**Doküman:** `EKRAN-PANO.md` · **Kod:** [`src/app/admin/page.tsx`](../src/app/admin/page.tsx) (otoritatif — mockup'ın gerisinde)
+
+> **2026-05-21 brief sync:** Implementasyon mockup'tan ileri. Mockup `preview/pano.html` Sprint 0 öncesi tasarım, kod 12+ sprint sonrası. Brief implementasyonu yansıtacak şekilde güncellendi. Mockup yenileme **Faz 2'ye saklı** (tek geliştirici sade-tut — kod canonical).
+
+**Bileşenler (testid sırasıyla):**
+- Topbar (`AdminTopbar`) — sayfa başlığı + tarih + ⌘K + 🌓 Theme + 🏪 Vitrin link + 🛡 Süperadmin (varsa) + 🔍 İzleyici (OBSERVER ise) + 🔔 NotificationBell (sayı rozet, cache-reactive, 2026-05-21 fix) + avatar + çıkış
+- Sidebar (`AdminSidebar`) — brand + nav gruplar + plan progress + düşük stok rozet
+- `pano-hero` — karşılama (companyName + son işlem zamanı) + 2 CTA (`hero-add-product` + `hero-stock-in`) + `hero-logo-wrap` mascot
+- `kpi-trio` — 3 büyük KPI (Ciro/Hareket/Vitrin görüntülenme 7g) + mini sparkline
+- `stock-strip` — Envanter değeri + şube breakdown + Aktif Ürün `N/limit` plan progress
+- `pano-alert` + `pano-alert-cta` — kritik tek mesaj (varsa) → ilgili eyleme link
+- `quick-chip-row` — 4 hızlı eylem chip (Stok Girişi / Yeni Satış / Transfer / Sayım)
+- `pano-notif-feed` — son okunmamış 5 bildirim mini-feed (Sprint 15+)
+- `pano-feedback-widget` — vitrin WhatsApp feedback özet (Sprint 12+ — funnel + ortalama rating)
+- `petpro-transfer-suggestions` — şubeler arası transfer önerisi (rule-based)
+- `petpro-discount-suggestions` — ölü stok indirim önerisi
+- `petpro-expiring-suggestions` — SKT yakın ürünler
+- `petpro-assistant` — kombine sipariş öneri kartı (low-stock + supplier grup)
+- 2-kolon son aktivite grid: `recent-activity-all-ledger` (son 10 stok hareketi) + `recent-activity-today-audit` (bugünkü audit log)
 
 **Data örnek:** Mavi Pet Shop, FREE 47/50 ürün, bugün 14 satış 1.850₺ ciro, 5 düşük stok ürün
-**Etkileşim:** Hızlı Eylem butonları drawer açar, KPI tıklama filtreli sayfa
-**Bağımlılık:** TASARIM-SISTEMI tüm tokenlar
+**Etkileşim:** Hızlı Eylem chip'leri ilgili sayfaya navigate, KPI tıklama filtreli sayfa
+**Bağımlılık:** TASARIM-SISTEMI tüm tokenlar + `notificationKeys` query cache key
 
 ---
 

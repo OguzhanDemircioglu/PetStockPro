@@ -132,6 +132,28 @@ claude
 
 ---
 
+### 🆕 Tur F: Bildirimler filtre sadeleştirme (2026-05-21 gece)
+
+**Kullanıcı kararı:** "BİLDİRİMLER ÜZERİNDE HEPSİ VE OKUNMAMIŞ OLMASI YETERLİ"
+
+**Değişiklik:** [src/app/admin/notifications/page.tsx](../src/app/admin/notifications/page.tsx) — `TYPE_GROUPS` sabiti (Stok / Sayım / Vitrin / Abonelik / Sistem chip'leri) ve alt-tip seçici paneli + `activeGroup` / `activeType` param'ları + `groupCounts` / `typeCounts` agregasyonları **tamamen kaldırıldı**. Sadece "Hepsi" + "Okunmamış (N)" filtre çubuğu kaldı. `TYPE_EMOJI` + `TYPE_LABEL` sabitleri liste satırlarında ikon/etiket için `NotificationsList` prop olarak verilmeye devam ediyor.
+
+**Net:** 60+ satır UI/state kod silindi (`181 → 24 insertions/deletions`). 1649 test pass koru. Lint + typecheck 0 error.
+
+**Browser smoke:** /admin/notifications → filtre sadece 2 link, grup chip'leri ve alt-tip paneli yok (screenshot kanıt).
+
+---
+
+### 🆕 Tur G: C iş kalemi #1 — pano.html brief sync (2026-05-21 gece)
+
+**Yaklaşım kararı:** "17 mockup brief'i sıralı" iş kaleminde mockup HTML'i sıfırdan yazmak yerine **her brief'i implementasyona göre güncelle** (kod canonical, mockup tasarım referansı). Tek geliştirici sade-tut — mockup'ı 1500+ satıra şişirmek (5+ yeni section eklemek) yerine brief implementasyon yapısını yansıtacak şekilde refresh edilir.
+
+**Değişiklik:** [docs/UI-MOCKUP-PLAN.md §5.1](UI-MOCKUP-PLAN.md) — pano brief'i `src/app/admin/page.tsx` testid'lerine göre yeniden listelendi. Eklenen yeni section'lar: `pano-notif-feed` (Sprint 15+) · `pano-feedback-widget` (Sprint 12+ vitrin WA feedback) · 3 ayrı PetPro öneri (`petpro-transfer-suggestions` / `petpro-discount-suggestions` / `petpro-expiring-suggestions`) · `recent-activity-all-ledger` + `recent-activity-today-audit` 2-kolon grid · NotificationBell (cache-reactive Tur E). Mockup `preview/pano.html` "Faz 2'ye saklı" işaretlendi.
+
+**Sıradaki C iş kalemi:** §5.2 urunler.html brief sync.
+
+---
+
 ### 🆕 Geçmiş tur (2026-05-21 öğleden sonra) — referans
 
 | Commit | Konu |
