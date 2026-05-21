@@ -33,6 +33,8 @@
 
 ## 🚀 YENİ SESSION'A GİRDİĞİNDE — İLK OKUMA SIRASI
 
+**2026-05-21 (Faz 1 BETA-PERFORMANCE):** Auto-bootstrap tamamlandı — `src/instrumentation.ts` boot hook + `src/lib/bootstrap/run.ts` orchestrator + cities/districts + catalog_seed_products idempotent ensure. Drizzle `__drizzle_migrations` 21. satır manuel senkron (kullanıcı A seçti, history INSERT). 8 yeni test (1567→1575 pass). Browser smoke: dev server 700ms ready + bootstrap 885ms (cities=81/catalog=1240 mevcut → skip). **Sıradaki:** FAZ 2 (log retention + error tracking).
+
 **2026-05-20 sonu:** SWAL toast + aria-invalid + Excel ürün import tamamlandı. **Sıradaki büyük iş: Observer/Yetki/Şube-state refactor** — plan: `docs/PLAN-OBSERVER-STAFF-BRANCH-STATE.md` ⭐
 
 1. **`docs/PLAN-BETA-PERFORMANCE.md`** 🆕🆕 — **YENİ SESSION BAŞLANGIÇ DOSYASI (2026-05-21 onaylı)** — 6 fazlı altyapı planı: auto-bootstrap + log retention + error tracking (Sentry'siz, system_errors + Telegram) + PetSpinner + TanStack Query Provider + 5 CRUD optimistic. Toplam 10-12 saat.

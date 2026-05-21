@@ -70,6 +70,11 @@ const nextConfig: NextConfig = {
   // Cloudflare Workers (OpenNext) için hazırlık — Sprint 14'te @opennextjs/cloudflare aktive edilecek
   typedRoutes: true,
 
+  // Auto-bootstrap (PLAN-BETA-PERFORMANCE.md FAZ 1) — src/instrumentation.ts'i çalıştırır.
+  // Next.js 16'da instrumentation hook stable (default-on); explicit dokümantasyon niyetiyle yazılır.
+  // BOOTSTRAP_SKIP=1 ile devre dışı bırakılabilir (production CI/CD migration önceden çalıştırırsa).
+  // Not: Next.js 16 ile experimental.instrumentationHook kaldırıldı, sadece dosyanın varlığı yeter.
+
   images: {
     remotePatterns: [
       // Supabase Storage (Frankfurt)
