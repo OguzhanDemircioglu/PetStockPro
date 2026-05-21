@@ -200,6 +200,24 @@ URL mimarisi notu güncellendi: süperadmin ayrı subdomain veya ayrı login de�
 
 ---
 
+### 🆕 Tur K: C iş kalemi #5 — auth brief sync (2026-05-21 gece)
+
+**Değişiklik:** [docs/UI-MOCKUP-PLAN.md §5.5](UI-MOCKUP-PLAN.md) — auth brief'i `src/app/{login,register,verify-email,forgot-password,reset-password,2fa-setup,verify-email-change,account-locked,onboarding}` 9 ana route + EKRAN-AUTH.md 52 senaryoya göre kapsamlı yeniden listelendi:
+- Login — password-toggle + 2FA TOTP step + recovery-upload + kalan hak banner + 5+ fail conditional Turnstile
+- Register — 2 KVKK checkbox + Turnstile zorunlu + Brevo verify (24h TTL)
+- Email Verify (bekleme + token) + Forgot Password (Turnstile + enumeration) + Reset (HIBP + TÜM oturum kapan)
+- 2FA Setup wizard 3-step (QR + TOTP verify + 8 recovery code) + `/admin/security` disable+regen
+- Email Change (init + verify + cancel Telegram critical)
+- Account Locked (HH:MM:SS countdown + 24h kalıcı variant)
+- Onboarding wizard 3-step (şube + ürün/marka import + vitrin)
+- Davet kabul hibrit (email 7g / link 24h)
+
+Brute-force: 5 fail → 1h lock + Brevo + Telegram + cookie state; 3 lock → 24h kalıcı. Turnstile @marsidev/react-turnstile TR locale Managed mode. Mockup `preview/auth.html` Faz 2'ye saklı.
+
+**Sıradaki C iş kalemi:** §5.6 subeler.html brief sync.
+
+---
+
 ### 🆕 Geçmiş tur (2026-05-21 öğleden sonra) — referans
 
 | Commit | Konu |

@@ -310,28 +310,66 @@ Sprint sırasına göre:
 
 ---
 
-### 5.5 auth.html (YENİ — Sprint 2 için)
+### 5.5 auth.html (yenile)
 
-**Doküman:** `EKRAN-AUTH.md` (2026-05-15 yeni doc — auth akışının tek source'u, 15 bölüm + 52 test)
+**Doküman:** `EKRAN-AUTH.md` (15 bölüm + 52 test) · **Kod:** [`src/app/`](../src/app/) — login + register + 2fa-setup + verify-email + verify-email-change + forgot-password + reset-password + onboarding + account-locked
 
-**Bileşenler (EKRAN-AUTH.md referansları):**
-- **Login (`§2`)** — sol panel (logo + slogan + mascot), sağ form (email + şifre + "Şifremi unuttum" + 2FA TOTP step). **5+ başarısız sonrası Turnstile widget görünür.** Google OAuth YOK (TR-only sadeleştirme).
-- **Register (`§3`)** — sol panel + sağ form (pet shop adı + email + şifre + şifre tekrar + **2 KVKK checkbox: Aydınlatma onayı + Frankfurt veri lokasyonu açık rıza**) + **Turnstile widget zorunlu**
-- **E-posta doğrulama bekleme (`§4.1`)** — info sayfa + "Yeniden Gönder" 60sn cooldown countdown + spam klasör notu
-- **E-posta doğrulama token tıklama (`§4.2`)** — başarılı/hatalı durum sayfası
-- **Şifremi unuttum (`§5.1`)** — email + **Turnstile zorunlu** + generic mesaj (enumeration koruma)
-- **Şifre sıfırlama (`§5.3`)** — yeni şifre + tekrar + HIBP check + "TÜM oturumlar kapanacak" uyarı
-- **Email değiştirme (`§6`)** — çift doğrulama (eski + yeni email)
-- **2FA setup wizard (`§7`)** — Adım 1 QR kod tara → Adım 2 6 haneli kod → Adım 3 8 recovery code (kopya/yazdır + checkbox)
-- **Account locked sayfası (`§10.2`)** — geri sayım + "Şifremi unuttum" alternatifi
-- **Onboarding (`§8`)** — 3 adım wizard (ilk şube → ilk ürün → vitrin profili opsiyonel)
-- **Davet kabul (`§EKRAN-KULLANICILAR §4.4`)** — hibrit davet token tıklama akışı (email veya link)
+> **2026-05-21 brief sync:** Sprint 2 ve sonrası implementasyon tamamlandı (auth full flow browser end-to-end geçti). Mockup `preview/auth.html` Faz 2'ye saklı (Verdana güncel, son akışlar koda göre).
 
-**Cloudflare Turnstile bileşeni:** `@marsidev/react-turnstile` paketi, **TR locale**, theme=light, size=normal. Widget mode: Managed (Cloudflare otomatik invisible/widget seçer).
+**Login (`/login`, [page.tsx](../src/app/login/page.tsx)):**
+- Sol panel — logo + slogan + 🔒 KVKK uyumlu rozet
+- Sağ form — email + şifre + `password-toggle` (göster/gizle)
+- 2FA TOTP step — `twoFactorEnabled=true` ise banner görünür + 6-haneli kod input
+- Recovery code upload — `recovery-upload-trigger` → `.txt` dosyasından kod parse (`extractRecoveryCodesFromText`) → `recovery-picker` ile birini seç (`recovery-picker-option`)
+- Kalan hak banner — 3/2/1 hak zinciri (5. yanlışta lock + Brevo email + Telegram alert)
+- **5+ başarısız sonrası Turnstile widget** (conditional)
+- 🔒 Cloudflare Turnstile + ✓ KVKK uyumlu footer rozet
 
-**Test sayısı:** 52 AUTH-* senaryosu (EKRAN-AUTH §13)
+**Register (`/register`, [page.tsx](../src/app/register/page.tsx)):**
+- Sol panel + sağ form (pet shop adı + email + şifre + şifre tekrar)
+- **2 KVKK checkbox zorunlu** — Md.10 Aydınlatma onayı + Md.9 Frankfurt veri lokasyonu açık rıza
+- **Turnstile widget zorunlu** (her register)
+- Vergi no kayıt formunda **YOK** (2026-05-13 kararı)
+- Submit → Brevo verify email (24h TTL) + /verify-email bekleme
 
-**Önemli:** Vergi no kayıt formunda **YOK** (2026-05-13 kararı)
+**Email Verify (`/verify-email`, [page.tsx](../src/app/verify-email/page.tsx) + [[token]/](../src/app/verify-email/[token])):**
+- Bekleme sayfası — "Yeniden Gönder" 60sn cooldown + spam klasör notu
+- Token tıklama — başarılı/hatalı durum sayfası
+
+**Forgot Password (`/forgot-password`, [page.tsx](../src/app/forgot-password/page.tsx)):**
+- Email + **Turnstile zorunlu** + generic 200 (enumeration koruma)
+- Lock bypass (account_locked iken bile şifre reset edebilir)
+- Brevo reset email (30dk TTL)
+
+**Reset Password (`/reset-password/[token]`):**
+- Yeni şifre + tekrar + HIBP check + "Tüm oturumlar kapanacak" uyarı + Brevo passwordChanged final email
+- failedLoginCount + lockedUntil reset
+
+**2FA Setup (`/2fa-setup`, [wizard.tsx](../src/app/2fa-setup/wizard.tsx) — 3-step):**
+- Step 1 — QR kod tara + manuel secret (otpauth URI + 10dk TTL setup secret)
+- Step 2 — 6 haneli TOTP doğrula
+- Step 3 — 8 recovery code ABCD-EFGH (clipboard copy + print + checkbox "Sakladım")
+- `/admin/security` üzerinden disable + regenerate codes (Telegram alert)
+
+**Email Change (`/admin/account` init + `/verify-email-change/[token]` confirm):**
+- Init — password re-auth + new email + 2 Brevo email (yeni doğrula CTA + eski "İptal Et" CTA)
+- Verify token — final değişiklik + eski email final notify
+- Cancel token — Telegram critical alert (hesap ele geçirme şüphesi)
+
+**Account Locked (`/account-locked`, [countdown.tsx](../src/app/account-locked/countdown.tsx)):**
+- HH:MM:SS geri sayım + "Şifremi unuttum" alternatif CTA + permanent lock kırmızı variant + destek email
+
+**Onboarding (`/onboarding`, [wizard.tsx](../src/app/onboarding/wizard.tsx) — 3-step):**
+- Step 1 — İlk şube (ad + il cascade ilçe + adres + WhatsApp)
+- Step 2 — İlk ürün opsiyonel/atla + `onboarding-import-brands-checkbox` (katalog seed marka 80+ aktive)
+- Step 3 — Vitrin profili opsiyonel/atla (slug edit veya skip)
+- `/?onboarding=complete` veya `/?onboarding=skipped-storefront` dashboard'a redirect
+
+**Davet kabul (EKRAN-KULLANICILAR §4.4):** hibrit davet token tıklama (email 7g veya link 24h) → register sonrası company'ye join
+
+**Cloudflare Turnstile bileşeni:** `@marsidev/react-turnstile`, TR locale, theme=light, size=normal, Managed mode.
+**Brute-force:** 5 fail → 1h lock + Brevo email + Telegram alert + cookie state; 3 art arda lock → 24h kalıcı.
+**Test sayısı:** 52 AUTH-* senaryosu (EKRAN-AUTH §13) — Sprint 2-2.9 hepsi yeşil.
 
 ---
 
