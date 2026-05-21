@@ -550,7 +550,7 @@ KAPSAM DIŞI (TR-only 2026-05-14):
 
 **2026-05-14 not:** TR-only kararı ile Paddle (yurt dışı ödeme) + Frankfurter API (currency rate) + EN locale dış servis/bağımlılık listesinden çıkarıldı. iyzico tek ödeme aracı, Nilvera tek e-Arşiv sağlayıcı, KVKK tek uyum referansı.
 
-**2026-05-14 plan tier güncellemesi (YT-7):** 3-tier B aktif — FREE 50 / PRO 500 (750₺ KDV dahil) / PRO+ ∞ (1.750₺ KDV dahil). Tek farklılaşma stok limiti, diğer tüm özellikler tüm planlarda açık. Custom domain / custom CSS / API erişimi / white-label hâlâ proje kapsamı dışı. Otoritatif: `PLAN-KADEMELERI.md §1`.
+**2026-05-21 plan tier (son revize):** 3-tier B aktif — FREE 50 / PRO 500 (**1.000₺** KDV dahil) / PRO+ ∞ (**2.000₺** KDV dahil). Tarihçe: 2026-05-14 ilk 750/1.750 → 2026-05-20 Karar C 1.250/2.250 → 2026-05-21 "fiyat artırmayalım" **1.000/2.000**. Tek farklılaşma stok limiti, diğer tüm özellikler tüm planlarda açık. Custom domain / custom CSS / API erişimi / white-label hâlâ proje kapsamı dışı. Otoritatif: `PLAN-KADEMELERI.md §1`.
 ```
 
 ---

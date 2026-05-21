@@ -208,11 +208,11 @@ Tüm tenant'ları etkileyen sistem ayarları.
 
 **6 bölüm:**
 
-##### 3.1.1 Plan Tiers (3-tier B — 2026-05-14, TR-only)
+##### 3.1.1 Plan Tiers (3-tier B — 2026-05-21 son revize, TR-only)
 ```
 FREE:    [50]  ürün · [0]      ₺/ay · KDV dahil
-PRO:     [500] ürün · [750]    ₺/ay · KDV dahil
-PRO+:    [∞]   ürün · [1.750]  ₺/ay · KDV dahil
+PRO:     [500] ürün · [1.000]  ₺/ay · KDV dahil
+PRO+:    [∞]   ürün · [2.000]  ₺/ay · KDV dahil
 ```
 
 Tek farklılaşma: stok limiti. Diğer tüm özellikler (vitrin, çoklu şube, audit, 2FA, asistan, 6 rapor, Nilvera e-Arşiv) tüm planlarda açık.

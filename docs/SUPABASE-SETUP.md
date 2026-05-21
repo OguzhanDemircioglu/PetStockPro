@@ -325,17 +325,18 @@ Supabase Dashboard > Database > Replication:
 
 ## 10. Storage Bucket Policies
 
-```sql
--- product-images: public read, authenticated write
-CREATE POLICY "Public read product images" ON storage.objects
-  FOR SELECT USING (bucket_id = 'product-images');
+> **2026-05-21 not (6. tur YT6-8):** Ürün görselleri için Supabase Storage **kullanılmıyor** — Cloudflare R2'ye taşındı (5. tur YT5-2/3 kararı, bkz. EKRAN-URUNLER §7.3 + DEPLOYMENT.md §0/§7.1). Supabase Storage sadece e-Arşiv PDF için (`invoice-archives` bucket — Sprint 14 Nilvera entegrasyonu).
 
-CREATE POLICY "Auth users upload product images" ON storage.objects
-  FOR INSERT WITH CHECK (
-    bucket_id = 'product-images' AND auth.role() = 'authenticated'
+```sql
+-- invoice-archives: e-Arşiv PDF (Nilvera), sadece tenant'ın kendi tenant_id klasörü
+-- Public read YOK (KVKK + ticari gizlilik). Server-side signed URL ile indirilir.
+CREATE POLICY "Tenant private invoice archives" ON storage.objects
+  FOR ALL USING (
+    bucket_id = 'invoice-archives'
+    AND (storage.foldername(name))[1] = auth.jwt() ->> 'company_id'
   );
 
--- documents: sadece tenant'ın kendi tenant_id klasörü
+-- documents: tenant'ın kendi belgeleri (lojistik, KVKK ek belgeler vb. — opsiyonel)
 CREATE POLICY "Tenant private documents" ON storage.objects
   FOR ALL USING (
     bucket_id = 'documents'

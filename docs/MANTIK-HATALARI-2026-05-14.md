@@ -676,4 +676,83 @@
 
 ---
 
-*Son güncelleme: 2026-05-14 (4. tur Claude self-tarama). 40 toplam bulgu — 19 (1.) + 14 (2.) + 2 (3.) + 5 (4.) = ✅ hepsi çözüldü.*
+## 6. Tur (2026-05-21 gece) — 10 Bulgu
+
+**Tetikleyici:** d6623b6 pricing revize (1.250/2.250 → 1.000/2.000) commit 18 dosya değiştirmiş ama yayılım 7 doc + 1 mockup + 1 test'te eksik kalmış. Ek olarak 5. tur YT5-2/3 (R2 strategy) Supabase Storage yansımasında bir doc'ta yarım kaldı.
+
+### 🔴 Kritik (otoritatif yanlış bilgi)
+
+### YT6-1: ✅ `CLAUDE.md §10 Kararlar` pricing 1.250/2.250 — STALE
+- **Sorun:** CLAUDE.md:448 — "Pricing (2026-05-20 Karar C revize): PRO 1.250₺ + PRO+ 2.250₺" — yeni session'da kullanıcı kararı yansımamış otoritatif bilgi okur
+- **Aksiyon:** "Pricing (2026-05-21 son revize): PRO 1.000₺ + PRO+ 2.000₺" + tarihçe (750/1.750 → 1.250/2.250 → 1.000/2.000)
+
+### YT6-2: ✅ `PAYMENT-INTEGRATION.md §10 Karar Geçmişi` 2026-05-14 sonrası entry yok
+- **Sorun:** Decision log 750/1.750 satırında durmuş, 2026-05-20 Karar C + 2026-05-21 son revize satırları eksik
+- **Aksiyon:** İki yeni satır eklendi (2026-05-20 + 2026-05-21), son satır "otoritatif pricing" olarak işaretlendi
+
+### YT6-3: ✅ `TECH-STACK.md §10` plan tier güncellemesi 750/1.750 — STALE
+- **Sorun:** "2026-05-14 plan tier güncellemesi (YT-7)" satırı eski pricing'i otoritatif gösteriyordu
+- **Aksiyon:** "2026-05-21 plan tier (son revize)" başlığıyla güncellendi + tarihçe satırı eklendi
+
+### YT6-4: ✅ `SUPERADMIN-YETKILERI.md §3.1.1` plan tablosu 750/1.750 — STALE
+- **Sorun:** Süperadmin yetki dokümanı eski pricing tablosuyla "PRO: [750] ₺" + "PRO+: [1.750] ₺" gösteriyordu
+- **Aksiyon:** "[1.000] ₺" + "[2.000] ₺" güncellendi, başlık "2026-05-21 son revize"
+
+### 🟡 Önemli (yayılım yarım kaldı, kafa karıştırıcı)
+
+### YT6-5: ✅ `SPRINT-PLAN.md` Sprint 0 plans master + product-images bucket — eski
+- **Sorun (a):** Line 228 — "plans master (3-tier B: FREE 50 / PRO 500-750₺ / PRO+ ∞ 1.750₺)" eski pricing
+- **Sorun (b):** Line 144 — "Storage bucket'ları yarat: product-images, logos, documents" R2 kararı yansımamış
+- **Aksiyon:** (a) Pricing 1.000/2.000 güncellendi + tarihçe; (b) Sadece `invoice-archives` (e-Arşiv) bucket, product-images R2'de notu eklendi
+
+### YT6-6: ✅ `UI-MOCKUP-PLAN.md §6` harici tool prompt template eski pricing
+- **Sorun:** Line 776 — Mockup üretim prompt template "PRO 500 ürün 750₺ / PRO+ Sınırsız 1.750₺" → Claude.ai/v0'a verilirse yanlış pricing'le mockup üretilir
+- **Aksiyon:** 1.000/2.000 güncellendi
+
+### YT6-7: ✅ `preview/urunler.html` mockup pricing eski
+- **Sorun:** Line 371 — Plan progress strip altındaki yazı "PRO 500 ürün (750 ₺/ay) · PRO+ Sınırsız (1.750 ₺/ay)"
+- **Aksiyon:** 1.000/2.000 güncellendi (kullanıcı d6623b6'da preview/super-admin.html'i güncellemiş ama urunler atlanmış)
+
+### YT6-8: ✅ `SUPABASE-SETUP.md §10 Storage Bucket Policies` product-images RLS — eski
+- **Sorun:** Storage Bucket Policies bölümü hâlâ Supabase `product-images` bucket'ı için RLS policy gösteriyordu. 5. tur YT5-2/3'te R2 stratejisine geçildi ama bu dosyada güncellenmedi
+- **Aksiyon:** `product-images` policy kaldırıldı, `invoice-archives` (e-Arşiv PDF, server-side signed URL, KVKK gizlilik) policy eklendi + R2 referansı notu
+
+### YT6-9: ✅ `src/lib/billing/totals.test.ts` test isimleri yanıltıcı
+- **Sorun:** Test isimleri "PRO 750₺ KDV dahil" + "PRO+ 1750₺ KDV dahil" — matematik geçerli ama yanlış pricing example'ı kullanıyor (gerçek 1000/2000). Yeni geliştirici test'i okuyup pricing'i 750 sanır
+- **Aksiyon:** Test örnekleri 1000 + 2000 ile güncellendi (matrah 833.33 / vat 166.67 ve matrah 1666.67 / vat 333.33). 3. test string input "1000.00"'a güncellendi
+
+### 🟢 Düşük (historik kayıt, dokunulmadı)
+
+### YT6-10: `DEVAM-REHBERI.md` historik kayıt referansları (dokunulmadı)
+- Line 484 + 591 — Tur özetleri "Karar C: 1.250/2.250" diyor (historik); line 2195 belge haritası "750₺ / 1.750₺" notu (historik)
+- **Karar:** Bu satırlar bilinçli historik kayıtlar (Karar tarihçesi). Üzerine yazmak tarihçeyi siler. Dokunulmadı.
+
+---
+
+## 6. Tur Özet (2026-05-21 gece)
+
+**10 yeni bulgu — 9 ✅ çözüldü, 1 historik kayıt korundu (toplam tüm turlar: 50 bulgu)**
+
+| Tür | Adet | Detay |
+|---|---|---|
+| 🔴 Kritik | 4 | CLAUDE.md / PAYMENT-INTEGRATION / TECH-STACK / SUPERADMIN-YETKILERI — otoritatif pricing yanlış |
+| 🟡 Önemli | 5 | SPRINT-PLAN (2 sorun) / UI-MOCKUP-PLAN prompt / preview/urunler / SUPABASE-SETUP / billing/totals.test |
+| 🟢 Düşük | 1 | DEVAM-REHBERI historik tur özetleri (dokunulmadı) |
+
+**Tarama yöntemi:**
+- d6623b6 commit'i (pricing revize) etkilenen 18 dosyayı listele, eksiklerini bul
+- 4 grep deseni: `750|1.750|1.250|2.250` (pricing) · `Karar C revize` · `product-images.*bucket` (R2 yarım) · `750₺|1750₺` (test isim)
+- src/lib/constants/plan-limits.ts canonical kabul, diğer doc/test/mockup ona göre tara
+- TYPE_GROUPS / NotificationBell yansıma kontrolü — minimal etki, ek bulgu yok
+
+**Etkilenen doc kategorileri:**
+- 7 doc (CLAUDE + 6 docs/*.md)
+- 1 mockup (preview/urunler.html)
+- 1 test (src/lib/billing/totals.test.ts)
+- 1 historik kayıt (dokunulmadı)
+
+**Sonuç:** Tüm yeni session'larda artık 1.000/2.000 pricing kullanılacak. R2 strategy 5. tur YT5-2/3 yansıması tamamlandı.
+
+---
+
+*Son güncelleme: 2026-05-21 gece (6. tur Claude self-tarama). 50 toplam bulgu — 19 (1.) + 14 (2.) + 2 (3.) + 5 (4.) + 8 (5.) + 10 (6.) = ✅ hepsi çözüldü/korundu.*

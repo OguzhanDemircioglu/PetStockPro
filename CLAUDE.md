@@ -445,7 +445,7 @@ EKRAN-SUPERADMIN.md §2.5 yeniden yazıldı — Vitrin Modlama 5 alt-sekme (Manu
 ## 🔑 Önemli Kararlar (Hatırlat)
 
 1. **Tech stack:** Next.js 16 + Supabase + Drizzle + Auth.js v5. **Eski Pet/server (Java/Spring) kodu KULLANILMIYOR** — sıfırdan TS.
-2. **Plan limitleri:** **3-tier B: FREE 50 / PRO 500 / PRO+ ∞ — TR-only.** Tek farklılaşma stok limiti. Diğer tüm özellikler her planda açık. **Pricing (2026-05-20 Karar C revize): PRO 1.250₺ + PRO+ 2.250₺** (önceki 2026-05-14: 750/1.750). 2026-05-13 "2-tier, PRO+ rafa" kararı iptal edildi.
+2. **Plan limitleri:** **3-tier B: FREE 50 / PRO 500 / PRO+ ∞ — TR-only.** Tek farklılaşma stok limiti. Diğer tüm özellikler her planda açık. **Pricing (2026-05-21 son revize): PRO 1.000₺ + PRO+ 2.000₺** (tarihçe: 2026-05-14 750/1.750 → 2026-05-20 Karar C 1.250/2.250 → 2026-05-21 "fiyat artırmayalım" 1.000/2.000). 2026-05-13 "2-tier, PRO+ rafa" kararı iptal edildi.
 
 2.5. **🚨 PARA AKIŞI ÇİZGİSİ (DEĞİŞMEZ — 2026-05-14):** Alıcı (müşteri) ile satıcı (pet shop) arasındaki para alışverişine **PetStockPro ASLA dahil değildir.** Bizim rolümüz sadece WhatsApp deep link açmak (dizin/yer sağlayıcı). Online sipariş YOK, sepet YOK, ödeme aracılığı YOK, komisyon YOK, kargo entegrasyonu YOK. Detay: `EKRAN-PUBLIC-VITRIN.md §13.4`. Bu çizgi yasal güvenlik (ödeme kuruluşu lisansı, sub-merchant, ETBİS aracı, KKDF) için kritik.
 3. **Tipografi:** **Verdana saf** (sistem font, kullanıcı tercihi). mockup-v3'teki Plus Jakarta + Fraunces değil.

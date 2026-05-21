@@ -393,6 +393,33 @@ Mockup preview/vitrin-ana-petstockpro.html yok (implementli, gerek kalmadı).
 
 ---
 
+### 🆕 Tur Y: 6. Mantık Hata Tarama (2026-05-21 gece)
+
+**Tetikleyici:** d6623b6 pricing revize (1.250/2.250 → 1.000/2.000) yayılımı 18 dosyayla eksik kalmıştı; 5. tur YT5-2/3 (R2 strategy) bir doc'ta yarım kalmıştı.
+
+**10 bulgu — 9 ✅ çözüldü, 1 historik korundu:**
+
+🔴 **Kritik 4** — Otoritatif pricing yanlış:
+- YT6-1: CLAUDE.md:448 "Karar C revize 1.250/2.250" → 1.000/2.000 + tam tarihçe
+- YT6-2: PAYMENT-INTEGRATION.md §10 — 2026-05-20 + 2026-05-21 satırları eklendi
+- YT6-3: TECH-STACK.md §10 (2026-05-14 plan tier) → "2026-05-21 son revize" başlık + 1.000/2.000
+- YT6-4: SUPERADMIN-YETKILERI.md §3.1.1 plan tablosu → [1.000] / [2.000]
+
+🟡 **Önemli 5** — Yayılım yarım:
+- YT6-5: SPRINT-PLAN.md — plans master 750/1.750 + Sprint 0 product-images Supabase bucket (R2'ye taşındı)
+- YT6-6: UI-MOCKUP-PLAN.md §6 harici tool prompt template 750/1.750
+- YT6-7: preview/urunler.html plan strip metni 750/1.750
+- YT6-8: SUPABASE-SETUP.md §10 product-images RLS → invoice-archives (e-Arşiv) + R2 notu
+- YT6-9: src/lib/billing/totals.test.ts test isimleri 750/1750 → 1000/2000 (matrah 833.33 + 1666.67)
+
+🟢 **Düşük 1** — DEVAM-REHBERI historik tur özetleri dokunulmadı (Karar tarihçesi bilinçli korundu)
+
+**Detay:** [docs/MANTIK-HATALARI-2026-05-14.md §6. Tur](MANTIK-HATALARI-2026-05-14.md). 50 toplam bulgu (5 önceki tur + 6. tur 10).
+
+**Toplam dosya:** 7 doc + 1 mockup + 1 test = 9 dosya değişti.
+
+---
+
 ## ✅ C İŞ KALEMİ TAMAMLANDI (17/17 brief sync)
 
 **Toplam tur:** G + H + I + J + K + L + M + N + O + P + R + S + T + U + V + W + X = 17 brief sync

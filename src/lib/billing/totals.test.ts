@@ -2,21 +2,26 @@ import { describe, it, expect } from 'vitest';
 import { computeInvoiceTotals, addMonths, SUBSCRIPTION_VAT_RATE } from './totals';
 
 describe('computeInvoiceTotals', () => {
-  it('PRO 750₺ KDV dahil → matrah 625 + vat 125', () => {
-    expect(computeInvoiceTotals(750)).toEqual({ matrah: 625, vat: 125, total: 750 });
+  it('PRO 1.000₺ KDV dahil → matrah 833.33 + vat 166.67 (penny-safe)', () => {
+    const t = computeInvoiceTotals(1000);
+    expect(t.matrah).toBe(833.33);
+    expect(t.vat).toBe(166.67);
+    expect(t.total).toBe(1000);
+    expect(t.matrah + t.vat).toBe(t.total);
   });
 
-  it('PRO+ 1750₺ KDV dahil → matrah 1458.33 + vat 291.67 (penny-safe)', () => {
-    const t = computeInvoiceTotals(1750);
-    expect(t.matrah).toBe(1458.33);
-    expect(t.vat).toBe(291.67);
-    expect(t.total).toBe(1750);
-    // matrah + vat tam eşit
+  it('PRO+ 2.000₺ KDV dahil → matrah 1666.67 + vat 333.33 (penny-safe)', () => {
+    const t = computeInvoiceTotals(2000);
+    expect(t.matrah).toBe(1666.67);
+    expect(t.vat).toBe(333.33);
+    expect(t.total).toBe(2000);
     expect(t.matrah + t.vat).toBe(t.total);
   });
 
   it('string input (decimal) kabul eder', () => {
-    expect(computeInvoiceTotals('750.00')).toEqual({ matrah: 625, vat: 125, total: 750 });
+    const t = computeInvoiceTotals('1000.00');
+    expect(t.total).toBe(1000);
+    expect(t.matrah + t.vat).toBe(1000);
   });
 
   it('özel KDV oranı (örn %10 pet mama) parametrize edilir', () => {

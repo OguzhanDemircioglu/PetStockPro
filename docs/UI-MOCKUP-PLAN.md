@@ -773,7 +773,7 @@ DESIGN SYSTEM (zorunlu):
 [Buraya ilgili EKRAN-XXX.md doküman içeriğini yapıştır — bileşen listesi + data örnek + etkileşim]
 
 ÖZEL KURALLAR:
-- Plan tier: 3-tier B (2026-05-14) — FREE 50 ürün / PRO 500 ürün 750₺ / PRO+ Sınırsız 1.750₺ (KDV dahil)
+- Plan tier: 3-tier B (2026-05-21 son revize) — FREE 50 ürün / PRO 500 ürün **1.000₺** / PRO+ Sınırsız **2.000₺** (KDV dahil)
 - TR-only — Paddle/USD/EUR/EN locale kapsam dışı
 - Vitrin: merkezi tek (petstockpro.com/vitrin), tenant subdomain YOK
 - WhatsApp deep link (wa.me/...), biz API kullanmıyoruz

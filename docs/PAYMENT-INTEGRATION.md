@@ -408,7 +408,9 @@ NILVERA_WEBHOOK_SECRET=
 |---|---|---|
 | 2026-05-12 | İlk taslak: 3-tier (FREE / PRO / PRO+) + iyzico + Nilvera + Paddle MoR + KVKK Madde 9 yurt dışı aktarım açık rıza + GDPR + EN locale + Frankfurter kur | Lansman kapsamı geniş |
 | 2026-05-13 | PRO+ rafa kaldırıldı → 2-tier (FREE 50 / PRO sınırsız) | Stratejik sadeleştirme (sonradan iptal) |
-| 2026-05-14 | **(1)** 3-tier B geri açıldı: FREE 50 / PRO 500 (750 ₺/ay KDV dahil) / PRO+ Sınırsız (1.750 ₺/ay KDV dahil). Otoritatif: `PLAN-KADEMELERI.md`. **(2)** TR-only kararı: Paddle MoR + KVKK Madde 9 yurt dışı aktarım akışı + GDPR cookie banner + EN locale + Frankfurter kur entegrasyonu **kapsam dışı**. Faz 2'de yurt dışı talep gelirse yeniden değerlendirilir. | Bu sürümün otoritatif kararları |
+| 2026-05-14 | **(1)** 3-tier B geri açıldı: FREE 50 / PRO 500 (750 ₺/ay KDV dahil) / PRO+ Sınırsız (1.750 ₺/ay KDV dahil). Otoritatif: `PLAN-KADEMELERI.md`. **(2)** TR-only kararı: Paddle MoR + KVKK Madde 9 yurt dışı aktarım akışı + GDPR cookie banner + EN locale + Frankfurter kur entegrasyonu **kapsam dışı**. Faz 2'de yurt dışı talep gelirse yeniden değerlendirilir. | İlk pricing — sonradan revize edildi |
+| 2026-05-20 | Karar C: Pricing yükseltildi → PRO 1.250 ₺ / PRO+ 2.250 ₺ (net hedef ~$10K/ay) | Kısa süre aktif kaldı, sonradan revize edildi |
+| **2026-05-21** | **Pricing son revize: PRO 1.000 ₺ / PRO+ 2.000 ₺** (kullanıcı kararı "fiyat artırmayalım"). Net hedef ~$8.240/ay (Karar C revize'den orta seviyeye düşürüldü). KDV %20 dahil ortak. | **Bu sürümün otoritatif pricing'i** |
 
 ---
 

@@ -141,7 +141,7 @@
 4. **Supabase project (1 gün)**
    - Supabase'de yeni proje oluştur (Free tier)
    - DB connection string al → `.env.local` koy
-   - Storage bucket'ları yarat: `product-images`, `logos`, `documents`
+   - Storage bucket'ı yarat: `invoice-archives` (e-Arşiv PDF, Nilvera Sprint 14 için). **Ürün görselleri Cloudflare R2'de** (5. tur YT5-2/3 kararı — bkz. EKRAN-URUNLER §7.3 + DEPLOYMENT.md §0/§7.1)
    - Auth provider config: Email + Google (sonra)
 
 5. **Drizzle setup (1 gün)**
@@ -225,7 +225,7 @@
    - `updated_at` auto
 
 5. **Seed data (1 gün — cities/districts dahil)**
-   - `plans` master (3-tier B: FREE 50 / PRO 500-750₺ / PRO+ ∞ 1.750₺ — 2026-05-14 karar)
+   - `plans` master (3-tier B: FREE 50 / PRO 500 **1.000₺** / PRO+ ∞ **2.000₺** — 2026-05-21 son revize; tarihçe 750/1.750 → 1.250/2.250 → 1.000/2.000)
    - **`cities` (81 il) + `districts` (~970 ilçe) seed**
      - Veri kaynağı: TÜİK güncel il-ilçe listesi (https://www.tuik.gov.tr) veya nvi.gov.tr (Nüfus ve Vatandaşlık İşleri)
      - **⚠ ESKİ Pet/client/src/data/turkeyDistricts.ts kullanma** — 2 yıl eski, yeni ilçeler eksik olabilir
