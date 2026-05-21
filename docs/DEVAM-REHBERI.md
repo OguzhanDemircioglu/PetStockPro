@@ -101,8 +101,10 @@ Plan: `docs/PLAN-OBSERVER-STAFF-BRANCH-STATE.md` — 9 faz, hepsi tamamlandı.
 
 ## 🚀 YENİ SESSION'A GİRDİĞİNDE — İLK OKUMA
 
-> Bir önceki büyük iş tamamlandı. Sıradaki büyük iş Sprint 3.3 image upload
-> (`SUPABASE_SERVICE_ROLE_KEY` blokeri). CLAUDE.md "Sıradaki olası işler" listesinden seç.
+> Bir önceki büyük iş tamamlandı (2026-05-21 PLAN-BETA-PERFORMANCE 6/6 faz + Sprint 3.3 image upload R2
+> migration + requireImage default true tutarsızlık fix + 5. tur mantık tarama). CLAUDE.md "Sıradaki olası
+> işler" listesinden seç. ~~Sprint 3.3 SUPABASE_SERVICE_ROLE_KEY blokeri~~ → ✅ Çözüldü (R2 strategy +
+> service-role JWT eklendi).
 
 ---
 
@@ -1170,7 +1172,7 @@ Negatif stok bypass'ı sadece SUPERADMIN tarafından özel sebep + şifre re-aut
 | 12 | ~~Yakınlık sorgusu (haversine, PostGIS YOK) (Faz 2'den çekildi)~~ ✅ | — | **Tamamlandı 2026-05-17.** companies tablosuna `location_lat/lng numeric(10,7)` migration (0015). PostGIS extension EKLENMEDİ — Postgres native math (RADIANS + SIN + COS + ASIN) ile haversine + bbox pre-filter. `lib/vitrin/geolocation.ts` (12 test): `haversineDistanceKm` saf TS, `parseLocationQuery` TR sınır check + radius clamp [1,200], `buildLocationFilter` drizzle SQL template. `listPublicStorefronts` + `countPublicStorefronts` opt `location: { lat, lng, radiusKm }` aldı → bbox WHERE + haversine ≤ radius + ORDER BY mesafe ASC (sort override). StorefrontListItem'a `distanceKm` field. Admin /admin/settings/company "📍 Konum" section (lat/lng input + "Konumumu kullan" button browser geolocation API). Public /vitrin'e `NearbyToggle` client component ("📡 Konumumu paylaş" → URL'e ?lat&lng&r=25 push, radius pills 5/10/25/50/100km, "× Temizle"). Storefront kartlarına mesafe badge (X.X km / XX m). Browser E2E: tenant lat/lng=İzmir Konak set + /vitrin?lat=38.45&lng=27.15&r=25 → "3.9 km" badge + /vitrin?lat=41&lng=29&r=10 → "Sonuç yok" doğru. |
 | 13 | ~~Vitrin moderasyon ürün-spesifik şikayet görünürlüğü (Faz 2'den çekildi)~~ ✅ | — | **Tamamlandı 2026-05-17.** `lib/vitrin/reports.ts` ReportRow'a `companySlug + productSlug` field eklendi; `ListReportsFilters` `targetType` filter; süperadmin /admin/superadmin/vitrin-moderation şikayetler tab'ına 2 filtre çubuğu — durum (pending/resolved/dismissed + count'lar) + hedef (Tümü/🛍 Ürün/🏪 Pet shop). Tablo cell'lerinde pet shop adı + ürün adı yeni sekmede vitrin sayfasına link (`target="_blank"`). Browser E2E: test product şikayeti insert + ?reportStatus=pending&targetType=product → 1 satır + "🛍 Ürün · Catit Pixi" + ürün/profil deeplink + `report-product-link-*` data-testid'i ile yeni sekmede /vitrin/magaza/.../urun/... açılıyor. |
 | 14 | ~~Pet shop profilinde brand grupla UX (Faz 2'den çekildi)~~ ✅ | — | **Tamamlandı 2026-05-17.** `listStorefrontProducts` brand + kategori LEFT JOIN ile zenginleştirildi + ORDER BY brand.name. `groupStorefrontProductsByBrand` pure helper — brand bazında grupla, markasızlar "Diğer ürünler" bucket'ında en alta sıralı, markalı gruplar productCount DESC + alfabetik. /vitrin/magaza/[slug] sayfası 2+ brand olduğunda anchor nav chip'i render eder (#brand-slug smooth scroll), her grup üstünde "🏷 Marka N ürün" header + 3-col responsive ürün grid. Tek-brand durumunda anchor nav gizlenir. Browser E2E: Royal Canin brand insert + product brand_id update → "🏷 Royal Canin 1 ürün" + "🐾 Diğer ürünler 1 ürün" iki grup, 2 anchor chip, sıralama doğru. |
-| 15 | **Storage upload — Sprint 3.3** | ⛔ BLOKER | `SUPABASE_SERVICE_ROLE_KEY` gerek (kullanıcı sağlayacak) |
+| 15 | ~~Storage upload — Sprint 3.3~~ ✅ | — | **Tamamlandı 2026-05-21.** Cloudflare R2 migration (S3-compatible, `r2-client.ts` AWS SDK v3) + `lib/catalog/product-images.ts` CRUD (upload + list + setPrimary + delete) + ImagesSection UI + `requireImage=true` default aktive (Sprint 3.3 fix). Env: R2_ACCOUNT_ID + R2_ACCESS_KEY_ID + R2_SECRET_ACCESS_KEY + R2_BUCKET + R2_PUBLIC_URL. SUPABASE_SERVICE_ROLE_KEY admin client için lazım (storage için değil — `R2 strategy`). Önceki "Supabase Storage" stratejisi 2026-05-19'da iptal edildi (CDN cache-control honor sorunu + Pro tier maliyeti). |
 | 16 | **Sprint 13/14 production deploy** | ⛔ BLOKER | Şirket kuruluş + vergi no + IBAN (2-4 hafta) |
 
 **Plana sadık sıra (CLAUDE.md SPRINT-PLAN):** Sprint 8 ✅ → Sprint 10 ✅ → Sprint 12 MVP ✅ → Sprint 15 polish 4'lü ✅ → Sprint 12 ext ürün detay + Feedback Balonu ✅ → Feedback dashboard (settings + Pano) ✅ → /vitrin pagination + sort enrichment ✅ → Sprint 12 ext SEO il/ilçe route'lar ✅ → Vitrin moderation süperadmin paneli ✅ → Audit log pagination fix ✅ → Sitemap.xml + robots.txt dynamic ✅ → vitrin_reports şikayet sistemi ✅ → Anti-spam rate-limit DB-level ✅ → Süperadmin Telegram alert yeni şikayet ✅ → Alert dedup 1h window ✅ → Günlük summary alert (endpoint hazır) ✅ → **Workers cron scheduler binding** ✅ → **Rate-limit UX banner (5/5 + 24 saat)** ✅ → **Workers KV migration (defense in depth)** ✅ → Sitemap pre-build (1 gün, şu an erken) → Sprint 16 lansman (bloker bekliyor)
@@ -1314,7 +1316,7 @@ Detaylı açıklamalar her bir commit mesajında. Yukarıdaki tabloda commit has
 
 - **Sprint 8 kalan** — İndirim önerisi rule (yavaş satış + yüksek stok, Faz 2 SKT yaklaşan)
 - **Sprint 10** — Ayarlar + Telegram setup wizard (Telegram bot config + bildirim tercih UI)
-- **Sprint 12 — Merkezi Vitrin Dizini** ⚠ partial — `/vitrin` public dizin + WhatsApp deep link (admin profil tamam, public sayfalar eksik). Image upload **bloker** SUPABASE_SERVICE_ROLE_KEY
+- **Sprint 12 — Merkezi Vitrin Dizini** ⚠ partial — `/vitrin` public dizin + WhatsApp deep link (admin profil tamam, public sayfalar eksik). Image upload ✅ Sprint 3.3 ile tamamlandı (R2 strategy, 2026-05-21).
 - **Sprint 13/14** iyzico/Nilvera production deploy ⚠ **BLOCKED** — şirket kuruluş bekliyor
 - **Sprint 15** Polish + Doc (notifications scaffold + audit-log filtre eksik)
 - **Sprint 16** Lansman

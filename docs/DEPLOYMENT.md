@@ -3,9 +3,9 @@
 **Domain:** petstockpro.com (Cloudflare DNS, alındı)
 **Frontend + API:** Cloudflare Workers + OpenNext (önerilen) — Faz 2
 **Database:** Supabase Postgres (kullanıcının mevcut projesi)
-**Storage:** Supabase Storage
+**Storage:** Cloudflare R2 (ürün görselleri — Sprint 3.3 R2 migration 2026-05-19) + Supabase Storage (e-Arşiv fatura PDF — Nilvera tarafından üretilen)
 **Email:** Brevo SMTP
-**Monitoring:** Sentry + Cloudflare Analytics
+**Monitoring:** Cloudflare Analytics + in-app `system_errors` + Telegram burst alert (Sentry'siz, PLAN-BETA-PERFORMANCE Faz 2.B)
 
 > Domain Cloudflare'de olduğu için **Cloudflare Workers + OpenNext** doğal seçim. Bu doküman deploy stratejisini ve adımlarını detaylar.
 
@@ -740,7 +740,8 @@ Yukarıdaki realist senaryonun dayanağı. DEVAM-REHBERI mantık hatası #2 düz
 
 - **Supabase:** Free tier 7 gün, Pro tier 30 gün + point-in-time
 - **Manuel:** Haftalık `pg_dump` ek snapshot (KVKK için)
-- **Storage:** Supabase Storage versioned (Pro)
+- **Storage (R2 ürün görselleri):** Cloudflare R2 versioning yok (immutable UUID key + DB delete cascade); orphan cleanup periyodik cron (Faz 2). Recovery: DB `product_images` satır restore + R2 obje key path persisted, manuel kurtarma destekli.
+- **Storage (e-Arşiv PDF):** Supabase Storage versioned (Pro) — Nilvera PDF cache, yasal saklama 10 yıl `invoices.pdfUrl` ile referans (silinmesi DB delete'ten sonra periyodik cron).
 
 ### 7.2 Disaster Recovery
 

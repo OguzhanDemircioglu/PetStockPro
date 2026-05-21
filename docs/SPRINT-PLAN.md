@@ -66,6 +66,12 @@
 
 **Hedef:** Çalışan development environment.
 
+> **2026-05-21 PLAN-BETA-PERFORMANCE Faz 1 sonrası ek:** Sprint 0 manuel bootstrap'i `src/instrumentation.ts` Next.js
+> native hook ile otomatikleşti. Sıfır DB'de `npm run dev` → migration apply + cities/districts (81+974) seed +
+> catalog_seed_products (1.240) seed otomatik (~885ms). `BOOTSTRAP_SKIP=1` ile prod CI/CD'de devre dışı. Sprint 0
+> bootstrap işleri (Next.js init + Drizzle + Auth.js + shadcn) yapıldıktan sonra **manuel seed çağrısı artık
+> gerekmez** — instrumentation.ts halleder. Detay: TECH-STACK.md §2.2 Auto-bootstrap + PLAN-BETA-PERFORMANCE.md Faz 1.
+
 ### Yapılacaklar
 
 1. **Repo kurulum (yarım gün)**
@@ -370,7 +376,7 @@ Auth çalışıyor. Admin shell hazır. Sprint 3'te ilk operasyonel feature.
    - 8 form bölümü
    - Sticky özet
    - SKU auto-suggest + çakışma kontrolü
-   - Görsel upload (drag-drop + Supabase Storage)
+   - Görsel upload (Sprint 3.3 — drag-drop + **Cloudflare R2** via AWS SDK v3, S3-compatible; `tenants/{companyId}/{productId}/{uuid}.{ext}` key pattern; `requireImage=true` default — bkz. EKRAN-URUNLER.md §5.5 + §7.3)
    - Auto-save taslak (localStorage)
 
 4. **Variant sistemi (2 gün)**

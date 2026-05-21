@@ -238,7 +238,15 @@ Variant'lı ürün (mockup parent grup tarzı):
 - En düşük variant fiyatı — en yüksek
 - Marj negatifse kırmızı (alış > satış olamaz validate, ama göstermek için)
 
-### 5.5 "Satışa Aç" Toggle + "Doğrula" Buton (2026-05-13 eklendi, 2026-05-14 kapsam netleştirildi)
+### 5.5 "Satışa Aç" Toggle + "Doğrula" Buton (2026-05-13 eklendi, 2026-05-14 kapsam netleştirildi, **2026-05-21 Sprint 3.3 default true fix**)
+
+> **2026-05-21 Sprint 3.3 fix:** `validateForStorefront.DEFAULT_OPTS.requireImage` artık **default true**.
+> Önceden edit sayfası explicit `requireImage: true` geçiriyordu ama liste'deki `list-row-toggle` opts
+> geçmiyordu → görselsiz ürün vitrin'e açılabiliyordu. Tutarsızlık giderildi.
+>
+> **Liste-row-toggle "Aç" akışı:** Görselsiz ürün → `validation_failed` + UI'da "⚠ N eksik —
+> Doğrula panelinden gör" badge + **1.5 sn sonra `/admin/products/[id]/edit` redirect**
+> (Doğrula paneli görsün). Network fail → "Bağlantı hatası" mesajı + rollback (setPublished revert).
 
 > **Kapsam kararı (2026-05-14 — DEVAM-REHBERI mantık hatası #4):** Toggle **parent-level**dır. 50 ürün × 3 variant = 150 toggle UX riski yüksek olduğu için **variant bazlı toggle YOK**. Parent on → tüm aktif variant'lar (`productVariants.isActive=true`) vitrin'de gösterilir.
 >
@@ -622,11 +630,14 @@ Etiketler      [yetişkin] [kuru-mama] [+ ekle]  (chip input)
 
 - Drag-drop API + file input fallback
 - Max 5 görsel
-- Max 2MB her biri (over → inline error)
+- Max **5MB** her biri (over → inline error) — Sprint 3.3'te 2MB → 5MB güncellendi
 - Sadece JPG/PNG/WebP (over → inline error)
-- İlk yüklenen otomatik **ana görsel** (⭐), sürükle-sırala değiştir
-- Backend: Supabase Storage bucket `product-images` (RLS: tenant izolasyon)
-- Image transformations: thumbnail 96×96 + medium 480×480 (Supabase auto)
+- İlk yüklenen otomatik **ana görsel** (⭐), `setPrimary` action ile değiştir
+- Backend: **Cloudflare R2** bucket `petstockpro-images` (S3-compatible, AWS SDK v3 — Sprint 3.3 R2 migration 2026-05-19)
+  - Object key pattern: `tenants/{companyId}/{productId}/{uuid}.{ext}` (path traversal koruması Zod regex)
+  - Public URL: `R2_PUBLIC_URL` env (örn. `pub-xxxxx.r2.dev` veya custom domain)
+  - Cache-Control: `public, max-age=31536000, immutable` (UUID-based key, CDN edge cache)
+- Image transformations: Cloudflare R2 doğrudan transformation yok — frontend size hint ile yükler (thumb/medium opsiyonel Faz 2'de Cloudflare Images entegrasyonu)
 
 ### 7.4 Bölüm 4: Fiyat
 
@@ -1149,7 +1160,7 @@ const mutation = useMutation({
 | `/api/admin/products/[id]/restore` | POST | Geri aç |
 | `/api/admin/products/[id]/duplicate` | POST | Kopyala (yeni ürün form pre-filled) |
 | `/api/admin/products/check-sku` | GET | SKU çakışma kontrolü |
-| `/api/admin/products/upload-image` | POST | Supabase Storage upload |
+| `uploadImageAction` server action | — | Cloudflare R2 upload (multipart formData, `tenants/{companyId}/{productId}/{uuid}.{ext}`) |
 | `/api/admin/products/bulk/threshold` | POST | Bulk eşik değiştir |
 | `/api/admin/products/bulk/category` | POST | Bulk kategori ata |
 | `/api/admin/products/bulk/price` | POST | Bulk fiyat değiştir |

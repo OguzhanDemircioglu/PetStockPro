@@ -75,6 +75,11 @@ Supabase Postgres
 
 **Migration:** Drizzle Kit (`drizzle-kit push` dev, `drizzle-kit migrate` prod)
 **Type generation:** `supabase gen types typescript` (CI'da otomatik)
+**Auto-bootstrap (PLAN-BETA-PERFORMANCE Faz 1, 2026-05-21):** `src/instrumentation.ts` Next.js native hook
+boot'ta `runBootstrap()` çağırır → pending Drizzle migration apply + cities/districts (81+974) seed +
+catalog_seed_products (1.240) seed. **Idempotent** — count=0 check ile skip, re-entrancy guard. Dev'de
+her boot çalışır (~885ms), production'da `BOOTSTRAP_SKIP=1` ile devre dışı (CI/CD migration önceden).
+`drizzle.__drizzle_migrations` history tablosu drizzle-kit ile ortak.
 
 ### 2.3 Auth: **Auth.js (NextAuth v5) + Drizzle Adapter**
 

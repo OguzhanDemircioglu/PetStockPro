@@ -2245,15 +2245,17 @@ Her `migrate generate` Drizzle migration dosyası SemVer ile etiketlenir.
 
 ---
 
-## 14. Tablo Sayısı Özet (2026-05-15 revize — system_errors + vitrin_whatsapp_feedback eklendi)
+## 14. Tablo Sayısı Özet (2026-05-21 revize — user_permissions + catalog_seed_products eklendi)
 
 | Kategori | Tablo sayısı |
 |---|---|
 | Tenant & Auth | 6 (companies, plans, users, accounts, sessions, verification_tokens) |
 | Şube & Stok | 2 (branches, branch_inventory) — `currency_rates` MVP'de migrate edilmez (O5, TR-only) |
 | Katalog | 5 (categories, brands, products, product_variants, product_images) |
+| **Katalog Seed** (yeni — 2026-05-19) | **1 (catalog_seed_products) — 1.240 satır seed, autocomplete kaynağı** |
 | Operasyon | 4 (stock_movements, stocktakes, stocktake_items, suppliers) |
 | Sistem | 5 (audit_logs, notifications, telegram_bindings, plan_approval_requests, data_export_jobs) |
+| **Yetki Sistemi** (yeni — 2026-05-21 Migration 0021) | **1 (user_permissions) — STAFF granular permission, PLAN-OBSERVER §C** |
 | Süperadmin | 2 (system_settings, system_broadcasts) — `SUPERADMIN-YETKILERI.md` |
 | Vitrin | 2 (storefront_settings, storefront_messages) |
 | **Konum** | **2 (cities, districts) — seed 81+970 kayıt** |
@@ -2261,9 +2263,9 @@ Her `migrate generate` Drizzle migration dosyası SemVer ile etiketlenir.
 | **Bayi Admin** (Faz 3) | **1 (bayi_admin_relations) — schema hazır, UI Faz 3'te** |
 | **Abonelik & Fatura** (yeni — K2) | **3 (subscriptions, processed_webhooks, invoices)** |
 | **Vitrin Modlama** (yeni — K5) | **1 (vitrin_reports)** |
-| **Monitoring** (yeni — 2026-05-15 Observability Stratejisi) | **1 (system_errors) — DEPLOYMENT §8.5** |
+| **Monitoring** (yeni — 2026-05-15 Observability + 2026-05-21 Migration 0022) | **1 (system_errors) — DEPLOYMENT §8.5** |
 | **WhatsApp Geri Bildirim** (yeni — 2026-05-15) | **1 (vitrin_whatsapp_feedback) — EKRAN-PUBLIC-VITRIN §17** |
-| **Toplam MVP** | **35 tablo** (currency_rates MVP'de migrate edilmez, O5 düzeltmesi) |
+| **Toplam MVP** | **37 tablo** (currency_rates MVP'de migrate edilmez, O5 düzeltmesi) |
 | Faz 2 | + 3 tablo (auto_reorder_rules, customers, paddle_subscriptions) |
 
 ### 14.1 Süperadmin Yetki Sistemi DB Etkileri

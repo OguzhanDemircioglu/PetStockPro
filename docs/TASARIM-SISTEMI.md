@@ -359,6 +359,29 @@ Her bento kartının sağ alt köşesinde subtle SVG mascot (opacity 0.07, hover
 | `snapBarFill` | Snapshot bar fill | 1.2s stagger 120ms |
 | `barRise` | KPI mini bar chart | 520ms stagger |
 | `numTicker` | Sayı animasyonu | 1.4s (IntersectionObserver) |
+| `paw-pulse` | **PetSpinner lg variant** — rotate 360° + scale 1.0→1.1→1.0 (yarım turda) | 1.4s ease-in-out loop |
+
+### 5.2.1 PetSpinner Component (PLAN-BETA-PERFORMANCE Faz 3, 2026-05-21)
+
+Site temalı yükleme göstergesi — `src/components/ui/pet-spinner.tsx`. Loading state'lerde generic spinner
+yerine **paw print** SVG kullanılır (4 toe + 1 pad, gradient fill).
+
+| Variant | Boyut | Animasyon | Kullanım |
+|---|---|---|---|
+| `sm` | 12px | `animate-spin` (simple circle, paw yok) | Buton içi pending, autocomplete loader |
+| `md` | 28px | paw SVG + `animate-spin` (1.0s linear) | Kart/section loading (nearby-map dynamic import vb.) |
+| `lg` | 48px | paw SVG + `animate-paw-pulse` (1.4s ease) | Page-level overlay, full-screen loading |
+
+**Tone (renk):** `cat` (default --cat turuncu) | `cart` (mavi) | `arrow` (yeşil). Brand paletinden seçilir.
+
+**A11y (WCAG 2.2 AA — zorunlu):**
+- `role="status"` + `aria-live="polite"` + `aria-busy="true"`
+- `<span className="sr-only">{label}</span>` — default "Yükleniyor…", prop override
+- `showLabel=true` + `lg` variant → visible label paw altında
+- `prefers-reduced-motion: reduce` → `.animate-paw-pulse` ve `.animate-spin` animasyon kapanır,
+  statik paw kalır (semantik kayıp yok)
+
+**Inline prop:** `inline=true` → `display:inline-block` (buton içi), `false` → `inline-flex` (block).
 
 ### 5.3 prefers-reduced-motion
 
