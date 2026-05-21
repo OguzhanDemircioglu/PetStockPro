@@ -173,6 +173,26 @@ export default function RegisterPage() {
               />
             </div>
 
+            <div>
+              <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3" htmlFor="passwordConfirm">
+                Şifre tekrar
+              </label>
+              <input
+                id="passwordConfirm"
+                name="passwordConfirm"
+                type="password"
+                placeholder="Aynı şifreyi tekrar gir"
+                autoComplete="new-password"
+                required
+                disabled={pending}
+                aria-invalid={hasError || undefined}
+                className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink transition-all focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+              />
+              <p className="mt-1 text-[11.5px] text-ink-4">
+                Yanlış yazımdan korunmak için ikinci kez gir — şifreler aynı olmalı.
+              </p>
+            </div>
+
             {/* KVKK çift checkbox — 2026-05-14 zorunlu (Madde 10 + Madde 9) */}
             <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-line bg-line-soft px-3.5 py-3 text-xs leading-relaxed text-ink-2">
               <input

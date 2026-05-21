@@ -23,11 +23,16 @@ export async function registerAction(
   const shopName = formData.get('shopName');
   const email = formData.get('email');
   const password = formData.get('password');
+  const passwordConfirm = formData.get('passwordConfirm');
   const kvkkConsent = formData.get('kvkkConsent') === 'on';
   const dataLocationConsent = formData.get('dataLocationConsent') === 'on';
 
   if (typeof shopName !== 'string' || typeof email !== 'string' || typeof password !== 'string') {
     return { ok: false, error: 'Tüm alanlar zorunlu' };
+  }
+
+  if (typeof passwordConfirm !== 'string' || password !== passwordConfirm) {
+    return { ok: false, error: 'Şifreler eşleşmiyor — ikinci kez aynı şifreyi gir' };
   }
 
   const result = await registerNewTenant(

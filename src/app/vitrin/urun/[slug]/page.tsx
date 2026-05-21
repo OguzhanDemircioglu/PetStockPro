@@ -141,7 +141,7 @@ export default async function CrossTenantProductPage({
               ? `${lowest.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}₺`
               : `${lowest.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}₺ — ${highest.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}₺`}
             <span className="ml-2 text-[13.5px] font-normal text-ink-3">
-              fiyat aralığı
+              {lowest === highest ? 'fiyat' : 'fiyat aralığı'}
             </span>
           </p>
         )}
