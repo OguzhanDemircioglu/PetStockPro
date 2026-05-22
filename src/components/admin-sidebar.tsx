@@ -14,6 +14,7 @@ interface Props {
   lowStockCount: number;
   unreadNotifications?: number;
   isSuperadmin: boolean;
+  isImpersonating?: boolean;
 }
 
 export function AdminSidebar({
@@ -24,6 +25,7 @@ export function AdminSidebar({
   lowStockCount,
   unreadNotifications = 0,
   isSuperadmin,
+  isImpersonating = false,
 }: Props) {
   const pathname = usePathname();
 
@@ -47,6 +49,7 @@ export function AdminSidebar({
     lowStockCount,
     unreadNotifications,
     isSuperadmin,
+    isImpersonating,
   });
 
   return (

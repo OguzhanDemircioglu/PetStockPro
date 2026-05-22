@@ -27,6 +27,7 @@ interface Props {
   lowStockCount: number;
   unreadNotifications: number;
   isSuperadmin: boolean;
+  isImpersonating?: boolean;
 }
 
 export function AdminMobileDrawer({
@@ -44,6 +45,7 @@ export function AdminMobileDrawer({
   lowStockCount,
   unreadNotifications,
   isSuperadmin,
+  isImpersonating = false,
 }: Props) {
   const pathname = usePathname();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -53,6 +55,7 @@ export function AdminMobileDrawer({
     lowStockCount,
     unreadNotifications,
     isSuperadmin,
+    isImpersonating,
   });
 
   // Route değişince drawer'ı kapat (link tıklayınca otomatik kapanma).

@@ -73,6 +73,7 @@ export default async function AdminLayout({
         lowStockCount={lowStockCount}
         unreadNotifications={unreadCount}
         isSuperadmin={showToolbox}
+        isImpersonating={!!impersonation}
       />
       <div className="flex min-h-screen flex-1 min-w-0 flex-col">
         {impersonation && (
@@ -96,6 +97,7 @@ export default async function AdminLayout({
           unreadCount={unreadCount}
           isSuperadmin={showToolbox}
           isObserver={isObserverRole}
+          isImpersonating={!!impersonation}
           tenantName={tenantName}
           displayName={displayName}
           plan={plan}

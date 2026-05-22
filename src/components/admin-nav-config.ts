@@ -37,13 +37,23 @@ interface BuildOptions {
   lowStockCount: number;
   unreadNotifications?: number;
   isSuperadmin: boolean;
+  /** Impersonation aktifse, SUPERADMIN bile normal tenant sidebar'ı görür. */
+  isImpersonating?: boolean;
 }
 
 export function buildSidebarGroups({
   lowStockCount,
   unreadNotifications,
   isSuperadmin,
+  isImpersonating = false,
 }: BuildOptions): SidebarGroup[] {
+  // SUPERADMIN role'lü kullanıcı impersonation deactivate iken kendi
+  // süperadmin sidebar'ını görür. Impersonation aktifse tenant rolü gibi
+  // davranır, normal tenant sidebar'ı gösterilir.
+  if (isSuperadmin && !isImpersonating) {
+    return buildSuperadminSidebar();
+  }
+
   const groups: SidebarGroup[] = [
     {
       links: [
@@ -100,19 +110,50 @@ export function buildSidebarGroups({
     },
   ];
 
-  if (isSuperadmin) {
-    groups.push({
-      label: '🛡 Süperadmin',
-      links: [
-        { icon: '🏬', label: "Tenant'lar", href: '/admin/superadmin' },
-        { icon: '🔍', label: 'Vitrin Moderasyon', href: '/admin/superadmin/vitrin-moderation' },
-        { icon: '🗄', label: 'DB Inspector', href: '/admin/superadmin/db-inspector' },
-        { icon: '🔧', label: 'Sistem Ayarları', href: '/admin/superadmin/system-settings' },
-      ],
-    });
-  }
-
   return groups;
+}
+
+/** SUPERADMIN role'lü kullanıcı impersonation OFF iken görür. */
+function buildSuperadminSidebar(): SidebarGroup[] {
+  return [
+    {
+      links: [
+        { icon: '🏬', label: "Tenant'lar", href: '/admin/superadmin', match: '/admin/superadmin' },
+      ],
+    },
+    {
+      label: 'İzleme',
+      links: [
+        { icon: '🔍', label: 'Vitrin Moderasyon', href: '/admin/superadmin/vitrin-moderation' },
+        { icon: '🐛', label: 'Hatalar', href: '/admin/superadmin/errors' },
+      ],
+    },
+    {
+      label: 'Sistem',
+      links: [
+        { icon: '🔧', label: 'Sistem Ayarları', href: '/admin/superadmin/system-settings' },
+        { icon: '🗄', label: 'DB Inspector', href: '/admin/superadmin/db-inspector' },
+      ],
+    },
+    {
+      label: 'Bypass Aksiyonları',
+      links: [
+        { icon: '↶', label: '24h+ Hareket Geri Al', href: '/admin/superadmin/bypass/reverse-expired' },
+        { icon: '🗑', label: 'Hard Delete', href: '/admin/superadmin/bypass/hard-delete' },
+        { icon: '⛔', label: 'Eksi Stok', href: '/admin/superadmin/bypass/negative-stock' },
+        { icon: '💎', label: 'Plan Override', href: '/admin/superadmin/bypass/plan-override' },
+        { icon: '🔄', label: 'Metadata Fix', href: '/admin/superadmin/bypass/metadata-fix' },
+        { icon: '📋', label: 'Sayım Undo', href: '/admin/superadmin/bypass/stocktake-undo' },
+      ],
+    },
+    {
+      label: 'Kendi Hesabım',
+      links: [
+        { icon: '👤', label: 'Hesabım', href: '/admin/account' },
+        { icon: '🛡', label: 'Güvenlik', href: '/admin/security' },
+      ],
+    },
+  ];
 }
 
 /** Mobile bottom tab bar — 5 kritik shortcut + "Daha" (drawer aç). */
@@ -123,6 +164,20 @@ export const BOTTOM_TABS: BottomTabSpec[] = [
   { icon: '🔔', label: 'Bildirim', href: '/admin/notifications', badgeKey: 'notifications' },
   { icon: '☰', label: 'Daha', isMore: true },
 ];
+
+/** Süperadmin bottom tab — impersonation OFF iken kullanılır. */
+export const SUPERADMIN_BOTTOM_TABS: BottomTabSpec[] = [
+  { icon: '🏬', label: "Tenant'lar", href: '/admin/superadmin', match: '/admin/superadmin' },
+  { icon: '🔍', label: 'Vitrin Mod', href: '/admin/superadmin/vitrin-moderation' },
+  { icon: '🐛', label: 'Hatalar', href: '/admin/superadmin/errors' },
+  { icon: '🔧', label: 'Sistem', href: '/admin/superadmin/system-settings' },
+  { icon: '☰', label: 'Daha', isMore: true },
+];
+
+export function getBottomTabs(isSuperadmin: boolean, isImpersonating: boolean): BottomTabSpec[] {
+  if (isSuperadmin && !isImpersonating) return SUPERADMIN_BOTTOM_TABS;
+  return BOTTOM_TABS;
+}
 
 /** Bir link aktif mi? Pano (/admin) tam eşleşme, diğerleri prefix. */
 export function isLinkActive(pathname: string, link: { href?: string; match?: string }): boolean {

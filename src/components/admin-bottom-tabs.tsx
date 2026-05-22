@@ -2,11 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BOTTOM_TABS, isLinkActive } from './admin-nav-config';
+import { getBottomTabs, isLinkActive } from './admin-nav-config';
 
 interface Props {
   unreadNotifications: number;
   onMoreClick: () => void;
+  isSuperadmin?: boolean;
+  isImpersonating?: boolean;
 }
 
 /**
@@ -15,8 +17,9 @@ interface Props {
  * 5 sekme: Pano · Ürünler · Hareket · Bildirim (badge) · Daha (drawer aç).
  * Safe-area-inset-bottom destekli — iOS Safari ev butonu/notch'ında doğru padding.
  */
-export function AdminBottomTabs({ unreadNotifications, onMoreClick }: Props) {
+export function AdminBottomTabs({ unreadNotifications, onMoreClick, isSuperadmin = false, isImpersonating = false }: Props) {
   const pathname = usePathname();
+  const tabs = getBottomTabs(isSuperadmin, isImpersonating);
 
   return (
     <nav
@@ -25,7 +28,7 @@ export function AdminBottomTabs({ unreadNotifications, onMoreClick }: Props) {
       className="fixed inset-x-0 bottom-0 z-40 flex h-16 items-stretch border-t border-line bg-paper/95 backdrop-blur-xl shadow-[0_-4px_16px_rgba(0,0,0,.08)] md:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
-      {BOTTOM_TABS.map((tab) => {
+      {tabs.map((tab) => {
         const active = isLinkActive(pathname, tab);
         const badge =
           tab.badgeKey === 'notifications' && unreadNotifications > 0

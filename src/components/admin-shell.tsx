@@ -10,6 +10,7 @@ interface Props {
   unreadCount: number;
   isSuperadmin: boolean;
   isObserver: boolean;
+  isImpersonating?: boolean;
   tenantName: string;
   displayName: string;
   plan: 'FREE' | 'PRO' | 'PRO_PLUS';
@@ -38,6 +39,7 @@ export function AdminShell({
   unreadCount,
   isSuperadmin,
   isObserver,
+  isImpersonating = false,
   tenantName,
   displayName,
   plan,
@@ -78,11 +80,14 @@ export function AdminShell({
         lowStockCount={lowStockCount}
         unreadNotifications={unreadCount}
         isSuperadmin={isSuperadmin}
+        isImpersonating={isImpersonating}
       />
 
       <AdminBottomTabs
         unreadNotifications={unreadCount}
         onMoreClick={() => setDrawerOpen(true)}
+        isSuperadmin={isSuperadmin}
+        isImpersonating={isImpersonating}
       />
     </>
   );
