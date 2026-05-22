@@ -65,6 +65,18 @@ describe('buildSystemPrompt', () => {
   it('uydurma yapmama talimatı içerir', () => {
     expect(buildSystemPrompt([mockChunk()])).toMatch(/uydurma|asla/);
   });
+
+  it('halüsinasyon koruma + süperadmin/yetki yönergesi içerir', () => {
+    const prompt = buildSystemPrompt([mockChunk()]);
+    expect(prompt).toMatch(/Halüsinasyon|halüsinasyon/);
+    expect(prompt).toMatch(/süperadmin|yönetici/);
+    expect(prompt).toContain('destek@petstockpro.com');
+  });
+
+  it('sidebar navigasyon yönergesi içerir (URL yerine sol menü)', () => {
+    const prompt = buildSystemPrompt([mockChunk()]);
+    expect(prompt).toMatch(/Sol menü|sidebar|Navigasyon/);
+  });
 });
 
 describe('retrieveChunks', () => {

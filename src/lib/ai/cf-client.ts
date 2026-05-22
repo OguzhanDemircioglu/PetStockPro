@@ -243,6 +243,28 @@ export interface VectorizeQueryResult {
   count: number;
 }
 
+export interface VectorizeDeleteResult {
+  mutationId: string;
+  count?: number;
+}
+
+/**
+ * Vectorize'tan id listesindeki vektörleri sil.
+ * CF v2 endpoint: snake_case (`delete_by_ids`).
+ */
+export async function deleteVectors(
+  indexName: string,
+  ids: string[],
+): Promise<VectorizeDeleteResult> {
+  if (ids.length === 0) return { mutationId: 'noop', count: 0 };
+  return cfRequest<VectorizeDeleteResult>(
+    `/vectorize/v2/indexes/${encodeURIComponent(indexName)}/delete_by_ids`,
+    {
+      body: { ids },
+    },
+  );
+}
+
 export async function queryVectorize(
   indexName: string,
   vector: number[],

@@ -20,6 +20,16 @@ export const TARGET_CHUNK_TOKENS = 500;
 export const MIN_CHUNK_TOKENS = 30;
 export const TR_CHARS_PER_TOKEN = 3.5;
 
+/**
+ * RAG indeksinden hariç tutulacak H2 başlıkları (prefix match).
+ *
+ * §18 "Süperadmin" — Pet shop kullanıcıları bu bilgilere ERİŞMEMELİ (RBAC).
+ *   USER-MANUAL'da kalır (insan okuyabilir, sahibe bilgilendirme) ama AI'a verilmez.
+ *
+ * Yeni hassas bölüm eklenirken H2 prefix'ini buraya ekle (örn '99. Internal').
+ */
+export const SKIP_H2_PREFIXES: readonly string[] = ['18.'];
+
 export interface Header {
   lineIndex: number; // 0-indexed
   level: 1 | 2 | 3 | 4;
@@ -307,12 +317,32 @@ export function splitChunks(lines: string[]): Chunk[] {
   const isInToc = (r: HeaderRange): boolean =>
     tocStart >= 0 && r.lineIndex >= tocStart && r.lineIndex <= tocEnd;
 
+  // Hassas H2 section'ları (RBAC: süperadmin gibi roller). Tüm child H3/H4 dahil skip.
+  function isInSkippedSection(r: HeaderRange): boolean {
+    // En yakın geriye doğru H2 başlığını bul + prefix match
+    for (let j = 0; j < ranges.length; j++) {
+      if (ranges[j].level !== 2) continue;
+      if (ranges[j].lineIndex > r.lineIndex) break;
+      const next = ranges
+        .slice(j + 1)
+        .find((x) => x.level === 2 || x.level === 1);
+      const upper = next ? next.lineIndex : Number.POSITIVE_INFINITY;
+      if (r.lineIndex >= ranges[j].lineIndex && r.lineIndex < upper) {
+        const title = ranges[j].title.trim();
+        if (SKIP_H2_PREFIXES.some((p) => title.startsWith(p))) return true;
+        return false;
+      }
+    }
+    return false;
+  }
+
   const ctx: EmitContext = { chunks: [], nextId: 1 };
 
   for (let i = 0; i < ranges.length; i++) {
     const h = ranges[i];
     if (h.level === 1) continue; // ana başlık
     if (isInToc(h)) continue; // İçindekiler
+    if (isInSkippedSection(h)) continue; // RBAC: hassas section (§18 Süperadmin gibi)
 
     if (h.level === 2) {
       const section = h.title;

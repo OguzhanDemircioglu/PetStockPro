@@ -330,4 +330,33 @@ describe('splitChunks (entegrasyon)', () => {
     // Sanity check
     expect(TARGET_CHUNK_TOKENS).toBeLessThan(MAX_CHUNK_TOKENS);
   });
+
+  it('SKIP_H2_PREFIXES H2 başlığını atlar (RBAC §18 Süperadmin)', () => {
+    const md = [
+      '## 17. Genel',
+      '',
+      'Genel açıklama.',
+      '',
+      '## 18. Süperadmin (Sahibinden kısa bilgi)',
+      '',
+      '### 18.1 Felsefe',
+      '',
+      'Süperadmin felsefesi açıklaması yeterli uzunlukta.',
+      '',
+      '### 18.2 URL yapısı',
+      '',
+      'Süperadmin URL açıklaması yeterli uzunlukta.',
+      '',
+      '## 19. SSS',
+      '',
+      'SSS açıklaması yeterli uzunlukta.',
+    ];
+    const chunks = splitChunks(md);
+    // §18 chunk'ı olmamalı
+    expect(chunks.find((c) => c.section.startsWith('18.'))).toBeUndefined();
+    expect(chunks.find((c) => c.breadcrumb.includes('18. Süperadmin'))).toBeUndefined();
+    // §17 ve §19 olmalı
+    expect(chunks.find((c) => c.section === '17. Genel')).toBeDefined();
+    expect(chunks.find((c) => c.section === '19. SSS')).toBeDefined();
+  });
 });
