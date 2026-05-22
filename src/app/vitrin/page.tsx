@@ -320,8 +320,25 @@ export default async function VitrinHomePage({
       <section data-testid="vitrin-nearby-section">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="text-[22px] font-bold tracking-tight text-cart">
-              {location ? '📍 Yakındaki pet shop\'lar' : '🐾 Pet shop\'lar'}
+            <h2 className="flex items-center gap-2 text-[22px] font-bold tracking-tight text-cart">
+              {location ? (
+                <>
+                  <span aria-hidden>📍</span>
+                  Yakındaki pet shop&apos;lar
+                </>
+              ) : (
+                <>
+                  <Image
+                    src="/logo.webp"
+                    alt=""
+                    width={32}
+                    height={32}
+                    className="h-7 w-7 shrink-0 object-contain"
+                    aria-hidden
+                  />
+                  Pet shop&apos;lar
+                </>
+              )}
             </h2>
             <p className="mt-0.5 text-[13px] text-ink-3">
               {location
