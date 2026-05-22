@@ -268,6 +268,11 @@ html.dark body::before {
     opacity: 0;
   }
 }
+@keyframes pp-pulse-ring {
+  /* Harita marker'ı için yayılan dalga halkaları */
+  0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 0.75; }
+  100% { transform: translate(-50%, -50%) scale(6); opacity: 0; }
+}
 @keyframes matrix-drop {
   /* Matrix yağmuru: linear sabit hız — tüm stream tepeden viewport'tan
      dışarı düşene kadar sabit hızda kayar. Her karakter trail efekti

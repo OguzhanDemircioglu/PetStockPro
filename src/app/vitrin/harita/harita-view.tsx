@@ -31,8 +31,12 @@ function buildWhatsappLink(phone: string | null, shopName: string): string | nul
   return `https://wa.me/${e164}?text=${msg}`;
 }
 
+const CARD_WIDTH = 360;
+const CARD_OFFSET_Y = 24; // marker pin ucundan kaç px aşağı
+
 export function HaritaView({ shops }: Props) {
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
+  const [markerScreenPos, setMarkerScreenPos] = useState<{ x: number; y: number } | null>(null);
   const selected = selectedSlug ? shops.find((s) => s.slug === selectedSlug) : null;
 
   return (
@@ -42,15 +46,21 @@ export function HaritaView({ shops }: Props) {
           shops={shops}
           selectedSlug={selectedSlug}
           onSelect={setSelectedSlug}
+          onMarkerScreenPosition={setMarkerScreenPos}
         />
       </div>
 
-      {/* Alt kart — marker tıklayınca slide-up */}
-      {selected && (
+      {/* Kart — marker'ın hemen altında, harita kenarlarına clamp */}
+      {selected && markerScreenPos && (
         <div
           data-testid="harita-selected-card"
-          className="absolute inset-x-3 bottom-3 z-[400] mx-auto max-w-2xl rounded-2xl border border-line bg-paper p-4 shadow-[0_18px_40px_rgba(0,0,0,.22)] sm:inset-x-6 sm:p-5"
-          style={{ animation: 'slide-up-card 0.3s ease-out' }}
+          className="absolute z-[400] rounded-2xl border border-line bg-paper p-4 shadow-[0_18px_40px_rgba(0,0,0,.22)] sm:p-5"
+          style={{
+            width: `min(${CARD_WIDTH}px, calc(100vw - 24px))`,
+            left: `clamp(12px, ${markerScreenPos.x}px - min(${CARD_WIDTH}px, calc(100vw - 24px)) / 2, calc(100vw - min(${CARD_WIDTH}px, calc(100vw - 24px)) - 12px))`,
+            top: `${markerScreenPos.y + CARD_OFFSET_Y}px`,
+            animation: 'slide-up-card 0.25s ease-out',
+          }}
         >
           <div className="flex items-start gap-3">
             <div

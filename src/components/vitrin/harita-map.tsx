@@ -30,22 +30,37 @@ interface Props {
   shops: HaritaShopPoint[];
   selectedSlug: string | null;
   onSelect: (slug: string) => void;
+  onMarkerScreenPosition?: (pos: { x: number; y: number } | null) => void;
 }
 
-// Default marker — 📍 turuncu daire içinde
+// 3 yayılan dalga halkası — varsayılan marker arka plan'sız, sadece pulse + 📍
+function pinHtml(opts: { selected: boolean }): string {
+  const ringColor = opts.selected ? 'rgba(22,160,138,0.55)' : 'rgba(212,74,20,0.55)';
+  const pinSize = opts.selected ? 40 : 32;
+  const ringSize = opts.selected ? 22 : 18;
+  return `
+    <div style="position:relative;width:${pinSize}px;height:${pinSize}px;display:grid;place-items:center;pointer-events:none;">
+      <div style="position:absolute;top:50%;left:50%;width:${ringSize}px;height:${ringSize}px;background:${ringColor};border-radius:50%;animation:pp-pulse-ring 2.4s ease-out infinite;"></div>
+      <div style="position:absolute;top:50%;left:50%;width:${ringSize}px;height:${ringSize}px;background:${ringColor};border-radius:50%;animation:pp-pulse-ring 2.4s ease-out infinite 0.6s;"></div>
+      <div style="position:absolute;top:50%;left:50%;width:${ringSize}px;height:${ringSize}px;background:${ringColor};border-radius:50%;animation:pp-pulse-ring 2.4s ease-out infinite 1.2s;"></div>
+      <div style="position:absolute;top:50%;left:50%;width:${ringSize}px;height:${ringSize}px;background:${ringColor};border-radius:50%;animation:pp-pulse-ring 2.4s ease-out infinite 1.8s;"></div>
+      <div style="position:relative;font-size:${pinSize}px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.4));">📍</div>
+    </div>
+  `;
+}
+
 const PIN_DEFAULT = L.divIcon({
   className: 'pp-harita-marker',
-  html: '<div style="background:#d44a14;border:2px solid #fff;border-radius:50%;width:32px;height:32px;display:grid;place-items:center;color:#fff;font-weight:700;box-shadow:0 4px 10px rgba(0,0,0,.25);font-family:sans-serif;font-size:16px;">📍</div>',
+  html: pinHtml({ selected: false }),
   iconSize: [32, 32],
-  iconAnchor: [16, 16],
+  iconAnchor: [16, 28], // pin ucu altında — emoji'nin alt çizgisinde
 });
 
-// Selected marker — büyük + arrow-yeşil daire (vurgu)
 const PIN_SELECTED = L.divIcon({
   className: 'pp-harita-marker-active',
-  html: '<div style="background:#16a08a;border:3px solid #fff;border-radius:50%;width:42px;height:42px;display:grid;place-items:center;color:#fff;font-weight:700;box-shadow:0 6px 18px rgba(22,160,138,.55);font-family:sans-serif;font-size:20px;animation:pulse-soft 1.5s ease-out infinite;">📍</div>',
-  iconSize: [42, 42],
-  iconAnchor: [21, 21],
+  html: pinHtml({ selected: true }),
+  iconSize: [40, 40],
+  iconAnchor: [20, 36],
 });
 
 function FitBoundsToMarkers({ shops }: { shops: HaritaShopPoint[] }) {
@@ -80,7 +95,48 @@ function PanToSelected({ shops, selectedSlug }: { shops: HaritaShopPoint[]; sele
   return null;
 }
 
-export default function HaritaMap({ shops, selectedSlug, onSelect }: Props) {
+/** Selected marker'ın screen pozisyonunu parent'a iletir + map move/zoom track eder. */
+function MarkerPositionTracker({
+  shops,
+  selectedSlug,
+  onPosition,
+}: {
+  shops: HaritaShopPoint[];
+  selectedSlug: string | null;
+  onPosition: (pos: { x: number; y: number } | null) => void;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!selectedSlug) {
+      onPosition(null);
+      return;
+    }
+    const shop = shops.find((s) => s.slug === selectedSlug);
+    if (!shop) {
+      onPosition(null);
+      return;
+    }
+
+    const update = () => {
+      const point = map.latLngToContainerPoint([shop.locationLat, shop.locationLng]);
+      onPosition({ x: point.x, y: point.y });
+    };
+    update();
+    map.on('move', update);
+    map.on('zoom', update);
+    map.on('viewreset', update);
+    return () => {
+      map.off('move', update);
+      map.off('zoom', update);
+      map.off('viewreset', update);
+    };
+  }, [selectedSlug, shops, map, onPosition]);
+
+  return null;
+}
+
+export default function HaritaMap({ shops, selectedSlug, onSelect, onMarkerScreenPosition }: Props) {
   const validPoints = useMemo(
     () =>
       shops.filter(
@@ -135,6 +191,13 @@ export default function HaritaMap({ shops, selectedSlug, onSelect }: Props) {
 
       <FitBoundsToMarkers shops={validPoints} />
       <PanToSelected shops={validPoints} selectedSlug={selectedSlug} />
+      {onMarkerScreenPosition && (
+        <MarkerPositionTracker
+          shops={validPoints}
+          selectedSlug={selectedSlug}
+          onPosition={onMarkerScreenPosition}
+        />
+      )}
     </MapContainer>
   );
 }
