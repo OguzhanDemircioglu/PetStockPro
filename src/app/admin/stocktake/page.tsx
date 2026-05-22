@@ -26,8 +26,8 @@ export default async function StocktakeListPage() {
   const past = items.filter((i) => i.status === 'completed' || i.status === 'cancelled');
 
   return (
-    <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-12">
-      <header className="flex items-end justify-between gap-4">
+    <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
         <div>
           <div className="text-[13px] font-bold uppercase tracking-wider text-cat">
             Admin · Sayım

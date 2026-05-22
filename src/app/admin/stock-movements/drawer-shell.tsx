@@ -42,10 +42,10 @@ export function DrawerShell({ title, subtitle, onClose, children, testid }: Prop
         className="flex-1 bg-ink/40 backdrop-blur-sm"
       />
       {/* Panel */}
-      <aside className="flex h-full w-full max-w-lg flex-col overflow-y-auto bg-paper shadow-2xl">
-        <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-line bg-paper px-6 py-5">
+      <aside className="ml-auto flex h-full w-full flex-col overflow-y-auto bg-paper shadow-2xl sm:max-w-lg">
+        <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-line bg-paper px-4 py-4 sm:px-6 sm:py-5">
           <div>
-            <h2 className="text-xl font-bold text-cart">{title}</h2>
+            <h2 className="text-lg font-bold text-cart sm:text-xl">{title}</h2>
             {subtitle && (
               <p className="mt-0.5 text-xs text-ink-3">{subtitle}</p>
             )}
@@ -60,7 +60,7 @@ export function DrawerShell({ title, subtitle, onClose, children, testid }: Prop
             ✕
           </button>
         </header>
-        <div className="flex-1 px-6 py-5">{children}</div>
+        <div className="flex-1 px-4 py-4 sm:px-6 sm:py-5">{children}</div>
       </aside>
     </div>
   );

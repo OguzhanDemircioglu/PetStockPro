@@ -52,7 +52,7 @@ export function SettingsShell({
   children: React.ReactNode;
 }) {
   return (
-    <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-12">
+    <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">
       <header>
         <div className="text-[13px] font-bold uppercase tracking-wider text-cat">
           Admin · Ayarlar
@@ -65,7 +65,7 @@ export function SettingsShell({
         ) : null}
       </header>
 
-      <div className="grid gap-8 lg:grid-cols-[220px_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[220px_1fr] lg:gap-8">
         <SettingsNav current={current} />
         <div className="min-w-0">{children}</div>
       </div>
@@ -84,7 +84,7 @@ function SettingsNav({ current }: { current: SettingsSection }) {
   return (
     <nav
       aria-label="Ayarlar"
-      className="flex flex-col gap-1 self-start lg:sticky lg:top-6"
+      className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 self-start sm:-mx-6 sm:px-6 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0 lg:sticky lg:top-6"
       data-settings-nav={current}
     >
       {NAV.map((item) => {
@@ -97,11 +97,11 @@ function SettingsNav({ current }: { current: SettingsSection }) {
             data-settings-link={item.key}
             className={
               isActive
-                ? 'flex items-center gap-3 rounded-xl border border-cat bg-cat-soft px-4 py-2.5 text-sm font-bold text-cart shadow-[var(--shadow-sm)]'
-                : 'flex items-center gap-3 rounded-xl border border-transparent px-4 py-2.5 text-sm text-ink-2 hover:border-line hover:bg-paper'
+                ? 'inline-flex shrink-0 items-center gap-2 rounded-xl border border-cat bg-cat-soft px-3 py-2 text-[13px] font-bold text-cart shadow-[var(--shadow-sm)] sm:px-4 sm:py-2.5 sm:text-sm lg:flex'
+                : 'inline-flex shrink-0 items-center gap-2 rounded-xl border border-transparent px-3 py-2 text-[13px] text-ink-2 hover:border-line hover:bg-paper sm:px-4 sm:py-2.5 sm:text-sm lg:flex'
             }
           >
-            <span aria-hidden className="text-lg">
+            <span aria-hidden className="text-base sm:text-lg">
               {item.emoji}
             </span>
             <span className="truncate">{item.label}</span>

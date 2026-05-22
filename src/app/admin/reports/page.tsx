@@ -65,7 +65,7 @@ export default async function ReportsPage({
     .limit(1);
   if (!hasAdvancedReports(companyPlan?.plan ?? 'FREE')) {
     return (
-      <main className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-12">
+      <main className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">
         <header>
           <Link href={'/admin' as never} className="text-xs text-ink-4 hover:text-cart">
             ← Pano&apos;ya dön
@@ -155,7 +155,7 @@ export default async function ReportsPage({
   const maxDailyQty = daily.reduce((m, r) => Math.max(m, r.qty), 0);
 
   return (
-    <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-12">
+    <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="text-[13px] font-bold uppercase tracking-wider text-cat">

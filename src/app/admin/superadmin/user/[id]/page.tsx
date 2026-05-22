@@ -40,7 +40,7 @@ export default async function SuperadminUserDetailPage({
     : ('/admin/superadmin' as never);
 
   return (
-    <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-12">
+    <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">
       <header>
         <Link href={tenantHref} className="text-xs text-ink-4 hover:text-cart">
           ← {user.companyName ?? 'Süperadmin'}

@@ -15,7 +15,7 @@ export default function KvkkPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <MarketingHeader />
-      <main className="flex-1 px-6 py-12">
+      <main className="flex-1 px-4 py-8 sm:px-6 sm:py-12">
         <article className="mx-auto max-w-3xl">
           {!company.hasRealInfo && (
             <div className="rounded-xl border border-arrow/30 bg-arrow-soft px-4 py-3 text-[12.5px] font-bold text-arrow-7">

@@ -99,7 +99,7 @@ export function NotificationsList({
 
   return (
     <>
-      <header className="flex items-end justify-between gap-4">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
         <div>
           <div className="text-[13px] font-bold uppercase tracking-wider text-cat">
             Admin · Bildirimler

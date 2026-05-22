@@ -99,7 +99,7 @@ export function SuperadminToolbox() {
         aria-label="Süperadmin Toolbox"
         data-testid="superadmin-toolbox-fab"
         data-open={open ? '1' : '0'}
-        className="fixed bottom-6 right-6 z-50 grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-cat to-cat-2 text-2xl text-white shadow-[var(--shadow-cat-lg)] transition-transform hover:scale-110"
+        className="fixed bottom-20 right-4 z-50 grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-cat to-cat-2 text-2xl text-white shadow-[var(--shadow-cat-lg)] transition-transform hover:scale-110 md:bottom-6 md:right-6"
       >
         🛡
       </button>
@@ -114,7 +114,7 @@ export function SuperadminToolbox() {
 
       {open && (
         <div
-          className="fixed bottom-24 right-6 z-50 flex w-80 flex-col gap-1 rounded-2xl border-2 border-cat/40 bg-paper p-2 shadow-2xl"
+          className="fixed bottom-[152px] right-4 z-50 flex w-[calc(100vw-2rem)] max-w-[20rem] flex-col gap-1 rounded-2xl border-2 border-cat/40 bg-paper p-2 shadow-2xl md:bottom-24 md:right-6 md:w-80"
           data-testid="superadmin-toolbox-menu"
         >
           <div className="px-3 py-2 text-[13px] font-bold uppercase tracking-wider text-cart">

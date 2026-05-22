@@ -30,7 +30,7 @@ export default async function BrandsPage({
     : allItems;
 
   return (
-    <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-12">
+    <main className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="text-[13px] font-bold uppercase tracking-wider text-cat">
@@ -105,7 +105,7 @@ export default async function BrandsPage({
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-line bg-paper">
+        <div className="overflow-x-auto rounded-2xl border border-line bg-paper">
           <table className="w-full text-sm">
             <thead className="bg-paper">
               <tr className="text-left text-[12px] font-bold uppercase tracking-wider text-ink-3">

@@ -34,7 +34,7 @@ export default async function BranchesPage({
   const holidayCount = items.filter((b) => b.status === 'holiday').length;
 
   return (
-    <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-12">
+    <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-[13px] font-bold uppercase tracking-wider text-cat">

@@ -70,7 +70,7 @@ export default function FiyatlarPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <MarketingHeader />
-      <main className="flex-1 px-6 py-12">
+      <main className="flex-1 px-4 py-8 sm:px-6 sm:py-12">
         <div className="mx-auto max-w-6xl">
           <div className="text-center">
             <div className="inline-flex items-center gap-2 rounded-full bg-cat-soft px-3 py-1 text-[11.5px] font-bold uppercase tracking-wider text-cat-7">

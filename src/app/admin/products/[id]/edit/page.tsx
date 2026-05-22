@@ -47,7 +47,7 @@ export default async function EditProductPage({
     ]);
 
   return (
-    <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-12">
+    <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">
       <EditForm
         productId={product.id}
         variantId={product.defaultVariant.id}

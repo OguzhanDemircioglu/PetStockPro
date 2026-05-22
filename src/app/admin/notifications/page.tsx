@@ -62,7 +62,7 @@ export default async function NotificationsPage({
   const unreadCount = items.filter((i) => i.readAt === null).length;
 
   return (
-    <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-12">
+    <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">
       <div className="flex gap-2" data-testid="notif-filter">
         <Link
           href={'/admin/notifications' as never}

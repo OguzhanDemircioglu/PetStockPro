@@ -13,6 +13,8 @@ interface Props {
   isSuperadmin?: boolean;
   /** Faz 8 (2026-05-21) — OBSERVER (İzleyici) sticky banner + topbar rozet. */
   isObserver?: boolean;
+  /** Mobil drawer toggle. AdminShell sağlar. */
+  onMenuClick?: () => void;
 }
 
 const TITLE_BY_PATH: { match: RegExp | string; title: string }[] = [
@@ -65,7 +67,7 @@ const TR_DATE = new Intl.DateTimeFormat('tr-TR', {
   year: 'numeric',
 });
 
-export function AdminTopbar({ userEmail, unreadCount, isSuperadmin, isObserver }: Props) {
+export function AdminTopbar({ userEmail, unreadCount, isSuperadmin, isObserver, onMenuClick }: Props) {
   const pathname = usePathname();
   const title = pathTitle(pathname);
   const dateLabel = TR_DATE.format(new Date());
@@ -73,21 +75,38 @@ export function AdminTopbar({ userEmail, unreadCount, isSuperadmin, isObserver }
   return (
     <header
       data-testid="admin-topbar"
-      className="sticky top-0 z-20 flex items-center gap-3 border-b border-line bg-paper/75 px-6 py-3 backdrop-blur-xl"
+      className="sticky top-0 z-20 flex items-center gap-2 border-b border-line bg-paper/75 px-3 py-3 backdrop-blur-xl sm:gap-3 sm:px-6"
     >
-      <div className="min-w-0">
+      {/* Hamburger — mobile only */}
+      {onMenuClick && (
+        <button
+          type="button"
+          data-testid="topbar-menu"
+          onClick={onMenuClick}
+          aria-label="Menüyü aç"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-line bg-paper text-ink-2 transition-colors hover:border-cat hover:text-cat md:hidden"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+      )}
+
+      <div className="min-w-0 flex-1 sm:flex-initial">
         <div className="truncate text-[15.5px] font-bold tracking-tight text-cart">
           <AnimatedShinyText>{title}</AnimatedShinyText>
         </div>
-        <div className="truncate text-[12px] text-ink-3 font-bold">{dateLabel}</div>
+        <div className="hidden truncate text-[12px] text-ink-3 font-bold sm:block">{dateLabel}</div>
       </div>
 
-      <div className="flex-1" />
+      <div className="hidden flex-1 sm:block" />
 
       {/* ⌘K placeholder — Faz 2'de command palette */}
       <div
         data-testid="topbar-cmdk"
-        className="hidden items-center gap-2 rounded-xl border border-line bg-line-soft/60 px-3 py-1.5 text-[13px] text-ink-3 transition-colors hover:border-cat hover:text-cat md:flex min-w-[200px]"
+        className="hidden items-center gap-2 rounded-xl border border-line bg-line-soft/60 px-3 py-1.5 text-[13px] text-ink-3 transition-colors hover:border-cat hover:text-cat lg:flex lg:min-w-[200px]"
       >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="11" cy="11" r="7" />
@@ -106,18 +125,22 @@ export function AdminTopbar({ userEmail, unreadCount, isSuperadmin, isObserver }
         target="_blank"
         rel="noreferrer noopener"
         data-testid="topbar-vitrin"
-        className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-br from-arrow to-arrow-2 px-3.5 py-2 text-[13px] font-bold text-white shadow-[var(--shadow-arrow)] hover:-translate-y-px transition-transform"
+        title="Public vitrin (yeni sekme)"
+        className="hidden md:inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-br from-arrow to-arrow-2 px-2.5 py-2 text-[13px] font-bold text-white shadow-[var(--shadow-arrow)] hover:-translate-y-px transition-transform lg:px-3.5"
       >
-        🏪 Vitrin ↗
+        <span aria-hidden>🏪</span>
+        <span className="hidden lg:inline">Vitrin ↗</span>
       </Link>
 
       {isSuperadmin && !pathname.startsWith('/admin/superadmin') && (
         <Link
           href={'/admin/superadmin' as never}
           data-testid="topbar-superadmin"
-          className="rounded-xl border border-danger/40 bg-danger-soft px-3 py-1.5 text-[13px] font-bold text-danger-7 hover:bg-danger hover:text-white transition-colors"
+          aria-label="Süperadmin paneli"
+          className="hidden sm:inline-flex items-center gap-1 rounded-xl border border-danger/40 bg-danger-soft px-2.5 py-1.5 text-[13px] font-bold text-danger-7 hover:bg-danger hover:text-white transition-colors md:px-3"
         >
-          🛡 Süperadmin
+          <span aria-hidden>🛡</span>
+          <span className="hidden md:inline">Süperadmin</span>
         </Link>
       )}
 
@@ -125,9 +148,10 @@ export function AdminTopbar({ userEmail, unreadCount, isSuperadmin, isObserver }
         <span
           data-testid="topbar-observer-badge"
           title="İzleyici — sadece okur, hiçbir aksiyon yapamaz"
-          className="inline-flex items-center gap-1 rounded-xl border border-cat/40 bg-cat-soft px-3 py-1.5 text-[12.5px] font-bold text-cart"
+          className="hidden sm:inline-flex items-center gap-1 rounded-xl border border-cat/40 bg-cat-soft px-2.5 py-1.5 text-[12.5px] font-bold text-cart md:px-3"
         >
-          🔍 İzleyici
+          <span aria-hidden>🔍</span>
+          <span className="hidden md:inline">İzleyici</span>
         </span>
       )}
 
@@ -137,12 +161,12 @@ export function AdminTopbar({ userEmail, unreadCount, isSuperadmin, isObserver }
         href={'/admin/account' as never}
         data-testid="topbar-avatar"
         title={userEmail}
-        className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-cat to-cart text-[12.5px] font-bold text-white border-2 border-paper hover:scale-105 transition-transform"
+        className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-cat to-cart text-[12.5px] font-bold text-white border-2 border-paper hover:scale-105 transition-transform"
       >
         {initials(userEmail)}
       </Link>
 
-      <form action={logoutAction}>
+      <form action={logoutAction} className="hidden sm:block">
         <button
           type="submit"
           data-testid="topbar-logout"

@@ -23,7 +23,7 @@ export function VariantsSection({ productId, variants, branches }: Props) {
 
   return (
     <section className="rounded-2xl border border-line bg-paper p-6">
-      <header className="flex items-end justify-between gap-4">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
         <div>
           <h2 className="text-lg font-bold text-cart">📋 Variantlar</h2>
           <p className="mt-1 text-xs text-ink-3">

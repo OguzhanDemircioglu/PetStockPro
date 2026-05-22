@@ -21,13 +21,13 @@ export default function VitrinLayout({
   return (
     <div className="min-h-screen bg-gradient-to-br from-paper to-cat-soft/10">
       <header className="sticky top-0 z-30 border-b border-line bg-paper/85 backdrop-blur supports-[backdrop-filter]:bg-paper/70">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
-          <div className="flex items-center gap-3 min-w-0">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             {/* Sadece login admin/staff/süperadmin: ← Admin paneli */}
             <VitrinAdminReturnLink />
             <Link
               href={'/vitrin' as never}
-              className="flex items-center gap-2 text-cart"
+              className="flex min-w-0 items-center gap-2 text-cart"
               data-testid="vitrin-logo"
             >
               <Image
@@ -35,26 +35,31 @@ export default function VitrinLayout({
                 alt="PetStockPro"
                 width={44}
                 height={44}
-                className="h-11 w-11 object-contain"
+                className="h-9 w-9 shrink-0 object-contain sm:h-11 sm:w-11"
                 priority
               />
-              <span className="text-[17px] font-bold leading-tight">
+              <span className="hidden truncate text-[15px] font-bold leading-tight sm:inline sm:text-[17px]">
                 PetStockPro <span className="text-cat">Vitrin</span>
               </span>
             </Link>
           </div>
-          <nav className="flex flex-wrap items-center gap-2 text-[13.5px]">
+          <nav className="flex shrink-0 items-center gap-1.5 text-[13.5px] sm:gap-2">
             <Link
               href={'/vitrin' as never}
-              className="rounded-xl border border-line bg-paper px-3 py-1.5 font-bold text-cart hover:bg-cat-soft"
+              title="Tüm pet shop'lar"
+              className="rounded-xl border border-line bg-paper px-2.5 py-1.5 font-bold text-cart hover:bg-cat-soft sm:px-3"
             >
-              📍 Tüm pet shop&apos;lar
+              <span aria-hidden>📍</span>
+              <span className="ml-1 hidden sm:inline">Tüm pet shop&apos;lar</span>
             </Link>
             <Link
               href={'/login' as never}
-              className="rounded-xl bg-cat px-3 py-1.5 font-bold text-white hover:bg-cat-2"
+              title="Pet shop sahibi girişi"
+              className="rounded-xl bg-cat px-2.5 py-1.5 font-bold text-white hover:bg-cat-2 sm:px-3"
             >
-              🏪 Pet shop sahibiyim
+              <span aria-hidden>🏪</span>
+              <span className="ml-1 hidden sm:inline">Pet shop sahibiyim</span>
+              <span className="ml-1 inline sm:hidden">Giriş</span>
             </Link>
           </nav>
         </div>

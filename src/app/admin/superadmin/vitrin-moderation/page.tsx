@@ -87,7 +87,7 @@ export default async function VitrinModerationPage({
   const rows = activeTab === 'flagged' ? flaggedRows : allRows;
 
   return (
-    <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-12">
+    <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">
       <header>
         <Link
           href={'/admin/superadmin' as never}

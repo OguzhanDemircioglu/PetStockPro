@@ -4,20 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { AnimatedShinyText } from './magicui/animated-shiny-text';
-
-interface SidebarLink {
-  label: string;
-  href: string;
-  badge?: number;
-  badgeTone?: 'cat' | 'danger' | 'arrow';
-  /** Aktif eşleşme için prefix (mevcut href değişirse override edebilir). */
-  match?: string;
-}
-
-interface SidebarGroup {
-  label?: string;
-  links: SidebarLink[];
-}
+import { buildSidebarGroups, isLinkActive } from './admin-nav-config';
 
 interface Props {
   tenantName: string;
@@ -25,6 +12,7 @@ interface Props {
   productCount: number;
   productLimit: number;
   lowStockCount: number;
+  unreadNotifications?: number;
   isSuperadmin: boolean;
 }
 
@@ -34,6 +22,7 @@ export function AdminSidebar({
   productCount,
   productLimit,
   lowStockCount,
+  unreadNotifications = 0,
   isSuperadmin,
 }: Props) {
   const pathname = usePathname();
@@ -54,66 +43,11 @@ export function AdminSidebar({
     productLimit > 0 ? Math.min(100, (productCount / productLimit) * 100) : 0;
   const isNearLimit = productLimit > 0 && usagePct >= 80;
 
-  const groups: SidebarGroup[] = [
-    {
-      links: [
-        { label: '📊 Pano', href: '/admin', match: '/admin' },
-        { label: "🤖 AI'ya Sor", href: '/admin/ai' },
-      ],
-    },
-    {
-      label: 'Envanter',
-      links: [
-        { label: '🛍 Ürünler', href: '/admin/products' },
-        { label: '📦 Hareketler', href: '/admin/stock-movements' },
-        {
-          label: '⚠ Düşük Stok',
-          href: '/admin/low-stock',
-          badge: lowStockCount > 0 ? lowStockCount : undefined,
-          badgeTone: 'danger',
-        },
-        { label: '📋 Sayım', href: '/admin/stocktake' },
-      ],
-    },
-    {
-      label: 'Kaynaklar',
-      links: [
-        { label: '🏢 Tedarikçiler', href: '/admin/suppliers' },
-        { label: '🏪 Şubeler', href: '/admin/branches' },
-        { label: '🏷 Markalar', href: '/admin/brands' },
-        { label: '📂 Kategoriler', href: '/admin/categories' },
-      ],
-    },
-    {
-      label: 'Analiz',
-      links: [
-        { label: '📈 Raporlar', href: '/admin/reports' },
-        { label: '📜 Audit Log', href: '/admin/audit-log' },
-        { label: '🔔 Bildirimler', href: '/admin/notifications' },
-      ],
-    },
-    {
-      label: 'Hesap',
-      links: [
-        { label: '⚙ Ayarlar', href: '/admin/settings' },
-        { label: '🌐 Vitrin Profili', href: '/admin/settings/storefront' },
-        { label: '👤 Hesabım', href: '/admin/account' },
-        { label: '🛡 Güvenlik', href: '/admin/security' },
-      ],
-    },
-  ];
-
-  if (isSuperadmin) {
-    groups.push({
-      label: '🛡 Süperadmin',
-      links: [
-        { label: 'Tenant\'lar', href: '/admin/superadmin' },
-        { label: 'Vitrin Moderasyon', href: '/admin/superadmin/vitrin-moderation' },
-        { label: 'DB Inspector', href: '/admin/superadmin/db-inspector' },
-        { label: 'Sistem Ayarları', href: '/admin/superadmin/system-settings' },
-      ],
-    });
-  }
+  const groups = buildSidebarGroups({
+    lowStockCount,
+    unreadNotifications,
+    isSuperadmin,
+  });
 
   return (
     <aside
@@ -170,11 +104,7 @@ export function AdminSidebar({
               </div>
             )}
             {g.links.map((link) => {
-              const match = link.match ?? link.href;
-              const active =
-                match === '/admin'
-                  ? pathname === '/admin'
-                  : pathname === match || pathname.startsWith(`${match}/`);
+              const active = isLinkActive(pathname, link);
               const badgeToneCls: Record<string, string> = {
                 cat: 'bg-cat text-white',
                 danger: 'bg-danger text-white',
@@ -192,6 +122,12 @@ export function AdminSidebar({
                       : 'flex items-center gap-2 rounded-lg px-2.5 py-2 font-bold text-ink-2 hover:bg-line-soft hover:text-cart'
                   }
                 >
+                  <span
+                    aria-hidden
+                    className="inline-flex w-5 shrink-0 items-center justify-center text-center leading-none"
+                  >
+                    {link.icon ?? ''}
+                  </span>
                   <span className="flex-1 truncate">{link.label}</span>
                   {link.badge !== undefined && (
                     <span

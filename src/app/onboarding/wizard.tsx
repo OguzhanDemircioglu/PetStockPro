@@ -116,7 +116,7 @@ export function OnboardingWizard({
   }, [selectedCityId]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-cat-soft via-bg to-bars-soft px-6 py-12">
+    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-cat-soft via-bg to-bars-soft px-4 py-8 sm:px-6 sm:py-12">
       <div className="w-full max-w-xl rounded-3xl bg-white p-10 shadow-[var(--shadow-lg)]">
         {/* Step indicator */}
         <div className="mb-8 flex items-center justify-between">

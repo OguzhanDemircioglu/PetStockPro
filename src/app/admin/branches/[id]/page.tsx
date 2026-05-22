@@ -44,7 +44,7 @@ export default async function BranchDetailPage({
   const zeroVariants = variantStock.filter((v) => v.isZero).length;
 
   return (
-    <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-12">
+    <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="text-[13px] font-bold uppercase tracking-wider text-cat">
