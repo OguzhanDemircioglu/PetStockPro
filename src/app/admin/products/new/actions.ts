@@ -10,7 +10,7 @@ import {
   MAX_FILE_SIZE_BYTES,
 } from '@/lib/catalog/product-images';
 import { transferSeedImageToProduct } from '@/lib/catalog/seed-image-transfer';
-import { resolveTenantBrand } from '@/lib/catalog/resolve-brand';
+import { resolveGlobalBrand } from '@/lib/catalog/resolve-brand';
 import { writeAuditLogAsync } from '@/lib/audit/log';
 import { logModerationFlag } from '@/lib/moderation/audit';
 import { assertNotObserver, ObserverReadOnlyError } from '@/lib/auth/role-gate';
@@ -112,7 +112,7 @@ export async function createProductAction(
 
   if (!resolvedBrandId && typeof catalogBrand === 'string' && catalogBrand.trim().length > 0) {
     try {
-      const resolved = await resolveTenantBrand(session.user.companyId, catalogBrand.trim(), db);
+      const resolved = await resolveGlobalBrand(catalogBrand.trim(), db);
       if (resolved && !resolved.rejected && resolved.id) {
         resolvedBrandId = resolved.id;
         brandAutoCreated = resolved.created;

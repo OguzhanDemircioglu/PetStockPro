@@ -56,12 +56,10 @@ export default async function ProductsPage({
     db
       .select({ id: categories.id, name: categories.name, emoji: categories.emoji })
       .from(categories)
-      .where(eq(categories.companyId, session.user.companyId))
       .orderBy(asc(categories.displayOrder)),
     db
       .select({ id: brands.id, name: brands.name })
       .from(brands)
-      .where(eq(brands.companyId, session.user.companyId))
       .orderBy(asc(brands.name)),
     db
       .select({ plan: companies.plan })

@@ -71,7 +71,7 @@ export async function addCategoryAction(
   const input = parseFormInput(formData);
   if (!input) return { ...EMPTY, message: 'Kategori adı zorunlu' };
 
-  const result = await addCategory(session.user.companyId, input, db);
+  const result = await addCategory(input, db);
   if (!result.ok) {
     return {
       ...EMPTY,
@@ -128,12 +128,7 @@ export async function updateCategoryAction(
   const input = parseFormInput(formData);
   if (!input) return { ...EMPTY, categoryId, message: 'Kategori adı zorunlu' };
 
-  const result = await updateCategory(
-    session.user.companyId,
-    categoryId,
-    input,
-    db,
-  );
+  const result = await updateCategory(categoryId, input, db);
   if (!result.ok) {
     return {
       ...EMPTY,
@@ -186,7 +181,7 @@ export async function deleteCategoryAction(
     };
   }
 
-  const result = await deleteCategory(session.user.companyId, categoryId, db);
+  const result = await deleteCategory(categoryId, db);
   if (!result.ok) {
     return {
       ...EMPTY,

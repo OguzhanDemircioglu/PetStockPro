@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation';
-import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { brands, categories } from '@/db/schema';
@@ -31,12 +30,10 @@ export default async function NewProductPage() {
         parentId: categories.parentId,
       })
       .from(categories)
-      .where(eq(categories.companyId, session.user.companyId))
       .orderBy(categories.displayOrder),
     db
       .select({ id: brands.id, name: brands.name })
       .from(brands)
-      .where(eq(brands.companyId, session.user.companyId))
       .orderBy(brands.name),
   ]);
 

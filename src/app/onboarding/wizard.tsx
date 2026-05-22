@@ -26,7 +26,12 @@ interface OnboardingWizardProps {
   companyName: string;
   currentSlug: string;
   citiesList: CityOption[];
-  /** Catalog'ta kaç DISTINCT marka var (Step 1 checkbox label'ında). */
+  /**
+   * Catalog'ta kaç DISTINCT marka var (Step 1 checkbox label'ında).
+   * Migration 0026 sonrası UI'da kullanılmıyor (brands GLOBAL) ama prop
+   * geriye uyum için kalır — caller `<OnboardingWizard catalogBrandCount={n} />`
+   * pattern'i değişmedi.
+   */
   catalogBrandCount: number;
 }
 
@@ -44,7 +49,7 @@ export function OnboardingWizard({
   companyName,
   currentSlug,
   citiesList,
-  catalogBrandCount,
+  catalogBrandCount: _catalogBrandCount, // 0026: kullanılmıyor, geriye uyum
 }: OnboardingWizardProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selectedCityId, setSelectedCityId] = useState<number | null>(null);
@@ -265,33 +270,9 @@ export function OnboardingWizard({
                 </p>
               </div>
 
-              {/* Opsiyonel: catalog brand seed */}
-              {catalogBrandCount > 0 && (
-                <label
-                  className="flex cursor-pointer items-start gap-3 rounded-xl border border-cat/25 bg-cat-soft/30 p-3 text-[13px] text-ink-2 transition-colors hover:bg-cat-soft/50"
-                  data-testid="onboarding-import-brands-label"
-                >
-                  <input
-                    type="checkbox"
-                    name="importBrands"
-                    value="true"
-                    defaultChecked
-                    disabled={branchPending}
-                    className="mt-0.5 h-4 w-4 accent-cat"
-                    data-testid="onboarding-import-brands-checkbox"
-                  />
-                  <span>
-                    <strong className="block text-cart">
-                      📦 Catalog markalarını içeri aktar ({catalogBrandCount} marka)
-                    </strong>
-                    <span className="text-[12px] text-ink-3">
-                      Royal Canin, Pro Plan, Catit, Whiskas vb. Türkiye&apos;de yaygın
-                      pet shop markaları otomatik eklenir — ürün eklerken hızlıca
-                      seçebilirsin. Gerekmeyenleri sonra silebilirsin.
-                    </span>
-                  </span>
-                </label>
-              )}
+              {/* 2026-05-22 Migration 0026 — catalog brand seed kaldırıldı.
+                  brands GLOBAL artık, her tenant'a kopya yok. catalogBrandCount
+                  prop hâlâ wizard'a geçiyor (geriye uyum) ama UI'da kullanılmıyor. */}
 
               <button
                 type="submit"
@@ -300,15 +281,6 @@ export function OnboardingWizard({
               >
                 {branchPending ? 'Kaydediliyor...' : 'Şubeyi kaydet ve devam et →'}
               </button>
-
-              {branchState?.ok && branchState.brandsImported !== null && branchState.brandsImported !== undefined && branchState.brandsImported > 0 && (
-                <div
-                  data-testid="onboarding-brands-imported-banner"
-                  className="rounded-xl border border-arrow/30 bg-arrow-soft px-3 py-2 text-[12.5px] font-bold text-arrow-7"
-                >
-                  ✓ {branchState.brandsImported} marka tenant&apos;a eklendi
-                </div>
-              )}
             </form>
           </div>
         )}

@@ -127,7 +127,7 @@ export default async function NewBranchPage({
               href={'/admin/settings' as never}
               className="rounded-xl bg-cat px-5 py-2.5 text-sm font-bold text-white hover:bg-cat/90"
             >
-              PRO'ya geç →
+              PRO&apos;ya geç →
             </Link>
             <Link
               href={'/admin/branches' as never}

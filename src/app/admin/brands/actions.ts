@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
+import { isSuperadmin } from '@/lib/superadmin/access';
 import {
   addBrand,
   updateBrand,
@@ -54,12 +55,20 @@ export async function addBrandAction(
   formData: FormData,
 ): Promise<BrandActionState> {
   const session = await auth();
-  if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+  if (!session?.user?.id) redirect('/login' as never);
+
+  // 2026-05-22 Migration 0026 — brands GLOBAL, CRUD SUPERADMIN-only.
+  if (!isSuperadmin(session)) {
+    return {
+      ...EMPTY,
+      message: 'Sadece süperadmin marka ekleyebilir',
+    };
+  }
 
   const input = parseFormInput(formData);
   if (!input) return { ...EMPTY, message: 'Marka adı zorunlu' };
 
-  const result = await addBrand(session.user.companyId, input, db);
+  const result = await addBrand(input, db);
   if (!result.ok) {
     return {
       ...EMPTY,
@@ -70,12 +79,14 @@ export async function addBrandAction(
 
   writeAuditLogAsync(
     {
-      companyId: session.user.companyId,
+      // Global brand action — audit companyId null (SUPERADMIN cross-tenant)
+      companyId: session.user.companyId ?? null,
       userId: session.user.id,
       action: 'brand.created',
       entityType: 'brand',
       entityId: result.brandId,
       afterState: { name: input.name },
+      performedAsSuperadmin: true,
     },
     db,
   );
@@ -83,7 +94,7 @@ export async function addBrandAction(
   if (result.moderationFlags?.flagged) {
     logModerationFlag(
       {
-        companyId: session.user.companyId,
+        companyId: session.user.companyId ?? null,
         userId: session.user.id,
         entityType: 'brand',
         entityId: result.brandId,
@@ -104,12 +115,20 @@ export async function updateBrandAction(
   formData: FormData,
 ): Promise<BrandActionState> {
   const session = await auth();
-  if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+  if (!session?.user?.id) redirect('/login' as never);
+
+  if (!isSuperadmin(session)) {
+    return {
+      ...EMPTY,
+      brandId,
+      message: 'Sadece süperadmin marka düzenleyebilir',
+    };
+  }
 
   const input = parseFormInput(formData);
   if (!input) return { ...EMPTY, brandId, message: 'Marka adı zorunlu' };
 
-  const result = await updateBrand(session.user.companyId, brandId, input, db);
+  const result = await updateBrand(brandId, input, db);
   if (!result.ok) {
     return {
       ...EMPTY,
@@ -121,12 +140,13 @@ export async function updateBrandAction(
 
   writeAuditLogAsync(
     {
-      companyId: session.user.companyId,
+      companyId: session.user.companyId ?? null,
       userId: session.user.id,
       action: 'brand.updated',
       entityType: 'brand',
       entityId: brandId,
       afterState: { name: input.name },
+      performedAsSuperadmin: true,
     },
     db,
   );
@@ -134,7 +154,7 @@ export async function updateBrandAction(
   if (result.moderationFlags?.flagged) {
     logModerationFlag(
       {
-        companyId: session.user.companyId,
+        companyId: session.user.companyId ?? null,
         userId: session.user.id,
         entityType: 'brand',
         entityId: brandId,
@@ -151,9 +171,17 @@ export async function updateBrandAction(
 
 export async function deleteBrandAction(brandId: string): Promise<BrandActionState> {
   const session = await auth();
-  if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+  if (!session?.user?.id) redirect('/login' as never);
 
-  const result = await deleteBrand(session.user.companyId, brandId, db);
+  if (!isSuperadmin(session)) {
+    return {
+      ...EMPTY,
+      brandId,
+      message: 'Sadece süperadmin marka silebilir',
+    };
+  }
+
+  const result = await deleteBrand(brandId, db);
   if (!result.ok) {
     return {
       ...EMPTY,
@@ -164,12 +192,13 @@ export async function deleteBrandAction(brandId: string): Promise<BrandActionSta
 
   writeAuditLogAsync(
     {
-      companyId: session.user.companyId,
+      companyId: session.user.companyId ?? null,
       userId: session.user.id,
       action: 'brand.deleted',
       entityType: 'brand',
       entityId: brandId,
       afterState: { affectedProductCount: result.affectedProductCount },
+      performedAsSuperadmin: true,
     },
     db,
   );

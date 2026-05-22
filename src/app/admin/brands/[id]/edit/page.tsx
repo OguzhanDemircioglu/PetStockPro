@@ -15,7 +15,7 @@ export default async function EditBrandPage({
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
 
-  const brand = await getBrandDetail(session.user.companyId, id, db);
+  const brand = await getBrandDetail(id, db);
   if (!brand) notFound();
 
   const boundUpdate = updateBrandAction.bind(null, id);

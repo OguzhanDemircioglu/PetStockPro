@@ -13,7 +13,7 @@ export default async function NewCategoryPage() {
   if (!isSuperadmin(session)) redirect('/admin/categories' as never);
 
   // Mevcut kategorileri çek: parent options + max(displayOrder) hesapla.
-  const allCategories = await listCategories(session.user.companyId, db);
+  const allCategories = await listCategories(db);
   // Sadece root kategoriler parent olabilir (2-seviye sistem, derinlik 1).
   const parentOptions: ParentOption[] = allCategories
     .filter((c) => !c.parentId)

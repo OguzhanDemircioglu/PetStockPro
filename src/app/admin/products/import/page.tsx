@@ -53,7 +53,7 @@ export default async function ProductImportPage() {
               href={'/admin/settings' as never}
               className="rounded-xl bg-cat px-5 py-2.5 text-sm font-bold text-white hover:bg-cat/90"
             >
-              PRO'ya geç →
+              PRO&apos;ya geç →
             </Link>
             <Link
               href={'/admin/products/new' as never}
@@ -71,8 +71,8 @@ export default async function ProductImportPage() {
     db
       .select({ name: categories.name, sktRequired: categories.sktRequired })
       .from(categories)
-      .where(eq(categories.companyId, companyId)),
-    db.select({ name: brands.name }).from(brands).where(eq(brands.companyId, companyId)),
+      ,
+    db.select({ name: brands.name }).from(brands),
     db
       .select({ name: products.name })
       .from(products)

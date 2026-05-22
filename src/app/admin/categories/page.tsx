@@ -6,7 +6,6 @@ import { listCategories, type CategoryListItem } from '@/lib/categories/manage';
 import { isSuperadmin } from '@/lib/superadmin/access';
 import { ModerationQueryBanner } from '@/components/moderation/moderation-query-banner';
 import { DeleteCategoryButton } from './delete-category-button';
-import { ResetMyCategoriesButton } from './reset-categories-button';
 
 export default async function CategoriesPage({
   searchParams,
@@ -22,12 +21,11 @@ export default async function CategoriesPage({
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
 
-  const allItems = await listCategories(session.user.companyId, db);
+  const allItems = await listCategories(db);
   const params = await searchParams;
   const q = params.q?.trim().toLowerCase() ?? '';
   // Kategori CRUD + sıfırla + CSV indir: sadece SUPERADMIN
   const canManage = isSuperadmin(session);
-  const hasNoChildren = !allItems.some((c) => c.parentId);
 
   // Filtreleme: arama varsa hem root hem child match olabilir; bir match'in
   // root'unu da göstermek için "match olmasa bile parent'ı match'in alındır"
@@ -109,21 +107,7 @@ export default async function CategoriesPage({
             ürünler genellikle alt kategoriye atanır.
           </p>
         </div>
-        {canManage && hasNoChildren && allItems.length > 0 && (
-          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-cat/30 bg-cat-soft px-3 py-2.5">
-            <span aria-hidden className="text-base">⚠</span>
-            <p className="flex-1 text-[12.5px] text-cart">
-              Mevcut kategorilerin <strong>eski tek-seviyeli yapıda</strong>.
-              Yeni 49 hiyerarşik default&apos;a sıfırlamak istersen:
-            </p>
-            <ResetMyCategoriesButton />
-          </div>
-        )}
-        {canManage && !hasNoChildren && (
-          <div className="flex flex-wrap items-center justify-end gap-3 border-t border-line-soft pt-3">
-            <ResetMyCategoriesButton />
-          </div>
-        )}
+        {/* Reset action kaldırıldı (Migration 0026) — kategoriler GLOBAL, reset gerek yok */}
       </div>
 
       <form className="flex gap-2" action="/admin/categories" method="get">

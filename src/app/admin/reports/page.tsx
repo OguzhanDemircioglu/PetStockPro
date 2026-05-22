@@ -68,7 +68,7 @@ export default async function ReportsPage({
       <main className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-12">
         <header>
           <Link href={'/admin' as never} className="text-xs text-ink-4 hover:text-cart">
-            ← Pano'ya dön
+            ← Pano&apos;ya dön
           </Link>
           <h1 className="mt-3 text-3xl font-bold leading-tight tracking-tight text-cart">
             Gelişmiş raporlar
@@ -82,7 +82,7 @@ export default async function ReportsPage({
             Detaylı analitik PRO planında
           </h2>
           <p className="mt-3 text-sm text-ink-2">
-            FREE planında <strong>Pano</strong> sayfasında temel KPI'ları
+            FREE planında <strong>Pano</strong> sayfasında temel KPI&apos;ları
             (bugünkü ciro, hareket sayısı, düşük stok) görürsün. PRO planında ek:
           </p>
           <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-ink-2">
@@ -99,13 +99,13 @@ export default async function ReportsPage({
               href={'/admin/settings' as never}
               className="rounded-xl bg-cat px-5 py-2.5 text-sm font-bold text-white hover:bg-cat/90"
             >
-              PRO'ya geç →
+              PRO&apos;ya geç →
             </Link>
             <Link
               href={'/admin' as never}
               className="rounded-xl border border-line bg-paper px-5 py-2.5 text-sm font-bold text-cart hover:bg-cat-soft"
             >
-              Pano'ya dön
+              Pano&apos;ya dön
             </Link>
           </div>
         </div>

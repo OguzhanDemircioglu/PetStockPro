@@ -18,8 +18,6 @@ import {
   completeOnboarding,
 } from '@/lib/onboarding/actions';
 import { createProduct } from '@/lib/catalog/products';
-import { seedCatalogBrandsForCompany } from '@/lib/brands/seed-catalog';
-import { writeAuditLogAsync } from '@/lib/audit/log';
 
 export interface BranchState {
   ok: boolean;
@@ -77,43 +75,15 @@ export async function branchAction(
     };
   }
 
-  // Opsiyonel: catalog markalarını içeri aktar (checkbox işaretli)
-  let brandsImported: number | null = null;
-  if (formData.get('importBrands') === 'true') {
-    try {
-      const seed = await seedCatalogBrandsForCompany(session.user.companyId, db);
-      brandsImported = seed.inserted;
-      if (seed.inserted > 0 && session.user.id) {
-        writeAuditLogAsync(
-          {
-            companyId: session.user.companyId,
-            userId: session.user.id,
-            action: 'brands.catalog_seeded',
-            entityType: 'company',
-            entityId: session.user.companyId,
-            afterState: {
-              inserted: seed.inserted,
-              skipped: seed.skipped,
-              totalCandidates: seed.totalCandidates,
-              source: 'onboarding_step1',
-            },
-          },
-          db,
-        );
-      }
-    } catch {
-      // Brand seed başarısız olursa onboarding'i bloklamayız — sessiz ihlal,
-      // kullanıcı şubeyi kaydetti, markaları sonra manuel ekleyebilir.
-      brandsImported = 0;
-    }
-  }
-
+  // 2026-05-22 Migration 0026 — brands GLOBAL. Onboarding "Catalog markalarını
+  // içeri aktar" checkbox kaldırıldı (artık her tenant'a brand seed yapılmıyor,
+  // brand'ler global tabloda zaten tanımlı).
   return {
     ok: true,
     error: null,
     issues: [],
     branchId: result.branchId,
-    brandsImported,
+    brandsImported: null,
   };
 }
 

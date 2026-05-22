@@ -8,7 +8,6 @@ import {
   listTenantMovements,
   listTenantAudit,
 } from '@/lib/superadmin/tenant-detail';
-import { ResetCategoriesButton } from './reset-categories-button';
 
 // Faz 1 (2026-05-21) — SUBE_MUDURU → OBSERVER key rename (Migration 0021).
 const ROLE_BADGE: Record<string, string> = {
@@ -81,19 +80,8 @@ export default async function TenantDetailSuperadminPage({
         />
       </section>
 
-      <section
-        data-testid="tenant-actions"
-        className="rounded-2xl border-2 border-danger/30 bg-danger-soft/30 p-4"
-      >
-        <h2 className="mb-2 text-xs font-bold uppercase tracking-wider text-danger-7">
-          ⚠ Tehlikeli aksiyonlar
-        </h2>
-        <p className="mb-3 text-[13px] text-ink-2">
-          Bu aksiyonlar tenant&apos;ın verilerini değiştirir. Audit log&apos;a
-          süperadmin damgalı yazılır.
-        </p>
-        <ResetCategoriesButton companyId={tenant.id} />
-      </section>
+      {/* Tehlikeli aksiyonlar section — kategoriler GLOBAL artık (Migration 0026), reset gerek yok.
+          İleride hard-delete tenant gibi süperadmin bypass aksiyonları buraya eklenebilir. */}
 
       <section className="grid gap-4 lg:grid-cols-2">
         <article className="rounded-2xl border border-line bg-paper p-5" data-testid="tenant-users">

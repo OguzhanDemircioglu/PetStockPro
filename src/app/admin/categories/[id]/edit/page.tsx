@@ -18,8 +18,8 @@ export default async function EditCategoryPage({
   if (!isSuperadmin(session)) redirect('/admin/categories' as never);
 
   const [cat, allCategories] = await Promise.all([
-    getCategoryDetail(session.user.companyId, id, db),
-    listCategories(session.user.companyId, db),
+    getCategoryDetail(id, db),
+    listCategories(db),
   ]);
   if (!cat) notFound();
 

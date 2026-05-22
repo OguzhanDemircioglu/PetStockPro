@@ -20,7 +20,7 @@ export default async function BrandsPage({
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
 
-  const allItems = await listBrands(session.user.companyId, db);
+  const allItems = await listBrands(db);
   const params = await searchParams;
   const q = params.q?.trim().toLowerCase() ?? '';
   const items = q

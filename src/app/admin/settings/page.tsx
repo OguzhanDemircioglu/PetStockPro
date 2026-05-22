@@ -43,8 +43,8 @@ export default async function SettingsHubPage() {
       .limit(1),
     db
       .select({
-        categoryCount: sql<number>`(SELECT COUNT(*)::int FROM ${categories} WHERE ${categories.companyId} = ${session.user.companyId})`,
-        brandCount: sql<number>`(SELECT COUNT(*)::int FROM ${brands} WHERE ${brands.companyId} = ${session.user.companyId})`,
+        categoryCount: sql<number>`(SELECT COUNT(*)::int FROM ${categories})`,
+        brandCount: sql<number>`(SELECT COUNT(*)::int FROM ${brands})`,
         branchCount: sql<number>`(SELECT COUNT(*)::int FROM ${branches} WHERE ${branches.companyId} = ${session.user.companyId} AND ${branches.isActive} = true)`,
         supplierCount: sql<number>`(SELECT COUNT(*)::int FROM ${suppliers} WHERE ${suppliers.companyId} = ${session.user.companyId} AND ${suppliers.isActive} = true)`,
       })

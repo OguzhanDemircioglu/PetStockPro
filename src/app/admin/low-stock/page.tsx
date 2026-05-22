@@ -28,10 +28,10 @@ export default async function LowStockPage({
 
   const [items, categoryList, branchList] = await Promise.all([
     listLowStock(session.user.companyId, db, { limit: 200, ...filters }),
+    // 2026-05-22 Migration 0026 — categories GLOBAL (companyId yok)
     db
       .select({ id: categoriesTable.id, name: categoriesTable.name })
       .from(categoriesTable)
-      .where(eq(categoriesTable.companyId, session.user.companyId))
       .orderBy(asc(categoriesTable.name)),
     db
       .select({ id: branchesTable.id, name: branchesTable.name })

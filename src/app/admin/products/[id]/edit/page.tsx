@@ -1,5 +1,4 @@
 import { notFound, redirect } from 'next/navigation';
-import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { brands, categories } from '@/db/schema';
@@ -33,12 +32,10 @@ export default async function EditProductPage({
       db
         .select({ id: categories.id, name: categories.name, emoji: categories.emoji })
         .from(categories)
-        .where(eq(categories.companyId, session.user.companyId))
         .orderBy(categories.displayOrder),
       db
         .select({ id: brands.id, name: brands.name })
         .from(brands)
-        .where(eq(brands.companyId, session.user.companyId))
         .orderBy(brands.name),
       listVariants(session.user.companyId, id, db),
       listBranchOptions(session.user.companyId, db),
