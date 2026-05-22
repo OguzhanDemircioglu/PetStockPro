@@ -1,8 +1,58 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-22 (Karar A revize — 4 yeni PRO farklılaşması)
-**Mevcut Branch:** `cray61` — commit'ler hazır
-**Son commit (önceki tur):** `f1200ba` docs(perf): PERFORMANCE-PLAYBOOK.md
+**Tarih:** 2026-05-22 (Migration 0026 — brands + categories GLOBAL)
+**Mevcut Branch:** `cray61` — push tamam
+**Son commit (önceki tur):** `a8fd84e` docs(devam-rehberi): Karar A revize Bölüm 4 smoke
+
+---
+
+## 🆕 2026-05-22 — Brands + Categories GLOBAL Refactor (Migration 0026)
+
+**Tetikleyici:** "brands/categories companyId çok public değer, her tenant duplicate row" gözlemi. 1K tenant × 95 brand = 95K row, 1K tenant × 16 kategori = 16K row. TR pazarında "Royal Canin" tek bir marka — global olmalı.
+
+**DB konsolidasyonu (Migration 0026 dev DB'de apply edildi):**
+| Tablo | Önceki | Sonrası | Azalma |
+|---|---|---|---|
+| brands | 196 row (98 unique slug) | **98 row** | %50 |
+| categories | 343 row (49 unique slug) | **49 row** | %86 |
+| products.brand_id | 2482 (FK intact) | 2482 (slug remap) | — |
+| products.category_id | 2486 (FK intact) | 2486 (slug remap) | — |
+
+**Schema değişiklikleri:**
+- `brands.company_id` DROP, `categories.company_id` DROP
+- `brands.slug` UNIQUE (global), `categories.slug` UNIQUE (global)
+- Eski `idx_brands_company_slug` + `idx_categories_company_slug` DROP
+- Yeni `idx_brands_slug` + `idx_categories_slug` UNIQUE
+
+**Yetki:** CRUD SUPERADMIN-only. BAYI_SAHIBI yeni brand/kategori ekleyemez (sadece var olanı seçer). Faz 2'de `is_custom + owner_company_id` ile özel brand opsiyonu eklenebilir.
+
+**Etkilenen kod (Bölüm 1-4):**
+- Migration 0026 SQL apply (Supabase MCP, dev DB)
+- src/db/schema/index.ts — companies field DROP, slug UNIQUE
+- src/lib/brands/manage.ts — companyId parametresi kaldırıldı (4 fn signature değişti)
+- src/lib/categories/manage.ts — aynı
+- src/lib/brands/seed-catalog.ts → seedCatalogBrandsGlobal (global insert)
+- src/lib/catalog/resolve-brand.ts → resolveGlobalBrand (sadece lookup, auto-create yok)
+- src/lib/products/import-execute.ts — brand auto-create kaldırıldı, lookup-only
+- src/lib/audit/log.ts — `companyId: string | null` (SUPERADMIN sistem aksiyonları)
+- Admin pages: products + products/new + products/[id]/edit + products/import + settings + low-stock + brands + brands/[id]/edit + categories + categories/[id]/edit + categories/new — companyId filter kaldırıldı
+- Admin actions: brands/actions.ts + categories/actions.ts SUPERADMIN-only guard
+- Onboarding wizard step 1 "Catalog markalarını içeri aktar" checkbox KALDIRILDI
+- 4 dosya silindi: reset-categories-action + reset-categories-button (admin + superadmin), seed-catalog.test.ts (artık global)
+
+**Browser smoke (PRO tenant):**
+- ✅ /admin/brands — "98 marka tanımlı" global liste
+- ✅ /admin/categories — "6 üst kategori · 43 alt kategori · 49 toplam"
+- ✅ /admin/products/new — brand dropdown 99 (— Seç + 98), parent kategori dropdown 7 (— Seç + 6)
+- ✅ /vitrin/marka/royal-canin — global brand slug ile sayfa açıldı
+
+**Metrik:**
+- Test: 1701 → **1694 pass** (-7: seed-catalog.test.ts silindi, import-execute auto-create test güncellendi, manage test'ler signature güncellendi)
+- Typecheck + lint 0 error / 0 warning
+
+---
+
+## 🆕 2026-05-22 — Karar A revize (4 yeni PRO farklılaşması)
 
 ---
 
