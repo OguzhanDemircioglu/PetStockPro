@@ -25,6 +25,16 @@ type Drop = {
   opacity: string;
 };
 
+type Star = {
+  left: string;
+  delay: string;
+  duration: string;
+  size: string;
+  drift: string;
+  opacity: string;
+  hue: 'gold' | 'amber';
+};
+
 function makeFlakes(count: number): Flake[] {
   return Array.from({ length: count }, () => ({
     left: Math.floor(Math.random() * 100) + '%',
@@ -50,6 +60,22 @@ function makeDrops(count: number): Drop[] {
   }));
 }
 
+function makeStars(count: number): Star[] {
+  return Array.from({ length: count }, () => ({
+    left: Math.floor(Math.random() * 100) + '%',
+    delay: (Math.random() * 10).toFixed(2) + 's',
+    // Yıldız kar gibi yavaş + dönerek: 7-12 saniye
+    duration: (Math.random() * 5 + 7).toFixed(2) + 's',
+    // Yıldız boyutu 8-16px (kar 2-5'ten büyük, daha gösterişli)
+    size: (Math.random() * 8 + 8).toFixed(0) + 'px',
+    // Yan sallanma -40..40px
+    drift: (Math.random() * 80 - 40).toFixed(0) + 'px',
+    opacity: (Math.random() * 0.3 + 0.7).toFixed(2),
+    // %60 altın (warm yellow), %40 amber (orange-tinted) — çeşitlilik
+    hue: Math.random() < 0.6 ? 'gold' : 'amber',
+  }));
+}
+
 let cachedSnowCount: number | null = null;
 let cachedFlakes: Flake[] | null = null;
 function makeFlakesCached(count: number): Flake[] {
@@ -70,19 +96,29 @@ function makeDropsCached(count: number): Drop[] {
   return cachedDrops;
 }
 
+let cachedStarCount: number | null = null;
+let cachedStars: Star[] | null = null;
+function makeStarsCached(count: number): Star[] {
+  if (cachedStarCount !== count || !cachedStars) {
+    cachedStarCount = count;
+    cachedStars = makeStars(count);
+  }
+  return cachedStars;
+}
+
 function subscribeNoop(): () => void {
   return () => undefined;
 }
 
 const STORAGE_KEY = 'pp-weather-mode';
-type WeatherMode = 'snow' | 'rain' | 'off';
+type WeatherMode = 'snow' | 'rain' | 'star' | 'off';
 
 const modeListeners = new Set<() => void>();
 function getModeSnapshot(): WeatherMode {
   if (typeof window === 'undefined') return 'snow';
   try {
     const v = window.localStorage.getItem(STORAGE_KEY);
-    if (v === 'snow' || v === 'rain' || v === 'off') return v;
+    if (v === 'snow' || v === 'rain' || v === 'star' || v === 'off') return v;
     // Backwards compat: eski 'pp-snowfall-enabled' true/false
     const legacy = window.localStorage.getItem('pp-snowfall-enabled');
     if (legacy === 'false') return 'off';
@@ -127,6 +163,12 @@ export function Snowfall({ number = 40 }: Props) {
   const drops = useSyncExternalStore<Drop[] | null>(
     subscribeNoop,
     () => makeDropsCached(Math.round(number * 1.5)),
+    () => null,
+  );
+  const stars = useSyncExternalStore<Star[] | null>(
+    subscribeNoop,
+    // Yıldız büyük + parlak, kardan az: number×0.6 (örn snow 40 → star 24)
+    () => makeStarsCached(Math.round(number * 0.6)),
     () => null,
   );
   const mode = useSyncExternalStore<WeatherMode>(
@@ -189,7 +231,34 @@ export function Snowfall({ number = 40 }: Props) {
         </div>
       )}
 
-      {/* Sağ alt köşedeki 3-state weather toggle */}
+      {mode === 'star' && stars && (
+        <div
+          aria-hidden
+          data-testid="star-overlay"
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+        >
+          {stars.map((s, i) => (
+            <span
+              key={i}
+              className="absolute top-[-12px] animate-star-fall inline-flex"
+              style={{
+                left: s.left,
+                width: s.size,
+                height: s.size,
+                opacity: s.opacity,
+                animationDelay: s.delay,
+                animationDuration: s.duration,
+                ['--star-drift' as string]: s.drift,
+                filter: `drop-shadow(0 0 6px ${s.hue === 'gold' ? 'rgba(253,224,71,0.9)' : 'rgba(251,191,36,0.85)'})`,
+              }}
+            >
+              <StarShape color={s.hue === 'gold' ? '#fde047' : '#fbbf24'} />
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Sağ alt köşedeki 4-state weather toggle */}
       <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1.5">
         <ToggleButton
           active={mode === 'snow'}
@@ -206,6 +275,13 @@ export function Snowfall({ number = 40 }: Props) {
           icon={<RainIcon size={14} />}
         />
         <ToggleButton
+          active={mode === 'star'}
+          onClick={() => setModePersistent('star')}
+          title="Yıldız yağmuru"
+          testId="weather-star"
+          icon={<StarIcon size={14} />}
+        />
+        <ToggleButton
           active={mode === 'off'}
           onClick={() => setModePersistent('off')}
           title="Hava efektini kapat"
@@ -214,6 +290,15 @@ export function Snowfall({ number = 40 }: Props) {
         />
       </div>
     </>
+  );
+}
+
+/** SVG 5-pointed solid star — animate-star-fall içinde dönen yıldızlar için. */
+function StarShape({ color }: { color: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill={color} stroke="none" aria-hidden="true" className="h-full w-full">
+      <path d="M12 2 14.59 8.41 21 9.27l-4.91 4.79L17.18 21 12 17.77 6.82 21l1.09-6.94L3 9.27l6.41-.86Z" />
+    </svg>
   );
 }
 
@@ -269,6 +354,24 @@ function SnowIcon({ size }: { size: number }) {
       <line x1="17" y1="2" x2="12" y2="7" />
       <line x1="7" y1="22" x2="12" y2="17" />
       <line x1="17" y1="22" x2="12" y2="17" />
+    </svg>
+  );
+}
+
+function StarIcon({ size }: { size: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
     </svg>
   );
 }
