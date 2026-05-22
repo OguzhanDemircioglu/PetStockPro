@@ -17,7 +17,40 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
+// Staging mockup gate: /login, /register, /admin/* → /yapim-asamasinda
+// IS_STAGING=true ortam değişkeni varsa aktif. Production'da kapalı.
+const STAGING_GATED_PATHS = [
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
+  '/verify-email',
+  '/verify-email-change',
+  '/cancel-email-change',
+  '/accept-invite',
+  '/account-locked',
+  '/2fa-setup',
+  '/onboarding',
+  '/admin',
+];
+
+function shouldGateForStaging(pathname: string): boolean {
+  if (process.env.NEXT_PUBLIC_STAGING_MODE !== 'true') return false;
+  if (pathname === '/yapim-asamasinda') return false; // sayfanın kendisi
+  return STAGING_GATED_PATHS.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
 export async function middleware(req: NextRequest) {
+  // Staging gate önce: login/register/admin → yapım aşamasında
+  if (shouldGateForStaging(req.nextUrl.pathname)) {
+    const gateUrl = req.nextUrl.clone();
+    gateUrl.pathname = '/yapim-asamasinda';
+    gateUrl.search = '';
+    return NextResponse.redirect(gateUrl);
+  }
+
   // Sadece /admin/superadmin/* yollarında kontrol — diğer /admin sayfaları layout'ta
   // requireSession yapıyor zaten.
   if (!req.nextUrl.pathname.startsWith('/admin/superadmin')) {
@@ -53,5 +86,18 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/superadmin/:path*'],
+  matcher: [
+    '/admin/:path*',
+    '/login',
+    '/register',
+    '/forgot-password',
+    '/reset-password/:path*',
+    '/verify-email/:path*',
+    '/verify-email-change/:path*',
+    '/cancel-email-change/:path*',
+    '/accept-invite/:path*',
+    '/account-locked',
+    '/2fa-setup',
+    '/onboarding',
+  ],
 };

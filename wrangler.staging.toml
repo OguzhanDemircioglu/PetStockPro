@@ -1,0 +1,57 @@
+#:schema node_modules/wrangler/config-schema.json
+# PetStockPro — Staging deploy (Cloudflare Workers)
+#
+# Mockup izlenimi: Vitrin + Admin UI gezilebilir. Login/register isteyen
+# kullanıcıya "yapım aşamasında" sayfası gösterilir (IS_STAGING=true flag).
+# Custom domain yok — *.workers.dev subdomain.
+# Cloudflare servisleri yok (Hyperdrive/KV/R2) — direct DATABASE_URL,
+# in-memory rate-limit, dynamic sitemap (R2 cache yok).
+
+name = "petstockpro-staging"
+main = ".open-next/worker.js"
+compatibility_date = "2026-01-15"
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
+account_id = "40480f0168b5090fcb25a6f1b5602e21"
+
+# Statik asset binding (OpenNext .open-next/assets klasörünü doldurur)
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+# Public env vars — staging için workers.dev URL'i (deploy sonrası buradan oku)
+[vars]
+NEXT_PUBLIC_APP_URL = "https://petstockpro-staging.workers.dev"
+NEXT_PUBLIC_APP_DOMAIN = "petstockpro-staging.workers.dev"
+NEXT_PUBLIC_SITE_URL = "https://petstockpro-staging.workers.dev"
+NEXT_PUBLIC_STAGING_MODE = "true"
+
+# Staging cron'lar — production'a göre az. Sadece sitemap pre-build kapalı
+# (R2 yok, in-memory cache her cold start sıfırlanır).
+[triggers]
+crons = [
+  "0 4 * * *",  # log retention cleanup (system_errors 90g vs.)
+]
+
+# Production secrets (wrangler secret put X --config wrangler.staging.toml ile ekle):
+# - DATABASE_URL                      # Aiven Postgres (production'la paylaş — staging için OK)
+# - DATABASE_URL_DIRECT               # Migration için pool dışı (gerekirse)
+# - NEXT_PUBLIC_SUPABASE_URL          # Supabase project URL (Brevo/auth için)
+# - NEXT_PUBLIC_SUPABASE_ANON_KEY     # Public anon key
+# - SUPABASE_SERVICE_ROLE_KEY         # Server-only image upload
+# - SUPABASE_JWT_SECRET               # Auth.js JWT signing
+# - AUTH_SECRET                       # Auth.js secret (openssl rand -base64 32)
+# - BREVO_API_KEY                     # Transactional email (opsiyonel staging'de)
+# - CF_ACCOUNT_ID                     # AI Chatbot Workers AI + Vectorize
+# - CF_API_TOKEN                      # AI Chatbot token
+# - CF_VECTORIZE_INDEX                # petstockpro-user-manual
+# - TELEGRAM_BOT_TOKEN                # Süperadmin alert (opsiyonel)
+#
+# Üretim için zorunlu olup staging'de **gerekli olmayanlar**:
+# - IYZICO_* (ödeme yok)
+# - NILVERA_* (fatura yok)
+# - TURNSTILE_* (register kapalı, "yapım aşamasında")
+# - R2_* (görsel upload staging'de kapalı veya production R2'ye yazıyor)
+
+# Observability — Workers Logs
+[observability]
+enabled = true

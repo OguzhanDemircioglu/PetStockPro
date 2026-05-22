@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { redirect } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
@@ -6,6 +7,7 @@ import { db } from '@/lib/db/client';
 import { users } from '@/db/schema';
 import { MarketingHeader } from '@/components/marketing/header';
 import { MarketingFooter } from '@/components/marketing/footer';
+import { stagingDemoLoginAction } from './staging-demo-actions';
 
 interface Feature {
   icon: string;
@@ -60,6 +62,11 @@ export default async function Home() {
       redirect('/onboarding' as never);
     }
     redirect('/admin' as never);
+  }
+
+  // Staging mockup landing — anonim ziyaretçiye direkt 2-button önizleme ekranı
+  if (process.env.NEXT_PUBLIC_STAGING_MODE === 'true') {
+    return <StagingDemoLanding />;
   }
 
   return (
@@ -217,5 +224,101 @@ export default async function Home() {
       </main>
       <MarketingFooter />
     </div>
+  );
+}
+
+/**
+ * Staging-only landing — mockup ziyaretçisine 2 büyük önizleme butonu sunar.
+ * Production'da render edilmez (NEXT_PUBLIC_STAGING_MODE flag gate).
+ */
+function StagingDemoLanding() {
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-paper to-cat-soft/30">
+      <div className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-6 py-12 text-center">
+        <Image
+          src="/logo.webp"
+          alt="PetStockPro"
+          width={160}
+          height={160}
+          className="h-36 w-36 object-contain"
+          priority
+        />
+
+        <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-cat-soft px-4 py-1.5 text-[12.5px] font-bold uppercase tracking-wider text-cart">
+          <span aria-hidden>🛠</span>
+          Önizleme / Staging
+        </div>
+
+        <h1 className="mt-5 text-4xl font-bold leading-tight tracking-tight text-cart sm:text-5xl">
+          PetStockPro&apos;ya hoş geldin
+        </h1>
+
+        <p className="mt-4 max-w-xl text-base leading-relaxed text-ink-2">
+          Pet shop&apos;lar için stok takip + vitrin SaaS platformu — lansman
+          öncesi son testler yapılıyor. Aşağıdaki iki sekmeden istediğini
+          önizleyebilirsin.
+        </p>
+
+        <div className="mt-10 grid w-full max-w-2xl gap-4 sm:grid-cols-2">
+          {/* Admin Paneli Önizle */}
+          <form action={stagingDemoLoginAction}>
+            <button
+              type="submit"
+              data-testid="staging-admin-preview"
+              className="group flex w-full flex-col items-start gap-3 rounded-2xl border-2 border-cat/40 bg-gradient-to-br from-cat to-cat-2 p-6 text-left text-white shadow-[var(--shadow-cat)] transition-transform hover:-translate-y-1"
+            >
+              <div className="grid h-12 w-12 place-items-center rounded-xl bg-white/20 text-2xl">
+                🛡
+              </div>
+              <div>
+                <div className="text-[11px] font-bold uppercase tracking-wider opacity-80">
+                  Pet shop sahipleri için
+                </div>
+                <div className="mt-1 text-xl font-bold leading-tight">
+                  Admin Paneli&apos;ni önizle →
+                </div>
+              </div>
+              <p className="text-[13px] leading-relaxed text-white/90">
+                Stok takip, vitrin yönetimi, raporlar, sayım — pet shop&apos;un
+                tüm operasyonu tek panelde. Demo SUPERADMIN ile gez.
+              </p>
+            </button>
+          </form>
+
+          {/* Vitrin Önizle */}
+          <Link
+            href={'/vitrin' as never}
+            data-testid="staging-vitrin-preview"
+            className="group flex flex-col items-start gap-3 rounded-2xl border-2 border-arrow/40 bg-gradient-to-br from-arrow to-arrow-7 p-6 text-left text-white shadow-[var(--shadow-arrow)] transition-transform hover:-translate-y-1"
+          >
+            <div className="grid h-12 w-12 place-items-center rounded-xl bg-white/20 text-2xl">
+              🏪
+            </div>
+            <div>
+              <div className="text-[11px] font-bold uppercase tracking-wider opacity-80">
+                Müşteriler için
+              </div>
+              <div className="mt-1 text-xl font-bold leading-tight">
+                Vitrin&apos;i önizle →
+              </div>
+            </div>
+            <p className="text-[13px] leading-relaxed text-white/90">
+              Türkiye&apos;deki pet shop&apos;ları haritada gez, yakınındakini
+              bul, WhatsApp&apos;tan satıcıya yaz. Online sipariş yok — direkt
+              iletişim.
+            </p>
+          </Link>
+        </div>
+
+        <p className="mt-10 max-w-md text-[12.5px] text-ink-3">
+          ℹ Gerçek hesap açma + ödeme akışı henüz aktif değil. Lansman için son
+          hazırlıklar yapılıyor.
+        </p>
+
+        <p className="mt-6 text-[11.5px] text-ink-4">
+          © 2026 PetStockPro · KVKK uyumlu · Cloudflare Workers altyapısı
+        </p>
+      </div>
+    </main>
   );
 }

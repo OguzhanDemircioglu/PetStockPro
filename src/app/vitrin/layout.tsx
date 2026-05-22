@@ -53,7 +53,7 @@ export default function VitrinLayout({
               <span className="ml-1.5 hidden sm:inline">Tüm pet shop&apos;lar</span>
             </Link>
             <Link
-              href={'/login' as never}
+              href={(process.env.NEXT_PUBLIC_STAGING_MODE === 'true' ? '/yapim-asamasinda' : '/login') as never}
               title="Pet shop sahibi girişi"
               className="rounded-xl bg-cat px-3 py-2 font-bold text-white hover:bg-cat-2 sm:px-3.5"
             >
