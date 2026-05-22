@@ -43,16 +43,19 @@ export async function VitrinAdminReturnLink() {
   const role = (session.user as { role?: string }).role;
   if (!role || !ELIGIBLE_ROLES.has(role)) return null;
 
+  // SUPERADMIN kendi paneline döner; diğer roller kendi tenant pano'suna.
+  const href = role === 'SUPERADMIN' ? '/admin/superadmin' : '/admin';
+
   return (
     <Link
-      href={'/admin' as never}
+      href={href as never}
       data-testid="vitrin-admin-return-link"
-      title="Admin paneline dön"
+      title="Yönetim paneline dön"
       className="inline-flex items-center gap-1 rounded-xl border border-cat/40 bg-cat-soft px-2.5 py-1.5 text-[13.5px] font-bold text-cart transition-colors hover:border-cat hover:bg-cat hover:text-white sm:gap-1.5 sm:px-3"
     >
       <span aria-hidden>←</span>
-      <span className="sm:hidden">Admin</span>
-      <span className="hidden sm:inline">Admin paneli</span>
+      <span className="sm:hidden">Yönetim</span>
+      <span className="hidden sm:inline">Yönetim Paneli</span>
     </Link>
   );
 }
