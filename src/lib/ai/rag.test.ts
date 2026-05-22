@@ -112,12 +112,45 @@ describe('stripUrlPaths', () => {
   });
 
   it('Markdown URL (linkler) — bizim case değil ama bozulmasın', () => {
-    // Markdown link içindeki path bozulabilir ama AI cevaplarda link az.
-    // Şu an: parantez içindeki path silindiği için "[text](/x)" bozulabilir.
-    // Test edip davranışı dokümante et:
     const out = stripUrlPaths('[Ürünler](/admin/products) sayfasına git');
-    // (parantez içinde /admin/products → silinir, [Ürünler] kalır)
     expect(out).toBe('[Ürünler] sayfasına git');
+  });
+
+  it('Markdown tablo (separator satırlı) komple silinir', () => {
+    const input = `Şablon Sütunları:
+
+| Sütun | Açıklama |
+|---|---|
+| name | Ürün adı (zorunlu) |
+| sku | SKU |
+| vat_rate | KDV |
+
+Tablo bittikten sonra devam eden cümle.`;
+    const out = stripUrlPaths(input);
+    expect(out).not.toContain('|');
+    expect(out).not.toContain('---');
+    expect(out).toContain('Şablon Sütunları:');
+    expect(out).toContain('Tablo bittikten sonra devam eden cümle.');
+  });
+
+  it('Separator yok ise (tek pipe satırı) bırakılır — false positive yok', () => {
+    const input = 'Bu | sembol | düz metin içinde olabilir, tablo değil.';
+    const out = stripUrlPaths(input);
+    expect(out).toContain('Bu | sembol | düz metin');
+  });
+
+  it('Üst üste tablo + URL aynı cevapta', () => {
+    const input = `Önce /admin/products sayfasına git.
+
+| A | B |
+|---|---|
+| 1 | 2 |
+
+Sonra devam et.`;
+    const out = stripUrlPaths(input);
+    expect(out).not.toContain('/admin/products');
+    expect(out).not.toContain('|---|');
+    expect(out).toContain('Sonra devam et');
   });
 });
 

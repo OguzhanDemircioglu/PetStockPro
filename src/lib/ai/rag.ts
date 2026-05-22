@@ -92,7 +92,7 @@ export function buildSystemPrompt(chunks: RetrievedChunk[]): string {
 ÖNEMLİ KURALLAR:
 1. CEVAP TÜRKÇE olmalı. Hiçbir cümle başka dilde olmasın.
 2. SADECE aşağıdaki "Kaynaklar" bölümündeki bilgilerden cevap ver. Asla uydurma yapma.
-3. **Halüsinasyon koruma:** Eğer cevabın "Kaynaklar" metninde **birebir** geçmiyorsa, "yeterli bilgi yok" de. Kaynakta olan kelimeleri farklı anlama çekme, yorum yapma, tahmin etme. Örneğin "override" kelimesi geçmiyorsa "override yapılır" deme.
+3. **Halüsinasyon koruma:** Kaynaklarda olmayan bilgi UYDURMA. Kaynaktaki bilgileri kendi cümlelerinle özetleyebilirsin (birebir kopyalama şart değil), ama "override yapılır" gibi kaynakta hiç bahsedilmeyen bir özellik UYDURMA. Şüphedeysen "yeterli bilgi yok" de.
 4. Eğer soru "Kaynaklar"daki bilgiyle yeterince örtüşmüyorsa şu cevabı ver: "Bu konuyla ilgili PetStockPro kullanım kılavuzunda yeterli bilgi bulamadım. Detaylı yardım için destek@petstockpro.com'a yazabilirsin."
 5. **Yetki ve süperadmin:** Eğer soru süperadmin yetkileri, bypass aksiyonları, hard delete, plan override, sayım rollback gibi yönetici özellikleri ile ilgiliyse şu cevabı ver: "Bu konu PetStockPro yöneticisi (sahibi) tarafından kullanılır, normal pet shop kullanıcılarına açık değil. Bir sorunun varsa destek@petstockpro.com'a yazabilirsin."
 6. Kullanıcının sorusuyla doğrudan ilgili olmayan kaynakları görmezden gel.
@@ -101,7 +101,8 @@ export function buildSystemPrompt(chunks: RetrievedChunk[]): string {
 
    ✅ DOĞRU: "Sol menüden 🛍 Ürünler'e git, sağ üstte 'Excel'den İçeri Aktar' butonuna tıkla."
    ❌ YANLIŞ: "/admin/products/import sayfasına git" veya "Ürünler sayfasına git (/admin/products)"
-9. Kaynaklardaki Markdown başlık (###), kod bloğu (\`\`\`) veya tablo formatlarını koruyabilirsin.
+9. **Tablo gösterme (ÇOK ÖNEMLİ):** Kaynaklarda Markdown tablo (| ... | ... |) olsa bile CEVABINDA tablo yapma. Tablo içeriğini kısa cümlede özetle. Örnek: "11 sütunlu şablon — name, sku, fiyat, stok vs." yeterli. Kullanıcı butonu tıkladığında zaten şablonu indirecek.
+10. Kaynaklardaki Markdown başlık (###) veya kod bloğu (\`\`\`) formatlarını koruyabilirsin (ama tabloları HAYIR).
 
 KAYNAKLAR:
 ${sources}`;
@@ -152,6 +153,7 @@ export async function askWithContext(
  *   - "/admin/...", "/api/...", "/cron/..." gibi yollar
  *   - Parantez içinde URL: "(/admin/products)" → ""
  *   - URL: prefix'i: "URL: /admin/..." → ""
+ *   - Markdown tablolar (| Sütun | Açıklama | ... + separator satırı)
  */
 export function stripUrlPaths(text: string): string {
   let out = text;
@@ -160,12 +162,60 @@ export function stripUrlPaths(text: string): string {
   // "URL: /admin/x" veya "URL: /admin/x sayfasına" → boş
   out = out.replace(/URL\s*:\s*\/[a-z][a-z0-9/_-]*\s*/gi, '');
   // Plain "/admin/x sayfasına git" / "/api/x" formundaki kalıntılar
-  // (kelime sınırından başlayan; sadece "git/aç/sayfa" gibi context'te değil her yerde temizlenir)
   out = out.replace(/(?:^|[\s,;:.!?])\/[a-z][a-z0-9/_-]+/gi, (match) => {
-    // Whitespace/punctuation prefix korunsun, path silinsin
     return match[0] === '/' ? '' : match[0];
   });
+  // Markdown tabloları kaldır: separator satırı (|---|---|) içeren bloklar
+  out = stripMarkdownTables(out);
   // Çift boşluk + leading/trailing whitespace temizle
   out = out.replace(/[ \t]{2,}/g, ' ').replace(/[ \t]+\n/g, '\n').trim();
+  // 3+ boş satırı 2'ye indir
+  out = out.replace(/\n{3,}/g, '\n\n');
   return out;
+}
+
+/**
+ * Markdown tablo bloklarını silen yardımcı.
+ *
+ * Markdown table = `| ... |` satır + `|---|---|` separator + diğer `|` satırları.
+ * Algoritma:
+ *   - Tüm satırları gez
+ *   - Her satır için "table satırı mı?" (regex `^\s*\|.*\|\s*$`)
+ *   - Ardışık table satırları separator satırı içeriyorsa blok olarak sil
+ *   - Tek başına "| ... |" (separator yoksa) bırak (tablo değil, olağan içerik)
+ */
+function stripMarkdownTables(text: string): string {
+  const lines = text.split('\n');
+  const out: string[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    const isTableRow = /^\s*\|.*\|\s*$/.test(line);
+    if (!isTableRow) {
+      out.push(line);
+      i++;
+      continue;
+    }
+    // Ardışık table satırlarını topla
+    let j = i;
+    let hasSeparator = false;
+    while (j < lines.length && /^\s*\|.*\|\s*$/.test(lines[j])) {
+      // Separator pattern: `|---|---|` veya `|:--|:--:|--:|`
+      if (/^\s*\|[\s:|-]+\|\s*$/.test(lines[j]) && lines[j].includes('---')) {
+        hasSeparator = true;
+      }
+      j++;
+    }
+    if (hasSeparator) {
+      // Bütün blok tablo — sil
+      i = j;
+    } else {
+      // Separator yok — olağan içerik, bırak
+      while (i < j) {
+        out.push(lines[i]);
+        i++;
+      }
+    }
+  }
+  return out.join('\n');
 }
