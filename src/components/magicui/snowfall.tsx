@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from 'react';
 
 interface Props {
-  /** Tane sayısı (default 40). */
+  /** Tane sayısı kar için (default 40). Yağmur 1.5× yoğunluk. */
   number?: number;
 }
 
@@ -16,99 +16,134 @@ type Flake = {
   opacity: string;
 };
 
+type Drop = {
+  left: string;
+  delay: string;
+  duration: string;
+  height: string;
+  drift: string;
+  opacity: string;
+};
+
 function makeFlakes(count: number): Flake[] {
   return Array.from({ length: count }, () => ({
     left: Math.floor(Math.random() * 100) + '%',
     delay: (Math.random() * 8).toFixed(2) + 's',
-    // Yavaş kar gibi düşüş: 6-12 saniye arası
     duration: (Math.random() * 6 + 6).toFixed(2) + 's',
-    // Çeşitlilik için 2-5px boyut karışımı
     size: (Math.random() * 3 + 2).toFixed(1) + 'px',
-    // Yan sallanma genliği -30..30px
     drift: (Math.random() * 60 - 30).toFixed(0) + 'px',
-    // Opacity 0.5-1.0 arası — bazı taneler daha sönük
     opacity: (Math.random() * 0.5 + 0.5).toFixed(2),
   }));
 }
 
-let cachedNumber: number | null = null;
-let cachedItems: Flake[] | null = null;
+function makeDrops(count: number): Drop[] {
+  return Array.from({ length: count }, () => ({
+    left: Math.floor(Math.random() * 100) + '%',
+    delay: (Math.random() * 1.5).toFixed(2) + 's',
+    // Yağmur kardan hızlı: 0.9-1.8 saniye
+    duration: (Math.random() * 0.9 + 0.9).toFixed(2) + 's',
+    // Damla uzunluğu 10-22px (uzun damla = hızlı düşüşün izlenimi)
+    height: (Math.random() * 12 + 10).toFixed(0) + 'px',
+    // Hafif eğim (rüzgar): -8..+8 px
+    drift: (Math.random() * 16 - 8).toFixed(0) + 'px',
+    opacity: (Math.random() * 0.3 + 0.55).toFixed(2),
+  }));
+}
+
+let cachedSnowCount: number | null = null;
+let cachedFlakes: Flake[] | null = null;
 function makeFlakesCached(count: number): Flake[] {
-  if (cachedNumber !== count || !cachedItems) {
-    cachedNumber = count;
-    cachedItems = makeFlakes(count);
+  if (cachedSnowCount !== count || !cachedFlakes) {
+    cachedSnowCount = count;
+    cachedFlakes = makeFlakes(count);
   }
-  return cachedItems;
+  return cachedFlakes;
+}
+
+let cachedRainCount: number | null = null;
+let cachedDrops: Drop[] | null = null;
+function makeDropsCached(count: number): Drop[] {
+  if (cachedRainCount !== count || !cachedDrops) {
+    cachedRainCount = count;
+    cachedDrops = makeDrops(count);
+  }
+  return cachedDrops;
 }
 
 function subscribeNoop(): () => void {
   return () => undefined;
 }
 
-const STORAGE_KEY = 'pp-snowfall-enabled';
+const STORAGE_KEY = 'pp-weather-mode';
+type WeatherMode = 'snow' | 'rain' | 'off';
 
-/**
- * useSyncExternalStore wiring — server snapshot=true (default kar), client
- * snapshot=localStorage. Mutate olduğunda listener'ları tetikler.
- */
-const enabledListeners = new Set<() => void>();
-function getEnabledSnapshot(): boolean {
-  if (typeof window === 'undefined') return true;
+const modeListeners = new Set<() => void>();
+function getModeSnapshot(): WeatherMode {
+  if (typeof window === 'undefined') return 'snow';
   try {
-    return window.localStorage.getItem(STORAGE_KEY) !== 'false';
+    const v = window.localStorage.getItem(STORAGE_KEY);
+    if (v === 'snow' || v === 'rain' || v === 'off') return v;
+    // Backwards compat: eski 'pp-snowfall-enabled' true/false
+    const legacy = window.localStorage.getItem('pp-snowfall-enabled');
+    if (legacy === 'false') return 'off';
+    return 'snow';
   } catch {
-    return true;
+    return 'snow';
   }
 }
-function getEnabledServerSnapshot(): boolean {
-  return true;
+function getModeServerSnapshot(): WeatherMode {
+  return 'snow';
 }
-function subscribeEnabled(cb: () => void): () => void {
-  enabledListeners.add(cb);
-  return () => enabledListeners.delete(cb);
+function subscribeMode(cb: () => void): () => void {
+  modeListeners.add(cb);
+  return () => modeListeners.delete(cb);
 }
-function setEnabledPersistent(value: boolean): void {
+function setModePersistent(value: WeatherMode): void {
   try {
-    window.localStorage.setItem(STORAGE_KEY, value ? 'true' : 'false');
+    window.localStorage.setItem(STORAGE_KEY, value);
   } catch {
     /* localStorage unavailable */
   }
-  enabledListeners.forEach((cb) => cb());
+  modeListeners.forEach((cb) => cb());
 }
 
 /**
- * Snowfall — yumuşak kar yağışı + toggle (kar aç/kapat butonları).
+ * Snowfall — kar/yağmur/kapalı 3-state weather efekti + sağ alt 3 toggle.
  *
  * Hero'nun pointer-events-none overlay'i; toggle butonları sağ alt köşede
- * pointer-events alır. localStorage 'pp-snowfall-enabled' ile persist eder
- * (default: 'true' — yeni kullanıcı için kar aktif).
+ * pointer-events alır. localStorage 'pp-weather-mode' = 'snow'|'rain'|'off'
+ * (default 'snow' — yeni kullanıcı için kar aktif). Eski 'pp-snowfall-enabled'
+ * legacy key migrate edilir.
  *
- * useSyncExternalStore SSR-safe: server snapshot null → DOM'da kar yok →
- * hydration mismatch yok. Client'ta cached flakes render eder.
+ * useSyncExternalStore SSR-safe: server snapshot 'snow' (default) → DOM'da kar
+ * render edilir → client mount sonrası localStorage'dan mode okunup yansır.
  */
 export function Snowfall({ number = 40 }: Props) {
-  const items = useSyncExternalStore<Flake[] | null>(
+  const flakes = useSyncExternalStore<Flake[] | null>(
     subscribeNoop,
     () => makeFlakesCached(number),
     () => null,
   );
-  // useSyncExternalStore — server snapshot true, client localStorage. Hydration
-  // sırasında server HTML'i ile client'ın ilk render'ı aynı (true), client
-  // mount sonrası sub'lar fire eder ve localStorage değeri yansır.
-  const enabled = useSyncExternalStore<boolean>(
-    subscribeEnabled,
-    getEnabledSnapshot,
-    getEnabledServerSnapshot,
+  const drops = useSyncExternalStore<Drop[] | null>(
+    subscribeNoop,
+    () => makeDropsCached(Math.round(number * 1.5)),
+    () => null,
+  );
+  const mode = useSyncExternalStore<WeatherMode>(
+    subscribeMode,
+    getModeSnapshot,
+    getModeServerSnapshot,
   );
 
   return (
     <>
-      {enabled && items && (
+      {mode === 'snow' && flakes && (
         <div
           aria-hidden
+          data-testid="snow-overlay"
           className="pointer-events-none absolute inset-0 overflow-hidden"
         >
-          {items.map((f, i) => (
+          {flakes.map((f, i) => (
             <span
               key={i}
               className="absolute top-[-8px] rounded-full bg-white animate-snow-fall"
@@ -127,38 +162,89 @@ export function Snowfall({ number = 40 }: Props) {
         </div>
       )}
 
-      {/* Sağ alt köşedeki toggle butonları — pointer-events alır */}
+      {mode === 'rain' && drops && (
+        <div
+          aria-hidden
+          data-testid="rain-overlay"
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+        >
+          {drops.map((d, i) => (
+            <span
+              key={i}
+              className="absolute top-[-20px] animate-rain-fall"
+              style={{
+                left: d.left,
+                width: '1.5px',
+                height: d.height,
+                opacity: d.opacity,
+                animationDelay: d.delay,
+                animationDuration: d.duration,
+                ['--rain-drift' as string]: d.drift,
+                background:
+                  'linear-gradient(to bottom, rgba(220,235,255,0) 0%, rgba(220,235,255,0.85) 60%, rgba(220,235,255,0.95) 100%)',
+                borderRadius: '999px',
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Sağ alt köşedeki 3-state weather toggle */}
       <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1.5">
-        <button
-          type="button"
-          data-testid="snow-on"
-          onClick={() => setEnabledPersistent(true)}
-          title="Kar yağmasını başlat"
-          aria-pressed={enabled}
-          className={`grid h-8 w-8 place-items-center rounded-full border backdrop-blur-sm transition-all ${
-            enabled
-              ? 'border-white bg-white/30 text-white shadow-sm'
-              : 'border-white/40 bg-white/12 text-white/75 hover:bg-white/22'
-          }`}
-        >
-          <SnowIcon size={14} />
-        </button>
-        <button
-          type="button"
-          data-testid="snow-off"
-          onClick={() => setEnabledPersistent(false)}
-          title="Kar yağmasını durdur"
-          aria-pressed={!enabled}
-          className={`grid h-8 w-8 place-items-center rounded-full border backdrop-blur-sm transition-all ${
-            !enabled
-              ? 'border-white bg-white/30 text-white shadow-sm'
-              : 'border-white/40 bg-white/12 text-white/75 hover:bg-white/22'
-          }`}
-        >
-          <CancelIcon size={14} />
-        </button>
+        <ToggleButton
+          active={mode === 'snow'}
+          onClick={() => setModePersistent('snow')}
+          title="Kar yağışı"
+          testId="weather-snow"
+          icon={<SnowIcon size={14} />}
+        />
+        <ToggleButton
+          active={mode === 'rain'}
+          onClick={() => setModePersistent('rain')}
+          title="Yağmur"
+          testId="weather-rain"
+          icon={<RainIcon size={14} />}
+        />
+        <ToggleButton
+          active={mode === 'off'}
+          onClick={() => setModePersistent('off')}
+          title="Hava efektini kapat"
+          testId="weather-off"
+          icon={<CancelIcon size={14} />}
+        />
       </div>
     </>
+  );
+}
+
+function ToggleButton({
+  active,
+  onClick,
+  title,
+  testId,
+  icon,
+}: {
+  active: boolean;
+  onClick: () => void;
+  title: string;
+  testId: string;
+  icon: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      data-testid={testId}
+      onClick={onClick}
+      title={title}
+      aria-pressed={active}
+      className={`grid h-8 w-8 place-items-center rounded-full border backdrop-blur-sm transition-all ${
+        active
+          ? 'border-white bg-white/30 text-white shadow-sm'
+          : 'border-white/40 bg-white/12 text-white/75 hover:bg-white/22'
+      }`}
+    >
+      {icon}
+    </button>
   );
 }
 
@@ -183,6 +269,28 @@ function SnowIcon({ size }: { size: number }) {
       <line x1="17" y1="2" x2="12" y2="7" />
       <line x1="7" y1="22" x2="12" y2="17" />
       <line x1="17" y1="22" x2="12" y2="17" />
+    </svg>
+  );
+}
+
+function RainIcon({ size }: { size: number }) {
+  // Bulut + 3 damla
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M16 13a4 4 0 0 0-3.5-3.95A6 6 0 0 0 4 11h-.5A3.5 3.5 0 0 0 3 18h12a4 4 0 0 0 1-7.92Z" />
+      <line x1="8" y1="20" x2="7" y2="22" />
+      <line x1="12" y1="20" x2="11" y2="22" />
+      <line x1="16" y1="20" x2="15" y2="22" />
     </svg>
   );
 }

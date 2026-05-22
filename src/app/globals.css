@@ -232,6 +232,19 @@ html.dark body::before {
     opacity: 0;
   }
 }
+@keyframes rain-fall {
+  0% {
+    transform: translate3d(0, -24px, 0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translate3d(var(--rain-drift, 0px), 360px, 0);
+    opacity: 0.6;
+  }
+}
 @keyframes shiny-text {
   0%, 100% { background-position: 200% 0; }
   50%      { background-position: 0% 0; }
@@ -245,6 +258,7 @@ html.dark body::before {
 .animate-pulse-soft    { animation: pulse-soft 1.5s ease-out infinite; }
 .animate-meteor        { animation: meteor 5s linear infinite; }
 .animate-snow-fall     { animation: snow-fall var(--mui-snow-duration, 8s) linear infinite; }
+.animate-rain-fall     { animation: rain-fall var(--mui-rain-duration, 1.4s) linear infinite; }
 .animate-shiny-text {
   background-image: linear-gradient(110deg, var(--cart) 40%, var(--cat) 55%, var(--cart) 70%);
   background-size: 200% auto;
