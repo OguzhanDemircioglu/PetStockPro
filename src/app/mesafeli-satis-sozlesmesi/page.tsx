@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { MarketingHeader } from '@/components/marketing/header';
 import { MarketingFooter } from '@/components/marketing/footer';
+import { getLegalCompanyInfo } from '@/lib/company/legal-info';
 
 export const metadata: Metadata = {
   title: 'Mesafeli Satış Sözleşmesi — PetStockPro',
@@ -9,15 +10,21 @@ export const metadata: Metadata = {
 };
 
 export default function MesafeliSatisSozlesmesiPage() {
+  const company = getLegalCompanyInfo();
+
   return (
     <div className="flex min-h-screen flex-col">
       <MarketingHeader />
       <main className="flex-1 px-6 py-12">
         <article className="mx-auto max-w-3xl">
-          <div className="rounded-xl border border-arrow/30 bg-arrow-soft px-4 py-3 text-[12.5px] font-bold text-arrow-7">
-            📝 TASLAK — Avukat onayıyla finalize edilecek. Mesafeli Sözleşmeler
-            Yönetmeliği (6502 sayılı kanun) zorunlu içerikleri içerir.
-          </div>
+          {!company.hasRealInfo && (
+            <div className="rounded-xl border border-arrow/30 bg-arrow-soft px-4 py-3 text-[12.5px] font-bold text-arrow-7">
+              ℹ Bu sözleşme lansman öncesi taslak metindir. Şirket kuruluşu
+              tamamlanıp avukat onayı alındıktan sonra satıcı bilgileri
+              yayınlanacak ve sözleşme yürürlüğe girecek. Bu noktaya kadar
+              ücretli abonelik satışı aktif değildir.
+            </div>
+          )}
 
           <h1 className="mt-6 text-3xl font-bold tracking-tight text-cart">
             Mesafeli Satış Sözleşmesi
@@ -34,17 +41,29 @@ export default function MesafeliSatisSozlesmesiPage() {
                   <p className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
                     SATICI
                   </p>
-                  <p className="mt-1">
-                    <strong>[FIRMA UNVANI — PLACEHOLDER]</strong>
-                    <br />
-                    MERSİS: [PLACEHOLDER]
-                    <br />
-                    VKN: [PLACEHOLDER]
-                    <br />
-                    Adres: [PLACEHOLDER]
-                    <br />
-                    E-posta: destek@petstockpro.com
-                  </p>
+                  {company.hasRealInfo ? (
+                    <p className="mt-1">
+                      <strong>{company.legalName}</strong>
+                      {company.mersisNo && (
+                        <>
+                          <br />
+                          MERSİS: {company.mersisNo}
+                        </>
+                      )}
+                      <br />
+                      VKN: {company.vatNo}
+                      <br />
+                      Adres: {company.address}
+                      <br />
+                      E-posta: {company.supportEmail}
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-ink-3">
+                      <strong>{company.brandName}</strong> markası — şirket
+                      kuruluş sürecinde, satıcı bilgileri lansman öncesi
+                      yayınlanacak.
+                    </p>
+                  )}
                 </div>
                 <div className="rounded-xl border border-line bg-paper p-3">
                   <p className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">

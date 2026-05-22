@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { MarketingHeader } from '@/components/marketing/header';
 import { MarketingFooter } from '@/components/marketing/footer';
+import { getLegalCompanyInfo } from '@/lib/company/legal-info';
 
 export const metadata: Metadata = {
   title: 'Üyelik Sözleşmesi — PetStockPro',
@@ -9,15 +10,20 @@ export const metadata: Metadata = {
 };
 
 export default function UyelikSozlesmesiPage() {
+  const company = getLegalCompanyInfo();
+
   return (
     <div className="flex min-h-screen flex-col">
       <MarketingHeader />
       <main className="flex-1 px-6 py-12">
         <article className="mx-auto max-w-3xl">
-          <div className="rounded-xl border border-arrow/30 bg-arrow-soft px-4 py-3 text-[12.5px] font-bold text-arrow-7">
-            📝 TASLAK — Avukat onayıyla finalize edilecek. Şirket kuruluşu
-            sonrası VKN/MERSİS/adres doldurulacak.
-          </div>
+          {!company.hasRealInfo && (
+            <div className="rounded-xl border border-arrow/30 bg-arrow-soft px-4 py-3 text-[12.5px] font-bold text-arrow-7">
+              ℹ Bu sözleşme lansman öncesi taslak metindir. Şirket kuruluşu
+              tamamlanıp avukat onayı alındıktan sonra şirket bilgileri
+              yayınlanacak ve sözleşme yürürlüğe girecek.
+            </div>
+          )}
 
           <h1 className="mt-6 text-3xl font-bold tracking-tight text-cart">
             Üyelik Sözleşmesi
@@ -33,10 +39,14 @@ export default function UyelikSozlesmesiPage() {
               </h2>
               <p className="mt-2">
                 İşbu Üyelik Sözleşmesi (&ldquo;Sözleşme&rdquo;), bir tarafta{' '}
-                <strong>[FIRMA UNVANI — PLACEHOLDER]</strong>{' '}
-                (&ldquo;Şirket&rdquo; / &ldquo;PetStockPro&rdquo;) ile diğer
-                tarafta platforma üye olan kullanıcı (&ldquo;Üye&rdquo;)
-                arasında imzalanmıştır.
+                <strong>
+                  {company.hasRealInfo
+                    ? company.legalName
+                    : `${company.brandName} (şirket kuruluş sürecinde)`}
+                </strong>{' '}
+                (&ldquo;Şirket&rdquo; / &ldquo;{company.brandName}&rdquo;) ile
+                diğer tarafta platforma üye olan kullanıcı
+                (&ldquo;Üye&rdquo;) arasında imzalanmıştır.
               </p>
             </section>
 
@@ -183,8 +193,9 @@ export default function UyelikSozlesmesiPage() {
               </h2>
               <p className="mt-2">
                 İşbu Sözleşme Türkiye Cumhuriyeti hukukuna tabidir.
-                Uyuşmazlıklarda <strong>[YETKİLİ MAHKEME — PLACEHOLDER]</strong>
-                {' '}Mahkemeleri ve İcra Daireleri yetkilidir.
+                Uyuşmazlıklarda{' '}
+                <strong>{company.legalJurisdiction}</strong> Mahkemeleri ve
+                İcra Daireleri yetkilidir.
               </p>
             </section>
 

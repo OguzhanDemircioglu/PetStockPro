@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { MarketingHeader } from '@/components/marketing/header';
 import { MarketingFooter } from '@/components/marketing/footer';
+import { getLegalCompanyInfo } from '@/lib/company/legal-info';
 
 export const metadata: Metadata = {
   title: 'İletişim — PetStockPro',
@@ -9,6 +10,8 @@ export const metadata: Metadata = {
 };
 
 export default function IletisimPage() {
+  const company = getLegalCompanyInfo();
+
   return (
     <div className="flex min-h-screen flex-col">
       <MarketingHeader />
@@ -55,59 +58,57 @@ export default function IletisimPage() {
             </div>
           </div>
 
-          <section className="mt-10 rounded-2xl border border-line bg-paper p-5">
-            <h2 className="text-[16px] font-bold text-cart">🏢 Firma bilgileri</h2>
-            <div className="mt-3 rounded-xl border border-arrow/30 bg-arrow-soft px-3 py-2 text-[12.5px] font-bold text-arrow-7">
-              📝 TASLAK — Şirket kuruluşu sonrası MERSİS, VKN, ticari unvan
-              ve resmi adres burada görünecek.
-            </div>
-            <dl className="mt-4 grid gap-3 text-[13.5px] sm:grid-cols-2">
-              <div>
-                <dt className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
-                  Ticari Unvan
-                </dt>
-                <dd className="mt-0.5 font-bold text-ink-2">
-                  [PLACEHOLDER — kuruluş sonrası]
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
-                  Marka
-                </dt>
-                <dd className="mt-0.5 font-bold text-ink-2">PetStockPro</dd>
-              </div>
-              <div>
-                <dt className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
-                  MERSİS No
-                </dt>
-                <dd className="mt-0.5 text-ink-2">[PLACEHOLDER]</dd>
-              </div>
-              <div>
-                <dt className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
-                  VKN
-                </dt>
-                <dd className="mt-0.5 text-ink-2">[PLACEHOLDER]</dd>
-              </div>
-              <div className="sm:col-span-2">
-                <dt className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
-                  Adres
-                </dt>
-                <dd className="mt-0.5 text-ink-2">[PLACEHOLDER]</dd>
-              </div>
-              <div>
-                <dt className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
-                  Web
-                </dt>
-                <dd className="mt-0.5 text-ink-2">petstockpro.com</dd>
-              </div>
-              <div>
-                <dt className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
-                  E-posta
-                </dt>
-                <dd className="mt-0.5 text-ink-2">destek@petstockpro.com</dd>
-              </div>
-            </dl>
-          </section>
+          {company.hasRealInfo ? (
+            <section className="mt-10 rounded-2xl border border-line bg-paper p-5">
+              <h2 className="text-[16px] font-bold text-cart">🏢 Firma bilgileri</h2>
+              <dl className="mt-4 grid gap-3 text-[13.5px] sm:grid-cols-2">
+                <div>
+                  <dt className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+                    Ticari Unvan
+                  </dt>
+                  <dd className="mt-0.5 font-bold text-ink-2">{company.legalName}</dd>
+                </div>
+                <div>
+                  <dt className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+                    Marka
+                  </dt>
+                  <dd className="mt-0.5 font-bold text-ink-2">{company.brandName}</dd>
+                </div>
+                {company.mersisNo && (
+                  <div>
+                    <dt className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+                      MERSİS No
+                    </dt>
+                    <dd className="mt-0.5 text-ink-2">{company.mersisNo}</dd>
+                  </div>
+                )}
+                <div>
+                  <dt className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+                    VKN
+                  </dt>
+                  <dd className="mt-0.5 text-ink-2">{company.vatNo}</dd>
+                </div>
+                <div className="sm:col-span-2">
+                  <dt className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+                    Adres
+                  </dt>
+                  <dd className="mt-0.5 text-ink-2">{company.address}</dd>
+                </div>
+                <div>
+                  <dt className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+                    Web
+                  </dt>
+                  <dd className="mt-0.5 text-ink-2">petstockpro.com</dd>
+                </div>
+                <div>
+                  <dt className="text-[11.5px] font-bold uppercase tracking-wider text-ink-3">
+                    E-posta
+                  </dt>
+                  <dd className="mt-0.5 text-ink-2">{company.supportEmail}</dd>
+                </div>
+              </dl>
+            </section>
+          ) : null}
 
           <section className="mt-10 rounded-2xl border border-cat/30 bg-cat-soft/40 p-5">
             <h2 className="text-[16px] font-bold text-cart">

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { MarketingHeader } from '@/components/marketing/header';
 import { MarketingFooter } from '@/components/marketing/footer';
+import { getLegalCompanyInfo } from '@/lib/company/legal-info';
 
 export const metadata: Metadata = {
   title: 'KVKK Aydınlatma Metni — PetStockPro',
@@ -9,16 +10,23 @@ export const metadata: Metadata = {
 };
 
 export default function KvkkPage() {
+  const company = getLegalCompanyInfo();
+
   return (
     <div className="flex min-h-screen flex-col">
       <MarketingHeader />
       <main className="flex-1 px-6 py-12">
         <article className="mx-auto max-w-3xl">
-          <div className="rounded-xl border border-arrow/30 bg-arrow-soft px-4 py-3 text-[12.5px] font-bold text-arrow-7">
-            📝 TASLAK — Şirket kuruluşu (VKN + MERSİS) tamamlandıktan sonra
-            avukat onayıyla finalize edilecek. iyzico üye işyeri başvurusu
-            öncesi gerçek firma bilgileri doldurulmalı.
-          </div>
+          {!company.hasRealInfo && (
+            <div className="rounded-xl border border-arrow/30 bg-arrow-soft px-4 py-3 text-[12.5px] font-bold text-arrow-7">
+              ℹ Bu sayfa lansman öncesi taslak metindir. Şirket kuruluşu
+              tamamlandıktan sonra avukat onayıyla finalize edilecek ve veri
+              sorumlusu bilgileri yayınlanacak. Sorularınız için:{' '}
+              <a href="mailto:kvkk@petstockpro.com" className="underline">
+                {company.kvkkEmail}
+              </a>
+            </div>
+          )}
 
           <h1 className="mt-6 text-3xl font-bold tracking-tight text-cart">
             KVKK Aydınlatma Metni
@@ -30,19 +38,36 @@ export default function KvkkPage() {
           <div className="mt-8 flex flex-col gap-6 text-[14px] leading-relaxed text-ink-2">
             <section>
               <h2 className="text-lg font-bold text-cart">1. Veri Sorumlusu</h2>
-              <p className="mt-2">
-                6698 sayılı Kişisel Verilerin Korunması Kanunu
-                (&ldquo;KVKK&rdquo;) uyarınca, kişisel verileriniz; veri
-                sorumlusu sıfatıyla <strong>[FIRMA UNVANI — PLACEHOLDER]</strong>{' '}
-                (&ldquo;PetStockPro&rdquo; veya &ldquo;Şirket&rdquo;)
-                tarafından aşağıda açıklanan kapsamda işlenebilecektir.
-              </p>
-              <ul className="mt-2 list-disc pl-5">
-                <li>Adres: [PLACEHOLDER]</li>
-                <li>MERSİS No: [PLACEHOLDER]</li>
-                <li>VKN: [PLACEHOLDER]</li>
-                <li>E-posta: destek@petstockpro.com</li>
-              </ul>
+              {company.hasRealInfo ? (
+                <>
+                  <p className="mt-2">
+                    6698 sayılı Kişisel Verilerin Korunması Kanunu
+                    (&ldquo;KVKK&rdquo;) uyarınca, kişisel verileriniz; veri
+                    sorumlusu sıfatıyla <strong>{company.legalName}</strong>{' '}
+                    (&ldquo;{company.brandName}&rdquo; veya
+                    &ldquo;Şirket&rdquo;) tarafından aşağıda açıklanan
+                    kapsamda işlenebilecektir.
+                  </p>
+                  <ul className="mt-2 list-disc pl-5">
+                    <li>Adres: {company.address}</li>
+                    {company.mersisNo && <li>MERSİS No: {company.mersisNo}</li>}
+                    <li>VKN: {company.vatNo}</li>
+                    <li>E-posta: {company.supportEmail}</li>
+                  </ul>
+                </>
+              ) : (
+                <p className="mt-2">
+                  6698 sayılı Kişisel Verilerin Korunması Kanunu
+                  (&ldquo;KVKK&rdquo;) uyarınca, kişisel verileriniz; veri
+                  sorumlusu sıfatıyla{' '}
+                  <strong>{company.brandName}</strong> markası altında
+                  işlenecektir. Şirket kuruluşu tamamlandıktan sonra ticari
+                  unvan, VKN ve resmi adres burada yayınlanacaktır. İletişim:{' '}
+                  <a href="mailto:kvkk@petstockpro.com" className="text-cat-7 hover:underline">
+                    {company.kvkkEmail}
+                  </a>
+                </p>
+              )}
             </section>
 
             <section>
@@ -164,11 +189,19 @@ export default function KvkkPage() {
                 7. İletişim &amp; Şikayet
               </h2>
               <p className="mt-2">
-                Veri Sorumlusu: <strong>[FIRMA UNVANI — PLACEHOLDER]</strong>
+                Veri Sorumlusu:{' '}
+                <strong>{company.hasRealInfo ? company.legalName : `${company.brandName} (şirket kuruluş sürecinde)`}</strong>
                 <br />
-                E-posta: <a href="mailto:kvkk@petstockpro.com" className="text-cat-7 hover:underline">kvkk@petstockpro.com</a>
-                <br />
-                Posta: [PLACEHOLDER ADRES]
+                E-posta:{' '}
+                <a href={`mailto:${company.kvkkEmail}`} className="text-cat-7 hover:underline">
+                  {company.kvkkEmail}
+                </a>
+                {company.hasRealInfo && company.address && (
+                  <>
+                    <br />
+                    Posta: {company.address}
+                  </>
+                )}
               </p>
               <p className="mt-2 text-[12.5px] text-ink-3">
                 KVKK Kuruluna şikayet hakkınız ayrıca saklıdır.
