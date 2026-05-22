@@ -494,34 +494,37 @@ export const auditLogs = petstockproSchema.table('audit_logs', {
  *
  * RLS: tenant SELECT/INSERT/UPDATE/DELETE kendi categories'lerini, super_admin all access.
  */
+// 2026-05-22 Migration 0026 — categories GLOBAL (companyId YOK).
+// TR pet shop pazarında kategoriler ortak (mama, aksesuar, oyuncak, vs.).
+// Her tenant duplicate row tutmak yerine global tablo + slug UNIQUE.
+// CRUD SUPERADMIN-only — pet shop yeni kategori ekleyemez (Faz 2'de
+// custom_category ihtiyacı doğarsa is_custom + owner_company_id eklenir).
 export const categories = petstockproSchema.table('categories', {
   id: uuid('id').defaultRandom().primaryKey(),
-  companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
   parentId: uuid('parent_id'), // self-reference (FK constraint Drizzle relations.ts'te)
   name: varchar('name', { length: 100 }).notNull(),
-  slug: varchar('slug', { length: 100 }).notNull(),
+  slug: varchar('slug', { length: 100 }).notNull().unique(),
   emoji: varchar('emoji', { length: 10 }),
   displayOrder: integer('display_order').notNull().default(0),
   sktRequired: boolean('skt_required').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
-  uniqueIndex('idx_categories_company_slug').on(t.companyId, t.slug),
   index('idx_categories_parent').on(t.parentId),
 ]);
 
 /**
- * BRANDS — Ürün markaları (tenant başına)
+ * BRANDS — Ürün markaları GLOBAL (2026-05-22 Migration 0026, companyId YOK).
+ * TR pet shop pazarında "Royal Canin" tek bir markadır. Cross-tenant
+ * vitrin sayfası `/vitrin/marka/[brand]` doğrudan global slug ile çalışır.
+ * CRUD SUPERADMIN-only.
  */
 export const brands = petstockproSchema.table('brands', {
   id: uuid('id').defaultRandom().primaryKey(),
-  companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 100 }).notNull(),
-  slug: varchar('slug', { length: 100 }).notNull(),
+  slug: varchar('slug', { length: 100 }).notNull().unique(),
   logoUrl: text('logo_url'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-}, (t) => [
-  uniqueIndex('idx_brands_company_slug').on(t.companyId, t.slug),
-]);
+});
 
 /**
  * SUPPLIERS — Tedarikçiler (tenant başına)

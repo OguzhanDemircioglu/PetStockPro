@@ -27,7 +27,12 @@ import type { DbClient } from '@/lib/db/client';
 import { auditLogs } from '@/db/schema';
 
 export interface AuditLogEntry {
-  companyId: string;
+  /**
+   * Tenant company. SUPERADMIN sistem-geneli aksiyonları için NULL
+   * (örn. global brand/category CRUD — Migration 0026, 2026-05-22).
+   * audit_logs.company_id DB seviyesinde NULLABLE.
+   */
+  companyId: string | null;
   userId: string;
   action: string;
   entityType?: string | null;
