@@ -51,7 +51,7 @@ export async function VitrinAdminReturnLink() {
       href={href as never}
       data-testid="vitrin-admin-return-link"
       title="Yönetim paneline dön"
-      className="inline-flex items-center gap-1 rounded-xl border border-cat/40 bg-cat-soft px-2.5 py-1.5 text-[13.5px] font-bold text-cart transition-colors hover:border-cat hover:bg-cat hover:text-white sm:gap-1.5 sm:px-3"
+      className="inline-flex items-center gap-1.5 rounded-xl border border-cat/40 bg-cat-soft px-3 py-2 text-[15px] font-bold text-cart transition-colors hover:border-cat hover:bg-cat hover:text-white sm:gap-2 sm:px-3.5 sm:text-[16px]"
     >
       <span aria-hidden>←</span>
       <span className="sm:hidden">Yönetim</span>

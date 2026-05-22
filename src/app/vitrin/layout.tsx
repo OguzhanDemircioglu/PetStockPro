@@ -27,39 +27,39 @@ export default function VitrinLayout({
             <VitrinAdminReturnLink />
             <Link
               href={'/vitrin' as never}
-              className="flex min-w-0 items-center gap-2 text-cart"
+              className="flex min-w-0 items-center gap-2.5 text-cart sm:gap-3"
               data-testid="vitrin-logo"
             >
               <Image
                 src="/logo.webp"
                 alt="PetStockPro"
-                width={44}
-                height={44}
-                className="h-9 w-9 shrink-0 object-contain sm:h-11 sm:w-11"
+                width={48}
+                height={48}
+                className="h-10 w-10 shrink-0 object-contain sm:h-12 sm:w-12"
                 priority
               />
-              <span className="hidden truncate text-[15px] font-bold leading-tight sm:inline sm:text-[17px]">
+              <span className="hidden truncate text-[18px] font-bold leading-tight sm:inline sm:text-[21px]">
                 PetStockPro <span className="text-cat">Vitrin</span>
               </span>
             </Link>
           </div>
-          <nav className="flex shrink-0 items-center gap-1.5 text-[13.5px] sm:gap-2">
+          <nav className="flex shrink-0 items-center gap-2 text-[15px] sm:gap-2.5 sm:text-[16px]">
             <Link
               href={'/vitrin' as never}
               title="Tüm pet shop'lar"
-              className="rounded-xl border border-line bg-paper px-2.5 py-1.5 font-bold text-cart hover:bg-cat-soft sm:px-3"
+              className="rounded-xl border border-line bg-paper px-3 py-2 font-bold text-cart hover:bg-cat-soft sm:px-3.5"
             >
               <span aria-hidden>📍</span>
-              <span className="ml-1 hidden sm:inline">Tüm pet shop&apos;lar</span>
+              <span className="ml-1.5 hidden sm:inline">Tüm pet shop&apos;lar</span>
             </Link>
             <Link
               href={'/login' as never}
               title="Pet shop sahibi girişi"
-              className="rounded-xl bg-cat px-2.5 py-1.5 font-bold text-white hover:bg-cat-2 sm:px-3"
+              className="rounded-xl bg-cat px-3 py-2 font-bold text-white hover:bg-cat-2 sm:px-3.5"
             >
               <span aria-hidden>🏪</span>
-              <span className="ml-1 hidden sm:inline">Pet shop sahibiyim</span>
-              <span className="ml-1 inline sm:hidden">Giriş</span>
+              <span className="ml-1.5 hidden sm:inline">Pet shop sahibiyim</span>
+              <span className="ml-1.5 inline sm:hidden">Giriş</span>
             </Link>
           </nav>
         </div>
