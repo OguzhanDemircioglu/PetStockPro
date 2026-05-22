@@ -269,10 +269,12 @@ html.dark body::before {
   }
 }
 @keyframes pp-pulse-ring {
-  /* Harita marker dalga halkası — opacity 0'dan peak'e geç ve fade out.
-     "Aniden ortada büyük opak nokta" görsel artefakt'ını önler. */
+  /* Harita marker dalga halkası — mount anında opacity 0, kısa fade-in,
+     scale ile dışa yayıl ve fade out. State değişiminde aniden opak nokta
+     belirmemesi için 0-10% opacity 0. */
   0%   { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
-  15%  { opacity: 0.55; }
+  10%  { opacity: 0; }
+  25%  { opacity: 0.55; }
   100% { transform: translate(-50%, -50%) scale(4); opacity: 0; }
 }
 @keyframes matrix-drop {
