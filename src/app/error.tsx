@@ -24,6 +24,12 @@ export default function ErrorBoundary({ error, reset }: Props) {
   useEffect(() => {
     // Production'da Sentry init'liyse hata yakalanır; aksi halde console.
     console.error('[error-boundary]', error);
+
+    // Next.js dev RSC payload fetch hatası — server action redirect sonrası
+    // client router cache miss. Hard navigation ile auto-recover.
+    if (error?.message?.includes('Failed to fetch')) {
+      window.location.reload();
+    }
   }, [error]);
 
   return (
