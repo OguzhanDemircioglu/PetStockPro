@@ -1,8 +1,47 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-22 (USD pricing önerisi: PRO $20 / PRO+ $50, Faz 2)
+**Tarih:** 2026-05-22 (AI Chatbot planı hazır, implementation yeni session'da)
 **Mevcut Branch:** `cray61` — push tamam
-**Son commit (önceki tur):** `2334a76` docs(manual): USER-MANUAL.md 2413 satır
+**Son commit:** `84b6ff9` feat(pricing): USD pricing önerisi yaz
+
+---
+
+## 🚀 YENİ SESSION — İLK İŞ: AI Chatbot Implementation
+
+**Plan:** [docs/PLAN-AI-CHATBOT.md](PLAN-AI-CHATBOT.md) — onaylı kararlar
+
+**Stack:**
+- LLM: **Cloudflare Workers AI** (Llama 3.1 8B veya Qwen 14B — TR test)
+- Embedding: **Workers AI** (multilingual-e5-large veya bge-base)
+- Vector store: **Cloudflare Vectorize**
+- Erişim: **FREE 10 msg/gün, PRO + PRO+ sınırsız**
+- Rate-limit: 5 msg/dk/user (anti-spam)
+
+**Knowledge base:** [docs/USER-MANUAL.md](USER-MANUAL.md) — 2413 satır, hazır
+
+**İlk komut:**
+```
+cd D:\Projeler\PetStockPro
+claude
+İlk komut: "PLAN-AI-CHATBOT.md oku ve Faz 1'den başla"
+```
+
+**Implementation 7 faz (toplam 8-9 saat, 2 büyük tur):**
+1. Chunk script (USER-MANUAL → JSON chunks, ~80-150 chunk)
+2. Vectorize index + embedding + bulk upsert
+3. `/api/ai/chat` RAG endpoint (streaming)
+4. `/admin/ai` UI sayfa + sidebar link
+5. Plan gate (FREE 10/gün) + rate-limit + ai_usage tablo
+6. Test + browser smoke
+7. Doc + monitoring (system_errors entegrasyonu)
+
+**Yeni 2 tablo (Migration 0027):** `ai_usage` + `ai_messages`
+
+**Maliyet (1K tenant scale):** ~$1.500-1.800/ay — net gelirin %13-15'i, yönetilebilir.
+
+---
+
+## 🆕 2026-05-22 — Son Turlar Özeti
 
 ---
 
