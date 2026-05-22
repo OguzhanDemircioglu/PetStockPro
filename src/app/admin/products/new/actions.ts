@@ -144,12 +144,24 @@ export async function createProductAction(
   );
 
   if (!result.ok) {
-    const msg = {
-      invalid_input: result.issues?.[0] ?? 'Geçersiz alan',
-      sku_taken: 'Bu SKU zaten kullanılıyor — başka bir SKU gir',
-      slug_taken: 'Aynı isimde ürün var',
-      unknown: 'Ürün oluşturulamadı, tekrar dene',
-    }[result.reason];
+    let msg: string;
+    if (result.reason === 'plan_limit_exceeded') {
+      const ctx = result.planContext;
+      if (ctx?.hadPromo && !ctx.promoActive) {
+        // T+0 sonrası: promo bitti, kullanıcı 50+ ürünle FREE'ye düştü.
+        msg = `⛔ PRO promosyonun bitti. ${ctx.currentCount}/${ctx.limit} ürün dolu. Yeni ürün eklemek için PRO aboneliğini başlatman gerekiyor (Sol menüde 💳 Plan ve Fatura).`;
+      } else {
+        // Generic FREE limit aşıldı (hiç promo almamış)
+        msg = `⛔ Plan limit doldu: ${ctx?.currentCount}/${ctx?.limit} ürün. PRO'ya geçerek 500 ürüne kadar genişletebilirsin (Sol menüde 💳 Plan ve Fatura).`;
+      }
+    } else {
+      msg = {
+        invalid_input: result.issues?.[0] ?? 'Geçersiz alan',
+        sku_taken: 'Bu SKU zaten kullanılıyor — başka bir SKU gir',
+        slug_taken: 'Aynı isimde ürün var',
+        unknown: 'Ürün oluşturulamadı, tekrar dene',
+      }[result.reason];
+    }
     return {
       ok: false,
       error: msg,

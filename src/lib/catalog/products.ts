@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { makeSlug } from '@/lib/utils/slug';
 import { moderateFields, type ModerationReason } from '@/lib/moderation/check';
 import type { DbClient } from '@/lib/db/client';
+import { getProductLimitContext } from '@/lib/promo/first-100';
 import {
   products,
   productVariants,
@@ -55,7 +56,19 @@ export type CreateProductResult =
       slug: string;
       moderationFlags?: ModerationFlagsResult;
     }
-  | { ok: false; reason: 'invalid_input' | 'sku_taken' | 'slug_taken' | 'unknown'; issues?: string[] };
+  | {
+      ok: false;
+      reason: 'invalid_input' | 'sku_taken' | 'slug_taken' | 'plan_limit_exceeded' | 'unknown';
+      issues?: string[];
+      // 'plan_limit_exceeded' için ek metadata (UI CTA mesajını ayırmak için):
+      planContext?: {
+        currentCount: number;
+        limit: number;
+        plan: string;
+        hadPromo: boolean;
+        promoActive: boolean;
+      };
+    };
 
 export async function createProduct(
   companyId: string,
@@ -68,6 +81,24 @@ export async function createProduct(
     return { ok: false, reason: 'invalid_input', issues: parsed.error.issues.map((i) => i.message) };
   }
   const data = parsed.data;
+
+  // Plan limit guard — First-100 Promo (Migration 0028):
+  // Promo aktifken plan='PRO' (limit 500). Promo bittikten sonra plan='FREE' (limit 50).
+  // Limit aşılırsa reject + planContext (UI ayrı SWAL: "PRO promo bitti" vs generic).
+  const planCtx = await getProductLimitContext(db, companyId);
+  if (planCtx.exceeded) {
+    return {
+      ok: false,
+      reason: 'plan_limit_exceeded',
+      planContext: {
+        currentCount: planCtx.currentCount,
+        limit: planCtx.limit,
+        plan: planCtx.plan,
+        hadPromo: planCtx.hadPromo,
+        promoActive: planCtx.promoActive,
+      },
+    };
+  }
 
   // Slug üret + çakışma için suffix
   const baseSlug = makeSlug(data.name);

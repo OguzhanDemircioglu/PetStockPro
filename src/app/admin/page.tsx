@@ -25,6 +25,7 @@ import {
 // Tur 12: listExpiringSuggestions PanoExpiringSection'a taşındı (Suspense)
 import { getFeedbackSummary } from '@/lib/vitrin/feedback';
 import { planProductLimit, planLimitDisplay } from '@/lib/constants/plan-limits';
+import { getPromoStatus } from '@/lib/promo/first-100';
 
 const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
   stock_in: { label: '📥', cls: 'bg-arrow-soft text-arrow-7' },
@@ -61,6 +62,7 @@ export default async function AdminDashboardPage() {
     transferSuggestions,
     discountSuggestions,
     feedback,
+    promoStatus,
   ] = await Promise.all([
     getCompanyById(session.user.companyId),
     getDashboardStats(session.user.companyId, db),
@@ -71,7 +73,11 @@ export default async function AdminDashboardPage() {
     listTopTransferSuggestions(session.user.companyId, db, 5),
     listDiscountSuggestions(session.user.companyId, db, 5),
     getFeedbackSummary(session.user.companyId, db, 30),
+    getPromoStatus(db, session.user.companyId),
   ]);
+
+  // İlk 100 Promo banner — sadece BAYI_SAHIBI rolüne göster.
+  const showPromoBanner = session.user.role === 'BAYI_SAHIBI' && promoStatus.eligible;
 
   const feedbackActivity =
     feedback.totalSubmitted + feedback.totalClosedManually + feedback.totalDismissed;
@@ -104,6 +110,43 @@ export default async function AdminDashboardPage() {
 
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 lg:px-6 py-8 lg:py-10">
+      {/* İlk 100 Promo banner — sadece BAYI_SAHIBI rolüne (Migration 0028) */}
+      {showPromoBanner && promoStatus.active && (
+        <div
+          data-testid="pano-promo-banner-active"
+          className="flex items-start gap-3 rounded-2xl border border-arrow/40 bg-arrow-soft/60 px-5 py-3 text-[13px]"
+        >
+          <span className="text-[20px]">🎉</span>
+          <div className="flex-1">
+            <div className="font-bold text-arrow-7">
+              İlk 100 PRO promosyonun aktif — {promoStatus.daysRemaining} gün kaldı
+            </div>
+            <div className="mt-0.5 text-[12px] text-ink-3">
+              {promoStatus.until?.toLocaleDateString('tr-TR', { dateStyle: 'long' })}{' '}
+              tarihine kadar PRO özelliklerini ücretsiz kullanıyorsun (slot{' '}
+              #{promoStatus.slotNumber}/100).
+            </div>
+          </div>
+        </div>
+      )}
+      {showPromoBanner && !promoStatus.active && (
+        <div
+          data-testid="pano-promo-banner-expired"
+          className="flex items-start gap-3 rounded-2xl border border-danger/40 bg-danger-soft px-5 py-3 text-[13px]"
+        >
+          <span className="text-[20px]">⛔</span>
+          <div className="flex-1">
+            <div className="font-bold text-danger">
+              PRO promosyonun sona erdi
+            </div>
+            <div className="mt-0.5 text-[12px] text-ink-3">
+              Hesabın FREE plan&apos;a döndü. Yeni ürün eklemek için aboneliği başlat
+              (Sol menüden ⚙ Ayarlar → 💳 Plan ve Fatura).
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ============ HERO — Cat orange gradient + meteors + logo aside ============ */}
       <section
         data-testid="pano-hero"

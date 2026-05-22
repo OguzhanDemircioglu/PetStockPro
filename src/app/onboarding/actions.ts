@@ -175,12 +175,19 @@ export async function firstProductAction(
   );
 
   if (!result.ok) {
-    const msg = {
-      invalid_input: result.issues?.[0] ?? 'Geçersiz alan',
-      sku_taken: 'Bu SKU zaten kullanılıyor',
-      slug_taken: 'Aynı isimde ürün var',
-      unknown: 'Ürün oluşturulamadı',
-    }[result.reason];
+    const msg: string = (() => {
+      if (result.reason === 'plan_limit_exceeded') {
+        // Onboarding'de plan limit aşılması teorik olarak imkansız (yeni tenant 0 ürün),
+        // ama tip güvenliği için handle et.
+        return `Plan limit doldu (${result.planContext?.currentCount}/${result.planContext?.limit}).`;
+      }
+      return ({
+        invalid_input: result.issues?.[0] ?? 'Geçersiz alan',
+        sku_taken: 'Bu SKU zaten kullanılıyor',
+        slug_taken: 'Aynı isimde ürün var',
+        unknown: 'Ürün oluşturulamadı',
+      } as Record<string, string>)[result.reason] ?? 'Ürün oluşturulamadı';
+    })();
     return { ok: false, error: msg, skipped: false };
   }
 

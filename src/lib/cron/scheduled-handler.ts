@@ -42,7 +42,10 @@ export interface ScheduledDispatchResult {
  */
 export const CRON_ENDPOINT_MAP: Record<string, string> = {
   '0 3 * * *': '/api/cron/sitemap-rebuild',
+  '55 3 * * *': '/api/cron/errors-threshold-check',
+  '0 4 * * *': '/api/cron/cleanup-old-logs',
   '0 6 * * *': '/api/cron/daily-summary',
+  '30 6 * * *': '/api/cron/promo-first-100-check',
 };
 
 /**
