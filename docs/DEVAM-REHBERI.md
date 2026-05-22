@@ -32,15 +32,21 @@
 
 **Test:** 1657 → **1701 pass** (+44 yeni: 30 plan-limits + 14 plan-features + canPublishToVitrin + canAddBranch). Typecheck + lint 0 error.
 
-**Migration 0025 — manuel apply gerek (DDL):**
-```sql
-ALTER TABLE petstockpro.companies ADD COLUMN IF NOT EXISTS temporary_vitrin_limit_override integer;
-ALTER TABLE petstockpro.companies ADD COLUMN IF NOT EXISTS temporary_vitrin_limit_override_until timestamp with time zone;
-ALTER TABLE petstockpro.companies ADD COLUMN IF NOT EXISTS temporary_branch_limit_override integer;
-ALTER TABLE petstockpro.companies ADD COLUMN IF NOT EXISTS temporary_branch_limit_override_until timestamp with time zone;
-```
-Dosya: [src/db/migrations/0025_plan_features_overrides.sql](../src/db/migrations/0025_plan_features_overrides.sql).
-Süperadmin override field'lar (Bölüm 4 son adım) — bu fix'ler tek-tenant manuel esnetme için.
+**Migration 0025 — Dev DB'de apply edildi (Supabase MCP ile, 2026-05-22):**
+- 4 yeni companies sütunu doğrulandı (`temporary_vitrin_limit_override` + `_until` + `temporary_branch_limit_override` + `_until`)
+- Production deploy için DEPLOYMENT.md §5.2 step 1b'ye manuel-apply girişi gerek
+
+**Browser smoke (FREE plan → 4 gate, sonra PRO geri):**
+- ✅ `/admin/products/import` FREE → "⭐ PRO ÖZELLİĞİ" paneli + "Manuel ekle" CTA (screenshot kanıt)
+- ✅ `/admin/branches/new` FREE → "⭐ PRO ÖZELLİĞİ" + "Mevcut: 1 / 1 şube" + "PRO'ya geç" CTA
+- ✅ `/admin/reports` FREE → "⭐ PRO ÖZELLİĞİ" + 7 madde özellik listesi (period comparison + top selling + customer + credits + ...)
+- ✅ `/admin/products` FREE → "Excel'den içeri aktar" button gri + "PRO" etiket
+- ✅ `/admin/reports` PRO → tam sayfa açıldı (range picker + KPI'lar)
+
+**Faz 2'ye saklı:**
+- Pano "Vitrin: N/limit" durum kartı (sade-tut, kullanıcı zaten products listede görür)
+- Süperadmin Toolbox FAB `temporary_*_override` action (tek-tenant manuel esnetme — şu an SQL ile elden yapılır)
+- EKRAN-* doc'larında ayrıntılı yansıma (URUNLER + SUBELER + RAPORLAR + AYARLAR)
 
 ---
 
