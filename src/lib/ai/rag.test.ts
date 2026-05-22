@@ -3,6 +3,7 @@ import {
   buildSystemPrompt,
   retrieveChunks,
   askWithContext,
+  stripUrlPaths,
   DEFAULT_TOP_K,
   LOW_CONFIDENCE_THRESHOLD,
   type RetrievedChunk,
@@ -76,6 +77,47 @@ describe('buildSystemPrompt', () => {
   it('sidebar navigasyon yönergesi içerir (URL yerine sol menü)', () => {
     const prompt = buildSystemPrompt([mockChunk()]);
     expect(prompt).toMatch(/Sol menü|sidebar|Navigasyon/);
+  });
+});
+
+describe('stripUrlPaths', () => {
+  it('parantez içinde URL → silinir', () => {
+    expect(stripUrlPaths('Ürünler sayfasına git (/admin/products) ve aç')).toBe(
+      'Ürünler sayfasına git ve aç',
+    );
+  });
+
+  it('düz "/admin/x sayfasına git" → URL silinir', () => {
+    expect(stripUrlPaths('/admin/products/import sayfasına git ve dene')).toBe(
+      'sayfasına git ve dene',
+    );
+  });
+
+  it('cümle ortasında URL: punctuation sonra → silinir', () => {
+    expect(stripUrlPaths('Önce /admin/security sayfasına gir, 2FA aktive et')).toBe(
+      'Önce sayfasına gir, 2FA aktive et',
+    );
+  });
+
+  it('"URL: /admin/x" prefix → silinir', () => {
+    expect(stripUrlPaths('URL: /admin/products — buradan başla')).toBe(
+      '— buradan başla',
+    );
+  });
+
+  it('URL yoksa cevap olduğu gibi kalır', () => {
+    expect(stripUrlPaths("Sol menüden 🛍 Ürünler'e git.")).toBe(
+      "Sol menüden 🛍 Ürünler'e git.",
+    );
+  });
+
+  it('Markdown URL (linkler) — bizim case değil ama bozulmasın', () => {
+    // Markdown link içindeki path bozulabilir ama AI cevaplarda link az.
+    // Şu an: parantez içindeki path silindiği için "[text](/x)" bozulabilir.
+    // Test edip davranışı dokümante et:
+    const out = stripUrlPaths('[Ürünler](/admin/products) sayfasına git');
+    // (parantez içinde /admin/products → silinir, [Ürünler] kalır)
+    expect(out).toBe('[Ürünler] sayfasına git');
   });
 });
 

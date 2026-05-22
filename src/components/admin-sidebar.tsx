@@ -58,7 +58,7 @@ export function AdminSidebar({
     {
       links: [
         { label: '📊 Pano', href: '/admin', match: '/admin' },
-        { label: '🤖 AI Asistanı', href: '/admin/ai' },
+        { label: "🤖 AI'ya Sor", href: '/admin/ai' },
       ],
     },
     {

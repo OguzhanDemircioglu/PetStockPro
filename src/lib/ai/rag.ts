@@ -97,7 +97,10 @@ export function buildSystemPrompt(chunks: RetrievedChunk[]): string {
 5. **Yetki ve süperadmin:** Eğer soru süperadmin yetkileri, bypass aksiyonları, hard delete, plan override, sayım rollback gibi yönetici özellikleri ile ilgiliyse şu cevabı ver: "Bu konu PetStockPro yöneticisi (sahibi) tarafından kullanılır, normal pet shop kullanıcılarına açık değil. Bir sorunun varsa destek@petstockpro.com'a yazabilirsin."
 6. Kullanıcının sorusuyla doğrudan ilgili olmayan kaynakları görmezden gel.
 7. Cevabını kısa, net ve madde işaretleriyle yaz (gerekirse adım adım).
-8. **Navigasyon yönergesi:** Kullanıcıyı bir sayfaya yönlendirirken **sidebar yolunu birebir** söyle ("Sol menüden 📊 Pano → 🛍 Ürünler" gibi). URL'i SADECE parantez içinde ek bilgi olarak ver (örn. "(/admin/products)"). URL'i TEK BAŞINA cevap yapma.
+8. **Navigasyon yönergesi (ÇOK ÖNEMLİ):** Kullanıcıyı bir sayfaya yönlendirirken SADECE sol menü adıyla söyle. URL veya path KESİNLİKLE yazma — / ile başlayan hiçbir şey (örn. /admin/products, /api/x). Kaynaklarda URL geçse bile cevabına KOYMA, atla.
+
+   ✅ DOĞRU: "Sol menüden 🛍 Ürünler'e git, sağ üstte 'Excel'den İçeri Aktar' butonuna tıkla."
+   ❌ YANLIŞ: "/admin/products/import sayfasına git" veya "Ürünler sayfasına git (/admin/products)"
 9. Kaynaklardaki Markdown başlık (###), kod bloğu (\`\`\`) veya tablo formatlarını koruyabilirsin.
 
 KAYNAKLAR:
@@ -131,11 +134,38 @@ export async function askWithContext(
   });
 
   return {
-    answer: llmRes.response.trim(),
+    answer: stripUrlPaths(llmRes.response.trim()),
     retrievedChunks: chunks,
     lowConfidence,
     inputTokens: llmRes.usage?.prompt_tokens,
     outputTokens: llmRes.usage?.completion_tokens,
     modelUsed: TEXT_MODEL,
   };
+}
+
+/**
+ * AI cevabından URL/path kalıntılarını temizle (system prompt 2. katmanı).
+ * LLM bazen kaynaktaki URL'i kopyalar (örn. "/admin/products/import sayfasına git").
+ * Bu fonksiyon deterministik temizler — tekrar test edilebilir.
+ *
+ * Cleaned patterns:
+ *   - "/admin/...", "/api/...", "/cron/..." gibi yollar
+ *   - Parantez içinde URL: "(/admin/products)" → ""
+ *   - URL: prefix'i: "URL: /admin/..." → ""
+ */
+export function stripUrlPaths(text: string): string {
+  let out = text;
+  // Parantez içinde URL: "(/admin/products)" veya "( /admin/x )"
+  out = out.replace(/\s*\(\s*\/[a-z][a-z0-9/_-]*\s*\)/gi, '');
+  // "URL: /admin/x" veya "URL: /admin/x sayfasına" → boş
+  out = out.replace(/URL\s*:\s*\/[a-z][a-z0-9/_-]*\s*/gi, '');
+  // Plain "/admin/x sayfasına git" / "/api/x" formundaki kalıntılar
+  // (kelime sınırından başlayan; sadece "git/aç/sayfa" gibi context'te değil her yerde temizlenir)
+  out = out.replace(/(?:^|[\s,;:.!?])\/[a-z][a-z0-9/_-]+/gi, (match) => {
+    // Whitespace/punctuation prefix korunsun, path silinsin
+    return match[0] === '/' ? '' : match[0];
+  });
+  // Çift boşluk + leading/trailing whitespace temizle
+  out = out.replace(/[ \t]{2,}/g, ' ').replace(/[ \t]+\n/g, '\n').trim();
+  return out;
 }
