@@ -235,6 +235,15 @@ export const companies = petstockproSchema.table('companies', {
   locationLat: decimal('location_lat', { precision: 10, scale: 7 }),
   locationLng: decimal('location_lng', { precision: 10, scale: 7 }),
 
+  // 2026-05-22 Karar A revize — süperadmin override field'lar (Migration 0025).
+  // Tek tenant için plan'a göre vitrin / şube limit'ini geçici esnetir.
+  // NULL = override yok (plan defaultu kullanılır). until NULL = kalıcı,
+  // datetime = otomatik bitiş (cleanup cron kontrol eder).
+  temporaryVitrinLimitOverride: integer('temporary_vitrin_limit_override'),
+  temporaryVitrinLimitOverrideUntil: timestamp('temporary_vitrin_limit_override_until', { withTimezone: true }),
+  temporaryBranchLimitOverride: integer('temporary_branch_limit_override'),
+  temporaryBranchLimitOverrideUntil: timestamp('temporary_branch_limit_override_until', { withTimezone: true }),
+
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
