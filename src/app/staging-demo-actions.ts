@@ -4,47 +4,37 @@ import { redirect } from 'next/navigation';
 import { and, eq } from 'drizzle-orm';
 import { signIn } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
-import { companies, storefrontSettings } from '@/db/schema';
-import { cookies } from 'next/headers';
-import { IMPERSONATE_COOKIE_NAME } from '@/lib/superadmin/impersonate';
+import { companies, storefrontSettings, users } from '@/db/schema';
+import { hashPassword } from '@/lib/auth/password';
 
 /**
  * Staging demo bayi admin (pet shop yönetim) paneli auto-login.
  *
- * Mockup ziyaretçisi için akış:
- *   1. SUPERADMIN demo hesabıyla signIn (env'den)
- *   2. DB'den onaylı + aktif vitrin'li ilk tenant'ı çek
- *   3. Impersonation cookie set (o tenant'a "gir")
- *   4. /admin'e redirect → bayi pano + mock data (stok, vitrin, raporlar)
+ * Mockup ziyaretçisi için akış (gerçek BAYI_SAHIBI deneyimi — impersonation YOK):
+ *   1. DB'den onaylı + aktif vitrin'li ilk tenant'ı çek (mock data dolu)
+ *   2. O tenant'a bağlı BAYI_SAHIBI demo user'ı var mı kontrol et
+ *   3. Yoksa: yarat (email = STAGING_DEMO_BAYI_EMAIL, password hash'i ile)
+ *   4. signIn credentials ile bu hesaba gir
+ *   5. /admin'e redirect → gerçek bayi pano, "Süperadmin'e dön" buton YOK
  *
  * Sadece NEXT_PUBLIC_STAGING_MODE=true iken çalışır. Production'da no-op.
  *
- * Env:
- *   STAGING_DEMO_EMAIL=claude@petstockpro.local
- *   STAGING_DEMO_PASSWORD=Test1234!
+ * Env (staging):
+ *   STAGING_DEMO_BAYI_EMAIL=demo-bayi@petstockpro.local (default)
+ *   STAGING_DEMO_BAYI_PASSWORD=DemoBayi123! (default)
  */
+const DEFAULT_DEMO_EMAIL = 'demo-bayi@petstockpro.local';
+const DEFAULT_DEMO_PASSWORD = 'DemoBayi123!';
+
 export async function stagingDemoLoginAction(): Promise<void> {
   if (process.env.NEXT_PUBLIC_STAGING_MODE !== 'true') {
     redirect('/' as never);
   }
 
-  const email = process.env.STAGING_DEMO_EMAIL;
-  const password = process.env.STAGING_DEMO_PASSWORD;
-  if (!email || !password) {
-    redirect('/yapim-asamasinda' as never);
-  }
+  const email = process.env.STAGING_DEMO_BAYI_EMAIL ?? DEFAULT_DEMO_EMAIL;
+  const password = process.env.STAGING_DEMO_BAYI_PASSWORD ?? DEFAULT_DEMO_PASSWORD;
 
-  try {
-    await signIn('credentials', {
-      email,
-      password,
-      redirect: false,
-    });
-  } catch {
-    redirect('/yapim-asamasinda' as never);
-  }
-
-  // Impersonate edilecek demo tenant — onaylı vitrin'li ilk pet shop
+  // Demo tenant — onaylı + aktif vitrin'li, mock data dolu ilk pet shop
   const [demoTenant] = await db
     .select({ id: companies.id })
     .from(companies)
@@ -60,17 +50,40 @@ export async function stagingDemoLoginAction(): Promise<void> {
     )
     .limit(1);
 
-  if (demoTenant) {
-    const cookieStore = await cookies();
-    cookieStore.set(IMPERSONATE_COOKIE_NAME, demoTenant.id, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      maxAge: 60 * 60 * 8,
+  if (!demoTenant) {
+    redirect('/yapim-asamasinda' as never);
+  }
+
+  // Demo BAYI_SAHIBI user'ı var mı? Yoksa yarat (idempotent)
+  const [existingUser] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+
+  if (!existingUser) {
+    const passwordHash = await hashPassword(password);
+    await db.insert(users).values({
+      email,
+      passwordHash,
+      role: 'BAYI_SAHIBI',
+      companyId: demoTenant.id,
+      name: 'Demo Bayi',
+      emailVerifiedAt: new Date(),
+      onboardingCompletedAt: new Date(),
+      kvkkConsentedAt: new Date(),
     });
   }
 
-  // Bayi paneline yönlendir — impersonation cookie ile o tenant'ın panosu
+  try {
+    await signIn('credentials', {
+      email,
+      password,
+      redirect: false,
+    });
+  } catch {
+    redirect('/yapim-asamasinda' as never);
+  }
+
   redirect('/admin' as never);
 }
