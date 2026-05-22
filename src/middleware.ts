@@ -17,8 +17,11 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
-// Staging mockup gate: /login, /register, /admin/* → /yapim-asamasinda
-// IS_STAGING=true ortam değişkeni varsa aktif. Production'da kapalı.
+// Staging mockup gate: auth/register URL'leri → /yapim-asamasinda
+// NEXT_PUBLIC_STAGING_MODE=true ortam değişkeni varsa aktif.
+// NOT: /admin gate'lenmez — demo SUPERADMIN auto-login flow için açık olmalı.
+// Anonim ziyaretçi /admin'e giderse layout'taki requireSession /login'e
+// yönlendirir, /login gate burada zaten staging gate'ler.
 const STAGING_GATED_PATHS = [
   '/login',
   '/register',
@@ -31,7 +34,6 @@ const STAGING_GATED_PATHS = [
   '/account-locked',
   '/2fa-setup',
   '/onboarding',
-  '/admin',
 ];
 
 function shouldGateForStaging(pathname: string): boolean {
