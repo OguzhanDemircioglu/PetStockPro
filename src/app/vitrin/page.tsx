@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
+import { ProductImage } from '@/components/vitrin/product-image';
 import { db } from '@/lib/db/client';
 import {
   listPublicStorefronts,
@@ -477,20 +478,12 @@ export default async function VitrinHomePage({
                     }
                     className="block"
                   >
-                    <div className="relative h-32 overflow-hidden bg-gradient-to-br from-cat-soft/40 to-arrow-soft/40">
-                      {p.primaryImageUrl ? (
-                        <Image
-                          src={p.primaryImageUrl}
-                          alt={p.productName}
-                          fill
-                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 200px"
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="grid h-full place-items-center text-5xl">
-                          
-                        </div>
-                      )}
+                    <div className="relative h-32 overflow-hidden bg-line-soft">
+                      <ProductImage
+                        src={p.primaryImageUrl}
+                        alt={p.productName}
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 200px"
+                      />
                       <span
                         className="absolute right-2 top-2 rounded-full bg-paper/95 px-2 py-0.5 text-[10.5px] font-bold text-cat shadow-sm"
                         title={`Son 7 günde ${TR_NUMBER.format(p.viewCount)} kez görüntülendi`}
@@ -562,20 +555,12 @@ export default async function VitrinHomePage({
                     }
                     className="block"
                   >
-                    <div className="relative h-32 overflow-hidden bg-gradient-to-br from-arrow-soft/40 to-cat-soft/30">
-                      {p.primaryImageUrl ? (
-                        <Image
-                          src={p.primaryImageUrl}
-                          alt={p.productName}
-                          fill
-                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 200px"
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="grid h-full place-items-center text-5xl">
-                          
-                        </div>
-                      )}
+                    <div className="relative h-32 overflow-hidden bg-line-soft">
+                      <ProductImage
+                        src={p.primaryImageUrl}
+                        alt={p.productName}
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 200px"
+                      />
                       <span
                         className="absolute right-2 top-2 rounded-full bg-arrow/90 px-2 py-0.5 text-[10.5px] font-bold text-white shadow-sm"
                         title={`Son 30 günde ${TR_NUMBER.format(p.totalSold)} adet satıldı`}
