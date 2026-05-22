@@ -7,7 +7,10 @@ import {
 } from './manage';
 import type { DbClient } from '@/lib/db/client';
 
-const COMPANY = 'company-uuid';
+// 2026-05-22 Migration 0026 — brands GLOBAL, COMPANY argümanı kaldırıldı.
+// Constant tutuluyor tarihsel referans için (eski test pattern).
+const _COMPANY = 'company-uuid';
+void _COMPANY;
 const BRAND = '11111111-1111-1111-1111-111111111111';
 
 function makeSelectChain(responses: unknown[][]) {
@@ -65,21 +68,21 @@ describe('addBrand', () => {
     const insert = vi.fn().mockReturnValue({ values });
     const db = { select, insert } as unknown as DbClient;
 
-    const result = await addBrand(COMPANY, { name: 'Royal Canin' }, db);
+    const result = await addBrand({ name: 'Royal Canin' }, db);
     expect(result).toEqual({ ok: true, brandId: 'new-brand' });
   });
 
   it('slug_taken — çakışma', async () => {
     const select = makeSelectChain([[{ id: 'existing' }]]);
     const db = { select } as unknown as DbClient;
-    const result = await addBrand(COMPANY, { name: 'Royal Canin' }, db);
+    const result = await addBrand({ name: 'Royal Canin' }, db);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe('slug_taken');
   });
 
   it('Zod fail', async () => {
     const db = { select: vi.fn() } as unknown as DbClient;
-    const result = await addBrand(COMPANY, { name: '' }, db);
+    const result = await addBrand({ name: '' }, db);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe('invalid_input');
   });
@@ -97,14 +100,14 @@ describe('updateBrand', () => {
     const update = vi.fn().mockReturnValue({ set: setFn });
     const db = { select, update } as unknown as DbClient;
 
-    const result = await updateBrand(COMPANY, BRAND, { name: 'Yeni İsim' }, db);
+    const result = await updateBrand(BRAND, { name: 'Yeni İsim' }, db);
     expect(result).toEqual({ ok: true });
   });
 
   it('not_found', async () => {
     const select = makeSelectChain([[]]);
     const db = { select } as unknown as DbClient;
-    const result = await updateBrand(COMPANY, BRAND, { name: 'X' }, db);
+    const result = await updateBrand(BRAND, { name: 'X' }, db);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe('not_found');
   });
@@ -115,7 +118,7 @@ describe('updateBrand', () => {
       [{ id: 'other-brand' }],
     ]);
     const db = { select } as unknown as DbClient;
-    const result = await updateBrand(COMPANY, BRAND, { name: 'Catit' }, db);
+    const result = await updateBrand(BRAND, { name: 'Catit' }, db);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe('slug_taken');
   });
@@ -129,7 +132,7 @@ describe('deleteBrand', () => {
     });
     const db = { select, delete: del } as unknown as DbClient;
 
-    const result = await deleteBrand(COMPANY, BRAND, db);
+    const result = await deleteBrand(BRAND, db);
     expect(result).toEqual({ ok: true, affectedProductCount: 0 });
   });
 
@@ -140,14 +143,14 @@ describe('deleteBrand', () => {
     });
     const db = { select, delete: del } as unknown as DbClient;
 
-    const result = await deleteBrand(COMPANY, BRAND, db);
+    const result = await deleteBrand(BRAND, db);
     expect(result).toEqual({ ok: true, affectedProductCount: 3 });
   });
 
   it('not_found', async () => {
     const select = makeSelectChain([[]]);
     const db = { select } as unknown as DbClient;
-    const result = await deleteBrand(COMPANY, BRAND, db);
+    const result = await deleteBrand(BRAND, db);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe('not_found');
   });

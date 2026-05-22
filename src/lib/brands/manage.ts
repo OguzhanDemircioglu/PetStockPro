@@ -1,15 +1,18 @@
 /**
- * Brands CRUD — Sprint 6.5
+ * Brands CRUD — GLOBAL (Migration 0026, 2026-05-22)
  *
- * listBrands + addBrand + updateBrand + deleteBrand.
+ * 2026-05-22: companyId kaldırıldı. brands artık GLOBAL — TR pet shop
+ * pazarında "Royal Canin" tek bir markadır. CRUD SUPERADMIN-only —
+ * pet shop yeni brand ekleyemez (Faz 2'de custom_brand ihtiyacı doğarsa
+ * is_custom + owner_company_id eklenir).
  *
- * Brands tablosunda isActive yok — sadece hard delete (Sprint 1B schema).
- * Bir markaya bağlı ürün varsa silinemez (FK SET NULL: ürün brandId=NULL).
+ * Brands tablosunda isActive yok — sadece hard delete.
+ * Bir markaya bağlı ürün varsa silinmesinde FK SET NULL: ürün brandId=NULL.
  *
  * Schema:
  * - name (varchar 100, zorunlu)
- * - slug (kebab-case, tenant başına unique)
- * - logoUrl (text, opsiyonel — image upload Sprint 3.3 sonrası)
+ * - slug (kebab-case, GLOBAL UNIQUE)
+ * - logoUrl (text, opsiyonel)
  */
 
 import { and, asc, eq, sql } from 'drizzle-orm';
@@ -33,10 +36,11 @@ export interface BrandListItem {
   createdAt: Date;
 }
 
-export async function listBrands(
-  companyId: string,
-  db: DbClient,
-): Promise<BrandListItem[]> {
+/**
+ * Global brand listesi (companyId YOK).
+ * productCount: vitrin'de yayında VE aktif ürün sayısı (cross-tenant).
+ */
+export async function listBrands(db: DbClient): Promise<BrandListItem[]> {
   return db
     .select({
       id: brands.id,
@@ -51,16 +55,14 @@ export async function listBrands(
       )`,
     })
     .from(brands)
-    .where(eq(brands.companyId, companyId))
     .orderBy(asc(brands.name));
 }
 
 export async function getBrandDetail(
-  companyId: string,
   brandId: string,
   db: DbClient,
 ): Promise<BrandListItem | null> {
-  const rows = await listBrands(companyId, db);
+  const rows = await listBrands(db);
   return rows.find((b) => b.id === brandId) ?? null;
 }
 
@@ -77,7 +79,7 @@ export const brandSchema = z.object({
 export type BrandInput = z.input<typeof brandSchema>;
 
 // ─────────────────────────────────────────────────────────────────
-// ADD
+// ADD — SUPERADMIN-only (caller'ın yetki check'i ayrı katmanda)
 // ─────────────────────────────────────────────────────────────────
 
 export type AddBrandResult =
@@ -89,7 +91,6 @@ export type AddBrandResult =
     };
 
 export async function addBrand(
-  companyId: string,
   input: BrandInput,
   db: DbClient,
 ): Promise<AddBrandResult> {
@@ -104,7 +105,6 @@ export async function addBrand(
   const data = parsed.data;
 
   // Moderation BLOCKING — küfür/uygunsuz içerik tespit edilirse INSERT yapma.
-  // (Önceki davranış: insert + flag — kullanıcı banner'ı görmezden gelebiliyordu.)
   const moderation = await moderateFields({ 'Marka adı': data.name });
   if (moderation.flagged) {
     const detected = moderation.reasons
@@ -129,11 +129,11 @@ export async function addBrand(
     };
   }
 
-  // Slug çakışma kontrolü
+  // Slug çakışma kontrolü (global)
   const existing = await db
     .select({ id: brands.id })
     .from(brands)
-    .where(and(eq(brands.companyId, companyId), eq(brands.slug, baseSlug)))
+    .where(eq(brands.slug, baseSlug))
     .limit(1);
   if (existing.length > 0) {
     return { ok: false, reason: 'slug_taken' };
@@ -143,7 +143,6 @@ export async function addBrand(
     const [row] = await db
       .insert(brands)
       .values({
-        companyId,
         name: data.name,
         slug: baseSlug,
         logoUrl: data.logoUrl ?? null,
@@ -156,7 +155,7 @@ export async function addBrand(
 }
 
 // ─────────────────────────────────────────────────────────────────
-// UPDATE
+// UPDATE — SUPERADMIN-only
 // ─────────────────────────────────────────────────────────────────
 
 export type UpdateBrandResult =
@@ -168,7 +167,6 @@ export type UpdateBrandResult =
     };
 
 export async function updateBrand(
-  companyId: string,
   brandId: string,
   input: BrandInput,
   db: DbClient,
@@ -183,7 +181,6 @@ export async function updateBrand(
   }
   const data = parsed.data;
 
-  // Moderation BLOCKING — küfür içeriyorsa UPDATE yapma
   const moderation = await moderateFields({ 'Marka adı': data.name });
   if (moderation.flagged) {
     const detected = moderation.reasons
@@ -202,7 +199,7 @@ export async function updateBrand(
   const existing = await db
     .select({ id: brands.id })
     .from(brands)
-    .where(and(eq(brands.id, brandId), eq(brands.companyId, companyId)))
+    .where(eq(brands.id, brandId))
     .limit(1);
   if (existing.length === 0) return { ok: false, reason: 'not_found' };
 
@@ -219,13 +216,7 @@ export async function updateBrand(
   const slugConflict = await db
     .select({ id: brands.id })
     .from(brands)
-    .where(
-      and(
-        eq(brands.companyId, companyId),
-        eq(brands.slug, newSlug),
-        sql`${brands.id} != ${brandId}`,
-      ),
-    )
+    .where(and(eq(brands.slug, newSlug), sql`${brands.id} != ${brandId}`))
     .limit(1);
   if (slugConflict.length > 0) return { ok: false, reason: 'slug_taken' };
 
@@ -245,19 +236,14 @@ export async function updateBrand(
 }
 
 // ─────────────────────────────────────────────────────────────────
-// DELETE — hard delete (FK ON DELETE SET NULL: ürün brandId=NULL)
+// DELETE — SUPERADMIN-only, hard delete (FK SET NULL)
 // ─────────────────────────────────────────────────────────────────
 
 export type DeleteBrandResult =
   | { ok: true; affectedProductCount: number }
   | { ok: false; reason: 'not_found' | 'unknown' };
 
-/**
- * Markayı siler. Ürün FK SET NULL — ürünler brand kaybeder ama silinmez.
- * affectedProductCount: kaç ürünün brand'ı NULL'a düşecek (uyarı için).
- */
 export async function deleteBrand(
-  companyId: string,
   brandId: string,
   db: DbClient,
 ): Promise<DeleteBrandResult> {
@@ -271,7 +257,7 @@ export async function deleteBrand(
       )`,
     })
     .from(brands)
-    .where(and(eq(brands.id, brandId), eq(brands.companyId, companyId)))
+    .where(eq(brands.id, brandId))
     .limit(1);
   if (existing.length === 0) return { ok: false, reason: 'not_found' };
 

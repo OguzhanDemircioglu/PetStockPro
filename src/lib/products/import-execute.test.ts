@@ -228,18 +228,21 @@ describe('executeImport — happy paths', () => {
     expect(insertSpy).toHaveBeenCalled();
   });
 
-  it('marka yoksa auto-create (1 brand insert)', async () => {
+  it('marka global listede yoksa brand_id=NULL ile ürün yaratılır (Migration 0026 — auto-create kaldırıldı)', async () => {
+    // 2026-05-22 Migration 0026 — brands GLOBAL, BAYI_SAHIBI yeni brand
+    // ekleyemez. Import sırasında bulamadığı brand adı için NULL kullanır
+    // (sonradan SUPERADMIN ekleyince products UI'sından atanabilir).
     const { db, insertSpy } = mockDb();
     const r = await executeImport({
       companyId: 'co-1',
       userId: 'u-1',
-      rows: [{ ...validRow, brandName: 'Yeni Marka' }],
+      rows: [{ ...validRow, brandName: 'Global Listede Olmayan Marka' }],
       db: db as never,
     });
     expect(r.ok).toBe(true);
     expect(insertSpy).toHaveBeenCalled();
-    // brand + product + variant = 3 insert (initial stock yok)
-    expect(insertSpy.mock.calls.length).toBeGreaterThanOrEqual(3);
+    // product + variant = 2 insert (brand insert YOK — global listede yok)
+    expect(insertSpy.mock.calls.length).toBe(2);
   });
 
   it('mevcut marka (case-insensitive) → yeni brand yaratmaz', async () => {

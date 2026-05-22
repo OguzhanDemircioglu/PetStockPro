@@ -7,7 +7,9 @@ import {
 } from './manage';
 import type { DbClient } from '@/lib/db/client';
 
-const COMPANY = 'company-uuid';
+// 2026-05-22 Migration 0026 — categories GLOBAL, COMPANY argümanı kaldırıldı.
+const _COMPANY = 'company-uuid';
+void _COMPANY;
 const CAT = '11111111-1111-1111-1111-111111111111';
 
 function makeSelectChain(responses: unknown[][]) {
@@ -65,7 +67,6 @@ describe('addCategory', () => {
     const db = { select, insert } as unknown as DbClient;
 
     const result = await addCategory(
-      COMPANY,
       { name: 'Kedi Maması', emoji: '🐱', sktRequired: true },
       db,
     );
@@ -75,14 +76,14 @@ describe('addCategory', () => {
   it('slug_taken', async () => {
     const select = makeSelectChain([[{ id: 'existing' }]]);
     const db = { select } as unknown as DbClient;
-    const result = await addCategory(COMPANY, { name: 'Köpek Maması' }, db);
+    const result = await addCategory({ name: 'Köpek Maması' }, db);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe('slug_taken');
   });
 
   it('Zod fail', async () => {
     const db = { select: vi.fn() } as unknown as DbClient;
-    const result = await addCategory(COMPANY, { name: '' }, db);
+    const result = await addCategory({ name: '' }, db);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe('invalid_input');
   });
@@ -100,19 +101,14 @@ describe('updateCategory', () => {
     const update = vi.fn().mockReturnValue({ set: setFn });
     const db = { select, update } as unknown as DbClient;
 
-    const result = await updateCategory(
-      COMPANY,
-      CAT,
-      { name: 'Premium Kedi' },
-      db,
-    );
+    const result = await updateCategory(CAT, { name: 'Premium Kedi' }, db);
     expect(result).toEqual({ ok: true });
   });
 
   it('not_found', async () => {
     const select = makeSelectChain([[]]);
     const db = { select } as unknown as DbClient;
-    const result = await updateCategory(COMPANY, CAT, { name: 'X' }, db);
+    const result = await updateCategory(CAT, { name: 'X' }, db);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe('not_found');
   });
@@ -126,14 +122,14 @@ describe('deleteCategory', () => {
     });
     const db = { select, delete: del } as unknown as DbClient;
 
-    const result = await deleteCategory(COMPANY, CAT, db);
+    const result = await deleteCategory(CAT, db);
     expect(result).toEqual({ ok: true, affectedProductCount: 5 });
   });
 
   it('not_found', async () => {
     const select = makeSelectChain([[]]);
     const db = { select } as unknown as DbClient;
-    const result = await deleteCategory(COMPANY, CAT, db);
+    const result = await deleteCategory(CAT, db);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe('not_found');
   });

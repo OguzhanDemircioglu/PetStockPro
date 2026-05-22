@@ -1,20 +1,18 @@
 /**
- * Categories CRUD — Sprint 6.6
+ * Categories CRUD — GLOBAL (Migration 0026, 2026-05-22)
  *
- * listCategories + addCategory + updateCategory + deleteCategory.
- *
- * Register'da 49 default kategori auto-insert ediliyor (default-categories.ts).
- * Bu helper kullanıcının kendi kategorisini eklemesini sağlar.
+ * 2026-05-22: companyId kaldırıldı. categories artık GLOBAL — TR pet shop
+ * pazarında kategoriler (mama, aksesuar, oyuncak, sağlık, ...) ortak.
+ * CRUD SUPERADMIN-only — pet shop yeni kategori ekleyemez (Faz 2'de
+ * custom_category ihtiyacı doğarsa is_custom + owner_company_id eklenir).
  *
  * Schema:
  * - name (varchar 100, zorunlu)
- * - slug (kebab-case, tenant başına unique — server-side `makeSlug(name)` ile
- *   otomatik üretilir; UI kullanıcısına gösterilmez ama vitrin route URL'leri
- *   `/vitrin/kategori/[slug]` için kullanılır.)
- * - emoji (varchar 10, opsiyonel, tenant başına unique)
- * - displayOrder (int, default 0 — kullanıcının eklediğinde 100+ atayalım)
+ * - slug (kebab-case, GLOBAL UNIQUE)
+ * - emoji (varchar 10, opsiyonel, global unique)
+ * - displayOrder (int, default 0)
  * - sktRequired (boolean, default false)
- * - parentId (self-ref, opsiyonel — 2-seviyeli hiyerarşi: root → child)
+ * - parentId (self-ref, opsiyonel — 2-seviyeli hiyerarşi)
  *
  * FK ON DELETE SET NULL: ürünler kategorisiz kalır, silinmez.
  */
@@ -43,10 +41,11 @@ export interface CategoryListItem {
   createdAt: Date;
 }
 
-export async function listCategories(
-  companyId: string,
-  db: DbClient,
-): Promise<CategoryListItem[]> {
+/**
+ * Global category listesi (companyId YOK).
+ * productCount: vitrin'de yayında VE aktif ürün sayısı (cross-tenant).
+ */
+export async function listCategories(db: DbClient): Promise<CategoryListItem[]> {
   return db
     .select({
       id: categories.id,
@@ -64,16 +63,14 @@ export async function listCategories(
       )`,
     })
     .from(categories)
-    .where(eq(categories.companyId, companyId))
     .orderBy(asc(categories.displayOrder), asc(categories.name));
 }
 
 export async function getCategoryDetail(
-  companyId: string,
   categoryId: string,
   db: DbClient,
 ): Promise<CategoryListItem | null> {
-  const rows = await listCategories(companyId, db);
+  const rows = await listCategories(db);
   return rows.find((c) => c.id === categoryId) ?? null;
 }
 
@@ -90,7 +87,6 @@ export const categorySchema = z.object({
     .transform((v) => (v === '' || v === undefined ? null : v)),
   sktRequired: z.boolean().default(false),
   displayOrder: z.number().int().min(0).max(999).default(100),
-  /** Üst kategori ID — root için null. Form'dan boş string gelirse null normalize. */
   parentId: z
     .string()
     .uuid('Geçerli üst kategori seç')
@@ -102,7 +98,7 @@ export const categorySchema = z.object({
 export type CategoryInput = z.input<typeof categorySchema>;
 
 // ─────────────────────────────────────────────────────────────────
-// ADD
+// ADD — SUPERADMIN-only
 // ─────────────────────────────────────────────────────────────────
 
 export type AddCategoryResult =
@@ -114,7 +110,6 @@ export type AddCategoryResult =
     };
 
 export async function addCategory(
-  companyId: string,
   input: CategoryInput,
   db: DbClient,
 ): Promise<AddCategoryResult> {
@@ -139,25 +134,18 @@ export async function addCategory(
   const existing = await db
     .select({ id: categories.id })
     .from(categories)
-    .where(
-      and(eq(categories.companyId, companyId), eq(categories.slug, baseSlug)),
-    )
+    .where(eq(categories.slug, baseSlug))
     .limit(1);
   if (existing.length > 0) {
     return { ok: false, reason: 'slug_taken' };
   }
 
-  // Emoji benzersizlik kontrolü — tenant başına. Emoji null/boş ise atlanır.
+  // Emoji benzersizlik kontrolü — global. Emoji null/boş ise atlanır.
   if (data.emoji && data.emoji.length > 0) {
     const emojiClash = await db
       .select({ id: categories.id })
       .from(categories)
-      .where(
-        and(
-          eq(categories.companyId, companyId),
-          eq(categories.emoji, data.emoji),
-        ),
-      )
+      .where(eq(categories.emoji, data.emoji))
       .limit(1);
     if (emojiClash.length > 0) {
       return { ok: false, reason: 'emoji_taken' };
@@ -168,7 +156,6 @@ export async function addCategory(
     const [row] = await db
       .insert(categories)
       .values({
-        companyId,
         name: data.name,
         slug: baseSlug,
         emoji: data.emoji ?? null,
@@ -197,7 +184,7 @@ export async function addCategory(
 }
 
 // ─────────────────────────────────────────────────────────────────
-// UPDATE
+// UPDATE — SUPERADMIN-only
 // ─────────────────────────────────────────────────────────────────
 
 export type UpdateCategoryResult =
@@ -214,7 +201,6 @@ export type UpdateCategoryResult =
     };
 
 export async function updateCategory(
-  companyId: string,
   categoryId: string,
   input: CategoryInput,
   db: DbClient,
@@ -232,9 +218,7 @@ export async function updateCategory(
   const existing = await db
     .select({ id: categories.id })
     .from(categories)
-    .where(
-      and(eq(categories.id, categoryId), eq(categories.companyId, companyId)),
-    )
+    .where(eq(categories.id, categoryId))
     .limit(1);
   if (existing.length === 0) return { ok: false, reason: 'not_found' };
 
@@ -251,24 +235,17 @@ export async function updateCategory(
     .select({ id: categories.id })
     .from(categories)
     .where(
-      and(
-        eq(categories.companyId, companyId),
-        eq(categories.slug, newSlug),
-        sql`${categories.id} != ${categoryId}`,
-      ),
+      and(eq(categories.slug, newSlug), sql`${categories.id} != ${categoryId}`),
     )
     .limit(1);
   if (slugConflict.length > 0) return { ok: false, reason: 'slug_taken' };
 
-  // Emoji benzersizlik — başka kategoride aynı emoji varsa reject (kendisi
-  // hariç). Emoji null/boş ise atlanır.
   if (data.emoji && data.emoji.length > 0) {
     const emojiClash = await db
       .select({ id: categories.id })
       .from(categories)
       .where(
         and(
-          eq(categories.companyId, companyId),
           eq(categories.emoji, data.emoji),
           sql`${categories.id} != ${categoryId}`,
         ),
@@ -310,7 +287,7 @@ export async function updateCategory(
 }
 
 // ─────────────────────────────────────────────────────────────────
-// DELETE — hard delete (FK ON DELETE SET NULL)
+// DELETE — SUPERADMIN-only, hard delete (FK ON DELETE SET NULL)
 // ─────────────────────────────────────────────────────────────────
 
 export type DeleteCategoryResult =
@@ -318,7 +295,6 @@ export type DeleteCategoryResult =
   | { ok: false; reason: 'not_found' | 'unknown' };
 
 export async function deleteCategory(
-  companyId: string,
   categoryId: string,
   db: DbClient,
 ): Promise<DeleteCategoryResult> {
@@ -332,9 +308,7 @@ export async function deleteCategory(
       )`,
     })
     .from(categories)
-    .where(
-      and(eq(categories.id, categoryId), eq(categories.companyId, companyId)),
-    )
+    .where(eq(categories.id, categoryId))
     .limit(1);
   if (existing.length === 0) return { ok: false, reason: 'not_found' };
 

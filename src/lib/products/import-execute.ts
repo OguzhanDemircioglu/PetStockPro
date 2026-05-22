@@ -98,21 +98,19 @@ export async function executeImport(opts: {
     };
   }
 
-  // Brand cache (case-insensitive)
+  // Brand cache (case-insensitive) — global (Migration 0026)
   const existingBrands = await db
     .select({ id: brands.id, name: brands.name })
-    .from(brands)
-    .where(eq(brands.companyId, companyId));
+    .from(brands);
   const brandByLower = new Map<string, string>();
   for (const b of existingBrands) {
     brandByLower.set(b.name.toLocaleLowerCase('tr-TR'), b.id);
   }
 
-  // Category cache
+  // Category cache — global
   const existingCats = await db
     .select({ id: categories.id, name: categories.name })
-    .from(categories)
-    .where(eq(categories.companyId, companyId));
+    .from(categories);
   const catByLower = new Map<string, string>();
   for (const c of existingCats) {
     catByLower.set(c.name.toLocaleLowerCase('tr-TR'), c.id);
@@ -126,22 +124,13 @@ export async function executeImport(opts: {
       for (let i = 0; i < parsed.length; i++) {
         const row = parsed[i];
         try {
-          // Brand lookup / auto-create
+          // Brand lookup — global (Migration 0026, BAYI_SAHIBI yeni brand
+          // ekleyemez). Brand'in global listede yoksa NULL → ürün marka'sız
+          // oluşturulur (sonradan SUPERADMIN ekleyince products UI'sından atanabilir).
           let brandId: string | null = null;
           if (row.brandName) {
             const lower = row.brandName.toLocaleLowerCase('tr-TR');
-            const existing = brandByLower.get(lower);
-            if (existing) {
-              brandId = existing;
-            } else {
-              const slug = makeSlug(row.brandName);
-              const [newBrand] = await tx
-                .insert(brands)
-                .values({ companyId, name: row.brandName, slug })
-                .returning({ id: brands.id });
-              brandId = newBrand.id;
-              brandByLower.set(lower, brandId);
-            }
+            brandId = brandByLower.get(lower) ?? null;
           }
 
           // Category lookup
