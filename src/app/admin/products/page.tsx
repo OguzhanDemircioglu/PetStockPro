@@ -5,7 +5,8 @@ import { eq, asc } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { listProducts } from '@/lib/catalog/products';
-import { categories, brands } from '@/db/schema';
+import { categories, brands, companies } from '@/db/schema';
+import { hasExcelImport } from '@/lib/billing/plan-features';
 import { ListRowToggle } from './list-row-toggle';
 import { FilterBar } from './filter-bar';
 
@@ -41,8 +42,8 @@ export default async function ProductsPage({
   const params = await searchParams;
   const justCreated = params.created === 'success';
 
-  // Parallel: filtered list + filter options (category + brand)
-  const [items, categoryOptions, brandOptions] = await Promise.all([
+  // Parallel: filtered list + filter options (category + brand) + plan
+  const [items, categoryOptions, brandOptions, [companyRow]] = await Promise.all([
     listProducts(session.user.companyId, db, {
       query: params.q,
       categoryId: params.category,
@@ -62,7 +63,15 @@ export default async function ProductsPage({
       .from(brands)
       .where(eq(brands.companyId, session.user.companyId))
       .orderBy(asc(brands.name)),
+    db
+      .select({ plan: companies.plan })
+      .from(companies)
+      .where(eq(companies.id, session.user.companyId))
+      .limit(1),
   ]);
+
+  // 2026-05-22 Karar A revize — Excel import sadece PRO + PRO+ (FREE'de gizli)
+  const showImportButton = hasExcelImport(companyRow?.plan ?? 'FREE');
 
   const hasActiveFilter =
     !!params.q ||
@@ -87,12 +96,22 @@ export default async function ProductsPage({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link
-            href={'/admin/products/import' as never}
-            className="inline-flex items-center gap-2 rounded-xl border border-cat/40 bg-cat-soft px-4 py-2.5 text-sm font-bold text-cat-7 hover:bg-cat hover:text-white"
-          >
-            📥 Excel&apos;den içeri aktar
-          </Link>
+          {showImportButton ? (
+            <Link
+              href={'/admin/products/import' as never}
+              className="inline-flex items-center gap-2 rounded-xl border border-cat/40 bg-cat-soft px-4 py-2.5 text-sm font-bold text-cat-7 hover:bg-cat hover:text-white"
+            >
+              📥 Excel&apos;den içeri aktar
+            </Link>
+          ) : (
+            <Link
+              href={'/admin/products/import' as never}
+              title="PRO planında Excel ile 500 ürün toplu import"
+              className="inline-flex items-center gap-2 rounded-xl border border-line bg-paper px-4 py-2.5 text-sm font-bold text-ink-4 hover:bg-cat-soft"
+            >
+              📥 Excel&apos;den içeri aktar <span className="text-[10px] uppercase tracking-wider text-cat">PRO</span>
+            </Link>
+          )}
           <Link
             href={'/admin/products/new' as never}
             className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-cat to-cat-2 px-5 py-2.5 text-sm font-bold text-white shadow-[var(--shadow-cat)] hover:-translate-y-0.5 transition-transform"

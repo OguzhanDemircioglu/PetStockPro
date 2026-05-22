@@ -1,8 +1,14 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { and, eq, sql } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
+import { branches, companies } from '@/db/schema';
 import { getAllCities } from '@/lib/cache/request-scoped';
+import {
+  canAddBranch,
+  getEffectiveBranchLimit,
+} from '@/lib/billing/plan-features';
 import { BranchForm } from '../branch-form';
 import { addBranchAction } from '../actions';
 import { getBranchDetail } from '@/lib/branches/manage';
@@ -56,6 +62,85 @@ export default async function NewBranchPage({
     );
   }
 
+  // 2026-05-22 Karar A revize — şube limit PRO upsell paneli
+  // FREE plan tek şube; 2. şubeye eklemek isteyen kullanıcı banner görür.
+  const [companyRow] = await db
+    .select({
+      plan: companies.plan,
+      temporaryVitrinLimitOverride: companies.temporaryVitrinLimitOverride,
+      temporaryVitrinLimitOverrideUntil: companies.temporaryVitrinLimitOverrideUntil,
+      temporaryBranchLimitOverride: companies.temporaryBranchLimitOverride,
+      temporaryBranchLimitOverrideUntil: companies.temporaryBranchLimitOverrideUntil,
+    })
+    .from(companies)
+    .where(eq(companies.id, session.user.companyId))
+    .limit(1);
+
+  const [branchCountRow] = await db
+    .select({ count: sql<number>`COUNT(*)::int` })
+    .from(branches)
+    .where(
+      and(
+        eq(branches.companyId, session.user.companyId),
+        sql`${branches.status} != 'inactive'`,
+      ),
+    );
+  const activeBranchCount = branchCountRow?.count ?? 0;
+  const branchLimitCheck = companyRow
+    ? canAddBranch(companyRow, activeBranchCount)
+    : { ok: true as const };
+  const effectiveBranchLimit = companyRow
+    ? getEffectiveBranchLimit(companyRow)
+    : Infinity;
+
+  if (!branchLimitCheck.ok) {
+    return (
+      <main className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-12">
+        <header>
+          <Link
+            href={'/admin/branches' as never}
+            className="text-xs text-ink-4 hover:text-cart"
+          >
+            ← Şubelere dön
+          </Link>
+          <h1 className="mt-3 text-3xl font-bold leading-tight tracking-tight text-cart">
+            Yeni şube ekle
+          </h1>
+        </header>
+        <div className="rounded-2xl border-2 border-cat/40 bg-cat-soft/30 p-6">
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-cat px-3 py-1 text-[12px] font-bold uppercase tracking-wider text-white">
+            ⭐ PRO Özelliği
+          </div>
+          <h2 className="text-xl font-bold text-cart">
+            Çoklu şube PRO planında
+          </h2>
+          <p className="mt-3 text-sm text-ink-2">
+            FREE planında <strong>1 şube</strong> ekleyebilirsin (mahalle pet shop
+            için yeter). PRO planında <strong>sınırsız şube</strong> + şubeler arası
+            transfer + şube-bazlı raporlar + her şubeye çalışan ataması.
+          </p>
+          <p className="mt-2 text-xs text-ink-4">
+            Mevcut: {branchLimitCheck.count} / {branchLimitCheck.limit} şube
+          </p>
+          <div className="mt-5 flex gap-3">
+            <Link
+              href={'/admin/settings' as never}
+              className="rounded-xl bg-cat px-5 py-2.5 text-sm font-bold text-white hover:bg-cat/90"
+            >
+              PRO'ya geç →
+            </Link>
+            <Link
+              href={'/admin/branches' as never}
+              className="rounded-xl border border-line bg-paper px-5 py-2.5 text-sm font-bold text-cart hover:bg-cat-soft"
+            >
+              Şubelere dön
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   // Step 1 — şube bilgileri formu (varsayılan)
   // 2026-05-22 Tur 7 YT7-6: getAllCities (unstable_cache 24h) — Türkiye 81 il
   // sabit data, request-bağımsız ortak cache. orderBy name (alfabetik) içinde.
@@ -76,6 +161,14 @@ export default async function NewBranchPage({
         <p className="mt-1 text-sm text-ink-3">
           Çoklu şube transfer için + stok takip için kullanılır.
           Şubeyi ekledikten sonra opsiyonel olarak çalışan davet edebilirsin.
+          {Number.isFinite(effectiveBranchLimit) && (
+            <>
+              {' · '}
+              <span className="text-ink-4">
+                {activeBranchCount}/{effectiveBranchLimit} şube
+              </span>
+            </>
+          )}
         </p>
       </header>
 

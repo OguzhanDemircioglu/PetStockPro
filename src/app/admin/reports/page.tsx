@@ -1,7 +1,10 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
+import { companies } from '@/db/schema';
+import { hasAdvancedReports } from '@/lib/billing/plan-features';
 import {
   dailySalesSummary,
   topSellingVariants,
@@ -50,6 +53,65 @@ export default async function ReportsPage({
   const params = await searchParams;
   const daysRaw = params.days ? parseInt(params.days, 10) : 30;
   const days = RANGE_OPTIONS.includes(daysRaw) ? daysRaw : 30;
+
+  // 2026-05-22 Karar A revize — Gelişmiş raporlar PRO + PRO+
+  // FREE plan'da Pano KPI yeterli (temel ciro/hareket/düşük stok); detaylı
+  // /admin/reports sayfası (period comparison + top selling + customer report
+  // + open credits + inventory value + activity actions) PRO'ya özel.
+  const [companyPlan] = await db
+    .select({ plan: companies.plan })
+    .from(companies)
+    .where(eq(companies.id, session.user.companyId))
+    .limit(1);
+  if (!hasAdvancedReports(companyPlan?.plan ?? 'FREE')) {
+    return (
+      <main className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-12">
+        <header>
+          <Link href={'/admin' as never} className="text-xs text-ink-4 hover:text-cart">
+            ← Pano'ya dön
+          </Link>
+          <h1 className="mt-3 text-3xl font-bold leading-tight tracking-tight text-cart">
+            Gelişmiş raporlar
+          </h1>
+        </header>
+        <div className="rounded-2xl border-2 border-cat/40 bg-cat-soft/30 p-6">
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-cat px-3 py-1 text-[12px] font-bold uppercase tracking-wider text-white">
+            ⭐ PRO Özelliği
+          </div>
+          <h2 className="text-xl font-bold text-cart">
+            Detaylı analitik PRO planında
+          </h2>
+          <p className="mt-3 text-sm text-ink-2">
+            FREE planında <strong>Pano</strong> sayfasında temel KPI'ları
+            (bugünkü ciro, hareket sayısı, düşük stok) görürsün. PRO planında ek:
+          </p>
+          <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-ink-2">
+            <li>📈 Dönem karşılaştırma (bu hafta vs geçen / 30 gün vs önceki 30)</li>
+            <li>🏆 En çok satan variantlar + günlük breakdown</li>
+            <li>👥 Müşteri raporu + en yoğun saatler</li>
+            <li>💰 Açık veresiyeler + aging</li>
+            <li>💎 Envanter değeri + kategori bazında</li>
+            <li>📜 Aktivite logu (aksiyon istatistiği)</li>
+            <li>⬇ Excel export</li>
+          </ul>
+          <div className="mt-5 flex gap-3">
+            <Link
+              href={'/admin/settings' as never}
+              className="rounded-xl bg-cat px-5 py-2.5 text-sm font-bold text-white hover:bg-cat/90"
+            >
+              PRO'ya geç →
+            </Link>
+            <Link
+              href={'/admin' as never}
+              className="rounded-xl border border-line bg-paper px-5 py-2.5 text-sm font-bold text-cart hover:bg-cat-soft"
+            >
+              Pano'ya dön
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   const [
     summary,
