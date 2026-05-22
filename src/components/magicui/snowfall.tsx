@@ -42,13 +42,13 @@ type Meteor = {
   tailLength: string;
 };
 
-type MatrixDrop = {
+type MatrixStream = {
   left: string;
   delay: string;
   duration: string;
   fontSize: string;
   fallDistance: string;
-  char: string;
+  chars: string[];
 };
 
 function makeFlakes(count: number): Flake[] {
@@ -102,27 +102,34 @@ function makeMeteors(count: number): Meteor[] {
   }));
 }
 
-const MATRIX_CHARS = '!@#$%^*()';
+// Matrix filminin ikonik katakana karakterleri + sayılar + bazı semboller.
+// Wachowski Brothers'ın orijinal "digital rain"i: half-width katakana + ters
+// arapça rakamlar — biz unicode katakana ile yakın görsel veriyoruz.
+const MATRIX_CHARS =
+  'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789:・."=*+-<>¦|';
 function pickMatrixChar(): string {
   return MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)];
 }
 
-function makeMatrixDrops(count: number): MatrixDrop[] {
-  // 80 drop pre-cached, sürekli infinite loop.
-  // Referans (D:/dir/css/Matrix_Rain): JS setInterval her 20ms yeni drop oluşturur,
-  // biz statik pre-cached pattern + random delay ile aynı yoğunluğu simüle ediyoruz.
-  return Array.from({ length: count }, () => ({
-    left: Math.floor(Math.random() * 100) + '%',
-    // Delay 0-3s ile başlangıç dağılımı — tüm drop'lar aynı anda doğmaz
-    delay: (Math.random() * 3).toFixed(2) + 's',
-    // Duration 1.2-2.4s (orijinal 1-2s)
-    duration: (Math.random() * 1.2 + 1.2).toFixed(2) + 's',
-    // Font size 0.6em-1.4em (orijinal 0.5-2em + scale(0.6) body)
-    fontSize: (Math.random() * 0.8 + 0.6).toFixed(2) + 'em',
-    // Düşüş mesafesi 200-360px (hero yüksekliğine göre)
-    fallDistance: (Math.floor(Math.random() * 160) + 200) + 'px',
-    char: pickMatrixChar(),
-  }));
+// Çok yavaş + sabit hız: 110 px/s (Matrix film yumuşak akış hissi).
+// fallDistance / duration = SPEED_PX_PER_S sabiti.
+const MATRIX_SPEED_PX_PER_S = 110;
+
+function makeMatrixStreams(count: number): MatrixStream[] {
+  // 90 stream pre-cached, her stream 14-22 karakter — gerçek Matrix uzun
+  // iz hissi (head parlak, gövde yumuşakça soluyor).
+  return Array.from({ length: count }, () => {
+    const streamLen = Math.floor(Math.random() * 9) + 14; // 14-22 karakter
+    const fallPx = Math.floor(Math.random() * 200) + 500; // 500-700px
+    return {
+      left: Math.floor(Math.random() * 100) + '%',
+      delay: (Math.random() * 5).toFixed(2) + 's',
+      fallDistance: fallPx + 'px',
+      duration: (fallPx / MATRIX_SPEED_PX_PER_S).toFixed(2) + 's',
+      fontSize: (Math.random() * 0.8 + 0.7).toFixed(2) + 'em', // 0.7-1.5em
+      chars: Array.from({ length: streamLen }, () => pickMatrixChar()),
+    };
+  });
 }
 
 let cachedSnowCount: number | null = null;
@@ -166,11 +173,11 @@ function makeMeteorsCached(count: number): Meteor[] {
 }
 
 let cachedMatrixCount: number | null = null;
-let cachedMatrix: MatrixDrop[] | null = null;
-function makeMatrixDropsCached(count: number): MatrixDrop[] {
+let cachedMatrix: MatrixStream[] | null = null;
+function makeMatrixStreamsCached(count: number): MatrixStream[] {
   if (cachedMatrixCount !== count || !cachedMatrix) {
     cachedMatrixCount = count;
-    cachedMatrix = makeMatrixDrops(count);
+    cachedMatrix = makeMatrixStreams(count);
   }
   return cachedMatrix;
 }
@@ -251,10 +258,11 @@ export function Snowfall({ number = 40 }: Props) {
     () => makeMeteorsCached(24),
     () => null,
   );
-  const matrixDrops = useSyncExternalStore<MatrixDrop[] | null>(
+  const matrixStreams = useSyncExternalStore<MatrixStream[] | null>(
     subscribeNoop,
-    // Matrix Rain: 80 drop sürekli infinite loop — yeşil karakter yağışı.
-    () => makeMatrixDropsCached(80),
+    // Matrix Rain: 180 stream × 14-22 karakter — yoğun katakana yağmuru.
+    // Toplam ~3300 karakter render edilir (önceki 90'dan 2× yoğun).
+    () => makeMatrixStreamsCached(180),
     () => null,
   );
   const mode = useSyncExternalStore<WeatherMode>(
@@ -373,28 +381,63 @@ export function Snowfall({ number = 40 }: Props) {
         </div>
       )}
 
-      {mode === 'matrix' && matrixDrops && (
+      {mode === 'matrix' && matrixStreams && (
         <div
           aria-hidden
           data-testid="matrix-overlay"
-          className="pointer-events-none absolute inset-0 overflow-hidden"
-          style={{ filter: 'drop-shadow(0 0 12px #0f0)' }}
+          className="pointer-events-none absolute inset-0 overflow-hidden bg-black"
         >
-          {matrixDrops.map((d, i) => (
-            <span
-              key={i}
-              className="absolute top-0 leading-none font-mono text-[#0f0] animate-matrix-drop"
-              style={{
-                left: d.left,
-                fontSize: d.fontSize,
-                animationDelay: d.delay,
-                animationDuration: d.duration,
-                ['--matrix-fall' as string]: d.fallDistance,
-              }}
-            >
-              {d.char}
-            </span>
-          ))}
+          {matrixStreams.map((s, i) => {
+            const len = s.chars.length;
+            return (
+              <span
+                key={i}
+                className="absolute flex flex-col leading-[1.05] font-mono animate-matrix-drop"
+                style={{
+                  left: s.left,
+                  top: 0,
+                  fontSize: s.fontSize,
+                  animationDelay: s.delay,
+                  animationDuration: s.duration,
+                  ['--matrix-fall' as string]: s.fallDistance,
+                }}
+              >
+                {s.chars.map((c, j) => {
+                  // chars[0] = en eski (üstte, en soluk)
+                  // chars[len-1] = en yeni (head, altta, en parlak)
+                  const fromHead = len - 1 - j;
+                  const isHead = fromHead === 0;
+                  // Head: beyaz-yeşil parlak (cyberpunk look)
+                  // Gövde: yeşil opacity head'den uzaklaştıkça azalır
+                  const opacity = Math.max(0.06, 1 - fromHead / len);
+                  // Motion-blur trail: head'in arkasında yukarı doğru parlama
+                  // izi (hareket aşağı, iz yukarıda). Body'de de hafif glow.
+                  let textShadow: string;
+                  if (isHead) {
+                    textShadow =
+                      '0 0 6px #d4ffd9, 0 0 14px #0f0, 0 -4px 10px rgba(0,255,0,0.6), 0 -8px 14px rgba(0,255,0,0.3)';
+                  } else if (fromHead <= 3) {
+                    textShadow = '0 0 6px rgba(0,255,0,0.7), 0 -3px 8px rgba(0,255,0,0.35)';
+                  } else if (fromHead <= 7) {
+                    textShadow = '0 0 4px rgba(0,255,0,0.4)';
+                  } else {
+                    textShadow = 'none';
+                  }
+                  return (
+                    <span
+                      key={j}
+                      style={{
+                        color: isHead ? '#e8ffea' : `rgba(0,255,80,${opacity.toFixed(2)})`,
+                        textShadow,
+                      }}
+                    >
+                      {c}
+                    </span>
+                  );
+                })}
+              </span>
+            );
+          })}
         </div>
       )}
 

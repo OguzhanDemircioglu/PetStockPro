@@ -269,18 +269,11 @@ html.dark body::before {
   }
 }
 @keyframes matrix-drop {
-  /* Matrix yağmuru: tepeden başla, scaleY ile uzayarak aşağı düş, son anda söndür
-     + tail (text-shadow ile yan parlama izi). Referans: D:/dir/css/Matrix_Rain */
-  0%   { transform: translateY(0) scaleY(0); transform-origin: top; }
-  10%  { transform: translateY(0) scaleY(0.25); transform-origin: top; }
-  20%  { transform: translateY(0) scaleY(1); }
-  70%  { transform: translateY(var(--matrix-fall, 280px)) scaleY(1); transform-origin: bottom; }
-  80%  { transform: translateY(var(--matrix-fall, 280px)) scaleY(1); transform-origin: bottom; }
-  100% {
-    transform: translateY(var(--matrix-fall, 280px)) scaleY(0);
-    transform-origin: bottom;
-    text-shadow: -180px 0 0 #0f0, 180px 0 #0f0;
-  }
+  /* Matrix yağmuru: linear sabit hız — tüm stream tepeden viewport'tan
+     dışarı düşene kadar sabit hızda kayar. Her karakter trail efekti
+     için kendi text-shadow'unu inline taşır (head parlak, body solgun). */
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(var(--matrix-fall, 480px)); }
 }
 @keyframes shiny-text {
   0%, 100% { background-position: 200% 0; }
