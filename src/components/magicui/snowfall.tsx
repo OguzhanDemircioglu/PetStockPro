@@ -35,6 +35,13 @@ type Star = {
   hue: 'gold' | 'amber';
 };
 
+type Meteor = {
+  left: string;         // Başlangıç yatay pozisyon (random %0-100)
+  delay: string;        // 0-1.6s
+  duration: string;     // 4-8s
+  tailLength: string;   // Tail uzunluğu px (50-90)
+};
+
 function makeFlakes(count: number): Flake[] {
   return Array.from({ length: count }, () => ({
     left: Math.floor(Math.random() * 100) + '%',
@@ -76,6 +83,16 @@ function makeStars(count: number): Star[] {
   }));
 }
 
+function makeMeteors(count: number): Meteor[] {
+  // Yumuşak + yoğun gökyüzü hissi: 24 meteor, delay 0-12s spread, duration 14-22s.
+  return Array.from({ length: count }, () => ({
+    left: Math.floor(Math.random() * 100) + '%',
+    delay: (Math.random() * 12).toFixed(2) + 's',
+    duration: (Math.random() * 8 + 14).toFixed(2) + 's',
+    tailLength: (Math.floor(Math.random() * 40) + 60) + 'px',
+  }));
+}
+
 let cachedSnowCount: number | null = null;
 let cachedFlakes: Flake[] | null = null;
 function makeFlakesCached(count: number): Flake[] {
@@ -106,19 +123,31 @@ function makeStarsCached(count: number): Star[] {
   return cachedStars;
 }
 
+let cachedMeteorCount: number | null = null;
+let cachedMeteors: Meteor[] | null = null;
+function makeMeteorsCached(count: number): Meteor[] {
+  if (cachedMeteorCount !== count || !cachedMeteors) {
+    cachedMeteorCount = count;
+    cachedMeteors = makeMeteors(count);
+  }
+  return cachedMeteors;
+}
+
 function subscribeNoop(): () => void {
   return () => undefined;
 }
 
 const STORAGE_KEY = 'pp-weather-mode';
-type WeatherMode = 'snow' | 'rain' | 'star' | 'off';
+type WeatherMode = 'snow' | 'rain' | 'star' | 'meteor' | 'off';
 
 const modeListeners = new Set<() => void>();
 function getModeSnapshot(): WeatherMode {
   if (typeof window === 'undefined') return 'snow';
   try {
     const v = window.localStorage.getItem(STORAGE_KEY);
-    if (v === 'snow' || v === 'rain' || v === 'star' || v === 'off') return v;
+    if (v === 'snow' || v === 'rain' || v === 'star' || v === 'meteor' || v === 'off') {
+      return v;
+    }
     // Backwards compat: eski 'pp-snowfall-enabled' true/false
     const legacy = window.localStorage.getItem('pp-snowfall-enabled');
     if (legacy === 'false') return 'off';
@@ -169,6 +198,12 @@ export function Snowfall({ number = 40 }: Props) {
     subscribeNoop,
     // Yıldız büyük + parlak, kardan az: number×0.6 (örn snow 40 → star 24)
     () => makeStarsCached(Math.round(number * 0.6)),
+    () => null,
+  );
+  const meteors = useSyncExternalStore<Meteor[] | null>(
+    subscribeNoop,
+    // Yoğun gökyüzü: 24 meteor + spread delay (her zaman birkaç tanesi düşer)
+    () => makeMeteorsCached(24),
     () => null,
   );
   const mode = useSyncExternalStore<WeatherMode>(
@@ -258,7 +293,36 @@ export function Snowfall({ number = 40 }: Props) {
         </div>
       )}
 
-      {/* Sağ alt köşedeki 4-state weather toggle */}
+      {mode === 'meteor' && meteors && (
+        <div
+          aria-hidden
+          data-testid="meteor-overlay"
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+        >
+          {meteors.map((m, i) => (
+            <span
+              key={i}
+              className="pointer-events-none absolute h-0.5 w-0.5 rounded-full bg-white shadow-[0_0_0_1px_#ffffff10] rotate-[215deg] animate-meteor"
+              style={{
+                top: -2,
+                left: m.left,
+                animationDelay: m.delay,
+                animationDuration: m.duration,
+              }}
+            >
+              {/* Kuyruk: head'in ARKASINDA olmalı (head önde down-left'e gider).
+                  Outer rotate(215deg) altında inner'ın sağ kenarı head yanında,
+                  sol kenarı world'de up-right'ta (tail uçu). */}
+              <span
+                className="absolute right-0 top-1/2 -translate-y-1/2 h-px bg-gradient-to-l from-white to-transparent"
+                style={{ width: m.tailLength }}
+              />
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Sağ alt köşedeki 5-state weather toggle */}
       <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1.5">
         <ToggleButton
           active={mode === 'snow'}
@@ -280,6 +344,13 @@ export function Snowfall({ number = 40 }: Props) {
           title="Yıldız yağmuru"
           testId="weather-star"
           icon={<StarIcon size={14} />}
+        />
+        <ToggleButton
+          active={mode === 'meteor'}
+          onClick={() => setModePersistent('meteor')}
+          title="Kuyruklu yıldız (meteor)"
+          testId="weather-meteor"
+          icon={<MeteorIcon size={14} />}
         />
         <ToggleButton
           active={mode === 'off'}
@@ -354,6 +425,33 @@ function SnowIcon({ size }: { size: number }) {
       <line x1="17" y1="2" x2="12" y2="7" />
       <line x1="7" y1="22" x2="12" y2="17" />
       <line x1="17" y1="22" x2="12" y2="17" />
+    </svg>
+  );
+}
+
+function MeteorIcon({ size }: { size: number }) {
+  // Kuyruklu yıldız — eğik çizgi (tail) + parlak yıldız baş
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {/* Tail diagonal */}
+      <line x1="3" y1="21" x2="14" y2="10" />
+      {/* Yıldız baş — 4 ışın */}
+      <line x1="14" y1="10" x2="17" y2="7" />
+      <line x1="14" y1="10" x2="11" y2="7" />
+      <line x1="14" y1="10" x2="17" y2="13" />
+      <line x1="14" y1="10" x2="11" y2="13" />
+      {/* Merkez ışıltı */}
+      <circle cx="14" cy="10" r="1.5" fill="currentColor" />
     </svg>
   );
 }

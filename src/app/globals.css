@@ -209,9 +209,12 @@ html.dark body::before {
   50%      { box-shadow: 0 0 0 10px transparent; }
 }
 @keyframes meteor {
-  0%   { transform: rotate(215deg) translateX(0); opacity: 1; }
+  /* rotate(215deg) + pozitif translateX → world'de aşağı-sola diagonal hareket
+     (negatif eski yön yukarı-sağa gidiyor ve sahne dışına çıkıyor). */
+  0%   { transform: rotate(215deg) translateX(0); opacity: 0; }
+  10%  { opacity: 1; }
   70%  { opacity: 1; }
-  100% { transform: rotate(215deg) translateX(-500px); opacity: 0; }
+  100% { transform: rotate(215deg) translateX(900px); opacity: 0; }
 }
 @keyframes snow-fall {
   0% {
@@ -277,7 +280,7 @@ html.dark body::before {
 .animate-shimmer-slide { animation: shimmer-slide 3s ease-in-out infinite alternate; }
 .animate-spin-around   { animation: spin-around calc(var(--mui-speed, 3s) * 2) infinite linear; }
 .animate-pulse-soft    { animation: pulse-soft 1.5s ease-out infinite; }
-.animate-meteor        { animation: meteor 5s linear infinite; }
+.animate-meteor        { animation: meteor var(--mui-meteor-duration, 9s) linear infinite; }
 .animate-snow-fall     { animation: snow-fall var(--mui-snow-duration, 8s) linear infinite; }
 .animate-rain-fall     { animation: rain-fall var(--mui-rain-duration, 1.4s) linear infinite; }
 .animate-star-fall     { animation: star-fall var(--mui-star-duration, 9s) linear infinite; }
