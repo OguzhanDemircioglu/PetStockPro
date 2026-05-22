@@ -36,10 +36,11 @@ type Star = {
 };
 
 type Meteor = {
-  left: string;         // Başlangıç yatay pozisyon (random %0-100)
-  delay: string;        // 0-1.6s
-  duration: string;     // 4-8s
-  tailLength: string;   // Tail uzunluğu px (50-90)
+  top: string;          // Başlangıç dikey: -2 ile -120 arası (random spread, hep aynı pozisyonda doğmasın)
+  left: string;         // Başlangıç yatay: %0-100 random
+  delay: string;
+  duration: string;
+  tailLength: string;
 };
 
 function makeFlakes(count: number): Flake[] {
@@ -84,11 +85,15 @@ function makeStars(count: number): Star[] {
 }
 
 function makeMeteors(count: number): Meteor[] {
-  // Yumuşak + yoğun gökyüzü hissi: 24 meteor, delay 0-16s spread, duration 20-32s.
+  // 215° diagonal pattern, yavaş + üst kenarda yığılma yok:
+  //   - top random -2 ile -120 arası (her meteor farklı yükseklikten doğar)
+  //   - duration 24-38s (yavaş)
+  //   - delay 0-22s spread (her zaman birkaç tanesi düşmekte)
   return Array.from({ length: count }, () => ({
+    top: -(Math.floor(Math.random() * 118) + 2) + 'px',
     left: Math.floor(Math.random() * 100) + '%',
-    delay: (Math.random() * 16).toFixed(2) + 's',
-    duration: (Math.random() * 12 + 20).toFixed(2) + 's',
+    delay: (Math.random() * 22).toFixed(2) + 's',
+    duration: (Math.random() * 14 + 24).toFixed(2) + 's',
     tailLength: (Math.floor(Math.random() * 40) + 60) + 'px',
   }));
 }
@@ -304,7 +309,7 @@ export function Snowfall({ number = 40 }: Props) {
               key={i}
               className="pointer-events-none absolute h-0.5 w-0.5 rounded-full bg-white shadow-[0_0_0_1px_#ffffff10] rotate-[215deg] animate-meteor"
               style={{
-                top: -2,
+                top: m.top,
                 left: m.left,
                 animationDelay: m.delay,
                 animationDuration: m.duration,
