@@ -91,6 +91,13 @@ crons = [
 # - TELEGRAM_BOT_TOKEN                # Süperadmin alert kanalı
 # - TURNSTILE_SECRET_KEY              # Sprint 2 bot koruma server-side verify
 # - SENTRY_AUTH_TOKEN                 # Sentry release upload (opsiyonel)
+# - CF_ACCOUNT_ID                     # AI Chatbot — Workers AI + Vectorize (Migration 0027)
+# - CF_API_TOKEN                      # AI Chatbot — Workers AI Read + Vectorize Edit
+# - CF_VECTORIZE_INDEX                # AI Chatbot — index adı (petstockpro-user-manual)
+# - OPENAI_API_KEY                    # (opsiyonel) eski moderation/seed scripts için
+# - R2_ACCOUNT_ID + R2_ACCESS_KEY_ID + R2_SECRET_ACCESS_KEY + R2_BUCKET + R2_PUBLIC_URL  # Sprint 3.3 ürün görsel
+# - AI_FREE_DAILY_LIMIT (opsiyonel, default 10)   # AI Chatbot FREE plan günlük cap
+# - AI_RATE_LIMIT_PER_MINUTE (opsiyonel, default 5)  # AI Chatbot anti-spam
 
 # Observability — Workers Logs (Cloudflare Dashboard'dan opt-in)
 [observability]
