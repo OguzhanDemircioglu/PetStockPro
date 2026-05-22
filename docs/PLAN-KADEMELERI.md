@@ -18,17 +18,19 @@
 
 ---
 
-## 1. Plan Tablosu (3-tier B — Dengeli, 2026-05-14)
+## 1. Plan Tablosu (3-tier B — Dengeli, 2026-05-22 revize)
 
-| Plan | Stok limiti | Aylık fiyat | Hedef segment |
-|---|---:|---:|---|
-| **FREE** | **50 ürün** | 0 ₺ | Denemelik, mahalle pet shop |
-| **PRO** | **500 ürün** | 1.000 ₺ | Orta segment, esas pazar (mahalle olgun + küçük zincir) |
-| **PRO+** | **Sınırsız** | 2.000 ₺ | Büyük zincirler (500+ ürün, çoklu şube) |
+| Plan | Stok | Vitrin | Şube | Excel import | Gelişmiş rapor | Aylık fiyat |
+|---|---:|---:|---:|:---:|:---:|---:|
+| **FREE** | **50** | **10** | **1** | ❌ | ❌ | 0 ₺ |
+| **PRO** | **500** | **500** | **∞** | ✅ | ✅ | 1.000 ₺ |
+| **PRO+** | **∞** | **∞** | **∞** | ✅ | ✅ | 2.000 ₺ |
 
 **Fiyat KDV dahil** (2026 oranı %20):
-- PRO matrah = 625 ₺ + KDV 125 ₺
-- PRO+ matrah = 1.458 ₺ + KDV 292 ₺
+- PRO matrah = 833,33 ₺ + KDV 166,67 ₺
+- PRO+ matrah = 1.666,67 ₺ + KDV 333,33 ₺
+
+> **2026-05-22 Karar A revize:** Tek farklılaşma "stok limiti" yetersiz görüldü → 4 yeni farklılaşma eklendi (vitrin limit + şube limit + Excel import + gelişmiş raporlar). Eşit rekabet felsefesi KORUNDU — sponsorship/sıralama bonusu YOK, vitrin metrikleri/audit/2FA/asistan/Telegram/Nilvera e-Arşiv tüm planlarda EŞİT. Diğer farklılaşma kategorileri: ya **sayısal limit** (10/500) ya da **doğal sınır** (manuel→Excel, tek→çoklu, basit→detaylı).
 
 ### Segment Mantığı
 
@@ -45,7 +47,9 @@
 | Faz 1 §7 (eski Pet/) | 50/200/∞ 3-tier | Legacy |
 | 2026-05-12 | 20/100/∞ 3-tier | İptal — limitler değişti |
 | 2026-05-13 | 50/∞ 2-tier (PRO+ rafa) | İptal — kullanıcı geri açtı |
-| **2026-05-14** | **50/500/∞ 3-tier B (TR-only)** | **Otoritatif** |
+| 2026-05-14 | 50/500/∞ 3-tier B (TR-only), tek farklılaşma stok | İptal — farklılaşma yetersiz |
+| 2026-05-20 Karar A | "(a) sade tut, tek stok limiti" | İptal — 2026-05-22'de revize |
+| **2026-05-22 Karar A revize** | **50/500/∞ 3-tier B + 4 ek farklılaşma (vitrin 10/500/∞ + şube 1/∞/∞ + Excel + raporlar)** | **Otoritatif** |
 
 ### Neden 3-tier B?
 
@@ -76,27 +80,30 @@ PRO+ sınırsız parent → büyük chain için yeterli.
 
 ---
 
-## 3. Özellikler Karşılaştırma (Tümü Açık — 3-tier)
+## 3. Özellikler Karşılaştırma (2026-05-22 Karar A revize — 4 farklılaşma)
 
 | Özellik | FREE | PRO | PRO+ |
 |---|:---:|:---:|:---:|
 | **Stok limiti** | 50 | 500 | ∞ |
-| Şube sayısı | ∞ | ∞ | ∞ |
+| **Vitrin limiti** (yeni 2026-05-22) | **10** | **500** | **∞** |
+| **Şube sayısı** (yeni 2026-05-22) | **1** | **∞** | **∞** |
+| **Excel ürün import** (yeni 2026-05-22) | ❌ | ✅ | ✅ |
+| **Gelişmiş raporlar /admin/reports** (yeni 2026-05-22) | ❌ | ✅ | ✅ |
 | Kullanıcı sayısı | ∞ | ∞ | ∞ |
 | Stok hareketleri ledger | ∞ | ∞ | ∞ |
 | Variant sistemi | ✅ | ✅ | ✅ |
 | Telegram bildirim (admin uyarı) | ✅ | ✅ | ✅ |
 | Düşük stok + akıllı sipariş | ✅ | ✅ | ✅ |
 | Sayım workflow | ✅ | ✅ | ✅ |
-| Transfer (şubeler arası) | ✅ | ✅ | ✅ |
-| 6 rapor (satış/kâr/en çok satan/ölü stok/şube/açık krediler) | ✅ | ✅ | ✅ |
+| Transfer (şubeler arası) | ✅ (1 şube → transfer yok) | ✅ | ✅ |
+| Pano + temel KPI | ✅ | ✅ | ✅ |
 | CSV/Excel export | ✅ | ✅ | ✅ |
 | PDF rapor | ✅ | ✅ | ✅ |
 | PetPro Asistanı (rule-based) | ✅ | ✅ | ✅ |
 | Audit log | ✅ | ✅ | ✅ |
 | 2FA TOTP | ✅ | ✅ | ✅ |
-| Merkezi vitrin (`petstockpro.com/vitrin`) | ✅ | ✅ | ✅ |
-| Vitrin Metrikleri (4 etiket) | ✅ | ✅ | ✅ |
+| Merkezi vitrin (`petstockpro.com/vitrin`) | ✅ (10 ürün limit) | ✅ (500) | ✅ (∞) |
+| Vitrin Metrikleri | ✅ | ✅ | ✅ |
 | Stok 0 → vitrin'den otomatik çekme | ✅ | ✅ | ✅ |
 | Satışa Aç toggle + Doğrula validation | ✅ | ✅ | ✅ |
 | KVKK veri export | ✅ | ✅ | ✅ |

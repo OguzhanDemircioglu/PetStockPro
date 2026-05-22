@@ -1,8 +1,48 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-22 (7. mantık hata tarama tamamlandı)
-**Mevcut Branch:** `cray61` — commit'ler hazır (push 7 ayrı tur)
-**Son commit (önceki session sonu):** `ab3fbc6` docs: session handoff
+**Tarih:** 2026-05-22 (Karar A revize — 4 yeni PRO farklılaşması)
+**Mevcut Branch:** `cray61` — commit'ler hazır
+**Son commit (önceki tur):** `f1200ba` docs(perf): PERFORMANCE-PLAYBOOK.md
+
+---
+
+## 🆕 2026-05-22 — Karar A REVİZE (FREE/PRO farklılaşması 4 katman)
+
+**Tetikleyici:** "FREE 50 kullanıcı PRO'ya neden yükselsin?" sorusu. 2026-05-20 "(a) sade tut, tek stok limiti" kararı zayıf upsell motivasyonu sağladı.
+
+**Yeni 4 farklılaşma (eşit rekabet KORUNUR — sponsorship/rozet/sıralama bonusu YOK):**
+
+| Özellik | FREE | PRO 1.000₺ | PRO+ 2.000₺ |
+|---|---|---|---|
+| Stok limiti | 50 | 500 | ∞ |
+| **Vitrin limiti** (yeni) | **10** | 500 | ∞ |
+| **Şube sayısı** (yeni) | **Tek** | ∞ | ∞ |
+| **Excel ürün import** (yeni) | ❌ Manuel only | ✅ | ✅ |
+| **Gelişmiş raporlar** (yeni) | ❌ Pano + temel KPI | ✅ Tam /admin/reports | ✅ |
+| Diğer (audit/2FA/asistan/Telegram/vitrin metrik/Nilvera/KVKK) | Aynı | Aynı | Aynı |
+
+**Implementasyon (Bölüm 1-4, ~10-12 saat):**
+
+| Bölüm | İçerik | Durum |
+|---|---|---|
+| 1 | Schema (Migration 0025) + Constants + helpers + 30+ test | ✅ |
+| 2 | 4 backend gate (publishProduct + addBranch + import route + reports route) + message mapping | ✅ |
+| 3 | 4 UI gate (branches/new PRO CTA + products list import button gizleme + ListRowToggle vitrin error msg + reports PRO overlay) | ✅ |
+| 4 | Doc sync (CLAUDE + PLAN-KADEMELERI + DEVAM-REHBERI) + smoke + commit | ⏳ Devam |
+
+**Test:** 1657 → **1701 pass** (+44 yeni: 30 plan-limits + 14 plan-features + canPublishToVitrin + canAddBranch). Typecheck + lint 0 error.
+
+**Migration 0025 — manuel apply gerek (DDL):**
+```sql
+ALTER TABLE petstockpro.companies ADD COLUMN IF NOT EXISTS temporary_vitrin_limit_override integer;
+ALTER TABLE petstockpro.companies ADD COLUMN IF NOT EXISTS temporary_vitrin_limit_override_until timestamp with time zone;
+ALTER TABLE petstockpro.companies ADD COLUMN IF NOT EXISTS temporary_branch_limit_override integer;
+ALTER TABLE petstockpro.companies ADD COLUMN IF NOT EXISTS temporary_branch_limit_override_until timestamp with time zone;
+```
+Dosya: [src/db/migrations/0025_plan_features_overrides.sql](../src/db/migrations/0025_plan_features_overrides.sql).
+Süperadmin override field'lar (Bölüm 4 son adım) — bu fix'ler tek-tenant manuel esnetme için.
+
+---
 
 ---
 

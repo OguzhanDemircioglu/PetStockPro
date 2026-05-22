@@ -367,16 +367,28 @@ Tartışmadan çıkan kararlar dokümanlara entegre edildi. **Önceki PetStockPr
 
 Aşağıdakilerin hepsi **teknik değil ticari/stratejik** kararlar — Sprint 16 lansman öncesi netleşmesi gerek.
 
-### Karar A — PRO Upsell Motivasyonu ✅ **2026-05-20 KARAR: (a) Sade tut**
+### Karar A — PRO Upsell Motivasyonu ✅ **2026-05-22 REVİZE: 4 yeni farklılaşma**
 
-**Sorun:** Vitrin tek tema, eşit görünüm. FREE 50 kullanıcı PRO'ya neden yükselsin? Sadece "50 ürünü geçtim" diye → ince motivasyon.
+> **2026-05-22 revize:** 2026-05-20 "(a) sade tut, tek farklılaşma stok limiti" kararı yetersiz görüldü. FREE 50 kullanıcı PRO'ya yükselmek için tek sayısal limit zayıf motivasyon. Yeni karar — kullanıcı 4 yeni farklılaşma ekledi (eşit rekabet felsefesi KORUNUR, sponsorship/sıralama bonusu YOK):
 
-**Seçenek:**
-- (a) ✅ **SEÇİLDİ** — "ürün limiti yeter" yeterli motivasyon, sade tut
-- ~~(b) PRO'ya küçük avantaj ekle: "✓ Onaylı PRO Üye" rozeti vitrin profilinde + sıralama bonusu (~5%)~~
-- ~~(c) Vitrin'de "Sponsored" özelliği aç — "rekabet eşit" felsefesini bozar~~
+**Yeni 3-tier B kademeleme:**
 
-**Karar gerekçesi:** Eşit rekabet felsefesi korundu, üç tier farklılaşması yalnız stok limiti. PRO+ rozet veya sıralama bonusu üzerinde tartışma Faz 2'ye saklı (lansman sonrası gerçek conversion verisi ile yeniden değerlendirilebilir).
+| Özellik | FREE | PRO 1.000₺ | PRO+ 2.000₺ |
+|---|---|---|---|
+| Stok limiti | 50 | 500 | ∞ |
+| **Vitrin limiti** (yeni) | 10 | 500 | ∞ |
+| **Ürün ekleme** (yeni) | Manuel only | + Excel import | Hepsi |
+| **Şube sayısı** (yeni) | Tek | ∞ | ∞ |
+| **Raporlar** (yeni) | Pano + temel KPI | + Tam /admin/reports | Hepsi |
+| Diğer (audit, 2FA, asistan, Telegram, vitrin görünürlük, vitrin metrikleri) | Aynı | Aynı | Aynı |
+
+**Karar gerekçesi:**
+- 4 farklılaşma hâlâ "sade" çünkü her biri **sayısal limit** (10/500) veya **doğal sınır** (manuel→Excel, tek→çoklu, basit→detaylı)
+- "Mahalle pet shop ne için PRO?" sorusu net cevap: 500 ürün (Excel) + çoklu şube + raporlar
+- Eşit rekabet (Karar A 2026-05-20 ana mesaj) **korundu** — sponsorship/rozet/sıralama bonusu YOK
+- Vitrin metrikleri tüm planlarda eşit (kullanıcı bu seçeneği işaretlemedi)
+
+**Önceki Karar A (2026-05-20):** "(a) sade tut, tek stok limiti" — yetersiz görüldü (revize).
 
 ### Karar B — WhatsApp Tıklama → İlgi Ölçümü Atfı
 
