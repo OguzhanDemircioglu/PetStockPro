@@ -45,8 +45,8 @@ export default function VitrinLayout({
           </div>
           <nav className="flex shrink-0 items-center gap-2 text-[15px] sm:gap-2.5 sm:text-[16px]">
             <Link
-              href={'/vitrin' as never}
-              title="Tüm pet shop'lar"
+              href={'/vitrin/harita' as never}
+              title="Tüm pet shop'lar — harita"
               className="rounded-xl border border-line bg-paper px-3 py-2 font-bold text-cart hover:bg-cat-soft sm:px-3.5"
             >
               <span aria-hidden>📍</span>
