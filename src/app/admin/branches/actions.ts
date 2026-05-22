@@ -101,6 +101,13 @@ export async function addBranchAction(
 
   const result = await addBranch(session.user.companyId, input, db);
   if (!result.ok) {
+    if (result.reason === 'branch_limit_exceeded') {
+      return {
+        ...EMPTY,
+        message: `Şube limitin doldu (${result.count}/${result.limit}) — PRO'ya geç`,
+        issues: [],
+      };
+    }
     return {
       ...EMPTY,
       message: REASON_MSG[result.reason] ?? 'Hata',

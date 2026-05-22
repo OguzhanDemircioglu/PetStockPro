@@ -105,8 +105,27 @@ describe('branchSchema', () => {
 // ─────────────────────────────────────────────────────────────────
 
 describe('addBranch', () => {
-  it('happy path — il + ilçe FK doğru, insert', async () => {
+  // 2026-05-22 Karar A revize — addBranch artık plan + branch count check yapar.
+  // Test mock'larında companies (plan + override) + branch count chain'i eklendi.
+  const COMPANY_PRO_NO_OVERRIDE = {
+    plan: 'PRO',
+    temporaryVitrinLimitOverride: null,
+    temporaryVitrinLimitOverrideUntil: null,
+    temporaryBranchLimitOverride: null,
+    temporaryBranchLimitOverrideUntil: null,
+  };
+  const COMPANY_FREE_NO_OVERRIDE = {
+    plan: 'FREE',
+    temporaryVitrinLimitOverride: null,
+    temporaryVitrinLimitOverrideUntil: null,
+    temporaryBranchLimitOverride: null,
+    temporaryBranchLimitOverrideUntil: null,
+  };
+
+  it('happy path — il + ilçe FK doğru, insert (PRO ∞ şube)', async () => {
     const select = makeSelectChain([
+      [COMPANY_PRO_NO_OVERRIDE], // plan
+      [{ count: 5 }], // activeBranchCount (PRO ∞)
       [{ id: 34 }], // city
       [{ id: DISTRICT }], // district
     ]);
@@ -129,8 +148,35 @@ describe('addBranch', () => {
     expect(insert).toHaveBeenCalledTimes(1);
   });
 
+  it('FREE plan 1/1 şube dolu → branch_limit_exceeded reject', async () => {
+    const select = makeSelectChain([
+      [COMPANY_FREE_NO_OVERRIDE], // plan FREE
+      [{ count: 1 }], // activeBranchCount = limit
+    ]);
+    const insert = vi.fn();
+    const db = { select, insert } as unknown as DbClient;
+
+    const result = await addBranch(
+      COMPANY,
+      { name: 'İkinci Şube', cityId: 34, districtId: DISTRICT },
+      db,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok && result.reason === 'branch_limit_exceeded') {
+      expect(result.limit).toBe(1);
+      expect(result.count).toBe(1);
+    } else {
+      expect.fail('Expected branch_limit_exceeded reason');
+    }
+    expect(insert).not.toHaveBeenCalled();
+  });
+
   it('il bulunamaz → city_not_found', async () => {
-    const select = makeSelectChain([[]]);
+    const select = makeSelectChain([
+      [COMPANY_PRO_NO_OVERRIDE], // plan
+      [{ count: 0 }], // activeBranchCount
+      [], // city not found
+    ]);
     const db = { select } as unknown as DbClient;
 
     const result = await addBranch(
@@ -144,7 +190,9 @@ describe('addBranch', () => {
 
   it('ilçe il\'e ait değil → district_mismatch', async () => {
     const select = makeSelectChain([
-      [{ id: 34 }],
+      [COMPANY_PRO_NO_OVERRIDE], // plan
+      [{ count: 0 }], // activeBranchCount
+      [{ id: 34 }], // city
       [], // district yok
     ]);
     const db = { select } as unknown as DbClient;

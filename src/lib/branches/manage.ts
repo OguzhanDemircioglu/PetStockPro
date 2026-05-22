@@ -15,10 +15,12 @@ import { z } from 'zod';
 import { moderateFields } from '@/lib/moderation/check';
 import type { ModerationFlagsResult } from '@/lib/moderation/redirect-suffix';
 import type { DbClient } from '@/lib/db/client';
+import { canAddBranch } from '@/lib/billing/plan-features';
 import {
   branches,
   cities,
   districts,
+  companies,
   productVariants,
   branchInventory,
   users,
@@ -113,6 +115,12 @@ export type AddBranchResult =
       ok: false;
       reason: 'invalid_input' | 'city_not_found' | 'district_mismatch' | 'unknown';
       issues?: string[];
+    }
+  | {
+      ok: false;
+      reason: 'branch_limit_exceeded';
+      limit: number;
+      count: number;
     };
 
 export async function addBranch(
@@ -129,6 +137,42 @@ export async function addBranch(
     };
   }
   const data = parsed.data;
+
+  // 2026-05-22 Karar A revize — şube limit kontrolü (plan + süperadmin override).
+  // active + holiday = "açık" şube sayılır; inactive değil.
+  const companyRow = await db
+    .select({
+      plan: companies.plan,
+      temporaryVitrinLimitOverride: companies.temporaryVitrinLimitOverride,
+      temporaryVitrinLimitOverrideUntil: companies.temporaryVitrinLimitOverrideUntil,
+      temporaryBranchLimitOverride: companies.temporaryBranchLimitOverride,
+      temporaryBranchLimitOverrideUntil: companies.temporaryBranchLimitOverrideUntil,
+    })
+    .from(companies)
+    .where(eq(companies.id, companyId))
+    .limit(1);
+  if (companyRow.length === 0) return { ok: false, reason: 'unknown' };
+
+  const activeBranchRow = await db
+    .select({ count: sql<number>`COUNT(*)::int` })
+    .from(branches)
+    .where(
+      and(
+        eq(branches.companyId, companyId),
+        sql`${branches.status} != 'inactive'`,
+      ),
+    );
+  const activeBranchCount = activeBranchRow[0]?.count ?? 0;
+
+  const limitCheck = canAddBranch(companyRow[0], activeBranchCount);
+  if (!limitCheck.ok) {
+    return {
+      ok: false,
+      reason: 'branch_limit_exceeded',
+      limit: limitCheck.limit,
+      count: limitCheck.count,
+    };
+  }
 
   const cityRows = await db
     .select({ id: cities.id })

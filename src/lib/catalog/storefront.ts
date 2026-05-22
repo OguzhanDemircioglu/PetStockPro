@@ -21,6 +21,7 @@ import {
   productImages,
   companies,
 } from '@/db/schema';
+import { canPublishToVitrin } from '@/lib/billing/plan-features';
 
 // ─────────────────────────────────────────────────────────────────
 // VALIDATION
@@ -213,6 +214,12 @@ export type PublishResult =
       ok: false;
       reason: 'not_found' | 'validation_failed' | 'unknown';
       issues?: StorefrontIssue[];
+    }
+  | {
+      ok: false;
+      reason: 'vitrin_limit_exceeded';
+      limit: number;
+      count: number;
     };
 
 /**
@@ -254,6 +261,44 @@ export async function publishProduct(
     .limit(1);
   if (current[0]?.vitrinPublished) {
     return { ok: true, alreadyPublished: true };
+  }
+
+  // 2026-05-22 Karar A revize — vitrin limit kontrolü (plan + süperadmin override).
+  // Idempotent check'ten sonra: zaten yayında ürün tekrar count'a katılmaz.
+  // Yayında olmayan ürünü açarken DB'deki aktif vitrin sayısı limit'i aşarsa reject.
+  const companyRow = await db
+    .select({
+      plan: companies.plan,
+      temporaryVitrinLimitOverride: companies.temporaryVitrinLimitOverride,
+      temporaryVitrinLimitOverrideUntil: companies.temporaryVitrinLimitOverrideUntil,
+      temporaryBranchLimitOverride: companies.temporaryBranchLimitOverride,
+      temporaryBranchLimitOverrideUntil: companies.temporaryBranchLimitOverrideUntil,
+    })
+    .from(companies)
+    .where(eq(companies.id, companyId))
+    .limit(1);
+  if (companyRow.length === 0) return { ok: false, reason: 'not_found' };
+
+  const activeVitrinRow = await db
+    .select({ count: sql<number>`COUNT(*)::int` })
+    .from(products)
+    .where(
+      and(
+        eq(products.companyId, companyId),
+        eq(products.vitrinPublished, true),
+        sql`${products.deletedAt} IS NULL`,
+      ),
+    );
+  const activeVitrinCount = activeVitrinRow[0]?.count ?? 0;
+
+  const limitCheck = canPublishToVitrin(companyRow[0], activeVitrinCount, now);
+  if (!limitCheck.ok) {
+    return {
+      ok: false,
+      reason: 'vitrin_limit_exceeded',
+      limit: limitCheck.limit,
+      count: limitCheck.count,
+    };
   }
 
   try {

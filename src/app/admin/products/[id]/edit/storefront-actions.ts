@@ -86,6 +86,14 @@ export async function publishProductAction(
         scope: 'publish',
       };
     }
+    if (result.reason === 'vitrin_limit_exceeded') {
+      return {
+        ok: false,
+        message: `Vitrin limitin doldu (${result.count}/${result.limit}) — PRO'ya geç veya başka bir ürünü vitrin'den kapat`,
+        issues: [],
+        scope: 'publish',
+      };
+    }
     return {
       ok: false,
       message: 'Vitrin açılamadı, tekrar dene',

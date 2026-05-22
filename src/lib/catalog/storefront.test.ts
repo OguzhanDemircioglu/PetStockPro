@@ -194,10 +194,21 @@ describe('validateForStorefront', () => {
 // ─────────────────────────────────────────────────────────────────
 
 describe('publishProduct', () => {
-  it('happy path — validation pass + zaten yayında değil → update', async () => {
+  // company plan + override fields (2026-05-22 Karar A revize — vitrin limit gate)
+  const COMPANY_FREE_NO_OVERRIDE = {
+    plan: 'FREE',
+    temporaryVitrinLimitOverride: null,
+    temporaryVitrinLimitOverrideUntil: null,
+    temporaryBranchLimitOverride: null,
+    temporaryBranchLimitOverrideUntil: null,
+  };
+
+  it('happy path — validation pass + zaten yayında değil + limit OK → update', async () => {
     const select = makeSelectChain([
       [VALID_ROW], // validate
       [{ vitrinPublished: false }], // current check
+      [COMPANY_FREE_NO_OVERRIDE], // company plan + override
+      [{ count: 3 }], // activeVitrinCount (FREE limit 10 → 3 < 10 OK)
     ]);
     const update = vi.fn().mockReturnValue({
       set: vi.fn().mockReturnValue({
@@ -209,6 +220,27 @@ describe('publishProduct', () => {
     const result = await publishProduct(COMPANY, PRODUCT, USER, db, {}, NOW);
     expect(result).toEqual({ ok: true, alreadyPublished: false });
     expect(update).toHaveBeenCalledTimes(1);
+  });
+
+  it('FREE plan vitrin limit dolu (10/10) → vitrin_limit_exceeded reject', async () => {
+    const select = makeSelectChain([
+      [VALID_ROW], // validate
+      [{ vitrinPublished: false }], // current check
+      [COMPANY_FREE_NO_OVERRIDE], // company plan
+      [{ count: 10 }], // activeVitrinCount = limit
+    ]);
+    const update = vi.fn();
+    const db = { select, update } as unknown as DbClient;
+
+    const result = await publishProduct(COMPANY, PRODUCT, USER, db, {}, NOW);
+    expect(result.ok).toBe(false);
+    if (!result.ok && result.reason === 'vitrin_limit_exceeded') {
+      expect(result.limit).toBe(10);
+      expect(result.count).toBe(10);
+    } else {
+      expect.fail('Expected vitrin_limit_exceeded reason');
+    }
+    expect(update).not.toHaveBeenCalled();
   });
 
   it('zaten yayında → idempotent alreadyPublished=true, update çağrılmaz', async () => {
@@ -232,9 +264,10 @@ describe('publishProduct', () => {
 
     const result = await publishProduct(COMPANY, PRODUCT, USER, db);
     expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.reason).toBe('validation_failed');
+    if (!result.ok && result.reason === 'validation_failed') {
       expect(result.issues?.some((i) => i.code === 'missing_vat_no')).toBe(true);
+    } else {
+      expect.fail('Expected validation_failed reason');
     }
   });
 
