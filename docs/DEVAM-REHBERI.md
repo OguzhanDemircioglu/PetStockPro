@@ -1,8 +1,30 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-22 (Migration 0026 — brands + categories GLOBAL)
+**Tarih:** 2026-05-22 (USD pricing önerisi: PRO $20 / PRO+ $50, Faz 2)
 **Mevcut Branch:** `cray61` — push tamam
-**Son commit (önceki tur):** `a8fd84e` docs(devam-rehberi): Karar A revize Bölüm 4 smoke
+**Son commit (önceki tur):** `2334a76` docs(manual): USER-MANUAL.md 2413 satır
+
+---
+
+## 🆕 2026-05-22 — USD Pricing Faz 2 Önerisi
+
+**Karar:** Yurt dışı tier'ı şu an açılmıyor (TR-only kararı 2026-05-14 korunur), ama Faz 2'de açıldığında kullanılacak değer kayda alındı.
+
+| Plan | TR aylık (aktif) | Yurt dışı (Faz 2 önerisi) |
+|---|---:|---:|
+| FREE | 0 ₺ | $0 |
+| PRO | 1.000 ₺ | **$20** |
+| PRO+ | 2.000 ₺ | **$50** |
+
+**Etkilenen yerler:**
+- `src/lib/constants/plan-limits.ts` — `PlanFeatures.priceMonthlyUsd` field eklendi
+- `src/lib/constants/plan-limits.test.ts` — 3 plan için USD assertion eklendi
+- `docs/DATABASE-SCHEMA.md §7` — plans seed `price_usd_monthly` 0→20/50
+- `docs/PLAN-KADEMELERI.md §1` — "Yurt dışı tier önerisi" alt-bölüm + karar geçmişi satırı
+
+**Faz 2'de aktive olunca:** Paddle MoR + EN locale + KVKK Md.9 (yurt dışı veri aktarım açık rıza) + Frankfurter kur API + vitrin USD disclaimer. Lansman (Sprint 14) TR-only çıkar, 6-12 ay gerçek veri sonrası yurt dışı kararı yeniden değerlendirilir.
+
+---
 
 ---
 

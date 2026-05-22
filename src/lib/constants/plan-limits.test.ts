@@ -14,29 +14,32 @@ import {
 } from './plan-limits';
 
 describe('PLAN_LIMITS', () => {
-  it('FREE = 50 ürün / 10 vitrin / 1 şube / manuel / basit / 0₺', () => {
+  it('FREE = 50 ürün / 10 vitrin / 1 şube / manuel / basit / 0₺ / 0$', () => {
     expect(PLAN_LIMITS.FREE.productLimit).toBe(50);
     expect(PLAN_LIMITS.FREE.vitrinLimit).toBe(10);
     expect(PLAN_LIMITS.FREE.branchLimit).toBe(1);
     expect(PLAN_LIMITS.FREE.excelImport).toBe(false);
     expect(PLAN_LIMITS.FREE.advancedReports).toBe(false);
     expect(PLAN_LIMITS.FREE.priceMonthlyTry).toBe(0);
+    expect(PLAN_LIMITS.FREE.priceMonthlyUsd).toBe(0);
   });
-  it('PRO = 500 ürün / 500 vitrin / ∞ şube / Excel + raporlar / 1000₺', () => {
+  it('PRO = 500 ürün / 500 vitrin / ∞ şube / Excel + raporlar / 1000₺ / 20$', () => {
     expect(PLAN_LIMITS.PRO.productLimit).toBe(500);
     expect(PLAN_LIMITS.PRO.vitrinLimit).toBe(500);
     expect(PLAN_LIMITS.PRO.branchLimit).toBe(Infinity);
     expect(PLAN_LIMITS.PRO.excelImport).toBe(true);
     expect(PLAN_LIMITS.PRO.advancedReports).toBe(true);
     expect(PLAN_LIMITS.PRO.priceMonthlyTry).toBe(1000);
+    expect(PLAN_LIMITS.PRO.priceMonthlyUsd).toBe(20);
   });
-  it('PRO_PLUS = ∞ hepsi / 2000₺', () => {
+  it('PRO_PLUS = ∞ hepsi / 2000₺ / 50$', () => {
     expect(PLAN_LIMITS.PRO_PLUS.productLimit).toBe(Infinity);
     expect(PLAN_LIMITS.PRO_PLUS.vitrinLimit).toBe(Infinity);
     expect(PLAN_LIMITS.PRO_PLUS.branchLimit).toBe(Infinity);
     expect(PLAN_LIMITS.PRO_PLUS.excelImport).toBe(true);
     expect(PLAN_LIMITS.PRO_PLUS.advancedReports).toBe(true);
     expect(PLAN_LIMITS.PRO_PLUS.priceMonthlyTry).toBe(2000);
+    expect(PLAN_LIMITS.PRO_PLUS.priceMonthlyUsd).toBe(50);
   });
 });
 

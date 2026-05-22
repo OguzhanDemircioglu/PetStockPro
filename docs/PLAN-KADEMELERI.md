@@ -32,6 +32,25 @@
 
 > **2026-05-22 Karar A revize:** Tek farklılaşma "stok limiti" yetersiz görüldü → 4 yeni farklılaşma eklendi (vitrin limit + şube limit + Excel import + gelişmiş raporlar). Eşit rekabet felsefesi KORUNDU — sponsorship/sıralama bonusu YOK, vitrin metrikleri/audit/2FA/asistan/Telegram/Nilvera e-Arşiv tüm planlarda EŞİT. Diğer farklılaşma kategorileri: ya **sayısal limit** (10/500) ya da **doğal sınır** (manuel→Excel, tek→çoklu, basit→detaylı).
 
+### Yurt dışı tier önerisi (Faz 2 — TR-only kararı korunur)
+
+> **2026-05-22 USD pricing kararı:** Yurt dışı tier'ı **şu an açılmıyor** — TR-only kararı (2026-05-14) lansman için korunur. Aşağıdaki USD pricing Faz 2'de (Paddle MoR + EN locale + KVKK Madde 9 yurt dışı veri aktarım çift checkbox) açıldığında kullanılacak öneri değerlerdir. `src/lib/constants/plan-limits.ts` ve `plans` master tablosu seed'inde `priceMonthlyUsd` alanı doldurulmuştur.
+
+| Plan | TR aylık (KDV dahil) | Yurt dışı aylık (Faz 2) |
+|---|---:|---:|
+| FREE | 0 ₺ | $0 |
+| PRO | 1.000 ₺ | **$20** |
+| PRO+ | 2.000 ₺ | **$50** |
+
+Faz 2'de aktive edilecekler:
+- Paddle MoR entegrasyonu (yurt dışı kart tahsilatı + VAT/sales tax otomatik)
+- EN locale UI (next-intl yapısı hazır, gizli mod açılır)
+- KVKK Madde 9 yurt dışı veri aktarım açık rıza akışı (kayıt formunda 3. checkbox)
+- Frankfurter kur API (TRY ↔ USD anlık kur)
+- Vitrin'de USD currency disclaimer
+
+**Lansman senaryosu:** Sprint 13/14 (Sprint 14 = production deploy) TR-only olarak çıkar. Yurt dışı tier 6-12 ay sonra (sprint sonrası gerçek conversion verisi + tek geliştirici operasyonel kapasite değerlendirmesi sonrası).
+
 ### Segment Mantığı
 
 | Tier | Pet shop büyüklüğü | Pazardaki yaklaşık pay |
@@ -49,7 +68,8 @@
 | 2026-05-13 | 50/∞ 2-tier (PRO+ rafa) | İptal — kullanıcı geri açtı |
 | 2026-05-14 | 50/500/∞ 3-tier B (TR-only), tek farklılaşma stok | İptal — farklılaşma yetersiz |
 | 2026-05-20 Karar A | "(a) sade tut, tek stok limiti" | İptal — 2026-05-22'de revize |
-| **2026-05-22 Karar A revize** | **50/500/∞ 3-tier B + 4 ek farklılaşma (vitrin 10/500/∞ + şube 1/∞/∞ + Excel + raporlar)** | **Otoritatif** |
+| 2026-05-22 Karar A revize | 50/500/∞ 3-tier B + 4 ek farklılaşma (vitrin 10/500/∞ + şube 1/∞/∞ + Excel + raporlar) | Aktif |
+| **2026-05-22 USD pricing** | **Yurt dışı tier Faz 2 önerisi: PRO $20 / PRO+ $50** (TR-only kararı korunur) | **Aktif** |
 
 ### Neden 3-tier B?
 

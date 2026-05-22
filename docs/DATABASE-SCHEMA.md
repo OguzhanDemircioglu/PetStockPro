@@ -2016,12 +2016,14 @@ CREATE INDEX idx_movements_realtime ON stock_movements(company_id, created_at) W
 ## 7. Seed Data
 
 ```sql
--- plans master (2026-05-14 — 3-tier B, TR-only)
--- price_try_monthly KDV dahil. price_usd_monthly = 0 (TR-only, Faz 2'de doldurulur).
+-- plans master (2026-05-22 son revize — 3-tier B, TR-only + USD pricing önerisi)
+-- price_try_monthly KDV dahil. TR-only kararı (2026-05-14) korunur, USD pricing
+-- yurt dışı tier Faz 2'de açıldığında (Paddle MoR + EN locale + KVKK Md.9)
+-- kullanılacak öneri değer (2026-05-22 kullanıcı kararı: PRO=20, PRO+=50).
 INSERT INTO plans (tier, product_limit, price_try_monthly, price_usd_monthly, features) VALUES
-  ('FREE',     50,   0,    0, '{"all_features": true}'),
-  ('PRO',      500,  1000, 0, '{"all_features": true}'),
-  ('PRO_PLUS', NULL, 2000, 0, '{"all_features": true}');
+  ('FREE',     50,   0,    0,  '{"all_features": true}'),
+  ('PRO',      500,  1000, 20, '{"all_features": true}'),
+  ('PRO_PLUS', NULL, 2000, 50, '{"all_features": true}');
 
 -- Default kategoriler (tenant başına copy template — onboarding'de)
 -- 2026-05-14 MANTIK-HATALARI YT-3: KDV %18 → %20 (TR 2024 Temmuz oranı). Mama %10 gıda, Sağlık %8 özel oran.

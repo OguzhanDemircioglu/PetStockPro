@@ -31,7 +31,16 @@ export interface PlanFeatures {
   excelImport: boolean;
   /** /admin/reports gelişmiş bölümleri (period comparison + top selling + ...) */
   advancedReports: boolean;
+  /** TR aylık fiyat (KDV dahil, ₺). Lansmandan itibaren aktif. */
   priceMonthlyTry: number;
+  /**
+   * Yurt dışı aylık fiyat (USD).
+   * 2026-05-22: kullanıcı PRO=20 / PRO+=50 USD pricing'i belirledi.
+   * Implementation (Paddle MoR + EN locale + KVKK Md.9) Faz 2'ye saklı —
+   * TR-only kararı (2026-05-14) lansman için korunur. Bu değerler doc/karar
+   * kaydı olarak tutulur, yurt dışı tier açıldığında bu kalibrasyon kullanılır.
+   */
+  priceMonthlyUsd: number;
 }
 
 export const PLAN_LIMITS: Record<'FREE' | 'PRO' | 'PRO_PLUS', PlanFeatures> = {
@@ -42,6 +51,7 @@ export const PLAN_LIMITS: Record<'FREE' | 'PRO' | 'PRO_PLUS', PlanFeatures> = {
     excelImport: false,
     advancedReports: false,
     priceMonthlyTry: 0,
+    priceMonthlyUsd: 0,
   },
   PRO: {
     productLimit: 500,
@@ -50,6 +60,7 @@ export const PLAN_LIMITS: Record<'FREE' | 'PRO' | 'PRO_PLUS', PlanFeatures> = {
     excelImport: true,
     advancedReports: true,
     priceMonthlyTry: 1000,
+    priceMonthlyUsd: 20,
   },
   PRO_PLUS: {
     productLimit: Infinity,
@@ -58,6 +69,7 @@ export const PLAN_LIMITS: Record<'FREE' | 'PRO' | 'PRO_PLUS', PlanFeatures> = {
     excelImport: true,
     advancedReports: true,
     priceMonthlyTry: 2000,
+    priceMonthlyUsd: 50,
   },
 } as const;
 
