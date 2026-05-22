@@ -42,6 +42,15 @@ type Meteor = {
   tailLength: string;
 };
 
+type MatrixDrop = {
+  left: string;
+  delay: string;
+  duration: string;
+  fontSize: string;
+  fallDistance: string;
+  char: string;
+};
+
 function makeFlakes(count: number): Flake[] {
   return Array.from({ length: count }, () => ({
     left: Math.floor(Math.random() * 100) + '%',
@@ -93,6 +102,29 @@ function makeMeteors(count: number): Meteor[] {
   }));
 }
 
+const MATRIX_CHARS = '!@#$%^*()';
+function pickMatrixChar(): string {
+  return MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)];
+}
+
+function makeMatrixDrops(count: number): MatrixDrop[] {
+  // 80 drop pre-cached, sürekli infinite loop.
+  // Referans (D:/dir/css/Matrix_Rain): JS setInterval her 20ms yeni drop oluşturur,
+  // biz statik pre-cached pattern + random delay ile aynı yoğunluğu simüle ediyoruz.
+  return Array.from({ length: count }, () => ({
+    left: Math.floor(Math.random() * 100) + '%',
+    // Delay 0-3s ile başlangıç dağılımı — tüm drop'lar aynı anda doğmaz
+    delay: (Math.random() * 3).toFixed(2) + 's',
+    // Duration 1.2-2.4s (orijinal 1-2s)
+    duration: (Math.random() * 1.2 + 1.2).toFixed(2) + 's',
+    // Font size 0.6em-1.4em (orijinal 0.5-2em + scale(0.6) body)
+    fontSize: (Math.random() * 0.8 + 0.6).toFixed(2) + 'em',
+    // Düşüş mesafesi 200-360px (hero yüksekliğine göre)
+    fallDistance: (Math.floor(Math.random() * 160) + 200) + 'px',
+    char: pickMatrixChar(),
+  }));
+}
+
 let cachedSnowCount: number | null = null;
 let cachedFlakes: Flake[] | null = null;
 function makeFlakesCached(count: number): Flake[] {
@@ -133,19 +165,32 @@ function makeMeteorsCached(count: number): Meteor[] {
   return cachedMeteors;
 }
 
+let cachedMatrixCount: number | null = null;
+let cachedMatrix: MatrixDrop[] | null = null;
+function makeMatrixDropsCached(count: number): MatrixDrop[] {
+  if (cachedMatrixCount !== count || !cachedMatrix) {
+    cachedMatrixCount = count;
+    cachedMatrix = makeMatrixDrops(count);
+  }
+  return cachedMatrix;
+}
+
 function subscribeNoop(): () => void {
   return () => undefined;
 }
 
 const STORAGE_KEY = 'pp-weather-mode';
-type WeatherMode = 'snow' | 'rain' | 'star' | 'meteor' | 'off';
+type WeatherMode = 'snow' | 'rain' | 'star' | 'meteor' | 'matrix' | 'off';
 
 const modeListeners = new Set<() => void>();
 function getModeSnapshot(): WeatherMode {
   if (typeof window === 'undefined') return 'snow';
   try {
     const v = window.localStorage.getItem(STORAGE_KEY);
-    if (v === 'snow' || v === 'rain' || v === 'star' || v === 'meteor' || v === 'off') {
+    if (
+      v === 'snow' || v === 'rain' || v === 'star' ||
+      v === 'meteor' || v === 'matrix' || v === 'off'
+    ) {
       return v;
     }
     // Backwards compat: eski 'pp-snowfall-enabled' true/false
@@ -204,6 +249,12 @@ export function Snowfall({ number = 40 }: Props) {
     subscribeNoop,
     // Yoğun gökyüzü: 24 meteor + spread delay (her zaman birkaç tanesi düşer)
     () => makeMeteorsCached(24),
+    () => null,
+  );
+  const matrixDrops = useSyncExternalStore<MatrixDrop[] | null>(
+    subscribeNoop,
+    // Matrix Rain: 80 drop sürekli infinite loop — yeşil karakter yağışı.
+    () => makeMatrixDropsCached(80),
     () => null,
   );
   const mode = useSyncExternalStore<WeatherMode>(
@@ -322,6 +373,31 @@ export function Snowfall({ number = 40 }: Props) {
         </div>
       )}
 
+      {mode === 'matrix' && matrixDrops && (
+        <div
+          aria-hidden
+          data-testid="matrix-overlay"
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+          style={{ filter: 'drop-shadow(0 0 12px #0f0)' }}
+        >
+          {matrixDrops.map((d, i) => (
+            <span
+              key={i}
+              className="absolute top-0 leading-none font-mono text-[#0f0] animate-matrix-drop"
+              style={{
+                left: d.left,
+                fontSize: d.fontSize,
+                animationDelay: d.delay,
+                animationDuration: d.duration,
+                ['--matrix-fall' as string]: d.fallDistance,
+              }}
+            >
+              {d.char}
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* Sağ alt köşedeki 5-state weather toggle */}
       <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1.5">
         <ToggleButton
@@ -351,6 +427,13 @@ export function Snowfall({ number = 40 }: Props) {
           title="Kuyruklu yıldız (meteor)"
           testId="weather-meteor"
           icon={<MeteorIcon size={14} />}
+        />
+        <ToggleButton
+          active={mode === 'matrix'}
+          onClick={() => setModePersistent('matrix')}
+          title="Matrix yağmuru"
+          testId="weather-matrix"
+          icon={<MatrixIcon size={14} />}
         />
         <ToggleButton
           active={mode === 'off'}
@@ -425,6 +508,30 @@ function SnowIcon({ size }: { size: number }) {
       <line x1="17" y1="2" x2="12" y2="7" />
       <line x1="7" y1="22" x2="12" y2="17" />
       <line x1="17" y1="22" x2="12" y2="17" />
+    </svg>
+  );
+}
+
+function MatrixIcon({ size }: { size: number }) {
+  // Matrix yağmuru — 3 dikey karakter çizgisi (üst-orta-alt)
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <line x1="6" y1="3" x2="6" y2="15" />
+      <line x1="12" y1="6" x2="12" y2="20" />
+      <line x1="18" y1="2" x2="18" y2="13" />
+      <circle cx="6" cy="17" r="0.8" fill="currentColor" />
+      <circle cx="12" cy="22" r="0.8" fill="currentColor" />
+      <circle cx="18" cy="15" r="0.8" fill="currentColor" />
     </svg>
   );
 }
