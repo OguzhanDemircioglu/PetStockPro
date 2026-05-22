@@ -209,13 +209,11 @@ html.dark body::before {
   50%      { box-shadow: 0 0 0 10px transparent; }
 }
 @keyframes meteor {
-  /* pano-magicui original pattern: rotate(215deg) + translateX(-900) →
-     world'de aşağı-sağa diagonal düşüş (matematik: x'=+737, y'=+517).
-     Opacity smooth: 0→15% fade-in, 85→100% fade-out (üst kenarda flash yok). */
+  /* rotate(215deg) + pozitif translateX → world'de aşağı-sola diagonal. */
   0%   { transform: rotate(215deg) translateX(0); opacity: 0; }
-  15%  { opacity: 1; }
-  85%  { opacity: 1; }
-  100% { transform: rotate(215deg) translateX(-900px); opacity: 0; }
+  10%  { opacity: 1; }
+  70%  { opacity: 1; }
+  100% { transform: rotate(215deg) translateX(900px); opacity: 0; }
 }
 @keyframes snow-fall {
   0% {

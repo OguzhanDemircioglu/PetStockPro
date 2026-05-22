@@ -36,7 +36,6 @@ type Star = {
 };
 
 type Meteor = {
-  top: string;          // Başlangıç dikey: -2 ile -120 arası (random spread, hep aynı pozisyonda doğmasın)
   left: string;         // Başlangıç yatay: %0-100 random
   delay: string;
   duration: string;
@@ -85,15 +84,11 @@ function makeStars(count: number): Star[] {
 }
 
 function makeMeteors(count: number): Meteor[] {
-  // 215° diagonal pattern, yavaş + üst kenarda yığılma yok:
-  //   - top random -2 ile -120 arası (her meteor farklı yükseklikten doğar)
-  //   - duration 24-38s (yavaş)
-  //   - delay 0-22s spread (her zaman birkaç tanesi düşmekte)
+  // Yumuşak + yoğun gökyüzü hissi: 24 meteor, delay 0-12s spread, duration 14-22s.
   return Array.from({ length: count }, () => ({
-    top: -(Math.floor(Math.random() * 118) + 2) + 'px',
     left: Math.floor(Math.random() * 100) + '%',
-    delay: (Math.random() * 22).toFixed(2) + 's',
-    duration: (Math.random() * 14 + 24).toFixed(2) + 's',
+    delay: (Math.random() * 12).toFixed(2) + 's',
+    duration: (Math.random() * 8 + 14).toFixed(2) + 's',
     tailLength: (Math.floor(Math.random() * 40) + 60) + 'px',
   }));
 }
@@ -309,7 +304,7 @@ export function Snowfall({ number = 40 }: Props) {
               key={i}
               className="pointer-events-none absolute h-0.5 w-0.5 rounded-full bg-white shadow-[0_0_0_1px_#ffffff10] rotate-[215deg] animate-meteor"
               style={{
-                top: m.top,
+                top: -2,
                 left: m.left,
                 animationDelay: m.delay,
                 animationDuration: m.duration,
