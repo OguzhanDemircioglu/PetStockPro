@@ -1,11 +1,12 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import type { Metadata } from 'next';
+import { stagingDemoLoginAction } from '../staging-demo-actions';
 
 export const metadata: Metadata = {
   title: 'Yapım Aşamasında — PetStockPro',
   description:
-    "PetStockPro yakında! Pet shop hesap oluşturma henüz açık değil. Şimdilik vitrin'de pet shop'ları gezebilirsin.",
+    "PetStockPro yakında! Pet shop hesap oluşturma henüz açık değil. Şimdilik bayi panelini ve vitrin'i önizleyebilirsin.",
   robots: { index: false, follow: false },
 };
 
@@ -32,51 +33,49 @@ export default function YapimAsamasindaPage() {
         </h1>
 
         <p className="mt-4 max-w-lg text-base leading-relaxed text-ink-2">
-          PetStockPro&apos;ya pet shop kaydı henüz açık değil. Şu anda son
-          hazırlıkları tamamlıyoruz — ödeme entegrasyonu, e-fatura ve canlı
-          yayın için son testler yapılıyor.
-        </p>
-
-        <p className="mt-3 max-w-lg text-[13px] text-ink-3">
-          🐾 Bu arada Türkiye&apos;deki pet shop&apos;ları{' '}
-          <strong className="text-cat">vitrin&apos;de</strong> gezebilir, en
-          yakındakini bulup WhatsApp&apos;tan iletişime geçebilirsin.
+          PetStockPro pet shop&apos;lar için <strong>stok takip + bayi
+          yönetim</strong> platformudur. Hesap oluşturma henüz açık değil — son
+          hazırlıkları tamamlıyoruz. Şimdilik bayi panelini ve vitrin&apos;i
+          önizleyebilirsin.
         </p>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <form action={stagingDemoLoginAction}>
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-cat to-cat-2 px-6 py-3 text-[15px] font-bold text-white shadow-[var(--shadow-cat)] hover:-translate-y-0.5 transition-transform"
+            >
+              <span aria-hidden>🛡</span>
+              Bayi panelini önizle
+            </button>
+          </form>
           <Link
             href={'/vitrin' as never}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-cat to-cat-2 px-6 py-3 text-[15px] font-bold text-white shadow-[var(--shadow-cat)] hover:-translate-y-0.5 transition-transform"
-          >
-            <span aria-hidden>📍</span>
-            Pet shop&apos;ları gez
-          </Link>
-          <Link
-            href={'/vitrin/harita' as never}
             className="inline-flex items-center gap-2 rounded-xl border border-line bg-paper px-6 py-3 text-[15px] font-bold text-cart hover:bg-cat-soft"
           >
-            <span aria-hidden>🗺</span>
-            Harita
+            <span aria-hidden>🏪</span>
+            Vitrin&apos;i önizle
           </Link>
         </div>
 
         <div className="mt-12 grid w-full max-w-lg gap-3 sm:grid-cols-2">
           <div className="rounded-2xl border border-line bg-paper p-4 text-left">
             <div className="text-[11px] font-bold uppercase tracking-wider text-cat">
-              🏪 Pet shop sahibiysen
+              🛡 Pet shop sahibiysen
             </div>
             <p className="mt-1.5 text-[13px] text-ink-2">
-              Canlıya çıktığımızda ücretsiz <strong>FREE plan</strong> ile 50
-              ürüne kadar stok takibi yapabilirsin.
+              Stok takibi, çoklu şube, sayım, raporlar — pet shop&apos;unun tüm
+              operasyonu tek panelde. <strong>FREE plan</strong> ile 50 ürün
+              ücretsiz.
             </p>
           </div>
           <div className="rounded-2xl border border-line bg-paper p-4 text-left">
             <div className="text-[11px] font-bold uppercase tracking-wider text-cat">
-              🐶 Hayvansever isen
+              🏪 Vitrin (müşteri bul)
             </div>
             <p className="mt-1.5 text-[13px] text-ink-2">
-              Vitrin&apos;de mamasının fiyatını karşılaştır, yakındaki pet
-              shop&apos;tan WhatsApp ile sor.
+              Pet shop&apos;un Türkiye dizinine eklenir, müşteri WhatsApp&apos;tan
+              sana yazar. Online sipariş yok — direkt iletişim.
             </p>
           </div>
         </div>

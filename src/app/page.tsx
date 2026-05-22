@@ -254,13 +254,13 @@ function StagingDemoLanding() {
         </h1>
 
         <p className="mt-4 max-w-xl text-base leading-relaxed text-ink-2">
-          Pet shop&apos;lar için stok takip + vitrin SaaS platformu — lansman
-          öncesi son testler yapılıyor. Aşağıdaki iki sekmeden istediğini
-          önizleyebilirsin.
+          Pet shop&apos;lar için <strong>stok takip + bayi yönetim</strong>{' '}
+          platformu. E-ticaret değil — sahibi WhatsApp&apos;tan müşteriyle
+          buluşturan dizin. Aşağıdaki iki sekmeden önizleyebilirsin.
         </p>
 
         <div className="mt-10 grid w-full max-w-2xl gap-4 sm:grid-cols-2">
-          {/* Admin Paneli Önizle */}
+          {/* Bayi Yönetim Paneli Önizle */}
           <form action={stagingDemoLoginAction}>
             <button
               type="submit"
@@ -275,12 +275,12 @@ function StagingDemoLanding() {
                   Pet shop sahipleri için
                 </div>
                 <div className="mt-1 text-xl font-bold leading-tight">
-                  Admin Paneli&apos;ni önizle →
+                  Bayi panelini önizle →
                 </div>
               </div>
               <p className="text-[13px] leading-relaxed text-white/90">
-                Stok takip, vitrin yönetimi, raporlar, sayım — pet shop&apos;un
-                tüm operasyonu tek panelde. Demo SUPERADMIN ile gez.
+                Stok takip, çoklu şube, sayım, raporlar — pet shop&apos;un tüm
+                operasyonu tek panelde. Demo mock data ile gez.
               </p>
             </button>
           </form>
@@ -303,9 +303,9 @@ function StagingDemoLanding() {
               </div>
             </div>
             <p className="text-[13px] leading-relaxed text-white/90">
-              Türkiye&apos;deki pet shop&apos;ları haritada gez, yakınındakini
-              bul, WhatsApp&apos;tan satıcıya yaz. Online sipariş yok — direkt
-              iletişim.
+              Pet shop dizini — müşteri yakınındaki shop&apos;u bulur,
+              WhatsApp&apos;tan direkt satıcıya yazar. Online sipariş yok,
+              ödeme yok, biz aracı değiliz.
             </p>
           </Link>
         </div>
