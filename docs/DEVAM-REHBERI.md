@@ -1,43 +1,66 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-22 (AI Chatbot planı hazır, implementation yeni session'da)
+**Tarih:** 2026-05-22 (AI Chatbot **TAMAMLANDI** — Faz 1-7 hepsi production-ready)
 **Mevcut Branch:** `cray61` — push tamam
-**Son commit:** `84b6ff9` feat(pricing): USD pricing önerisi yaz
+**Son commit:** `ea082fb` feat(ai): Faz 7 — USER-MANUAL §21 AI Asistanı + süperadmin AI istat
 
 ---
 
-## 🚀 YENİ SESSION — İLK İŞ: AI Chatbot Implementation
+## ✅ AI CHATBOT TAMAMLANDI (2026-05-22 — tek session, 6 commit, 7 faz)
 
-**Plan:** [docs/PLAN-AI-CHATBOT.md](PLAN-AI-CHATBOT.md) — onaylı kararlar
+**Plan:** [docs/PLAN-AI-CHATBOT.md](PLAN-AI-CHATBOT.md) — TÜM FAZLAR DONE
 
-**Stack:**
-- LLM: **Cloudflare Workers AI** (Llama 3.1 8B veya Qwen 14B — TR test)
-- Embedding: **Workers AI** (multilingual-e5-large veya bge-base)
-- Vector store: **Cloudflare Vectorize**
-- Erişim: **FREE 10 msg/gün, PRO + PRO+ sınırsız**
-- Rate-limit: 5 msg/dk/user (anti-spam)
+**Commit zinciri:**
+- `8deee93` Faz 1 — USER-MANUAL chunk script + 29 unit test
+- `adf6fe8` Faz 2 — Cloudflare Vectorize + bge-m3 RAG kurulumu (21 test)
+- `e408086` Faz 3 — `/api/ai/chat` RAG endpoint + audit + usage (23 test)
+- `31967dc` Faz 4 — UI `/admin/ai` chat interface
+- `09e438b` Faz 5 — Plan gate (FREE 10/gün) + rate-limit (5/dk) + UI sayaç (15 test)
+- `ea082fb` Faz 7 — USER-MANUAL §21 AI Asistanı + süperadmin AI istat
+- (Faz 6 test pekitirme Faz 5'e dahil edildi)
 
-**Knowledge base:** [docs/USER-MANUAL.md](USER-MANUAL.md) — 2413 satır, hazır
+**Production altyapı (Aiven + Cloudflare):**
+- Migration 0027 manuel apply edildi (Aiven) — `ai_usage` + `ai_messages` + `ai_message_role` enum + 5 index
+- Cloudflare Vectorize index `petstockpro-user-manual` (1024 dim, cosine)
+- 189 chunk embedded + bulk upsert (önceki 182, yeni AI §21 dahil)
+- CF Workers AI: `bge-m3` (embed) + `Llama 3.1 8B Instruct` (LLM)
 
-**İlk komut:**
-```
-cd D:\Projeler\PetStockPro
-claude
-İlk komut: "PLAN-AI-CHATBOT.md oku ve Faz 1'den başla"
-```
+**Env değişkenleri (.env'de):**
+- `CF_ACCOUNT_ID=40480f0168b5090fcb25a6f1b5602e21`
+- `CF_API_TOKEN=cfut_*` (Workers AI Read + Vectorize Edit yetkili)
+- `CF_VECTORIZE_INDEX=petstockpro-user-manual`
+- `AI_FREE_DAILY_LIMIT=10` (default, override edilebilir)
+- `AI_RATE_LIMIT_PER_MINUTE=5` (default)
 
-**Implementation 7 faz (toplam 8-9 saat, 2 büyük tur):**
-1. Chunk script (USER-MANUAL → JSON chunks, ~80-150 chunk)
-2. Vectorize index + embedding + bulk upsert
-3. `/api/ai/chat` RAG endpoint (streaming)
-4. `/admin/ai` UI sayfa + sidebar link
-5. Plan gate (FREE 10/gün) + rate-limit + ai_usage tablo
-6. Test + browser smoke
-7. Doc + monitoring (system_errors entegrasyonu)
+**Test kanıtları:**
+- Smoke 4/4 query: vitrin/stok-0/2FA/kapsam-dışı tüm doğru cevap + reddet PERFECT
+- Latency 876-2568ms, token cost ~$0.002/query
+- AI kendi kendine cevap verebiliyor: "AI Asistanın günlük limiti?" → "FREE 10 mesaj"
+- Browser smoke 3 senaryo: welcome screen + suggested auto-submit + free-form input PASS
+- Süperadmin paneli 4 KPI: bugünkü mesaj/7 günlük/ort yanıt/token
 
-**Yeni 2 tablo (Migration 0027):** `ai_usage` + `ai_messages`
+**Test toplamı:** 1782 pass (Faz 1 öncesi 1649 → +133 yeni test)
 
-**Maliyet (1K tenant scale):** ~$1.500-1.800/ay — net gelirin %13-15'i, yönetilebilir.
+**Maliyet doğrulaması (production):**
+- 1 query ortalama ~2.2K token (1500 input + 200 output) → ~$0.002
+- Beta scale (50-100 tenant): ~$60/ay (plan tahmini)
+- Production scale (1K tenant): ~$1.500-1.800/ay — net gelirin %13-15'i
+
+**Sonraki AI iş kalemleri (opsiyonel, ileride):**
+- Stream response (Server-Sent Events) — şu an JSON, latency 1-3sn'de kabul edilebilir
+- Conversation memory (multi-turn) — şu an her soru bağımsız (KISS)
+- Vectorize re-seed CI otomasyonu (USER-MANUAL.md değişince auto-trigger)
+- Cost dashboard süperadmin paneline ($ harcama günlük)
+- system_errors entegrasyonu AI fail için (track quota_exceeded, rate_limited rates)
+
+---
+
+## 🎯 Sıradaki Büyük İş Kalemleri (PetStockPro genel)
+
+1. **Production deploy gerçek metric ölçüm** — Lighthouse + artillery k6 ⛔ Sprint 14 bloker (şirket kuruluş)
+2. **Performance marjinal fix'ler** — Tur 7/8/15/16 (Drizzle prepare/query consolidation) — ROI marjinal
+3. **7. Mantık Hata Tarama** — yeni AI değişiklikleri için (2-3 saat)
+4. Sprint 13/14 production / Beta / Pricing pilot — ⛔ kullanıcı bloker
 
 ---
 

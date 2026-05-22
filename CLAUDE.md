@@ -33,7 +33,33 @@
 
 ## 🚀 YENİ SESSION'A GİRDİĞİNDE — İLK OKUMA SIRASI
 
-**2026-05-22 GECE — Uzun session bitti.** Son commit `424a520`. **39 commit GitHub'da** (88dfa8b..424a520). 0 bekleyen commit. Test **1649 pass** · typecheck/lint 0 error.
+**2026-05-22 (AI Chatbot session) — AI CHATBOT TAMAMLANDI 7 fazda.** Son commit `ea082fb`. **6 commit yeni** (8deee93..ea082fb). 0 bekleyen commit. Test **1782 pass** (+133 yeni AI test) · typecheck/lint 0 error.
+
+**AI Chatbot session özeti (Faz 1-7):**
+1. **Faz 1** (`8deee93`) — USER-MANUAL chunk script + 29 unit test (189 chunk üretimi, TR-friendly 3.5 char/token)
+2. **Faz 2** (`adf6fe8`) — CF API client (cf-client.ts) + Vectorize index create + 182 chunk embed + 5 smoke query PERFECT (21 test)
+3. **Faz 3** (`e408086`) — Migration 0027 (ai_usage + ai_messages) + rag.ts + usage.ts + `/api/ai/chat` route + 23 test
+4. **Faz 4** (`31967dc`) — Sidebar "🤖 AI Asistanı" link + `/admin/ai` page + ChatInterface (welcome + 5 önerilen soru + markdown render + auto-scroll)
+5. **Faz 5** (`09e438b`) — Plan gate (FREE 10/gün) + rate-limit (IP×user 5/dk KV/memory) + UI sayaç + 4 hata türü reject (15 test)
+6. **Faz 7** (`ea082fb`) — USER-MANUAL §21 AI Asistanı + süperadmin AI istat KPI (4 kart) + Vectorize re-seed (189 chunk)
+7. **(Faz 6 test pekitirme Faz 5'e dahil)**
+
+**Production altyapı (Aiven + Cloudflare):**
+- Migration 0027 Aiven'da apply edildi (manuel, journal'a eklenmedi — CLAUDE.md pattern)
+- Cloudflare Vectorize `petstockpro-user-manual` (1024 dim, cosine) + 189 chunk seed
+- CF Workers AI: `@cf/baai/bge-m3` (embed) + `@cf/meta/llama-3.1-8b-instruct` (LLM)
+- Env: `CF_ACCOUNT_ID`, `CF_API_TOKEN`, `CF_VECTORIZE_INDEX`, `AI_FREE_DAILY_LIMIT=10`, `AI_RATE_LIMIT_PER_MINUTE=5`
+
+**Test kanıtları:**
+- Smoke RAG 4/4: Vitrin/Stok-0/2FA/kapsam-dışı tümü doğru
+- Latency 876-2568ms (avg ~1700ms), token cost ~$0.002/query
+- AI self-aware: "AI Asistanın günlük limiti?" → "FREE 10 mesaj" doğru
+- Browser smoke 3 senaryo (welcome + suggested + free-form) PASS
+- Süperadmin AI istat KPI render OK (bugünkü mesaj=4, ort latency=2.8sn, token=8.080)
+
+---
+
+**2026-05-22 GECE (önceki session) — Uzun session bitti.** Son commit `424a520`. **39 commit GitHub'da** (88dfa8b..424a520). 0 bekleyen commit. Test **1649 pass** · typecheck/lint 0 error.
 
 **Bu session'da yapılan büyük tur özetler (sırasıyla):**
 1. **NotificationBell client + 6 test** (commit `88dfa8b`) — bulk Tümünü oku sonrası bell anlık 0 (useSyncExternalStore). Cache-reactive.
