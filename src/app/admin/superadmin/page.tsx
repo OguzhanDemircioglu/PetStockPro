@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { db } from '@/lib/db/client';
 import { requireSuperadmin } from '@/lib/superadmin/access';
 import { listAllTenants, getSystemStats } from '@/lib/superadmin/tenants';
+import { getAiSystemStats } from '@/lib/ai/stats';
 import { getDatabaseStats } from '@/lib/superadmin/db-stats';
 import {
   getVitrinEventStats,
@@ -27,13 +28,15 @@ const STOREFRONT_LABELS: Record<string, { label: string; cls: string }> = {
 export default async function SuperadminTenantsPage() {
   await requireSuperadmin();
 
-  const [tenants, stats, dbStats, vitrinStats, activityStats] = await Promise.all([
-    listAllTenants(db, 50),
-    getSystemStats(db),
-    getDatabaseStats(db),
-    getVitrinEventStats(db, 7),
-    getTenantActivityStats(db),
-  ]);
+  const [tenants, stats, dbStats, vitrinStats, activityStats, aiStats] =
+    await Promise.all([
+      listAllTenants(db, 50),
+      getSystemStats(db),
+      getDatabaseStats(db),
+      getVitrinEventStats(db, 7),
+      getTenantActivityStats(db),
+      getAiSystemStats(db, 7),
+    ]);
 
   const usageDanger = dbStats.usagePct > 80;
   const usageWarning = dbStats.usagePct > 50 && !usageDanger;
@@ -149,6 +152,42 @@ export default async function SuperadminTenantsPage() {
           label="Conversion oranı"
           value={`%${vitrinStats.conversionRate.toFixed(1)}`}
           sub="WA tıklama / profil görüntüleme"
+        />
+      </section>
+
+      <ZoneLabel emoji="🤖" label="AI Asistanı · Son 7 gün" />
+
+      <section
+        data-testid="ai-metrics"
+        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+      >
+        <KpiBold
+          tone="cart"
+          label="Bugünkü mesaj"
+          value={aiStats.todayMessageCount}
+          sub={`${aiStats.activeUsersToday} aktif kullanıcı`}
+        />
+        <KpiBold
+          tone="bars"
+          label="7 günlük mesaj"
+          value={aiStats.totalMessagesNDays}
+          sub="assistant cevapları"
+        />
+        <KpiBold
+          tone="arrow"
+          label="Ortalama yanıt"
+          value={
+            aiStats.avgResponseTimeMs > 0
+              ? `${(aiStats.avgResponseTimeMs / 1000).toFixed(1)} sn`
+              : '—'
+          }
+          sub="RAG + LLM latency"
+        />
+        <KpiBold
+          tone="cat"
+          label="7 günlük token"
+          value={aiStats.totalTokensNDays.toLocaleString('tr-TR')}
+          sub="input + output (CF Workers AI)"
         />
       </section>
 

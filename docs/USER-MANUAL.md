@@ -27,6 +27,7 @@
 18. Süperadmin (Sahibinden kısa bilgi)
 19. Sık Sorulan Sorular (50+ kategorize edilmiş)
 20. Sorun Giderme
+21. AI Asistanı (Chatbot)
 
 ---
 
@@ -2384,6 +2385,71 @@ Eksikleri tamamla, tekrar "Aç" tıkla.
 **Problem:** Pano üst menüsünde 🛡 "Süperadmin" linki yok
 
 **Olası sebep:** Hesabın **SUPERADMIN rolü değil**. Bu link sadece PetStockPro yönetimi (sahibi) tarafından kullanılır. Normal pet shop sahipleri ve çalışanlar görmez.
+
+---
+
+## 21. AI Asistanı (Chatbot)
+
+URL: `/admin/ai`
+
+Sol menüde **"🤖 AI Asistanı"** linkine tıklayınca PetStockPro hakkında doğal dilde soru sorabileceğin bir chat sayfası açılır. Asistan **sadece bu kullanım kılavuzundaki bilgilerle** cevap verir — uydurma yapmaz.
+
+### 21.1 Nasıl kullanılır?
+
+- Welcome ekranında 5 önerilen soru görürsün ("Vitrin'e ürün nasıl çıkarırım?", "Stok 0 olunca?", "2FA TOTP nasıl?", "PRO'ya nasıl geçerim?", "Excel ile toplu yükleme"). Tıkla → otomatik gönderilir.
+- Veya alt input'a soru yaz (2-500 karakter), **Enter** ile gönder. **Shift+Enter** yeni satır.
+- Cevap geldiğinde, balonun altında **"📚 N kaynak"** detayı aç → hangi kılavuz bölümlerinden cevabın üretildiğini görürsün.
+- Kaynaklar düşük skorlu ise **"düşük güven"** rozeti çıkar. Bu durumda asistan büyük olasılıkla "yeterli bilgi bulamadım" der.
+
+### 21.2 Plan limitleri
+
+| Plan | Günlük mesaj | Dakikada |
+|---|---|---|
+| FREE | **10 mesaj** (00:00 UTC sıfırlanır) | 5 (anti-spam) |
+| PRO | Sınırsız | 5 |
+| PRO+ | Sınırsız | 5 |
+
+- **FREE plan sayacı** sayfa üst sağında "FREE plan: 3/10 bugün" şeklinde görünür. Kalan ≤5 ise turuncu, ≤2 ise kırmızı tonda uyarır.
+- 10/10'a ulaşınca input alanı **kilitlenir**, ⛔ banner "Günlük limit doldu" görünür. Yarın 00:00 UTC'da sıfırlanır.
+- Anti-spam: dakikada 5 mesajdan fazla gönderirsen 60 sn beklemen istenir.
+
+### 21.3 Kapsam — neyi cevaplar, neyi cevaplamaz?
+
+**Cevaplar:**
+- PetStockPro uygulamasının her ekranı, her özelliği (bu kılavuzun §1-§20 arası tüm konular)
+- Hesap + güvenlik (2FA, şifremi unuttum, kilitli hesap)
+- Ürün + stok + sayım + transfer + raporlar
+- Vitrin (sahip tarafı + müşteri tarafı)
+- Plan + fatura + Excel import + KVKK veri indirme
+
+**Cevaplamaz:**
+- PetStockPro dışı konular (hava durumu, dolar kuru, başka uygulamalar)
+- Senin tenant'ına özel veriler (kaç ürünün var, hangi satışın oldu — Asistan canlı veriye bakmaz, sadece dokümandan cevap verir)
+- Kullanım kılavuzunda olmayan ileri seviye konular
+
+**Kapsam dışı sorularda:** "Bu konuyla ilgili PetStockPro kullanım kılavuzunda yeterli bilgi bulamadım. Detaylı yardım için destek@petstockpro.com'a yazabilirsin." cevabı verir.
+
+### 21.4 Teknoloji — nasıl çalışıyor?
+
+- **Embedding:** Cloudflare Workers AI (`bge-m3` multilingual, 1024 boyutlu vektör, Türkçe destekli)
+- **LLM:** `Llama 3.1 8B Instruct` (Cloudflare Workers AI)
+- **Vector store:** Cloudflare Vectorize (USER-MANUAL.md'nin 182 chunk'ı önceden embed edilip indekslenmiştir)
+- **RAG (Retrieval-Augmented Generation):** Sorduğun soru → embedding → en alakalı 5 chunk → LLM'e kaynak olarak verilir → Türkçe cevap
+
+Cevap genelde 1-3 saniyede gelir. Latency >10sn ise "Sistem yoğun, tekrar dene" mesajı görürsün.
+
+### 21.5 Gizlilik
+
+- Sorduğun her soru ve verilen cevap **audit log'a kaydedilir** (`ai_messages` tablo): tenant + user ID + tarih + soru + cevap + hangi kaynaklar kullanıldı + kaç token harcandı.
+- **Tenant izolasyonu:** Asistan başka tenant'ların verilerini görmez. Bu zaten teknik olarak imkânsız çünkü Asistan kullanım kılavuzunu okur, canlı veri tabanına bakmaz.
+- **3. taraf:** Sorular Cloudflare Workers AI'ya gönderilir (Cloudflare EU bölgesi). Cloudflare bu verileri model eğitimi için kullanmaz (kurumsal sözleşme).
+- **KVKK:** AI mesajları kişisel veri kapsamında değildir (sadece sistem kullanımı). Yine de "Verilerimi İndir" ile audit log'u indirebilirsin.
+
+### 21.6 Sınırlamalar
+
+- **Halüsinasyon yok ama yetersizlik var:** Asistan uydurma yapmaz ama bazı detaylı sorularda "yeterli bilgi bulamadım" diyebilir. Önerimiz: soruyu farklı kelimelerle yeniden sor veya destek email'ine yaz.
+- **Canlı veri yok:** "Kaç ürünüm var?" gibi tenant verisini sormak işe yaramaz. O bilgi için Pano sayfasını veya Ürünler listesini kullan.
+- **Hatırlama yok:** Her soru bağımsızdır, önceki sorunu hatırlamaz. Tek mesajda tam bağlam ver.
 
 ---
 
