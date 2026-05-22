@@ -279,7 +279,10 @@ html.dark body::before {
 .animate-shimmer-slide { animation: shimmer-slide 3s ease-in-out infinite alternate; }
 .animate-spin-around   { animation: spin-around calc(var(--mui-speed, 3s) * 2) infinite linear; }
 .animate-pulse-soft    { animation: pulse-soft 1.5s ease-out infinite; }
-.animate-meteor        { animation: meteor var(--mui-meteor-duration, 9s) linear infinite; }
+/* backwards = animationDelay süresi boyunca 0% keyframe (opacity:0) uygulanır.
+   Yoksa element delay'de default state'te (görünür) kalıyor → tıklamada üst kenarda
+   statik çizgiler. */
+.animate-meteor        { animation: meteor var(--mui-meteor-duration, 9s) linear infinite backwards; }
 .animate-snow-fall     { animation: snow-fall var(--mui-snow-duration, 8s) linear infinite; }
 .animate-rain-fall     { animation: rain-fall var(--mui-rain-duration, 1.4s) linear infinite; }
 .animate-star-fall     { animation: star-fall var(--mui-star-duration, 9s) linear infinite; }
