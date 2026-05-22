@@ -13,6 +13,7 @@
  *   - FREE plan günlük 10 cap (getTodayUsage + reject)
  *   - IP × user dakikada 5 rate limit
  */
+import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
@@ -22,6 +23,22 @@ import {
   recordAssistantMessage,
   incrementDailyUsage,
 } from '@/lib/ai/usage';
+import {
+  checkAiDailyQuota,
+  checkAiRateLimit,
+  type PlanName,
+} from '@/lib/ai/plan-gate';
+import { getCompanyById } from '@/lib/cache/request-scoped';
+
+function getIp(req: Request): string {
+  const xff = req.headers.get('x-forwarded-for');
+  if (xff) return xff.split(',')[0].trim();
+  return req.headers.get('x-real-ip') ?? '0.0.0.0';
+}
+
+function hashIp(ip: string): string {
+  return createHash('sha256').update(ip).digest('hex').slice(0, 16);
+}
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -58,6 +75,43 @@ export async function POST(req: Request): Promise<Response> {
     );
   }
   const { question } = parsed.data;
+
+  // Rate-limit (IP × user dakikada 5)
+  const ipHash = hashIp(getIp(req));
+  const rate = await checkAiRateLimit(session.user.id, ipHash);
+  if (!rate.allowed) {
+    return Response.json(
+      {
+        ok: false,
+        error: 'rate_limited',
+        retryAfterSeconds: rate.retryAfterSeconds,
+        limit: rate.limit,
+      },
+      { status: 429, headers: { 'retry-after': String(rate.retryAfterSeconds) } },
+    );
+  }
+
+  // Plan quota (FREE 10/gün cap, PRO+ sınırsız)
+  const company = await getCompanyById(session.user.companyId);
+  const plan = (company?.plan ?? 'FREE') as PlanName;
+  const quota = await checkAiDailyQuota(
+    db,
+    session.user.companyId,
+    session.user.id,
+    plan,
+  );
+  if (!quota.allowed) {
+    return Response.json(
+      {
+        ok: false,
+        error: 'daily_quota_exceeded',
+        plan,
+        used: quota.used,
+        limit: quota.limit,
+      },
+      { status: 429 },
+    );
+  }
 
   // RAG
   const indexName = process.env.CF_VECTORIZE_INDEX || DEFAULT_INDEX;
@@ -118,5 +172,12 @@ export async function POST(req: Request): Promise<Response> {
     outputTokens: rag.outputTokens,
     modelUsed: rag.modelUsed,
     responseTimeMs,
+    // Quota (UI sayaç güncelleyebilsin)
+    quota: {
+      plan,
+      used: quota.used + 1, // bu mesaj sonrası yeni used
+      limit: quota.limit === Infinity ? null : quota.limit,
+      remaining: quota.remaining === Infinity ? null : Math.max(0, quota.remaining - 1),
+    },
   });
 }

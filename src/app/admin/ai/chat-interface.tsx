@@ -20,6 +20,11 @@ interface ChatResponse {
   lowConfidence?: boolean;
   error?: string;
   detail?: string;
+  retryAfterSeconds?: number;
+  plan?: string;
+  used?: number;
+  limit?: number;
+  quota?: { plan: string; used: number; limit: number | null; remaining: number | null };
 }
 
 const SUGGESTED_QUESTIONS = [
@@ -30,11 +35,21 @@ const SUGGESTED_QUESTIONS = [
   { emoji: '📊', text: 'Excel ile toplu ürün yüklemek istiyorum' },
 ];
 
-export function ChatInterface({ userName }: { userName: string }) {
+interface ChatInterfaceProps {
+  userName: string;
+  plan: 'FREE' | 'PRO' | 'PRO_PLUS';
+  initialUsage: number;
+  dailyLimit: number | null;
+}
+
+export function ChatInterface({ userName, plan: _plan, initialUsage, dailyLimit }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
+  const [usedCount, setUsedCount] = useState(initialUsage);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const capReached = dailyLimit !== null && usedCount >= dailyLimit;
 
   const askMutation = useMutation({
     mutationFn: async (question: string): Promise<ChatResponse> => {
@@ -45,7 +60,17 @@ export function ChatInterface({ userName }: { userName: string }) {
       });
       const json = (await res.json()) as ChatResponse;
       if (!res.ok || !json.ok) {
-        throw new Error(json.error ?? 'unknown_error');
+        const err = new Error(json.error ?? 'unknown_error') as Error & {
+          status?: number;
+          retryAfterSeconds?: number;
+          limit?: number;
+          used?: number;
+        };
+        err.status = res.status;
+        err.retryAfterSeconds = json.retryAfterSeconds;
+        err.limit = json.limit;
+        err.used = json.used;
+        throw err;
       }
       return json;
     },
@@ -53,7 +78,7 @@ export function ChatInterface({ userName }: { userName: string }) {
 
   function sendQuestion(question: string): void {
     const q = question.trim();
-    if (!q || askMutation.isPending) return;
+    if (!q || askMutation.isPending || capReached) return;
 
     const userMsg: Message = {
       id: `u-${Date.now()}`,
@@ -73,16 +98,32 @@ export function ChatInterface({ userName }: { userName: string }) {
           lowConfidence: data.lowConfidence,
         };
         setMessages((prev) => [...prev, asstMsg]);
+        if (data.quota && typeof data.quota.used === 'number') {
+          setUsedCount(data.quota.used);
+        }
       },
       onError: (err) => {
-        const errMsg: Message = {
-          id: `e-${Date.now()}`,
-          role: 'assistant',
-          content:
-            'Üzgünüm, bir sorun oluştu. Lütfen tekrar dene veya destek@petstockpro.com\'a yaz.',
-          error: true,
+        const errAny = err as Error & {
+          status?: number;
+          retryAfterSeconds?: number;
+          limit?: number;
+          used?: number;
         };
-        setMessages((prev) => [...prev, errMsg]);
+        let content: string;
+        if (errAny.message === 'daily_quota_exceeded') {
+          content = `Günlük limit doldu (${errAny.used}/${errAny.limit}). FREE planında günde ${errAny.limit} soru sorabilirsin. Yarın 00:00 (UTC) sıfırlanacak — ya da PRO'ya geç sınırsız sor.`;
+          if (errAny.used !== undefined) setUsedCount(errAny.used);
+        } else if (errAny.message === 'rate_limited') {
+          content = `Çok hızlı soruyorsun. Lütfen ${errAny.retryAfterSeconds ?? 60} saniye bekleyip tekrar dene.`;
+        } else if (errAny.message === 'ai_unavailable') {
+          content = 'AI servisine ulaşılamıyor. Lütfen birazdan tekrar dene.';
+        } else {
+          content = 'Üzgünüm, bir sorun oluştu. Lütfen tekrar dene veya destek@petstockpro.com\'a yaz.';
+        }
+        setMessages((prev) => [
+          ...prev,
+          { id: `e-${Date.now()}`, role: 'assistant', content, error: true },
+        ]);
         console.error('AI chat error:', err);
       },
     });
@@ -109,6 +150,17 @@ export function ChatInterface({ userName }: { userName: string }) {
 
   return (
     <div className="flex h-full flex-1 flex-col overflow-hidden rounded-2xl border border-line/40 bg-white/40">
+      {capReached && (
+        <div
+          role="status"
+          data-testid="ai-cap-banner"
+          className="border-b border-danger/40 bg-danger-soft px-4 py-2 text-[12.5px] font-bold text-danger"
+        >
+          ⛔ Günlük limit doldu ({usedCount}/{dailyLimit}). Yarın 00:00 (UTC)
+          sıfırlanır — ya da PRO&apos;ya geç sınırsız sor.
+        </div>
+      )}
+
       {/* Mesaj alanı */}
       <div
         ref={scrollRef}
@@ -119,7 +171,7 @@ export function ChatInterface({ userName }: { userName: string }) {
           <WelcomeScreen
             userName={userName}
             onSuggest={(q) => sendQuestion(q)}
-            disabled={askMutation.isPending}
+            disabled={askMutation.isPending || capReached}
           />
         ) : (
           <div className="flex flex-col gap-3">
@@ -148,16 +200,20 @@ export function ChatInterface({ userName }: { userName: string }) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKey}
-            placeholder="PetStockPro hakkında bir soru yaz... (Enter ile gönder, Shift+Enter yeni satır)"
+            placeholder={
+              capReached
+                ? 'Günlük limit doldu — yarın tekrar dene veya PRO\'ya geç.'
+                : 'PetStockPro hakkında bir soru yaz... (Enter ile gönder, Shift+Enter yeni satır)'
+            }
             rows={2}
             maxLength={500}
-            disabled={askMutation.isPending}
+            disabled={askMutation.isPending || capReached}
             className="flex-1 resize-none rounded-xl border border-line/40 bg-white px-3 py-2 text-[13.5px] text-ink placeholder:text-ink-4 focus:outline-none focus:ring-2 focus:ring-cat/40 disabled:opacity-50"
             data-testid="ai-chat-input"
           />
           <button
             type="submit"
-            disabled={askMutation.isPending || input.trim().length < 2}
+            disabled={askMutation.isPending || capReached || input.trim().length < 2}
             className="rounded-xl bg-cat px-4 py-2.5 text-[13px] font-bold text-white shadow-sm transition hover:bg-cat-dark disabled:cursor-not-allowed disabled:opacity-50"
             data-testid="ai-chat-send"
           >
