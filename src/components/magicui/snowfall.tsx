@@ -84,11 +84,11 @@ function makeStars(count: number): Star[] {
 }
 
 function makeMeteors(count: number): Meteor[] {
-  // Yumuşak + yoğun gökyüzü hissi: 24 meteor, delay 0-12s spread, duration 14-22s.
+  // Yumuşak + yoğun gökyüzü hissi: 24 meteor, delay 0-16s spread, duration 20-32s.
   return Array.from({ length: count }, () => ({
     left: Math.floor(Math.random() * 100) + '%',
-    delay: (Math.random() * 12).toFixed(2) + 's',
-    duration: (Math.random() * 8 + 14).toFixed(2) + 's',
+    delay: (Math.random() * 16).toFixed(2) + 's',
+    duration: (Math.random() * 12 + 20).toFixed(2) + 's',
     tailLength: (Math.floor(Math.random() * 40) + 60) + 'px',
   }));
 }
