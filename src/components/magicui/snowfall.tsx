@@ -84,11 +84,11 @@ function makeStars(count: number): Star[] {
 }
 
 function makeMeteors(count: number): Meteor[] {
-  // 24 meteor, delay 0-20s spread, duration 40-50s (çok yavaş yumuşak akış).
+  // 24 meteor, delay 0-40s spread, duration 90-100s (slow-motion gökyüzü akışı).
   return Array.from({ length: count }, () => ({
     left: Math.floor(Math.random() * 100) + '%',
-    delay: (Math.random() * 20).toFixed(2) + 's',
-    duration: (Math.random() * 10 + 40).toFixed(2) + 's',
+    delay: (Math.random() * 40).toFixed(2) + 's',
+    duration: (Math.random() * 10 + 90).toFixed(2) + 's',
     tailLength: (Math.floor(Math.random() * 40) + 60) + 'px',
   }));
 }
