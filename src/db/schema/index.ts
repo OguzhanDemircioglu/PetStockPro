@@ -1149,6 +1149,56 @@ export const systemErrors = petstockproSchema.table('system_errors', {
 ]);
 
 // ═══════════════════════════════════════════════════════════════
+// AI CHATBOT (PLAN-AI-CHATBOT.md Faz 3+)
+// ═══════════════════════════════════════════════════════════════
+
+// 'user' | 'assistant' — system mesajı tabloya yazılmaz (prompt template'tedir)
+export const aiMessageRoleEnum = petstockproSchema.enum('ai_message_role', [
+  'user',
+  'assistant',
+]);
+
+/**
+ * Günlük aggregate AI mesaj sayacı (gün başına 1 satır/user/tenant).
+ * FREE plan 10/gün cap için kullanılır. PRO+PRO+ için sadece analytics.
+ */
+export const aiUsage = petstockproSchema.table('ai_usage', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  date: date('date').notNull(),  // YYYY-MM-DD (UTC)
+  messageCount: integer('message_count').notNull().default(0),
+  totalInputTokens: integer('total_input_tokens').notNull().default(0),
+  totalOutputTokens: integer('total_output_tokens').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('idx_ai_usage_company_user_date').on(t.companyId, t.userId, t.date),
+]);
+
+/**
+ * Her user/assistant mesajı için audit + analytics kaydı.
+ * RAG metadata (retrieved chunk id'leri) + model bilgisi + latency.
+ * userId 'set null': user silinince mesaj kaybolmasın (tenant analytics korunsun).
+ */
+export const aiMessages = petstockproSchema.table('ai_messages', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  role: aiMessageRoleEnum('role').notNull(),
+  content: text('content').notNull(),
+  retrievedChunkIds: jsonb('retrieved_chunk_ids'),  // ['c-001', 'c-042', ...]
+  inputTokens: integer('input_tokens'),
+  outputTokens: integer('output_tokens'),
+  modelUsed: varchar('model_used', { length: 100 }),  // '@cf/meta/llama-3.1-8b-instruct'
+  responseTimeMs: integer('response_time_ms'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('idx_ai_messages_company_date').on(t.companyId, t.createdAt.desc()),
+  index('idx_ai_messages_user_date').on(t.userId, t.createdAt.desc()),
+]);
+
+// ═══════════════════════════════════════════════════════════════
 // TODO Sprint 1B.3+ (sırayla eklenecek)
 // ═══════════════════════════════════════════════════════════════
 // telegram_bindings (Faz 2 binding flow), system_settings, system_broadcasts,
