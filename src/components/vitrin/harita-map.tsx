@@ -33,17 +33,21 @@ interface Props {
   onMarkerScreenPosition?: (pos: { x: number; y: number } | null) => void;
 }
 
-// 3 yayılan dalga halkası — varsayılan marker arka plan'sız, sadece pulse + 📍
+// Selected marker'da yayılan dalga halkaları (default sade).
+// State değişiminde "büyük opak nokta" artefakt'ını önler.
 function pinHtml(opts: { selected: boolean }): string {
-  const ringColor = opts.selected ? 'rgba(22,160,138,0.55)' : 'rgba(212,74,20,0.55)';
   const pinSize = opts.selected ? 40 : 32;
   const ringSize = opts.selected ? 22 : 18;
+  const rings = opts.selected
+    ? `
+      <div style="position:absolute;top:50%;left:50%;width:${ringSize}px;height:${ringSize}px;background:rgba(22,160,138,0.55);border-radius:50%;animation:pp-pulse-ring 2.4s ease-out infinite;"></div>
+      <div style="position:absolute;top:50%;left:50%;width:${ringSize}px;height:${ringSize}px;background:rgba(22,160,138,0.55);border-radius:50%;animation:pp-pulse-ring 2.4s ease-out infinite 0.8s;"></div>
+      <div style="position:absolute;top:50%;left:50%;width:${ringSize}px;height:${ringSize}px;background:rgba(22,160,138,0.55);border-radius:50%;animation:pp-pulse-ring 2.4s ease-out infinite 1.6s;"></div>
+    `
+    : '';
   return `
     <div style="position:relative;width:${pinSize}px;height:${pinSize}px;display:grid;place-items:center;pointer-events:none;">
-      <div style="position:absolute;top:50%;left:50%;width:${ringSize}px;height:${ringSize}px;background:${ringColor};border-radius:50%;animation:pp-pulse-ring 2.4s ease-out infinite;"></div>
-      <div style="position:absolute;top:50%;left:50%;width:${ringSize}px;height:${ringSize}px;background:${ringColor};border-radius:50%;animation:pp-pulse-ring 2.4s ease-out infinite 0.6s;"></div>
-      <div style="position:absolute;top:50%;left:50%;width:${ringSize}px;height:${ringSize}px;background:${ringColor};border-radius:50%;animation:pp-pulse-ring 2.4s ease-out infinite 1.2s;"></div>
-      <div style="position:absolute;top:50%;left:50%;width:${ringSize}px;height:${ringSize}px;background:${ringColor};border-radius:50%;animation:pp-pulse-ring 2.4s ease-out infinite 1.8s;"></div>
+      ${rings}
       <div style="position:relative;font-size:${pinSize}px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.4));">📍</div>
     </div>
   `;

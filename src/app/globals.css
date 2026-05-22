@@ -269,9 +269,11 @@ html.dark body::before {
   }
 }
 @keyframes pp-pulse-ring {
-  /* Harita marker'ı için yayılan dalga halkaları */
-  0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 0.75; }
-  100% { transform: translate(-50%, -50%) scale(6); opacity: 0; }
+  /* Harita marker dalga halkası — opacity 0'dan peak'e geç ve fade out.
+     "Aniden ortada büyük opak nokta" görsel artefakt'ını önler. */
+  0%   { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+  15%  { opacity: 0.55; }
+  100% { transform: translate(-50%, -50%) scale(4); opacity: 0; }
 }
 @keyframes matrix-drop {
   /* Matrix yağmuru: linear sabit hız — tüm stream tepeden viewport'tan
