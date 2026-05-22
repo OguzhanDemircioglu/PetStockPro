@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import Link from 'next/link';
 
 const STORAGE_KEY = 'vitrin-cookie-banner-dismissed-at';
@@ -10,49 +10,69 @@ const DISMISS_TTL_MS = 6 * 30 * 24 * 60 * 60 * 1000;
 /**
  * Vitrin için KVKK uyumlu cookie banner.
  *
- * Mount'ta localStorage'a bakıp 6 ay içinde dismiss edilmişse gizlenir.
- * "Reddet" → KVKK opt-out (analytics tracking yine de IP-hash anonim devam
- * eder ama localStorage flag set). "Kabul Et" → flag set.
+ * useSyncExternalStore ile SSR-safe: server snapshot + ilk hydration banner
+ * gizli (dismissed=true) — server HTML ile client DOM eşleşir. Hydration
+ * sonrası client snapshot çağrılır, localStorage'a bakılır, banner
+ * gerekiyorsa görünür hale gelir.
  *
- * Her iki seçim de dismiss eder. KVKK madde 5 açık rıza gerektirmez çünkü
- * IP hash anonim + günlük-salt rotasyonu var — banner sadece şeffaflık için.
- *
- * SSR-safe: ilk render'da null döner (hydration mismatch önlemi), useEffect
- * sonrası karar verir.
+ * Dismiss tıklanınca localStorage flag set + subscribers notified.
  */
-/** Mount sırasında localStorage'tan dismiss durumunu oku — eslint set-state-in-effect uyumlu */
-function readInitialShow(): boolean | null {
-  // SSR'da localStorage yok → null (ilk paint'te ban görüntülenmez)
-  if (typeof window === 'undefined') return null;
+const subscribers = new Set<() => void>();
+let cachedDismissed: boolean | null = null;
+
+function readDismissedFromStorage(): boolean {
+  if (typeof window === 'undefined') return true;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const ts = parseInt(raw, 10);
       if (Number.isFinite(ts) && Date.now() - ts < DISMISS_TTL_MS) {
-        return false;
+        return true;
       }
     }
   } catch {
-    // Private mode / quota → sessizce göster
+    /* Private mode / quota — banner göster */
   }
+  return false;
+}
+
+function getDismissedSnapshot(): boolean {
+  if (cachedDismissed === null) {
+    cachedDismissed = readDismissedFromStorage();
+  }
+  return cachedDismissed;
+}
+
+/** Server + ilk hydration: banner gizli (dismissed=true). */
+function getDismissedServerSnapshot(): boolean {
   return true;
 }
 
-export function CookieBanner() {
-  // useState lazy initializer ile mount sırasında bir kez okur (SSR'da null →
-  // ilk paint banner-less, client hydrate olunca localStorage check + render).
-  const [show, setShow] = useState<boolean | null>(() => readInitialShow());
-
-  const dismiss = () => {
-    try {
-      localStorage.setItem(STORAGE_KEY, String(Date.now()));
-    } catch {
-      /* noop */
-    }
-    setShow(false);
+function subscribeDismissed(cb: () => void): () => void {
+  subscribers.add(cb);
+  return () => {
+    subscribers.delete(cb);
   };
+}
 
-  if (show !== true) return null;
+function markDismissed(): void {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, String(Date.now()));
+  } catch {
+    /* noop */
+  }
+  cachedDismissed = true;
+  subscribers.forEach((cb) => cb());
+}
+
+export function CookieBanner() {
+  const dismissed = useSyncExternalStore<boolean>(
+    subscribeDismissed,
+    getDismissedSnapshot,
+    getDismissedServerSnapshot,
+  );
+
+  if (dismissed) return null;
 
   return (
     <div
@@ -80,7 +100,7 @@ export function CookieBanner() {
         <button
           type="button"
           data-testid="cookie-accept"
-          onClick={dismiss}
+          onClick={markDismissed}
           className="rounded-xl bg-gradient-to-br from-cat to-cat-2 px-4 py-2 text-[13px] font-bold text-white shadow-sm hover:-translate-y-px transition-transform"
         >
           Çerezlere izin ver
