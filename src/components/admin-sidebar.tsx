@@ -56,7 +56,10 @@ export function AdminSidebar({
 
   const groups: SidebarGroup[] = [
     {
-      links: [{ label: '📊 Pano', href: '/admin', match: '/admin' }],
+      links: [
+        { label: '📊 Pano', href: '/admin', match: '/admin' },
+        { label: '🤖 AI Asistanı', href: '/admin/ai' },
+      ],
     },
     {
       label: 'Envanter',
