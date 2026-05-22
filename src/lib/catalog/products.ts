@@ -219,6 +219,7 @@ export interface ListProductsOptions {
   status?: 'active' | 'inactive' | 'all';
   vitrinPublished?: boolean;
   limit?: number;
+  offset?: number;
 }
 
 export async function listProducts(
@@ -291,9 +292,62 @@ export async function listProducts(
     .leftJoin(brands, eq(brands.id, products.brandId))
     .where(and(...conditions))
     .orderBy(desc(products.createdAt))
-    .limit(opts.limit ?? 50);
+    .limit(opts.limit ?? 50)
+    .offset(opts.offset ?? 0);
 
   return rows;
+}
+
+/**
+ * Aynı filter set'i için COUNT(*) — pagination meta için.
+ * listProducts ile aynı conditions'ı uygular (ama join yok, daha hızlı).
+ */
+export async function countProducts(
+  companyId: string,
+  db: DbClient,
+  opts: ListProductsOptions = {},
+): Promise<number> {
+  const conditions = [
+    eq(products.companyId, companyId),
+    sql`${products.deletedAt} IS NULL`,
+  ];
+
+  if (opts.query && opts.query.trim().length > 0) {
+    const pattern = `%${opts.query.trim()}%`;
+    conditions.push(
+      sql`(
+        ${products.name} ILIKE ${pattern}
+        OR EXISTS (
+          SELECT 1 FROM ${productVariants} pv
+          WHERE pv.product_id = ${products.id}
+            AND pv.sku ILIKE ${pattern}
+        )
+      )`,
+    );
+  }
+  if (opts.categoryId) {
+    conditions.push(eq(products.categoryId, opts.categoryId));
+  }
+  if (opts.brandId) {
+    conditions.push(eq(products.brandId, opts.brandId));
+  }
+  if (opts.status === 'active') {
+    conditions.push(eq(products.isActive, true));
+  } else if (opts.status === 'inactive') {
+    conditions.push(eq(products.isActive, false));
+  }
+  if (opts.vitrinPublished === true) {
+    conditions.push(eq(products.vitrinPublished, true));
+  } else if (opts.vitrinPublished === false) {
+    conditions.push(eq(products.vitrinPublished, false));
+  }
+
+  const [row] = await db
+    .select({ c: sql<number>`COUNT(*)::int` })
+    .from(products)
+    .where(and(...conditions));
+
+  return row?.c ?? 0;
 }
 
 // ─────────────────────────────────────────────────────────────────

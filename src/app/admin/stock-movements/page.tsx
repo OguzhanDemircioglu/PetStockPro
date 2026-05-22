@@ -2,12 +2,14 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
-import { listStockMovements } from '@/lib/stock/list';
+import { listStockMovements, countStockMovements } from '@/lib/stock/list';
 import {
   listBranchOptions,
   listVariantOptions,
   listSupplierOptions,
 } from '@/lib/stock/options';
+import { parsePagination, buildPageMeta } from '@/lib/utils/pagination';
+import { Paginator } from '@/components/paginator';
 import { MovementsTable } from './movements-table';
 import { DrawerLauncher } from './drawer-launcher';
 import { MovementsFilterBar } from './movements-filter-bar';
@@ -32,6 +34,8 @@ export default async function StockMovementsPage({
     from?: string;
     to?: string;
     qty?: string;
+    page?: string;
+    pageSize?: string;
   }>;
 }) {
   const session = await auth();
@@ -54,17 +58,30 @@ export default async function StockMovementsPage({
       }
     : undefined;
 
-  const [movements, branches, variants, suppliers] = await Promise.all([
+  const pagination = parsePagination({ page: params.page, pageSize: params.pageSize });
+  const filterOpts = {
+    branchId: params.branch,
+    variantId: params.variant,
+    type: typeFilter,
+  };
+
+  const [movements, totalRows, branches, variants, suppliers] = await Promise.all([
     listStockMovements(session.user.companyId, db, {
-      branchId: params.branch,
-      variantId: params.variant,
-      type: typeFilter,
-      limit: 100,
+      ...filterOpts,
+      limit: pagination.limit,
+      offset: pagination.offset,
     }),
+    countStockMovements(session.user.companyId, db, filterOpts),
     listBranchOptions(session.user.companyId, db),
     listVariantOptions(session.user.companyId, db),
     listSupplierOptions(session.user.companyId, db),
   ]);
+
+  const pageMeta = buildPageMeta(pagination, totalRows);
+  const paginatorSearchParams = new URLSearchParams();
+  if (params.branch) paginatorSearchParams.set('branch', params.branch);
+  if (params.variant) paginatorSearchParams.set('variant', params.variant);
+  if (params.type) paginatorSearchParams.set('type', params.type);
 
   const activeFilter = !!(params.branch || params.variant || params.type);
 
@@ -79,10 +96,10 @@ export default async function StockMovementsPage({
             Ledger
           </h1>
           <p className="mt-1 text-sm text-ink-3">
-            {movements.length === 100
-              ? 'Son 100 hareket'
-              : `${movements.length} hareket`}{' '}
-            · Append-only — düzenleme yok, geri alma Sprint 4.5&apos;te
+            {pageMeta.totalRows === 0
+              ? 'Hareket yok'
+              : `${pageMeta.fromRow}-${pageMeta.toRow} / ${pageMeta.totalRows} hareket`}{' '}
+            · Append-only — düzenleme yok, geri alma 24 saatlik kuralda
           </p>
         </div>
         <DrawerLauncher
@@ -127,6 +144,13 @@ export default async function StockMovementsPage({
       ) : (
         <MovementsTable movements={movements} />
       )}
+
+      <Paginator
+        basePath="/admin/stock-movements"
+        searchParams={paginatorSearchParams}
+        meta={pageMeta}
+        noun="hareket"
+      />
 
       <Link
         href={'/' as never}

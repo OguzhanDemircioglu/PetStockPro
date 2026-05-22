@@ -46,6 +46,7 @@ export interface ListMovementsOptions {
   variantId?: string;
   type?: 'stock_in' | 'stock_out' | 'transfer' | 'stocktake' | 'stocktake_initial';
   limit?: number;
+  offset?: number;
 }
 
 export async function listStockMovements(
@@ -97,9 +98,31 @@ export async function listStockMovements(
     .leftJoin(suppliers, eq(suppliers.id, stockMovements.supplierId))
     .where(and(...conditions))
     .orderBy(desc(stockMovements.createdAt))
-    .limit(opts.limit ?? 100);
+    .limit(opts.limit ?? 100)
+    .offset(opts.offset ?? 0);
 
   return rows;
+}
+
+/**
+ * Aynı filter set'i için COUNT — pagination meta için.
+ */
+export async function countStockMovements(
+  companyId: string,
+  db: DbClient,
+  opts: ListMovementsOptions = {},
+): Promise<number> {
+  const conditions = [eq(stockMovements.companyId, companyId)];
+  if (opts.branchId) conditions.push(eq(stockMovements.branchId, opts.branchId));
+  if (opts.variantId) conditions.push(eq(stockMovements.variantId, opts.variantId));
+  if (opts.type) conditions.push(eq(stockMovements.type, opts.type));
+
+  const [row] = await db
+    .select({ c: sql<number>`COUNT(*)::int` })
+    .from(stockMovements)
+    .where(and(...conditions));
+
+  return row?.c ?? 0;
 }
 
 /**

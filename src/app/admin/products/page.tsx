@@ -4,9 +4,11 @@ import Image from 'next/image';
 import { eq, asc } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
-import { listProducts } from '@/lib/catalog/products';
+import { listProducts, countProducts } from '@/lib/catalog/products';
 import { categories, brands, companies } from '@/db/schema';
 import { hasExcelImport } from '@/lib/billing/plan-features';
+import { parsePagination, buildPageMeta } from '@/lib/utils/pagination';
+import { Paginator } from '@/components/paginator';
 import { ListRowToggle } from './list-row-toggle';
 import { FilterBar } from './filter-bar';
 
@@ -32,6 +34,8 @@ export default async function ProductsPage({
     brand?: string;
     status?: 'active' | 'inactive' | 'all';
     vitrin?: 'on' | 'off';
+    page?: string;
+    pageSize?: string;
   }>;
 }) {
   const session = await auth();
@@ -42,17 +46,24 @@ export default async function ProductsPage({
   const params = await searchParams;
   const justCreated = params.created === 'success';
 
-  // Parallel: filtered list + filter options (category + brand) + plan
-  const [items, categoryOptions, brandOptions, [companyRow]] = await Promise.all([
+  const pagination = parsePagination({ page: params.page, pageSize: params.pageSize });
+  const listOpts = {
+    query: params.q,
+    categoryId: params.category,
+    brandId: params.brand,
+    status: params.status,
+    vitrinPublished:
+      params.vitrin === 'on' ? true : params.vitrin === 'off' ? false : undefined,
+  };
+
+  // Parallel: list (paginated) + total count + filter options + plan
+  const [items, totalRows, categoryOptions, brandOptions, [companyRow]] = await Promise.all([
     listProducts(session.user.companyId, db, {
-      query: params.q,
-      categoryId: params.category,
-      brandId: params.brand,
-      status: params.status,
-      vitrinPublished:
-        params.vitrin === 'on' ? true : params.vitrin === 'off' ? false : undefined,
-      limit: 100,
+      ...listOpts,
+      limit: pagination.limit,
+      offset: pagination.offset,
     }),
+    countProducts(session.user.companyId, db, listOpts),
     db
       .select({ id: categories.id, name: categories.name, emoji: categories.emoji })
       .from(categories)
@@ -67,6 +78,15 @@ export default async function ProductsPage({
       .where(eq(companies.id, session.user.companyId))
       .limit(1),
   ]);
+
+  const pageMeta = buildPageMeta(pagination, totalRows);
+  // Paginator search params (mevcut filter'lar korunsun)
+  const searchParamsForPaginator = new URLSearchParams();
+  if (params.q) searchParamsForPaginator.set('q', params.q);
+  if (params.category) searchParamsForPaginator.set('category', params.category);
+  if (params.brand) searchParamsForPaginator.set('brand', params.brand);
+  if (params.status) searchParamsForPaginator.set('status', params.status);
+  if (params.vitrin) searchParamsForPaginator.set('vitrin', params.vitrin);
 
   // 2026-05-22 Karar A revize — Excel import sadece PRO + PRO+ (FREE'de gizli)
   const showImportButton = hasExcelImport(companyRow?.plan ?? 'FREE');
@@ -252,6 +272,13 @@ export default async function ProductsPage({
           </table>
         </div>
       )}
+
+      <Paginator
+        basePath="/admin/products"
+        searchParams={searchParamsForPaginator}
+        meta={pageMeta}
+        noun="ürün"
+      />
 
       <Link
         href={'/' as never}
