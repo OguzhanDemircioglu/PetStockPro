@@ -97,3 +97,6 @@ worker.js
 # ============================================================
 scripts/data/
 scripts/enrich-product-images.ts
+
+.vercel
+.vercel/

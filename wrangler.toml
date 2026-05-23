@@ -20,11 +20,8 @@ account_id = "40480f0168b5090fcb25a6f1b5602e21"
 
 workers_dev = true
 
-# Custom domain routes (token Workers Routes:Edit yetkili olmalı)
-routes = [
-  { pattern = "petstockpro.com", custom_domain = true },
-  { pattern = "www.petstockpro.com", custom_domain = true },
-]
+# Custom domain'ler Vercel'e taşındı (2026-05-23) — Workers artık trafiği almaz
+# routes = []
 
 # Statik asset binding (OpenNext .open-next/assets klasörünü doldurur)
 [assets]
