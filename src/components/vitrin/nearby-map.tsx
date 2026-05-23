@@ -41,12 +41,22 @@ interface Props {
   enableLiveTracking?: boolean;
 }
 
-// Leaflet default marker icon path bug — webpack/Next.js'te asset path bozulur, manuel set.
+// Pet shop marker — /vitrin/harita ile aynı stil: arka plansız 📍 + 3 pulse ring
+// (animation: globals.css @keyframes pp-pulse-ring, backwards fill-mode)
+const PIN_SIZE = 32;
+const RING_SIZE = 18;
 const PET_SHOP_ICON = L.divIcon({
   className: 'pp-pet-shop-marker',
-  html: '<div style="background:#d44a14;border:2px solid #fff;border-radius:50%;width:28px;height:28px;display:grid;place-items:center;color:#fff;font-weight:700;box-shadow:0 4px 10px rgba(0,0,0,.25);font-family:sans-serif;font-size:13px;">🏪</div>',
-  iconSize: [28, 28],
-  iconAnchor: [14, 14],
+  html: `
+    <div style="position:relative;width:${PIN_SIZE}px;height:${PIN_SIZE}px;display:grid;place-items:center;pointer-events:none;">
+      <div style="position:absolute;top:50%;left:50%;width:${RING_SIZE}px;height:${RING_SIZE}px;background:rgba(212,74,20,0.55);border-radius:50%;animation:pp-pulse-ring 2.4s ease-out infinite 0s backwards;"></div>
+      <div style="position:absolute;top:50%;left:50%;width:${RING_SIZE}px;height:${RING_SIZE}px;background:rgba(212,74,20,0.55);border-radius:50%;animation:pp-pulse-ring 2.4s ease-out infinite 0.8s backwards;"></div>
+      <div style="position:absolute;top:50%;left:50%;width:${RING_SIZE}px;height:${RING_SIZE}px;background:rgba(212,74,20,0.55);border-radius:50%;animation:pp-pulse-ring 2.4s ease-out infinite 1.6s backwards;"></div>
+      <div style="position:relative;font-size:${PIN_SIZE}px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.4));">📍</div>
+    </div>
+  `,
+  iconSize: [PIN_SIZE, PIN_SIZE],
+  iconAnchor: [PIN_SIZE / 2, PIN_SIZE - 4],
 });
 
 /**
