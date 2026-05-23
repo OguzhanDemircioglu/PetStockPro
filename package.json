@@ -20,6 +20,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/db/seed/index.ts",
+    "db:seed:demo": "tsx src/db/seed/staging-demo.ts",
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare preview",
     "cf:deploy:staging": "opennextjs-cloudflare build && wrangler deploy --config wrangler.staging.toml"
