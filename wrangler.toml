@@ -13,26 +13,36 @@
 # Ref: docs/DEPLOYMENT.md §3 (Cloudflare Workers Setup)
 
 name = "petstockpro"
-main = "src/cf/worker-entry.ts"
+main = ".open-next/worker.js"
 compatibility_date = "2026-01-15"
-compatibility_flags = ["nodejs_compat"]
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
+account_id = "40480f0168b5090fcb25a6f1b5602e21"
+
+workers_dev = true
+
+# Custom domain routes (token Workers Routes:Edit yetkili olmalı)
+routes = [
+  { pattern = "petstockpro.com", custom_domain = true },
+  { pattern = "www.petstockpro.com", custom_domain = true },
+]
 
 # Statik asset binding (OpenNext .open-next/assets klasörünü doldurur)
 [assets]
 directory = ".open-next/assets"
 binding = "ASSETS"
 
-# Tek domain routing — 2026-05-13 kararı (tenant subdomain + PRO+ custom domain kapsam dışı)
-routes = [
-  { pattern = "petstockpro.com/*", custom_domain = true },
-  { pattern = "www.petstockpro.com/*", custom_domain = true },
-]
-
 # Public env vars (build-time inlined olmayanlar)
+# NOT: Lansman öncesi mockup modu — kullanıcı /admin'e gitse /yapim-asamasinda'a
+# yönlenir, ana sayfada "Bayi Paneli Önizle" + "Vitrin Önizle" 2-buton landing.
+# Gerçek lansmanda STAGING_MODE=false yapılır + iyzico/Nilvera/Turnstile secrets eklenir.
 [vars]
 NEXT_PUBLIC_APP_URL = "https://petstockpro.com"
 NEXT_PUBLIC_APP_DOMAIN = "petstockpro.com"
 NEXT_PUBLIC_SITE_URL = "https://petstockpro.com"
+NEXT_PUBLIC_STAGING_MODE = "true"
+# Workers runtime'da migrations zaten Aiven'da apply edildi —
+# instrumentation.ts hook atlanmalı (fs erişimi yok)
+BOOTSTRAP_SKIP = "1"
 
 # Cloudflare Hyperdrive — Supabase Postgres pooling
 # Cloudflare Dashboard > Workers > Hyperdrive'dan ID al, buraya yaz

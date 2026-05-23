@@ -1,21 +1,15 @@
 /**
- * Next.js instrumentation hook — boot sırasında (Node.js runtime'da) çalışır.
- * Edge runtime'da skip edilir (postgres-js + fs erişimi yok).
+ * Next.js instrumentation hook — Cloudflare Workers deployment için no-op.
  *
- * Otoritatif: docs/PLAN-BETA-PERFORMANCE.md FAZ 1
+ * Eski davranış: Node.js runtime'da boot sırasında migrations + city/district +
+ * catalog seed çalıştırırdı. Workers'da gerekli değil:
+ *  - Migrations Supabase üzerinden manuel apply edildi
+ *  - Seed data zaten DB'de mevcut (cities, districts, catalog_seed_products)
+ *  - postgres-js + fs erişimi Workers Webpack bundle'ında crash ediyor
+ *
+ * Dev modunda manuel bootstrap için: scripts/baseline-drizzle-migrations.ts
+ * veya npm run db:seed komutları kullanılır.
  */
 export async function register() {
-  if (process.env.NEXT_RUNTIME !== 'nodejs') return;
-  if (process.env.BOOTSTRAP_SKIP === '1') {
-    console.log('[bootstrap] BOOTSTRAP_SKIP=1 — atlandı');
-    return;
-  }
-  try {
-    const { runBootstrap } = await import('./lib/bootstrap/run');
-    await runBootstrap();
-  } catch (err) {
-    console.error('[bootstrap] ❌ FATAL:', err);
-    // Boot fail explicit — Next.js start error.
-    throw err;
-  }
+  // Intentional no-op — bkz. yukarıdaki doc.
 }
