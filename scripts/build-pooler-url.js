@@ -35,6 +35,8 @@ const [, user, pass, projectRef] = match;
 // Region — Frankfurt EU (CLAUDE.md: Supabase region eu-central-1)
 const region = 'eu-central-1';
 // Transaction pooler — port 6543, username format: postgres.PROJECT_REF
-const poolerUrl = `postgresql://postgres.${projectRef}:${encodeURIComponent(pass)}@aws-0-${region}.pooler.supabase.com:6543/postgres`;
+// NOT: Region prefix Supabase Dashboard'tan doğrulanır (aws-0 / aws-1 / aws-2)
+// PetStockPro project'i için aws-1 (Dashboard'tan kontrol edildi 2026-05-23)
+const poolerUrl = `postgresql://postgres.${projectRef}:${encodeURIComponent(pass)}@aws-1-${region}.pooler.supabase.com:6543/postgres`;
 
 process.stdout.write(poolerUrl);
