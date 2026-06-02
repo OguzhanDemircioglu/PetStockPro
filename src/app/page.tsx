@@ -7,7 +7,7 @@ import { db } from '@/lib/db/client';
 import { users } from '@/db/schema';
 import { MarketingHeader } from '@/components/marketing/header';
 import { MarketingFooter } from '@/components/marketing/footer';
-import { stagingDemoLoginAction } from './staging-demo-actions';
+import { StagingDemoButton } from './staging-demo-button';
 
 interface Feature {
   icon: string;
@@ -261,29 +261,27 @@ function StagingDemoLanding() {
 
         <div className="mt-10 grid w-full max-w-2xl gap-4 sm:grid-cols-2">
           {/* Bayi Yönetim Paneli Önizle */}
-          <form action={stagingDemoLoginAction}>
-            <button
-              type="submit"
-              data-testid="staging-admin-preview"
-              className="group flex w-full flex-col items-start gap-3 rounded-2xl border-2 border-cat/40 bg-gradient-to-br from-cat to-cat-2 p-6 text-left text-white shadow-[var(--shadow-cat)] transition-transform hover:-translate-y-1"
-            >
-              <div className="grid h-12 w-12 place-items-center rounded-xl bg-white/20 text-2xl">
-                🛡
+          <StagingDemoButton
+            testId="staging-admin-preview"
+            className="group flex w-full flex-col items-start gap-3 rounded-2xl border-2 border-cat/40 bg-gradient-to-br from-cat to-cat-2 p-6 text-left text-white shadow-[var(--shadow-cat)] transition-transform hover:-translate-y-1 disabled:opacity-80 disabled:cursor-progress disabled:translate-y-0"
+            pendingText="Bayi paneline yönlendiriliyorsun…"
+          >
+            <div className="grid h-12 w-12 place-items-center rounded-xl bg-white/20 text-2xl">
+              🛡
+            </div>
+            <div>
+              <div className="text-[11px] font-bold uppercase tracking-wider opacity-80">
+                Pet shop sahipleri için
               </div>
-              <div>
-                <div className="text-[11px] font-bold uppercase tracking-wider opacity-80">
-                  Pet shop sahipleri için
-                </div>
-                <div className="mt-1 text-xl font-bold leading-tight">
-                  Bayi panelini önizle →
-                </div>
+              <div className="mt-1 text-xl font-bold leading-tight">
+                Bayi panelini önizle →
               </div>
-              <p className="text-[13px] leading-relaxed text-white/90">
-                Stok takip, çoklu şube, sayım, raporlar — pet shop&apos;un tüm
-                operasyonu tek panelde. Demo mock data ile gez.
-              </p>
-            </button>
-          </form>
+            </div>
+            <p className="text-[13px] leading-relaxed text-white/90">
+              Stok takip, çoklu şube, sayım, raporlar — pet shop&apos;un tüm
+              operasyonu tek panelde. Demo mock data ile gez.
+            </p>
+          </StagingDemoButton>
 
           {/* Vitrin Önizle */}
           <Link
