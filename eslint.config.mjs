@@ -8,8 +8,13 @@ const eslintConfig = defineConfig([
   globalIgnores([
     ".next/**",
     ".open-next/**",
+    ".vercel/**",
     "out/**",
     "build/**",
+    // Node CommonJS scripts (deploy/build araçları)
+    "scripts/build-pooler-url.js",
+    "scripts/prepare-prod-secrets.js",
+    "scripts/push-vercel-env.js",
     "next-env.d.ts",
     // Legacy/static HTML mockups + JSX canvas (Sprint 12'de React'e taşınacak)
     "preview/**",

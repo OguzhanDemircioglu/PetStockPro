@@ -85,5 +85,16 @@ export async function stagingDemoLoginAction(): Promise<void> {
     redirect('/yapim-asamasinda' as never);
   }
 
+  // Demo bayi her açılışta kar yağışı default — Snowfall mount'ta bu
+  // cookie'yi okur, localStorage'ı 'snow' yapar, cookie'yi siler.
+  const cookieStore = await (await import('next/headers')).cookies();
+  cookieStore.set('pp-force-snow', '1', {
+    httpOnly: false, // client okuyabilmeli
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: 60, // tek seferlik (kısa)
+  });
+
   redirect('/admin' as never);
 }

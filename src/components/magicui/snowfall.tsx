@@ -190,8 +190,25 @@ const STORAGE_KEY = 'pp-weather-mode';
 type WeatherMode = 'snow' | 'rain' | 'star' | 'meteor' | 'matrix' | 'off';
 
 const modeListeners = new Set<() => void>();
+
+/** Demo bayi login sonrası tek-seferlik snow force cookie (stagingDemoLoginAction set'ler). */
+function consumeForceSnowCookie(): boolean {
+  if (typeof document === 'undefined') return false;
+  if (!document.cookie.includes('pp-force-snow=1')) return false;
+  // Cookie'yi sil — tek seferlik
+  document.cookie = 'pp-force-snow=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  try {
+    window.localStorage.setItem(STORAGE_KEY, 'snow');
+  } catch {
+    /* noop */
+  }
+  return true;
+}
+
 function getModeSnapshot(): WeatherMode {
   if (typeof window === 'undefined') return 'snow';
+  // Force snow (demo bayi açılışı) — cookie varsa localStorage'ı snow yap
+  consumeForceSnowCookie();
   try {
     const v = window.localStorage.getItem(STORAGE_KEY);
     if (
