@@ -1,8 +1,10 @@
 # PetStockPro — Tech Stack Kararları
 
-**Tarih:** 2026-05-12 (revize 2026-05-14)
-**Durum:** Onaylanmış 4 ana karar + bekleyen detaylar
+**Tarih:** 2026-05-12 (revize 2026-05-14, son güncelleme 2026-06-05)
+**Durum:** Onaylanmış 4 ana karar + tamamlanan sprint'lerle güncellendi
 **Bağlam:** PetStockPro sıfırdan yeni proje. Eski Pet/server (Java/Spring) referans değil — yeni proje, yeni stack.
+
+> **2026-06-05 Son Durum:** Production Vercel'de canlı (petstockpro.com). Staging CF Workers'da. DB Aiven Postgres. AI Chatbot + Vectorize aktif.
 
 ---
 
@@ -191,36 +193,50 @@ Bu yaklaşım custom plugin yazmadan standard ESLint ile çözüm sağlar (1 saa
 
 ## 3. Onaylanmış Detaylar
 
-### 3.1 Deploy / Hosting — **NETLEŞTİ**
-**Karar:** **Cloudflare Workers + OpenNext**
-**Domain:** petstockpro.com (Cloudflare DNS, alındı)
+### 3.1 Deploy / Hosting — **GÜNCEL DURUM (2026-06-05)**
+
+> **2026-05-23 değişikliği:** Custom domain petstockpro.com **Vercel'e taşındı**. Cloudflare Workers staging ortamı olarak korunuyor.
+
 **Detay:** `DEPLOYMENT.md`
 
 ```
 Cloudflare DNS (petstockpro.com)
-  └── Cloudflare Workers (OpenNext adapter)
-       ├── petstockpro.com/admin/*       → admin paneli (auth)
-       │                                    ├ Normal ADMIN: sidebar standart menüler
-       │                                    └ SUPERADMIN role: ek sidebar grubu
-       │                                      (/admin/tenants, /admin/audit,
-       │                                       /admin/db-inspector, /admin/system-settings,
-       │                                       /admin/plan-approval)
-       │                                    ⚠ Ayrı /super-admin URL'i YOK (2026-05-14)
-       │                                      SUPERADMIN-only route'lar role-based gating
-       │                                      ile aynı `/admin` namespace altında.
-       └── petstockpro.com/vitrin/*      → merkezi vitrin (public)
+  ├── PRODUCTION: Vercel (petstockpro.com)
+  │     ├── petstockpro.com/admin/*   → admin paneli (auth)
+  │     │     ├ Normal ADMIN: sidebar standart menüler
+  │     │     └ SUPERADMIN role: ek sidebar grubu (/admin/superadmin/*)
+  │     └── petstockpro.com/vitrin/*  → merkezi vitrin (public)
+  │
+  └── STAGING: Cloudflare Workers (OpenNext adapter)
+        petstockpro-staging.workers.dev
+        (aynı Aiven DB, STAGING_MODE=true, iyzico/Nilvera devre dışı)
 
-(2026-05-13 değişiklik: Tenant subdomain *.petstockpro.com İPTAL,
- Custom domain (PRO+) RAFA. Sadece tek merkezi vitrin.)
+(2026-05-13: Tenant subdomain *.petstockpro.com İPTAL,
+ Custom domain PRO+ RAFA, tek merkezi vitrin.)
 ```
+
+**Deployment araçları:**
+| Ortam | Araç | Komut |
+|---|---|---|
+| Production | Vercel CLI / GitHub entegrasyon | `vercel --prod` |
+| Staging | Cloudflare Workers + OpenNext | `npm run cf:deploy:staging` |
+| Local preview | OpenNext lokal | `npm run cf:preview` |
+
+**Cloudflare servisler (Workers staging + production bindings):**
+- **Hyperdrive** — Postgres connection pooling (Aiven bağlantısı için)
+- **KV** — `RATE_LIMIT_KV` vitrin şikayet rate-limit namespace
+- **R2** — `SITEMAP_R2` sitemap cache bucket + `PRODUCT_IMAGES` ürün görselleri
+- **Workers AI** — `@cf/baai/bge-m3` embed + `@cf/meta/llama-3.1-8b-instruct` LLM (AI Chatbot)
+- **Vectorize** — `petstockpro-user-manual` (1024 dim, cosine, 189 chunk)
+- **Cron Triggers** — `0 3 * * *` sitemap, `55 3 * * *` error check, `0 4 * * *` log retention, `0 6 * * *` vitrin özeti
 
 **Edge runtime için kısıtlar:**
 - ❌ `jsonwebtoken` → ✅ `jose` (Cloudflare uyumlu)
 - ❌ `bcrypt` (native) → ✅ `bcryptjs` (pure JS)
 - ❌ Long-running tasks (>5dk) → Supabase Edge Functions (150sn timeout)
-- ⚠ DB connection pooling → **Cloudflare Hyperdrive** (Supabase ile entegre, free tier)
+- ⚠ DB connection pooling → **Cloudflare Hyperdrive** (staging'de aktif)
 
-**Maliyet:** Cloudflare Workers Paid ($5/ay) + Supabase free tier başlangıçta yeter.
+**Maliyet:** Vercel Hobby ($0 başlangıç, Pro $20/ay üretim ölçekte) + Cloudflare Workers Paid ($5/ay staging) + Supabase free → Pro ($25/ay lansman öncesi).
 
 ### 3.2 UI Component Library: **shadcn/ui**
 - Tailwind CSS v4 + Radix UI primitive üzerine kopya-sahip ol pattern
@@ -268,9 +284,13 @@ Cloudflare DNS (petstockpro.com)
 - **pg_cron** (Postgres extension) — günlük/haftalık özet bildirimleri, plan limit kontrolleri
 - Inngest gerekli değil — Supabase native yeter
 
-### 3.7 Monitoring: **In-app error tracking + Telegram alert (Sentry yerine)**
+### 3.7 Monitoring: **Sentry + In-app error tracking + Telegram alert**
 
-**Karar revizyonu (2026-05-21):** Sentry'e gerek yok. In-app `system_errors` tablosu + threshold-based Telegram burst alert pattern yeter:
+> **2026-06-05 güncel:** `@sentry/nextjs` production bağımlılığı olarak kurulu ve aktif. `system_errors` tablosu ek katman olarak da çalışıyor.
+
+**Sentry kurulum durumu:** ✅ `@sentry/nextjs ^8.47.0` production `dependencies`'de (devDep değil). CSP'de `https://*.ingest.sentry.io` whitelisted. Next.js instrumentation hook üzerinden aktive.
+
+**In-app error tracking (Sentry'ye ek olarak, 2026-05-21):** In-app `system_errors` tablosu + threshold-based Telegram burst alert pattern yeter:
 
 - **`system_errors` tablosu** — `errorType`, `message` (PII strip'li), `stack`, `severity`, `companyId`, `userId`, `route`, `action`, `metadata` jsonb, `createdAt` (90 gün retention, KVKK uyumlu Frankfurt).
 - **`lib/errors/track.ts` helper** — `trackError(err, context, db)` server action catch'lerinde fire-and-forget INSERT.
@@ -278,19 +298,16 @@ Cloudflare DNS (petstockpro.com)
 - **Süperadmin `/admin/superadmin/errors` sayfası** — liste + detay drawer + resolve toggle.
 - **Workers cron 03:55 UTC** — günlük threshold check + alert tetikleme.
 
-**Sentry vs. bu pattern:**
+**İki katman avantajı:**
 
-| Sentry | In-app pattern |
+| Sentry | In-app system_errors |
 |---|---|
-| $26/ay Team plan | **$0** |
-| 3. parti dependency + KVKK risk (ABD veri) | Frankfurt EU, kontrolün sende |
-| Bundle +50KB | Bundle +0 |
-| Stack trace zengin | Stack trace + context jsonb yeter |
-| Web Vitals dahil | CF Analytics + Cloudflare/Vercel deploy sonrası eklenir |
+| Source map + stack trace zengin | Uygulama context (companyId, route, action) |
+| Performance monitoring + Web Vitals | PII strip (KVKK uyumlu Frankfurt) |
+| Release tracking | Telegram burst alert |
+| $0 (Free 5K event/ay) → $26/ay Team | $0 — sadece Postgres storage |
 
-**Aktivasyon:** `PLAN-BETA-PERFORMANCE.md` Faz 2.B ile beta öncesi.
-
-**Lansman sonrası reconsider:** 100+ event/gün üretiyorsak veya Web Vitals'a ihtiyaç olursa Sentry Team plan ($26/ay) eklenir. MVP için **gerek yok**.
+**Aktivasyon:** Sentry kurulu ve çalışıyor. `system_errors` da aktif (Faz 2.B tamamlandı).
 
 ### 3.8 Telegram Bot — ADMIN BİLDİRİM KANALI (2026-05-13 netleştirme)
 
@@ -449,7 +466,67 @@ export async function verifyTurnstile(token: string, ip: string): Promise<boolea
 
 **Re-evaluation tetikleyici:** Eğer Turnstile false positive oranı >%2 olursa (gerçek müşteri bot olarak reddediliyor) → Cloudflare dashboard'da "interactive" moduna geç (basit puzzle). reCAPTCHA'ya geçiş şu an gerekmez.
 
-### 3.10 PDF Üretimi (Faz 2 e-fatura için)
+### 3.10 Storage: **Cloudflare R2 (ürün görselleri) + Supabase Storage**
+
+> **2026-05-21 (Sprint 3.3) kararı:** Ürün görselleri **Cloudflare R2**'a taşındı. AWS S3-compatible API üzerinden erişiliyor.
+
+**Paketler:** `@aws-sdk/client-s3 ^3.1049.0` + `@aws-sdk/s3-request-presigner ^3.1049.0`
+
+```
+R2 bucket: product-images (public read, server-side write)
+  ├── R2_ACCOUNT_ID + R2_ACCESS_KEY_ID + R2_SECRET_ACCESS_KEY (env)
+  ├── R2_BUCKET + R2_PUBLIC_URL
+  └── Presigned URL pattern: server-side 5MB limit, image/jpeg+png+webp
+```
+
+**Supabase Storage:** PDF / e-Arşiv için kullanılmaya devam (Faz 2). `SUPABASE_SERVICE_ROLE_KEY` ile server-side upload.
+
+### 3.10b AI Chatbot: **Cloudflare Workers AI + Vectorize** ✅ AKTİF (2026-05-22 Faz 1-7)
+
+**Durum:** Tamamlandı. 189 chunk kullanıcı kılavuzu Vectorize'a seed edildi. Günlük 10 mesaj FREE planı, dakika 5 mesaj rate-limit.
+
+```
+Cloudflare Workers AI (env.AI binding):
+  ├── @cf/baai/bge-m3 — embedding (1024 dim, 512 token context)
+  └── @cf/meta/llama-3.1-8b-instruct — LLM (TR yanıt)
+
+Cloudflare Vectorize:
+  └── petstockpro-user-manual (1024 dim, cosine, 189 chunk)
+
+RAG pipeline:
+  User query → bge-m3 embed → Vectorize topK=5 → llama LLM → stream
+  Latency: avg ~1700ms, cost ~$0.002/query
+```
+
+**Env vars:** `CF_ACCOUNT_ID`, `CF_API_TOKEN`, `CF_VECTORIZE_INDEX`, `AI_FREE_DAILY_LIMIT=10`, `AI_RATE_LIMIT_PER_MINUTE=5`
+
+**UI:** `/admin/ai` — ChatInterface (markdown render, önerilen sorular, plan gate, sayaç)
+
+### 3.10c Form Handling: **React Hook Form + Zod**
+
+**Paketler:** `react-hook-form ^7.54.2` + `@hookform/resolvers ^3.10.0`
+
+41 formda `useSwalOnError(state)` hook ile entegre. Zod schema → `zodResolver` ile tüm form validasyonu type-safe.
+
+### 3.10d Animasyon: **Motion (Framer Motion successor)**
+
+**Paket:** `motion ^12.38.0` (eskiden `framer-motion`, yeni standalone paket)
+
+`next.config.ts` `optimizePackageImports`'a dahil (tree-shake). UI transition'ları, drawer animasyonları, loading state'ler için.
+
+### 3.10e Utility Kütüphaneler
+
+| Paket | Versiyon | Kullanım |
+|---|---|---|
+| `date-fns` | ^4.1.0 | Tarih formatlama, `DATE_TRUNC` yardımcı. `optimizePackageImports`'da |
+| `exceljs` | ^4.4.0 | Excel (.xlsx) ürün import + 7 export route. TR header, ₺ para, auto-filter, freeze pane |
+| `sweetalert2` | ^11.26.24 | Toast bildirimleri — sağ üstte 4sn auto-dismiss, hover pause. `useSwalOnError` hook |
+| `lucide-react` | ^0.469.0 | İkon kütüphanesi (shadcn/ui uyumlu). `optimizePackageImports`'da |
+| `clsx` | ^2.1.1 | Class adı birleştirme (`cn()` utility) |
+| `class-variance-authority` | ^0.7.1 | Variant-based component stilleri (shadcn/ui) |
+| `tailwind-merge` | ^2.5.5 | Tailwind conflict çözümü (`cn()` ile birlikte) |
+
+### 3.10f PDF Üretimi (Faz 2 e-fatura için)
 **Yaklaşım:** Supabase Edge Function + React-PDF (server-side, Deno uyumlu) — uzun timeout (150sn) PDF üretmek için yeterli.
 
 ### 3.11 Validation: **Zod**
@@ -493,48 +570,55 @@ export async function verifyTurnstile(token: string, ip: string): Promise<boolea
 
 ---
 
-## 4. Final Stack (Onaylanmış + Bekleyen)
+## 4. Final Stack (Güncel — 2026-06-05)
 
 ```
 ┌─────────────────────────────────────────────────┐
-│  Browser (TR-only · 2026-05-14)                 │
+│  Browser (TR-only)                              │
 │  ┌─────────────────────────────────────────┐    │
-│  │ Next.js 16 (App Router · RSC · Actions) │    │
-│  │ TypeScript strict · Tailwind v4         │    │
-│  │ next-intl (TR aktif, EN gizli)          │    │
-│  │ shadcn/ui · Recharts                    │    │
-│  │ Leaflet · Auth.js client                │    │
+│  │ Next.js 16.2.6 (App Router · RSC)       │    │
+│  │ React 19.2.4 · TypeScript strict        │    │
+│  │ Tailwind v4 · shadcn/ui · Recharts      │    │
+│  │ React Hook Form · Motion · SweetAlert2  │    │
+│  │ TanStack Query 5.62 · Zustand 5.0       │    │
+│  │ Leaflet · next-intl (TR) · Turnstile    │    │
 │  └────────────┬────────────────────────────┘    │
 └───────────────┼─────────────────────────────────┘
                 │ HTTPS · JSON · WebSocket
                 ▼
 ┌─────────────────────────────────────────────────┐
-│  Next.js Server (Server Components + Actions)   │
+│  Next.js Server (Vercel PROD / CF Workers STG)  │
 │  ┌─────────────────────────────────────────┐    │
 │  │ Auth.js v5 + Drizzle adapter            │    │
-│  │ Drizzle ORM (type-safe SQL)             │    │
+│  │ Drizzle ORM · postgres-js               │    │
 │  │ Supabase SDK (Realtime · Storage)       │    │
-│  │ Zod validation                          │    │
+│  │ AWS SDK S3 (R2 ürün görselleri)         │    │
+│  │ Zod · date-fns · exceljs                │    │
+│  │ bcryptjs · jose · otpauth               │    │
 │  └────────────┬────────────────────────────┘    │
 └───────────────┼─────────────────────────────────┘
                 │
-                ▼
-┌─────────────────────────────────────────────────┐
-│  Supabase                                       │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐       │
-│  │ Postgres │  │ Realtime │  │ Storage  │       │
-│  │ + RLS    │  │ WebSocket│  │ S3-uyumlu│       │
-│  └──────────┘  └──────────┘  └──────────┘       │
-│  ┌──────────────────────────────────────────┐   │
-│  │ Edge Functions (uzun task'lar — PDF,     │   │
-│  │ büyük rapor export, Telegram async)     │   │
-│  └──────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────┘
+       ┌────────┴────────┐
+       ▼                 ▼
+┌──────────────┐  ┌────────────────────────────────┐
+│ Aiven Postgres│  │  Supabase (Frankfurt eu-central)│
+│ (Frankfurt)   │  │  ┌──────────┐  ┌────────────┐  │
+│ 27 migration  │  │  │ Realtime │  │ Storage    │  │
+│ RLS enabled   │  │  │ WebSocket│  │ PDF/backup │  │
+│ pg_cron       │  │  └──────────┘  └────────────┘  │
+└──────────────┘  │  Edge Functions (PDF, async)    │
+                  └────────────────────────────────┘
+
+Cloudflare (Workers AI + Vectorize — AI Chatbot):
+├── Workers AI: bge-m3 embed + llama-3.1-8b LLM
+├── Vectorize: petstockpro-user-manual (189 chunk)
+├── KV: rate-limit namespace
+└── R2: sitemap cache + (ürün görselleri staging)
 
 Dış servisler:
-├── Brevo SMTP (e-posta)
-├── Telegram Bot API (bildirim)
-├── Sentry (error tracking)
+├── Brevo SMTP (e-posta transactional)
+├── Telegram Bot API (admin bildirim kanalı)
+├── Sentry @8.47 (error tracking — aktif)
 ├── iyzico Subscription (Faz 2 — TR ödeme, tek ödeme aracı)
 ├── Nilvera (Faz 2 — e-Arşiv / TR)
 ├── MaxMind GeoLite2 (vitrin konum tespiti — IP-based fallback)
@@ -551,7 +635,6 @@ KAPSAM DIŞI (TR-only 2026-05-14):
 **2026-05-14 not:** TR-only kararı ile Paddle (yurt dışı ödeme) + Frankfurter API (currency rate) + EN locale dış servis/bağımlılık listesinden çıkarıldı. iyzico tek ödeme aracı, Nilvera tek e-Arşiv sağlayıcı, KVKK tek uyum referansı.
 
 **2026-05-21 plan tier (son revize):** 3-tier B aktif — FREE 50 / PRO 500 (**1.000₺** KDV dahil) / PRO+ ∞ (**2.000₺** KDV dahil). Tarihçe: 2026-05-14 ilk 750/1.750 → 2026-05-20 Karar C 1.250/2.250 → 2026-05-21 "fiyat artırmayalım" **1.000/2.000**. Tek farklılaşma stok limiti, diğer tüm özellikler tüm planlarda açık. Custom domain / custom CSS / API erişimi / white-label hâlâ proje kapsamı dışı. Otoritatif: `PLAN-KADEMELERI.md §1`.
-```
 
 ---
 
