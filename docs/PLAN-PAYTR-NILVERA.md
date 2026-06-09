@@ -221,8 +221,10 @@ CRON_SECRET                                                    # yenileme cron a
 | 1 (config+hash+client+types) | ✅ TAM — recurring hash + chargeSavedCard + store_card/utoken · 42 PayTR test |
 | 0 (iyzico çıkar + Nilvera VKN) | ✅ iyzico+orchestrator+webhook silindi · VKN 10/11 hane · 1795 test · typecheck/lint 0 |
 | 2 şema | ✅ Supabase+Aiven (0029) |
-| 2 orchestrator | ✅ processPaytrCallback + 12 test (idempotency/tutar/dunning/Nilvera) |
-| 2 callback route + checkout + UI | ⏳ sıradaki |
+| 2 orchestrator | ✅ processPaytrCallback (transaction'lı) + 12 test |
+| 2 callback route | ✅ /api/webhooks/paytr + 8 test |
+| 2 checkout backend | ✅ paytr-checkout + 5 test |
+| 2 billing UI | ✅ /admin/settings/billing — **E2E doğrulandı** (gerçek PayTR get-token + iframe + incomplete subscription) |
 | 3 (recurring+cron+dunning) | ⏳ |
 | 4 (UI+iptal+fatura) | ⏳ |
 | 5 (doc+smoke+temizlik) | ⏳ |
