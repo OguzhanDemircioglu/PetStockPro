@@ -6,6 +6,7 @@ import { getCurrentSubscription, listInvoices } from '@/lib/billing/billing-view
 import { PLAN_LABELS, PLAN_LIMITS } from '@/lib/constants/plan-limits';
 import { SettingsShell } from '@/components/settings-shell';
 import { BillingCheckout } from './billing-checkout';
+import { SubscriptionActions } from './subscription-actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -75,6 +76,11 @@ export default async function BillingPage({
                 </p>
               )}
               {sub.status === 'incomplete' && <p className="text-ink-3">⏳ Ödeme bekleniyor…</p>}
+              {sub.cancelAtPeriodEnd && (
+                <p className="font-medium text-danger-7" data-testid="cancel-scheduled">
+                  ⚠ İptal edildi · {fmtDate(sub.currentPeriodEnd)} tarihinde sona erecek.
+                </p>
+              )}
               {sub.cardMasked && (
                 <p className="text-ink-3">
                   {(sub.cardBrand ?? 'Kart').toUpperCase()} · {sub.cardMasked}
@@ -92,8 +98,8 @@ export default async function BillingPage({
           </section>
         )}
 
-        {!showUpgrade && (
-          <p className="text-xs text-ink-4">Plan değişikliği &amp; iptal yönetimi yakında eklenecek.</p>
+        {sub && (sub.status === 'active' || sub.status === 'past_due') && (
+          <SubscriptionActions cancelScheduled={sub.cancelAtPeriodEnd} />
         )}
 
         {!profile.vatNo && (

@@ -5,7 +5,9 @@ import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { getCompanyProfile } from '@/lib/company/settings';
 import { startPaytrCheckout, CheckoutError, type PaidPlan } from '@/lib/billing/paytr-checkout';
+import { cancelSubscription, reactivateSubscription } from '@/lib/billing/manage';
 import { isPaytrConfigured } from '@/lib/paytr/config';
+import { revalidatePath } from 'next/cache';
 
 export interface CheckoutActionState {
   ok: boolean;
@@ -60,4 +62,22 @@ export async function startCheckoutAction(plan: PaidPlan): Promise<CheckoutActio
     const msg = err instanceof Error ? err.message : 'Ödeme başlatılamadı.';
     return { ok: false, error: msg };
   }
+}
+
+export async function cancelSubscriptionAction(): Promise<{ ok: boolean; error?: string }> {
+  const session = await auth();
+  if (!session?.user?.companyId) return { ok: false, error: 'Oturum bulunamadı.' };
+  const res = await cancelSubscription(session.user.companyId, db);
+  if (!res.ok) return { ok: false, error: 'Aktif abonelik bulunamadı.' };
+  revalidatePath('/admin/settings/billing');
+  return { ok: true };
+}
+
+export async function reactivateSubscriptionAction(): Promise<{ ok: boolean; error?: string }> {
+  const session = await auth();
+  if (!session?.user?.companyId) return { ok: false, error: 'Oturum bulunamadı.' };
+  const res = await reactivateSubscription(session.user.companyId, db);
+  if (!res.ok) return { ok: false, error: 'İptal edilmiş abonelik bulunamadı.' };
+  revalidatePath('/admin/settings/billing');
+  return { ok: true };
 }
