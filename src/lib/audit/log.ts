@@ -62,7 +62,8 @@ export interface AuditLogEntry {
  */
 export async function writeAuditLog(
   entry: AuditLogEntry,
-  db: DbClient,
+  // Ham db veya transaction client kabul eder (sadece `insert` gerekli — tx '$client' içermez).
+  db: Pick<DbClient, 'insert'>,
   now: Date = new Date(),
 ): Promise<{ ok: boolean }> {
   try {

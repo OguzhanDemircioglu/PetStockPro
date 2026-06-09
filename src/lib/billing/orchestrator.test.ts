@@ -107,6 +107,8 @@ function makeDb(config: DbConfig) {
       };
     },
   };
+  // tx === db (mock); fn fırlatırsa propagate olur (rollback/duplicate senaryoları).
+  db.transaction = (fn: (tx: unknown) => unknown) => fn(db);
   return { db, calls };
 }
 

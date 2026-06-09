@@ -3,29 +3,27 @@
  *
  * PayTR callback'ini (ödeme bildirimi) işler. Caller pattern (/api/webhooks/paytr):
  *   1. verifyPaytrCallbackHash(...) → reject if invalid (asla "OK" dönme)
- *   2. processPaytrCallback(input, { db }) → outcome
- *   3. her durumda "OK" dön (PayTR retry spam önleme)
+ *   2. processPaytrCallback(input, { db, nilvera }) → outcome
+ *   3. "OK" dön (PayTR retry spam önleme) — processing throw ederse non-OK dön (retry istenir)
+ *
+ * Atomiklik (kritik — "para alındı ama PRO açılmadı" önlemi):
+ *   - processed_webhooks insert + subscription/company/invoice yazımı TEK transaction'da.
+ *   - Hata → rollback (webhook kaydı da geri alınır) → PayTR retry'ı TEMİZ reprocess eder.
+ *   - Duplicate (event_id 23505) → tx abort → 'duplicate' outcome (idempotent).
+ *   - Nilvera (dış ağ) transaction DIŞINDA, best-effort: hata → invoice 'pending' kalır.
  *
  * Akış:
- *   - Idempotency: processed_webhooks.event_id = merchant_oid (PK çakışması = skip)
  *   - Subscription lookup: pending_merchant_oid → tenant
  *   - Tutar doğrulama: total_amount (kuruş) == plan tutarı (manipülasyon koruması)
- *   - status=success:
- *       ilk ödeme (incomplete) → active + kart token sakla + company.plan + invoice + Nilvera
- *       yenileme (active/past_due) → period +1 ay + invoice + Nilvera + retry sıfırla
- *   - status=failed:
- *       ilk ödeme → incomplete bırak (checkout tamamlanmadı)
- *       yenileme → past_due + dunning (retry sayacı + nextRetryAt)
- *
- * Nilvera best-effort: hata → invoice 'pending' kalır (background retry). Orchestration
- * yine başarı döner. DB yazımı caller transaction'ı dışında (Nilvera external network).
+ *   - success: ilk ödeme (incomplete) → active + kart token + company.plan + invoice
+ *              yenileme (active/past_due) → period +1 ay + invoice + retry sıfırla
+ *   - failed:  ilk ödeme → incomplete bırak; yenileme → past_due + dunning
  */
 
 import { eq, and } from 'drizzle-orm';
 import type { DbClient } from '@/lib/db/client';
 import { writeAuditLog } from '@/lib/audit/log';
 import { createNilveraInvoice } from '@/lib/nilvera/invoice';
-import type { NilveraInvoiceResponse } from '@/lib/nilvera/types';
 import { processedWebhooks, subscriptions, invoices, companies, users } from '@/db/schema';
 import { addMonths, computeInvoiceTotals, type InvoiceTotals } from './totals';
 
@@ -49,23 +47,18 @@ export interface PaytrCallbackInput {
   paymentType?: string;
   failedReason?: string;
   /** İlk ödemede saklanan kart bilgileri (callback'ten normalize edilir). */
-  card?: {
-    utoken?: string;
-    ctoken?: string;
-    masked?: string;
-    brand?: string;
-  };
+  card?: { utoken?: string; ctoken?: string; masked?: string; brand?: string };
   /** processed_webhooks.payload için tam ham gövde (debug). */
   rawPayload?: Record<string, unknown>;
 }
 
 export type PaytrCallbackOutcome =
-  | 'duplicate' // event zaten işlenmiş
+  | 'duplicate'
   | 'payment_succeeded'
   | 'payment_failed'
-  | 'subscription_not_found' // pending_merchant_oid eşleşmedi
-  | 'company_user_missing' // BAYI_SAHIBI yok (data tutarsız)
-  | 'amount_mismatch'; // total_amount plan tutarıyla uyuşmadı (manipülasyon)
+  | 'subscription_not_found'
+  | 'company_user_missing'
+  | 'amount_mismatch';
 
 export interface PaytrCallbackResult {
   outcome: PaytrCallbackOutcome;
@@ -78,9 +71,7 @@ export interface PaytrCallbackResult {
 
 export interface OrchestratorDeps {
   db: DbClient;
-  /** Nilvera invoice helper — testlerde mock geçirilebilir; yoksa fatura atlanır. */
   nilvera?: { createInvoice: typeof createNilveraInvoice };
-  /** Zaman injection (testlerde deterministic). */
   now?: () => Date;
 }
 
@@ -95,6 +86,15 @@ interface SubscriptionRow {
   paymentRetryCount: number;
 }
 
+/** Transaction içinden dönen sonuç + (varsa) post-tx Nilvera bağlamı. */
+interface TxOutcome {
+  result: PaytrCallbackResult;
+  nilveraCtx?: { invoiceId: string; companyId: string; plan: 'FREE' | 'PRO' | 'PRO_PLUS'; totals: InvoiceTotals };
+}
+
+// Drizzle transaction callback'ine geçen client (db ile aynı arayüz).
+type Tx = Parameters<Parameters<DbClient['transaction']>[0]>[0];
+
 // ══════════════════════════════════════════════════════════════
 // Main
 // ══════════════════════════════════════════════════════════════
@@ -103,30 +103,56 @@ export async function processPaytrCallback(
   input: PaytrCallbackInput,
   deps: OrchestratorDeps,
 ): Promise<PaytrCallbackResult> {
-  const db = deps.db;
   const now = deps.now?.() ?? new Date();
 
-  // 1. Idempotency
-  const persisted = await persistWebhook(db, input, now);
-  if (!persisted) {
-    return { outcome: 'duplicate', merchantOid: input.merchantOid };
+  let txOut: TxOutcome;
+  try {
+    txOut = await deps.db.transaction((tx) => processInTransaction(input, tx as unknown as Tx, now));
+  } catch (err) {
+    if (isUniqueViolation(err)) {
+      // event_id zaten kayıtlı → ya gerçek duplicate ya da önceki başarılı işlem.
+      return { outcome: 'duplicate', merchantOid: input.merchantOid };
+    }
+    throw err; // gerçek hata → route non-OK döner → PayTR retry → temiz reprocess
   }
 
-  // 2. Subscription lookup (pending_merchant_oid)
-  const sub = await findSubscriptionByPendingOid(db, input.merchantOid);
+  // Post-tx: Nilvera best-effort (yalnız başarılı ödeme + nilvera dep varsa)
+  if (txOut.nilveraCtx && deps.nilvera?.createInvoice) {
+    const { nilveraInvoiceId, nilveraError } = await issueAndRecordNilvera(deps, txOut.nilveraCtx, now);
+    return { ...txOut.result, nilveraInvoiceId, nilveraError };
+  }
+  return txOut.result;
+}
+
+// ══════════════════════════════════════════════════════════════
+// Transaction gövdesi
+// ══════════════════════════════════════════════════════════════
+
+async function processInTransaction(input: PaytrCallbackInput, tx: Tx, now: Date): Promise<TxOutcome> {
+  // 1. Idempotency — duplicate ise 23505 fırlatır, tx abort olur, caller 'duplicate' döner.
+  await tx.insert(processedWebhooks).values({
+    eventId: input.merchantOid,
+    source: 'paytr',
+    eventType: `payment.${input.status}`,
+    payload: (input.rawPayload ?? {}) as Record<string, unknown>,
+    processedAt: now,
+  });
+
+  // 2. Subscription lookup
+  const sub = await findSubscriptionByPendingOid(tx, input.merchantOid);
   if (!sub) {
-    return { outcome: 'subscription_not_found', merchantOid: input.merchantOid };
+    return { result: { outcome: 'subscription_not_found', merchantOid: input.merchantOid } };
   }
 
-  // 3. Audit author (BAYI_SAHIBI)
-  const ownerUserId = await findCompanyOwner(db, sub.companyId);
+  // 3. Audit author
+  const ownerUserId = await findCompanyOwner(tx, sub.companyId);
   if (!ownerUserId) {
-    return { outcome: 'company_user_missing', merchantOid: input.merchantOid, subscriptionId: sub.id };
+    return { result: { outcome: 'company_user_missing', merchantOid: input.merchantOid, subscriptionId: sub.id } };
   }
 
   // 4. Dispatch
   if (input.status === 'failed') {
-    return handleFailure(input, sub, ownerUserId, deps, now);
+    return { result: await applyFailure(input, sub, ownerUserId, tx, now) };
   }
 
   // success → tutar doğrula (manipülasyon koruması)
@@ -141,44 +167,19 @@ export async function processPaytrCallback(
         entityId: sub.id,
         afterState: { expectedKurus, gotKurus: input.totalAmount, merchantOid: input.merchantOid },
       },
-      db,
+      tx,
       now,
     );
-    return { outcome: 'amount_mismatch', merchantOid: input.merchantOid, subscriptionId: sub.id };
+    return { result: { outcome: 'amount_mismatch', merchantOid: input.merchantOid, subscriptionId: sub.id } };
   }
 
-  return handleSuccess(input, sub, ownerUserId, deps, now);
+  return applySuccess(input, sub, ownerUserId, tx, now);
 }
 
-// ══════════════════════════════════════════════════════════════
-// Step helpers (internal)
-// ══════════════════════════════════════════════════════════════
+// ── DB reads ───────────────────────────────────────────────────
 
-async function persistWebhook(
-  db: DbClient,
-  input: PaytrCallbackInput,
-  now: Date,
-): Promise<boolean> {
-  try {
-    await db.insert(processedWebhooks).values({
-      eventId: input.merchantOid,
-      source: 'paytr',
-      eventType: `payment.${input.status}`,
-      payload: (input.rawPayload ?? {}) as Record<string, unknown>,
-      processedAt: now,
-    });
-    return true;
-  } catch (err) {
-    if (isUniqueViolation(err)) return false;
-    throw err;
-  }
-}
-
-async function findSubscriptionByPendingOid(
-  db: DbClient,
-  merchantOid: string,
-): Promise<SubscriptionRow | null> {
-  const rows = await db
+async function findSubscriptionByPendingOid(tx: Tx, merchantOid: string): Promise<SubscriptionRow | null> {
+  const rows = await tx
     .select({
       id: subscriptions.id,
       companyId: subscriptions.companyId,
@@ -195,8 +196,8 @@ async function findSubscriptionByPendingOid(
   return (rows[0] as SubscriptionRow) ?? null;
 }
 
-async function findCompanyOwner(db: DbClient, companyId: string): Promise<string | null> {
-  const rows = await db
+async function findCompanyOwner(tx: Tx, companyId: string): Promise<string | null> {
+  const rows = await tx
     .select({ id: users.id })
     .from(users)
     .where(and(eq(users.companyId, companyId), eq(users.role, 'BAYI_SAHIBI')))
@@ -204,21 +205,20 @@ async function findCompanyOwner(db: DbClient, companyId: string): Promise<string
   return rows[0]?.id ?? null;
 }
 
-// ── Success ────────────────────────────────────────────────────
+// ── Success (tx içi) ───────────────────────────────────────────
 
-async function handleSuccess(
+async function applySuccess(
   input: PaytrCallbackInput,
   sub: SubscriptionRow,
   ownerUserId: string,
-  deps: OrchestratorDeps,
+  tx: Tx,
   now: Date,
-): Promise<PaytrCallbackResult> {
-  const db = deps.db;
+): Promise<TxOutcome> {
   const isFirstPayment = sub.status === 'incomplete';
   const newPeriodStart = isFirstPayment ? now : sub.currentPeriodEnd;
   const newPeriodEnd = addMonths(newPeriodStart, 1);
 
-  await db
+  await tx
     .update(subscriptions)
     .set({
       status: 'active',
@@ -235,12 +235,10 @@ async function handleSuccess(
     })
     .where(eq(subscriptions.id, sub.id));
 
-  // company.plan = abonelik planı (ilk ödemede FREE → PRO/PRO_PLUS)
-  await db.update(companies).set({ plan: sub.plan, updatedAt: now }).where(eq(companies.id, sub.companyId));
+  await tx.update(companies).set({ plan: sub.plan, updatedAt: now }).where(eq(companies.id, sub.companyId));
 
-  // Invoice (pending → Nilvera onayı sonrası issued)
   const totals = computeInvoiceTotals(sub.amountTry);
-  const invRows = await db
+  const invRows = await tx
     .insert(invoices)
     .values({
       companyId: sub.companyId,
@@ -256,32 +254,7 @@ async function handleSuccess(
       updatedAt: now,
     })
     .returning({ id: invoices.id });
-  const invoiceId = invRows[0]?.id;
-
-  // Nilvera best-effort
-  let nilveraInvoiceId: string | undefined;
-  let nilveraError: string | undefined;
-  if (deps.nilvera?.createInvoice && invoiceId) {
-    try {
-      const resp = await issueNilveraInvoice({ deps, companyId: sub.companyId, plan: sub.plan, totals, invoiceId, now });
-      if (resp) {
-        nilveraInvoiceId = resp.invoiceId;
-        await db
-          .update(invoices)
-          .set({
-            nilveraInvoiceId: resp.invoiceId,
-            nilveraInvoiceNumber: resp.invoiceNumber ?? null,
-            pdfUrl: resp.pdfUrl ?? null,
-            status: 'issued',
-            issuedAt: now,
-            updatedAt: now,
-          })
-          .where(eq(invoices.id, invoiceId));
-      }
-    } catch (err) {
-      nilveraError = err instanceof Error ? err.message : String(err);
-    }
-  }
+  const invoiceId = invRows[0]?.id as string;
 
   await writeAuditLog(
     {
@@ -295,45 +268,36 @@ async function handleSuccess(
         periodStart: newPeriodStart.toISOString(),
         periodEnd: newPeriodEnd.toISOString(),
         amountTotal: totals.total,
-        invoiceId: invoiceId ?? null,
-        nilveraInvoiceId: nilveraInvoiceId ?? null,
-        nilveraError: nilveraError ?? null,
+        invoiceId,
         merchantOid: input.merchantOid,
       },
     },
-    db,
+    tx,
     now,
   );
 
   return {
-    outcome: 'payment_succeeded',
-    merchantOid: input.merchantOid,
-    subscriptionId: sub.id,
-    invoiceId,
-    nilveraInvoiceId,
-    nilveraError,
+    result: { outcome: 'payment_succeeded', merchantOid: input.merchantOid, subscriptionId: sub.id, invoiceId },
+    nilveraCtx: { invoiceId, companyId: sub.companyId, plan: sub.plan, totals },
   };
 }
 
-// ── Failure ────────────────────────────────────────────────────
+// ── Failure (tx içi) ───────────────────────────────────────────
 
-async function handleFailure(
+async function applyFailure(
   input: PaytrCallbackInput,
   sub: SubscriptionRow,
   ownerUserId: string,
-  deps: OrchestratorDeps,
+  tx: Tx,
   now: Date,
 ): Promise<PaytrCallbackResult> {
-  const db = deps.db;
   const isFirstPayment = sub.status === 'incomplete';
 
   if (isFirstPayment) {
-    // Checkout tamamlanmadı — incomplete bırak, pending oid temizle.
-    await db
+    await tx
       .update(subscriptions)
       .set({ pendingMerchantOid: null, updatedAt: now })
       .where(eq(subscriptions.id, sub.id));
-
     await writeAuditLog(
       {
         companyId: sub.companyId,
@@ -343,7 +307,7 @@ async function handleFailure(
         entityId: sub.id,
         afterState: { reason: input.failedReason ?? null, merchantOid: input.merchantOid },
       },
-      db,
+      tx,
       now,
     );
     return { outcome: 'payment_failed', merchantOid: input.merchantOid, subscriptionId: sub.id };
@@ -354,9 +318,9 @@ async function handleFailure(
   const nextRetryAt =
     newRetryCount <= RETRY_SCHEDULE_DAYS.length
       ? new Date(now.getTime() + RETRY_SCHEDULE_DAYS[newRetryCount - 1] * DAY_MS)
-      : null; // retry tükendi → cron (Faz 3) expire eder
+      : null;
 
-  await db
+  await tx
     .update(subscriptions)
     .set({
       status: 'past_due',
@@ -381,47 +345,58 @@ async function handleFailure(
         reason: input.failedReason ?? null,
       },
     },
-    db,
+    tx,
     now,
   );
 
   return { outcome: 'payment_failed', merchantOid: input.merchantOid, subscriptionId: sub.id };
 }
 
-// ── Nilvera helper ─────────────────────────────────────────────
+// ── Nilvera (post-tx, best-effort) ─────────────────────────────
 
-async function issueNilveraInvoice(params: {
-  deps: OrchestratorDeps;
-  companyId: string;
-  plan: 'FREE' | 'PRO' | 'PRO_PLUS';
-  totals: InvoiceTotals;
-  invoiceId: string;
-  now: Date;
-}): Promise<NilveraInvoiceResponse | null> {
-  const { deps, companyId, plan, totals, invoiceId, now } = params;
-  if (!deps.nilvera) return null;
+async function issueAndRecordNilvera(
+  deps: OrchestratorDeps,
+  ctx: { invoiceId: string; companyId: string; plan: 'FREE' | 'PRO' | 'PRO_PLUS'; totals: InvoiceTotals },
+  now: Date,
+): Promise<{ nilveraInvoiceId?: string; nilveraError?: string }> {
+  try {
+    const compRows = await deps.db
+      .select({ name: companies.name, vatNo: companies.vatNo })
+      .from(companies)
+      .where(eq(companies.id, ctx.companyId))
+      .limit(1);
+    const company = compRows[0];
+    if (!company?.vatNo) {
+      throw new Error(`Şirket VKN eksik (companyId=${ctx.companyId}) — Nilvera fatura atlandı`);
+    }
 
-  const compRows = await deps.db
-    .select({ name: companies.name, vatNo: companies.vatNo })
-    .from(companies)
-    .where(eq(companies.id, companyId))
-    .limit(1);
-  const company = compRows[0];
+    const resp = await deps.nilvera!.createInvoice({
+      externalRef: ctx.invoiceId,
+      invoiceDate: now.toISOString(),
+      customer: { taxNumber: company.vatNo, title: company.name, address: '—', city: '—' },
+      lines: [
+        { name: `PetStockPro ${ctx.plan} planı (aylık abonelik)`, quantity: 1, unitPrice: ctx.totals.matrah, vatRate: 20 },
+      ],
+      currency: 'TRY',
+    });
 
-  // VKN yoksa fatura kesilemez → invoice 'pending' kalsın (caller catch eder).
-  if (!company?.vatNo) {
-    throw new Error(`Şirket VKN eksik (companyId=${companyId}) — Nilvera fatura atlandı`);
+    await deps.db
+      .update(invoices)
+      .set({
+        nilveraInvoiceId: resp.invoiceId,
+        nilveraInvoiceNumber: resp.invoiceNumber ?? null,
+        pdfUrl: resp.pdfUrl ?? null,
+        status: 'issued',
+        issuedAt: now,
+        updatedAt: now,
+      })
+      .where(eq(invoices.id, ctx.invoiceId));
+
+    return { nilveraInvoiceId: resp.invoiceId };
+  } catch (err) {
+    // Invoice 'pending' kalır — background retry için işaret. Akış bozulmaz.
+    return { nilveraError: err instanceof Error ? err.message : String(err) };
   }
-
-  return await deps.nilvera.createInvoice({
-    externalRef: invoiceId,
-    invoiceDate: now.toISOString(),
-    customer: { taxNumber: company.vatNo, title: company.name, address: '—', city: '—' },
-    lines: [
-      { name: `PetStockPro ${plan} planı (aylık abonelik)`, quantity: 1, unitPrice: totals.matrah, vatRate: 20 },
-    ],
-    currency: 'TRY',
-  });
 }
 
 // ══════════════════════════════════════════════════════════════
