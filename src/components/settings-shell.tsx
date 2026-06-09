@@ -12,6 +12,7 @@ import Link from 'next/link';
 export type SettingsSection =
   | 'overview'
   | 'company'
+  | 'billing'
   | 'storefront'
   | 'users'
   | 'notifications'
@@ -31,6 +32,7 @@ export interface SettingsNavItem {
 const NAV: SettingsNavItem[] = [
   { key: 'overview', href: '/admin/settings', emoji: '📊', label: 'Genel Bakış' },
   { key: 'company', href: '/admin/settings/company', emoji: '🏢', label: 'Firma' },
+  { key: 'billing', href: '/admin/settings/billing', emoji: '💳', label: 'Abonelik' },
   { key: 'storefront', href: '/admin/settings/storefront', emoji: '🌐', label: 'Vitrin Profili' },
   { key: 'users', href: '/admin/settings/users', emoji: '👥', label: 'Kullanıcılar' },
   { key: 'notifications', href: '/admin/settings/notifications', emoji: '🔔', label: 'Bildirimler' },
