@@ -16,7 +16,8 @@ describe('nilvera config', () => {
   });
 
   describe('getNilveraConfig', () => {
-    it('default base URL production', () => {
+    it('default base URL production (env yoksa)', () => {
+      vi.stubEnv('NILVERA_BASE_URL', '');
       _resetNilveraConfigCache();
       const cfg = getNilveraConfig();
       expect(cfg.NILVERA_BASE_URL).toBe('https://api.nilvera.com');
@@ -39,8 +40,32 @@ describe('nilvera config', () => {
       expect(getNilveraConfig()).toBe(getNilveraConfig());
     });
 
-    it('VKN 10 karakter dışında → reject', () => {
-      vi.stubEnv('NILVERA_SELLER_VKN', '12345');
+    it('VKN 10 hane (tüzel kişi VKN) kabul', () => {
+      vi.stubEnv('NILVERA_SELLER_VKN', '1234567890');
+      _resetNilveraConfigCache();
+      expect(getNilveraConfig().NILVERA_SELLER_VKN).toBe('1234567890');
+    });
+
+    it('VKN 11 hane (şahıs şirketi TCKN) kabul', () => {
+      vi.stubEnv('NILVERA_SELLER_VKN', '12345678901');
+      _resetNilveraConfigCache();
+      expect(getNilveraConfig().NILVERA_SELLER_VKN).toBe('12345678901');
+    });
+
+    it('VKN 9 hane → reject', () => {
+      vi.stubEnv('NILVERA_SELLER_VKN', '123456789');
+      _resetNilveraConfigCache();
+      expect(() => getNilveraConfig()).toThrow(/geçersiz/i);
+    });
+
+    it('VKN 12 hane → reject', () => {
+      vi.stubEnv('NILVERA_SELLER_VKN', '123456789012');
+      _resetNilveraConfigCache();
+      expect(() => getNilveraConfig()).toThrow(/geçersiz/i);
+    });
+
+    it('VKN harf içerir → reject', () => {
+      vi.stubEnv('NILVERA_SELLER_VKN', '12345678AB');
       _resetNilveraConfigCache();
       expect(() => getNilveraConfig()).toThrow(/geçersiz/i);
     });

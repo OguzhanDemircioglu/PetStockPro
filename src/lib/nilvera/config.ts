@@ -18,7 +18,8 @@ const nilveraEnvSchema = z.object({
 
   // PetStockPro tax info (e-Arşiv faturalarında "satıcı" tarafı)
   // Lansman öncesi şirket kuruluş tamamlanınca env'e eklenir
-  NILVERA_SELLER_VKN: z.string().length(10).optional(),
+  // Satıcı (PetStockPro) vergi no: tüzel kişi VKN 10 hane VEYA şahıs şirketi TCKN 11 hane.
+  NILVERA_SELLER_VKN: z.string().regex(/^\d{10,11}$/, 'VKN 10 hane veya TC 11 hane (sadece rakam)').optional(),
   NILVERA_SELLER_TITLE: z.string().optional(), // "PetStockPro Yazılım A.Ş." vs.
 });
 
