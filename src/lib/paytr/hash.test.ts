@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import crypto from 'node:crypto';
 import {
   buildPaytrTokenHash,
+  buildPaytrRecurringHash,
   verifyPaytrCallbackHash,
   type PaytrTokenHashInput,
 } from './hash';
@@ -222,5 +223,82 @@ describe('verifyPaytrCallbackHash', () => {
         MERCHANT_SALT,
       ),
     ).toThrow(/merchant_key/);
+  });
+});
+
+describe('buildPaytrRecurringHash', () => {
+  const RINPUT = {
+    merchantId: '123456',
+    userIp: '1.2.3.4',
+    merchantOid: 'PSPREC1715789432000',
+    email: 'tenant@petshop.com',
+    paymentAmount: '120000',
+    paymentType: 'card',
+    installmentCount: '0',
+    currency: 'TL',
+    testMode: '1',
+    non3d: '1',
+  };
+
+  function expectedRecurring(i: typeof RINPUT, key: string, salt: string): string {
+    const hashStr =
+      i.merchantId +
+      i.userIp +
+      i.merchantOid +
+      i.email +
+      i.paymentAmount +
+      i.paymentType +
+      i.installmentCount +
+      i.currency +
+      i.testMode +
+      i.non3d;
+    return crypto.createHmac('sha256', key).update(hashStr + salt, 'utf8').digest('base64');
+  }
+
+  it('recurring formülüyle birebir eşleşir (alan sırası)', () => {
+    expect(buildPaytrRecurringHash(RINPUT, MERCHANT_KEY, MERCHANT_SALT)).toBe(
+      expectedRecurring(RINPUT, MERCHANT_KEY, MERCHANT_SALT),
+    );
+  });
+
+  it('recurring hash ≠ get-token hash (farklı formül)', () => {
+    const rec = buildPaytrRecurringHash(RINPUT, MERCHANT_KEY, MERCHANT_SALT);
+    const tok = buildPaytrTokenHash(
+      {
+        merchantId: RINPUT.merchantId,
+        userIp: RINPUT.userIp,
+        merchantOid: RINPUT.merchantOid,
+        email: RINPUT.email,
+        paymentAmount: RINPUT.paymentAmount,
+        userBasket: 'x',
+        noInstallment: '1',
+        maxInstallment: '0',
+        currency: RINPUT.currency,
+        testMode: RINPUT.testMode,
+      },
+      MERCHANT_KEY,
+      MERCHANT_SALT,
+    );
+    expect(rec).not.toBe(tok);
+  });
+
+  it('tek alan değişince hash değişir (payment_amount)', () => {
+    const base = buildPaytrRecurringHash(RINPUT, MERCHANT_KEY, MERCHANT_SALT);
+    const changed = buildPaytrRecurringHash(
+      { ...RINPUT, paymentAmount: '240000' },
+      MERCHANT_KEY,
+      MERCHANT_SALT,
+    );
+    expect(changed).not.toBe(base);
+  });
+
+  it('farklı salt/key farklı hash', () => {
+    const base = buildPaytrRecurringHash(RINPUT, MERCHANT_KEY, MERCHANT_SALT);
+    expect(buildPaytrRecurringHash(RINPUT, MERCHANT_KEY, 'other-salt')).not.toBe(base);
+    expect(buildPaytrRecurringHash(RINPUT, 'other-key', MERCHANT_SALT)).not.toBe(base);
+  });
+
+  it('merchant_key eksik → throw', () => {
+    expect(() => buildPaytrRecurringHash(RINPUT, '', MERCHANT_SALT)).toThrow(/merchant_key/);
   });
 });

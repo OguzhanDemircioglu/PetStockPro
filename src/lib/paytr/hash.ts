@@ -81,6 +81,58 @@ export function buildPaytrTokenHash(
 }
 
 /**
+ * Recurring (kayıtlı kart / Non3D) charge için paytr_token üretir.
+ *
+ * DİKKAT: get-token'dan FARKLI alan sırası (PayTR dokümanı):
+ *   hash_str = merchant_id + user_ip + merchant_oid + email + payment_amount +
+ *              payment_type + installment_count + currency + test_mode + non_3d
+ *   token = base64( HMAC_SHA256(hash_str + merchant_salt, merchant_key) )
+ *
+ * Docs: https://dev.paytr.com/en/direkt-api/kart-saklama-api/kayitli-kart-tekrarlayan-odeme
+ */
+export interface PaytrRecurringHashInput {
+  merchantId: string;
+  userIp: string;
+  merchantOid: string;
+  email: string;
+  paymentAmount: string; // kuruş
+  paymentType: string; // 'card'
+  installmentCount: string; // '0'
+  currency: string; // 'TL'
+  testMode: string; // '0' | '1'
+  non3d: string; // '1'
+}
+
+export function buildPaytrRecurringHash(
+  input: PaytrRecurringHashInput,
+  merchantKey: string,
+  merchantSalt: string,
+): string {
+  if (!merchantKey || !merchantSalt) {
+    throw new Error(
+      'PayTR recurring hash üretilemiyor — merchant_key + merchant_salt gerekli (PAYTR_MERCHANT_KEY / PAYTR_MERCHANT_SALT).',
+    );
+  }
+
+  const hashStr =
+    input.merchantId +
+    input.userIp +
+    input.merchantOid +
+    input.email +
+    input.paymentAmount +
+    input.paymentType +
+    input.installmentCount +
+    input.currency +
+    input.testMode +
+    input.non3d;
+
+  return crypto
+    .createHmac('sha256', merchantKey)
+    .update(hashStr + merchantSalt, 'utf8')
+    .digest('base64');
+}
+
+/**
  * Callback'in PayTR'dan geldiğini doğrular (timing-safe).
  *
  * @param params — PayTR callback POST gövdesinden gelen alanlar

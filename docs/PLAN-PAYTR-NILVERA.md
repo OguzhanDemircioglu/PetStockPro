@@ -218,7 +218,7 @@ CRON_SECRET                                                    # yenileme cron a
 
 | Faz | Durum |
 |---|---|
-| 1 (config+hash+client+types) | ✅ kısmen (30 test) — recurring ekleri kaldı |
+| 1 (config+hash+client+types) | ✅ TAM — recurring hash + chargeSavedCard + store_card/utoken · 42 PayTR test |
 | 0 (iyzico çıkar + Nilvera VKN) | ✅ iyzico+orchestrator+webhook silindi · VKN 10/11 hane · 1795 test · typecheck/lint 0 |
 | 2 (şema+checkout+callback) | ⏳ |
 | 3 (recurring+cron+dunning) | ⏳ |
