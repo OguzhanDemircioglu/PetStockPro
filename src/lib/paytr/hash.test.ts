@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import {
   buildPaytrTokenHash,
   buildPaytrRecurringHash,
+  buildPaytrSavedCardsHash,
   verifyPaytrCallbackHash,
   type PaytrTokenHashInput,
 } from './hash';
@@ -300,5 +301,25 @@ describe('buildPaytrRecurringHash', () => {
 
   it('merchant_key eksik → throw', () => {
     expect(() => buildPaytrRecurringHash(RINPUT, '', MERCHANT_SALT)).toThrow(/merchant_key/);
+  });
+});
+
+describe('buildPaytrSavedCardsHash', () => {
+  it('formül: base64(hmac(utoken + salt, key))', () => {
+    const expected = crypto
+      .createHmac('sha256', MERCHANT_KEY)
+      .update('utok-1' + MERCHANT_SALT, 'utf8')
+      .digest('base64');
+    expect(buildPaytrSavedCardsHash('utok-1', MERCHANT_KEY, MERCHANT_SALT)).toBe(expected);
+  });
+
+  it('farklı utoken farklı hash', () => {
+    expect(buildPaytrSavedCardsHash('a', MERCHANT_KEY, MERCHANT_SALT)).not.toBe(
+      buildPaytrSavedCardsHash('b', MERCHANT_KEY, MERCHANT_SALT),
+    );
+  });
+
+  it('merchant_key eksik → throw', () => {
+    expect(() => buildPaytrSavedCardsHash('u', '', MERCHANT_SALT)).toThrow(/merchant_key/);
   });
 });

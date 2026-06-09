@@ -2,10 +2,11 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   createPaytrIframeToken,
   chargeSavedCard,
+  listSavedCards,
   paytrIframeUrl,
   PaytrApiError,
 } from './client';
-import { buildPaytrTokenHash, buildPaytrRecurringHash } from './hash';
+import { buildPaytrTokenHash, buildPaytrRecurringHash, buildPaytrSavedCardsHash } from './hash';
 import { _resetPaytrConfigCache } from './config';
 import type { PaytrBasketItem } from './types';
 
@@ -309,6 +310,60 @@ describe('chargeSavedCard', () => {
     _resetPaytrConfigCache();
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
     await expect(chargeSavedCard(CHARGE)).rejects.toBeInstanceOf(PaytrApiError);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('listSavedCards', () => {
+  beforeEach(() => {
+    vi.stubEnv('PAYTR_MERCHANT_ID', MERCHANT_ID);
+    vi.stubEnv('PAYTR_MERCHANT_KEY', MERCHANT_KEY);
+    vi.stubEnv('PAYTR_MERCHANT_SALT', MERCHANT_SALT);
+    vi.stubEnv('PAYTR_TEST_MODE', '1');
+    vi.stubEnv('PAYTR_BASE_URL', 'https://www.paytr.com');
+    _resetPaytrConfigCache();
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+    _resetPaytrConfigCache();
+  });
+
+  it('success → kart listesi + endpoint /odeme/capi/list + doğru hash', async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(jsonResponse({ status: 'success', cards: [{ ctoken: 'ctok-1', last_4: '1234', c_brand: 'visa' }] }));
+
+    const cards = await listSavedCards('utok-1');
+
+    expect(cards).toHaveLength(1);
+    expect(cards[0].ctoken).toBe('ctok-1');
+    expect(fetchSpy.mock.calls[0][0]).toBe('https://www.paytr.com/odeme/capi/list');
+    const body = lastFetchBody();
+    expect(body.get('utoken')).toBe('utok-1');
+    expect(body.get('paytr_token')).toBe(buildPaytrSavedCardsHash('utok-1', MERCHANT_KEY, MERCHANT_SALT));
+  });
+
+  it('cards yoksa → boş dizi', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse({ status: 'success' }));
+    expect(await listSavedCards('utok-1')).toEqual([]);
+  });
+
+  it('status error → PaytrApiError', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse({ status: 'error', err_msg: 'utoken yok' }));
+    await expect(listSavedCards('utok-1')).rejects.toBeInstanceOf(PaytrApiError);
+  });
+
+  it('ağ hatası → PaytrApiError', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('ECONNREFUSED'));
+    await expect(listSavedCards('utok-1')).rejects.toBeInstanceOf(PaytrApiError);
+  });
+
+  it('config eksik → fetch çağrılmadan throw', async () => {
+    vi.stubEnv('PAYTR_MERCHANT_KEY', '');
+    _resetPaytrConfigCache();
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    await expect(listSavedCards('utok-1')).rejects.toBeInstanceOf(PaytrApiError);
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 });

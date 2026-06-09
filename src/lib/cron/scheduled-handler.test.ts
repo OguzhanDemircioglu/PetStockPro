@@ -37,6 +37,10 @@ describe('CRON_ENDPOINT_MAP', () => {
     expect(CRON_ENDPOINT_MAP['30 6 * * *']).toBe('/api/cron/promo-first-100-check');
   });
 
+  it('05:00 UTC eşlemesi → /api/cron/billing-renew (Faz 3)', () => {
+    expect(CRON_ENDPOINT_MAP['0 5 * * *']).toBe('/api/cron/billing-renew');
+  });
+
   it('tüm endpoint path leading slash ile başlar', () => {
     for (const path of Object.values(CRON_ENDPOINT_MAP)) {
       expect(path.startsWith('/')).toBe(true);

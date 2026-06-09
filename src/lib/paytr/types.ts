@@ -62,3 +62,30 @@ export const paytrChargeResponseSchema = z
   })
   .passthrough();
 export type PaytrChargeResponse = z.infer<typeof paytrChargeResponseSchema>;
+
+/**
+ * Kayıtlı Kart Listesi yanıtındaki tek kart.
+ */
+export const paytrSavedCardSchema = z
+  .object({
+    ctoken: z.string(), // recurring charge için kart token
+    last_4: z.string().optional(),
+    c_brand: z.string().optional(), // visa | mastercard | troy
+    c_bank: z.string().optional(),
+    month: z.string().optional(),
+    year: z.string().optional(),
+    require_cvv: z.union([z.string(), z.number()]).optional(),
+  })
+  .passthrough();
+export type PaytrSavedCard = z.infer<typeof paytrSavedCardSchema>;
+
+/**
+ * Kayıtlı Kart Listesi yanıtı (/odeme/capi/list).
+ */
+export const paytrSavedCardsResponseSchema = z
+  .object({
+    status: z.string(),
+    cards: z.array(paytrSavedCardSchema).optional(),
+  })
+  .passthrough();
+export type PaytrSavedCardsResponse = z.infer<typeof paytrSavedCardsResponseSchema>;

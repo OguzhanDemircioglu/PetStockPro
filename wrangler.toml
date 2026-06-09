@@ -79,6 +79,7 @@ crons = [
   "0 4 * * *",  # log retention cleanup — 07:00 TR (04:00 UTC) — Faz 2.A
   "0 6 * * *",  # günlük vitrin şikayet özeti — 09:00 TR (06:00 UTC)
   "30 6 * * *", # ilk 100 promo T-7/T-1/T+0 check — 09:30 TR (06:30 UTC) — Migration 0028
+  "0 5 * * *",  # abonelik yenileme (PayTR recurring + dunning) — 08:00 TR (05:00 UTC) — Faz 3
 ]
 
 # Production secrets (wrangler secret put X ile ekle, asla wrangler.toml'a yazma):

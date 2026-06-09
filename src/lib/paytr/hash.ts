@@ -176,3 +176,24 @@ export function verifyPaytrCallbackHash(
   }
   return crypto.timingSafeEqual(expectedBuf, receivedBuf);
 }
+
+/**
+ * Kayıtlı Kart Listesi (saved cards) için paytr_token.
+ *   token = base64( HMAC_SHA256(utoken + merchant_salt, merchant_key) )
+ * Docs: https://dev.paytr.com/en/direkt-api/kart-saklama-api/kayitli-kart-listesi
+ */
+export function buildPaytrSavedCardsHash(
+  utoken: string,
+  merchantKey: string,
+  merchantSalt: string,
+): string {
+  if (!merchantKey || !merchantSalt) {
+    throw new Error(
+      'PayTR saved-cards hash üretilemiyor — merchant_key + merchant_salt gerekli (PAYTR_MERCHANT_KEY / PAYTR_MERCHANT_SALT).',
+    );
+  }
+  return crypto
+    .createHmac('sha256', merchantKey)
+    .update(utoken + merchantSalt, 'utf8')
+    .digest('base64');
+}

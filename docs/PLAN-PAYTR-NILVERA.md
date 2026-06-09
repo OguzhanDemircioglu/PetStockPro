@@ -225,6 +225,6 @@ CRON_SECRET                                                    # yenileme cron a
 | 2 callback route | ✅ /api/webhooks/paytr + 8 test |
 | 2 checkout backend | ✅ paytr-checkout + 5 test |
 | 2 billing UI | ✅ /admin/settings/billing — **E2E doğrulandı** (gerçek PayTR get-token + iframe + incomplete subscription) |
-| 3 (recurring+cron+dunning) | ⏳ |
+| 3 (recurring+cron+dunning) | ✅ listSavedCards + runBillingRenewals + /api/cron/billing-renew + wrangler cron · 22 test |
 | 4 (UI+iptal+fatura) | ⏳ |
 | 5 (doc+smoke+temizlik) | ⏳ |

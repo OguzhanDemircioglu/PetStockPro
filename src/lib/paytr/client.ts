@@ -12,12 +12,14 @@
  */
 
 import { getPaytrConfig } from './config';
-import { buildPaytrTokenHash, buildPaytrRecurringHash } from './hash';
+import { buildPaytrTokenHash, buildPaytrRecurringHash, buildPaytrSavedCardsHash } from './hash';
 import {
   paytrGetTokenResponseSchema,
   paytrChargeResponseSchema,
+  paytrSavedCardsResponseSchema,
   type PaytrBasketItem,
   type PaytrChargeResponse,
+  type PaytrSavedCard,
 } from './types';
 
 /**
@@ -301,4 +303,62 @@ export async function chargeSavedCard(
   }
 
   return parsed.data;
+}
+
+/**
+ * Kullanıcının saklı kartlarını listeler (utoken → ctoken).
+ * Recurring charge için ctoken buradan alınır (ilk ödeme callback'i ctoken vermediyse).
+ *
+ * @returns saklı kart listesi (boş olabilir)
+ * @throws PaytrApiError — config eksik / ağ / parse / status!=success
+ */
+export async function listSavedCards(utoken: string): Promise<PaytrSavedCard[]> {
+  const cfg = getPaytrConfig();
+  const { merchantId, merchantKey, merchantSalt } = cfg;
+  if (!merchantId || !merchantKey || !merchantSalt) {
+    throw new PaytrApiError(
+      'PayTR yapılandırılmadı — PAYTR_MERCHANT_ID + PAYTR_MERCHANT_KEY + PAYTR_MERCHANT_SALT gerekli.',
+    );
+  }
+
+  const paytrToken = buildPaytrSavedCardsHash(utoken, merchantKey, merchantSalt);
+  const form = new URLSearchParams({ merchant_id: merchantId, utoken, paytr_token: paytrToken });
+  const url = `${cfg.baseUrl}/odeme/capi/list`;
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form.toString(),
+    });
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : 'unknown';
+    throw new PaytrApiError(`PayTR saved-cards ağ hatası: ${detail}`);
+  }
+
+  const text = await response.text();
+  let json: unknown;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    throw new PaytrApiError(
+      `PayTR saved-cards JSON dışı yanıt (HTTP ${response.status}): ${text.slice(0, 150)}`,
+      { httpStatus: response.status },
+    );
+  }
+
+  const parsed = paytrSavedCardsResponseSchema.safeParse(json);
+  if (!parsed.success) {
+    throw new PaytrApiError(`PayTR saved-cards beklenmedik yanıt biçimi (HTTP ${response.status})`, {
+      httpStatus: response.status,
+    });
+  }
+  if (parsed.data.status !== 'success') {
+    throw new PaytrApiError(`PayTR saved-cards başarısız (status=${parsed.data.status})`, {
+      httpStatus: response.status,
+    });
+  }
+
+  return parsed.data.cards ?? [];
 }
