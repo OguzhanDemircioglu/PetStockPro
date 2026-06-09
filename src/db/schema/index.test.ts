@@ -62,7 +62,7 @@ describe('Schema — enum değerleri (Sprint 1A)', () => {
     ]);
   });
 
-  it('subscriptionStatusEnum: 6 state (suspended dahil — KT2-3)', () => {
+  it('subscriptionStatusEnum: 7 state (incomplete — PayTR checkout öncesi)', () => {
     expect(subscriptionStatusEnum.enumValues).toEqual([
       'active',
       'past_due',
@@ -70,6 +70,7 @@ describe('Schema — enum değerleri (Sprint 1A)', () => {
       'cancelled',
       'expired',
       'trialing',
+      'incomplete',
     ]);
   });
 
@@ -187,13 +188,16 @@ describe('Schema — Sprint 0 iskelet tabloları', () => {
 });
 
 describe('Schema — Sprint 1A payment + audit tabloları', () => {
-  it('subscriptions: company FK + plan + status + iyzico refs + period + amount', () => {
+  it('subscriptions: company FK + plan + status + PayTR kart token + period + amount', () => {
     expect(subscriptions.id).toBeDefined();
     expect(subscriptions.companyId).toBeDefined();
     expect(subscriptions.plan).toBeDefined();
     expect(subscriptions.status).toBeDefined();
-    expect(subscriptions.iyzicoSubscriptionRef).toBeDefined();
-    expect(subscriptions.iyzicoCustomerRef).toBeDefined();
+    expect(subscriptions.paytrUtoken).toBeDefined();
+    expect(subscriptions.paytrCtoken).toBeDefined();
+    expect(subscriptions.pendingMerchantOid).toBeDefined();
+    expect(subscriptions.paymentRetryCount).toBeDefined();
+    expect(subscriptions.nextRetryAt).toBeDefined();
     expect(subscriptions.currentPeriodStart).toBeDefined();
     expect(subscriptions.currentPeriodEnd).toBeDefined();
     expect(subscriptions.cancelAtPeriodEnd).toBeDefined();

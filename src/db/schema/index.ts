@@ -63,11 +63,12 @@ export const storefrontStatusEnum = petstockproSchema.enum('storefront_status', 
 // Sprint 1A — Subscription state machine (PAYMENT-INTEGRATION §5.3)
 export const subscriptionStatusEnum = petstockproSchema.enum('subscription_status', [
   'active',     // ödeme aktif, dönem içinde
-  'past_due',   // ödeme başarısız, 3-7 gün retry (iyzico)
-  'suspended',  // past_due 7 gün geçti, askıda — ödeme yapınca active'e döner
+  'past_due',   // ödeme başarısız, retry/dunning (PayTR recurring)
+  'suspended',  // past_due grace geçti, askıda — ödeme yapınca active'e döner
   'cancelled',  // tenant iptal etti, dönem sonuna kadar aktif
   'expired',    // dönem bitti, FREE'ye düştü
   'trialing',   // deneme süresi (Faz 2 — şu an kullanılmıyor)
+  'incomplete', // checkout başladı, ilk PayTR ödemesi onaylanmadı (callback bekliyor)
 ]);
 
 // Sprint 1A — Invoice lifecycle (Nilvera e-Arşiv)
@@ -368,9 +369,14 @@ export const subscriptions = petstockproSchema.table('subscriptions', {
   plan: planEnum('plan').notNull(), // PRO veya PRO_PLUS (FREE için kayıt yok)
   status: subscriptionStatusEnum('status').notNull().default('active'),
 
-  // iyzico referansları (TR-only)
-  iyzicoSubscriptionRef: varchar('iyzico_subscription_ref', { length: 100 }).unique(),
-  iyzicoCustomerRef: varchar('iyzico_customer_ref', { length: 100 }),
+  // PayTR kart saklama — recurring tahsilat için (ilk ödeme callback'inde doldurulur)
+  paytrUtoken: varchar('paytr_utoken', { length: 128 }),         // kullanıcı token (saklı kartlar sahibi)
+  paytrCtoken: varchar('paytr_ctoken', { length: 190 }),         // saklı kart token (recurring charge)
+  paytrCardMasked: varchar('paytr_card_masked', { length: 32 }), // "•••• 1234" (UI gösterim)
+  paytrCardBrand: varchar('paytr_card_brand', { length: 20 }),   // visa/mastercard/troy
+  pendingMerchantOid: varchar('pending_merchant_oid', { length: 64 }), // devam eden ödeme ↔ callback eşleşme
+  paymentRetryCount: integer('payment_retry_count').notNull().default(0), // dunning sayacı
+  nextRetryAt: timestamp('next_retry_at', { withTimezone: true }),         // sıradaki recurring deneme
 
   // Ödeme döngüsü
   currentPeriodStart: timestamp('current_period_start', { withTimezone: true }).notNull(),
@@ -385,6 +391,7 @@ export const subscriptions = petstockproSchema.table('subscriptions', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index('idx_subscriptions_company_status').on(t.companyId, t.status),
+  index('idx_subscriptions_pending_oid').on(t.pendingMerchantOid),
   // Tek aktif abonelik per tenant — partial unique index
   uniqueIndex('one_active_subscription_per_tenant')
     .on(t.companyId)
@@ -435,6 +442,9 @@ export const invoices = petstockproSchema.table('invoices', {
   vatAmount: decimal('vat_amount', { precision: 10, scale: 2 }).notNull(),          // KDV (125₺)
   amountTotal: decimal('amount_total', { precision: 10, scale: 2 }).notNull(),      // KDV dahil (1.000₺)
 
+  // PayTR ödeme eşleştirme (başarılı charge'ın merchant_oid'i)
+  merchantOid: varchar('merchant_oid', { length: 64 }),
+
   // Nilvera e-Arşiv referansları
   nilveraInvoiceId: varchar('nilvera_invoice_id', { length: 100 }),
   nilveraInvoiceNumber: varchar('nilvera_invoice_number', { length: 50 }), // PSP-2026-000147
@@ -450,6 +460,7 @@ export const invoices = petstockproSchema.table('invoices', {
   index('idx_invoices_subscription').on(t.subscriptionId),
   index('idx_invoices_status').on(t.status),
   uniqueIndex('idx_invoices_nilvera_id').on(t.nilveraInvoiceId).where(sql`${t.nilveraInvoiceId} IS NOT NULL`),
+  uniqueIndex('idx_invoices_merchant_oid').on(t.merchantOid).where(sql`${t.merchantOid} IS NOT NULL`),
 ]);
 
 /**
