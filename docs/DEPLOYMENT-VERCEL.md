@@ -35,10 +35,12 @@ Gerekli secret'lar: `DATABASE_URL`, `AUTH_SECRET`, `SUPABASE_*`, `PAYTR_MERCHANT
 
 > Supabase MCP yerine: Vercel env'leri **şifreli** tutar, repo'ya girmez. (`.env` zaten gitignored.)
 
-## 3. Cron (vercel.json — hazır)
-- 6 cron tanımlı (`vercel.json` `crons`). Vercel **GET** isteği gönderir → her route'a `export const GET = POST` köprüsü eklendi.
-- **Auth:** `CRON_SECRET` env set edilince Vercel otomatik `Authorization: Bearer $CRON_SECRET` header'ı ekler → route'lardaki kontrol aynı.
-- ⚠ **Vercel Pro ($20/ay) gerekir** — Hobby planı 2 cron + günde 1 ile sınırlı.
+## 3. Cron (vercel.json — Free/Hobby uyumlu)
+- **Free (Hobby) planı max 2 cron + günde 1 tetikleme** destekler → 6 ayrı cron yerine **tek master cron** kullanıyoruz: `vercel.json` `/api/cron/run-all` (günlük 03:00 UTC / 06:00 TR).
+- `run-all` route'u 6 job'ı (`billing-renew`, `cleanup-old-logs`, `errors-threshold-check`, `daily-summary`, `promo-first-100-check`, `sitemap-rebuild`) **paralel** çalıştırır (`maxDuration=60`).
+- Vercel **GET** isteği gönderir → route GET+POST ikisini de handle eder.
+- **Auth:** `CRON_SECRET` env set edilince Vercel otomatik `Authorization: Bearer $CRON_SECRET` ekler.
+- **Pro'ya geçilirse:** `vercel.json`'da 6 ayrı cron'a bölünebilir (route'lar zaten ayrı + GET köprülü). Her job kendi saatinde + dakika granülerliğiyle çalışır.
 
 ## 4. DNS (Cloudflare panel)
 1. Vercel → Project → **Domains** → `petstockpro.com` ekle → Vercel DNS talimatını verir.

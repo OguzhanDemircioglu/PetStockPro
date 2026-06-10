@@ -2,11 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "regions": ["fra1"],
   "crons": [
-    { "path": "/api/cron/sitemap-rebuild", "schedule": "0 3 * * *" },
-    { "path": "/api/cron/errors-threshold-check", "schedule": "55 3 * * *" },
-    { "path": "/api/cron/cleanup-old-logs", "schedule": "0 4 * * *" },
-    { "path": "/api/cron/billing-renew", "schedule": "0 5 * * *" },
-    { "path": "/api/cron/daily-summary", "schedule": "0 6 * * *" },
-    { "path": "/api/cron/promo-first-100-check", "schedule": "30 6 * * *" }
+    { "path": "/api/cron/run-all", "schedule": "0 3 * * *" }
   ]
 }
