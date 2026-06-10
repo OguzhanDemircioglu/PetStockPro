@@ -2,8 +2,16 @@
 
 import { useActionState } from 'react';
 import Image from 'next/image';
+import { Package, Store, BarChart3, type LucideIcon } from 'lucide-react';
 import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import { registerAction, type RegisterState } from './actions';
+
+const HERO_FEATURES: { title: string; sub: string; icon?: LucideIcon; img?: string }[] = [
+  { icon: Package, title: 'Stok Takip', sub: 'Çoklu şube, sayım, immutable ledger' },
+  { icon: Store, title: 'Vitrin', sub: 'Müşteri bul, WhatsApp ile sat' },
+  { icon: BarChart3, title: '6 Rapor', sub: 'Kâr-zarar, KDV, en çok satan' },
+  { img: '/chatbot.png', title: 'PetPro Asistan', sub: 'Sipariş + transfer + indirim önerisi' },
+];
 
 /**
  * Register Page — Sprint 2.2
@@ -16,10 +24,8 @@ import { registerAction, type RegisterState } from './actions';
  *   - E-posta
  *   - Şifre (HIBP + strength check server-side)
  *   - KVKK Aydınlatma (Md.10) checkbox — zorunlu
- *   - AB veri lokasyonu (KVKK Md.9 açık rıza) checkbox — zorunlu
+ *   - (AB veri işleme açık rızası KVKK dokümanında belirtilir — ayrı checkbox YOK, 2026-06-10)
  *   - Submit → registerAction → /verify-email redirect
- *
- * Sprint 2.3+: Turnstile widget (zorunlu), email verification flow.
  */
 export default function RegisterPage() {
   const [state, formAction, pending] = useActionState<RegisterState | null, FormData>(
@@ -82,23 +88,27 @@ export default function RegisterPage() {
         </div>
 
         <div className="relative z-10 mt-10 grid grid-cols-2 gap-3">
-          {[
-            { ic: '📦', title: 'Stok Takip', sub: 'Çoklu şube, sayım, immutable ledger' },
-            { ic: '🏪', title: 'Vitrin', sub: 'Müşteri bul, WhatsApp ile sat' },
-            { ic: '📊', title: '6 Rapor', sub: 'Kâr-zarar, KDV, en çok satan' },
-            { ic: '🤖', title: 'PetPro Asistan', sub: 'Sipariş + transfer + indirim önerisi' },
-          ].map((f) => (
-            <div
-              key={f.title}
-              className="rounded-2xl border border-white/20 bg-white/10 px-5 py-4 backdrop-blur-md transition-all hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/15"
-            >
-              <div className="mb-2 grid h-9 w-9 place-items-center rounded-xl border border-white/20 bg-white/20 text-lg">
-                {f.ic}
+          {HERO_FEATURES.map((f) => {
+            const Icon = f.icon;
+            return (
+              <div
+                key={f.title}
+                className="group relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 px-5 py-4 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-white/40 hover:bg-white/[0.16] hover:shadow-[0_16px_34px_rgba(0,0,0,0.22)]"
+              >
+                {/* hover glow */}
+                <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/20 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100" />
+                <div className="relative mb-2.5 grid h-12 w-12 place-items-center overflow-hidden rounded-2xl bg-gradient-to-br from-white/40 to-white/10 shadow-lg ring-1 ring-inset ring-white/30 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3">
+                  {f.img ? (
+                    <Image src={f.img} alt="" width={48} height={48} className="h-full w-full object-cover" />
+                  ) : Icon ? (
+                    <Icon className="h-[23px] w-[23px] text-white drop-shadow" strokeWidth={2.2} />
+                  ) : null}
+                </div>
+                <div className="text-sm font-bold leading-tight">{f.title}</div>
+                <div className="mt-1 text-[13px] leading-snug opacity-80">{f.sub}</div>
               </div>
-              <div className="text-sm font-bold leading-tight">{f.title}</div>
-              <div className="mt-1 text-[13px] leading-snug opacity-80">{f.sub}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="relative z-10 mt-auto flex items-center gap-3 pt-6 text-[12.5px] font-bold uppercase tracking-wider opacity-80">
@@ -193,7 +203,7 @@ export default function RegisterPage() {
               </p>
             </div>
 
-            {/* KVKK çift checkbox — 2026-05-14 zorunlu (Madde 10 + Madde 9) */}
+            {/* KVKK Aydınlatma onayı (Madde 10) — zorunlu. AB veri işleme rızası KVKK dokümanında belirtilir. */}
             <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-line bg-line-soft px-3.5 py-3 text-xs leading-relaxed text-ink-2">
               <input
                 type="checkbox"
@@ -209,22 +219,6 @@ export default function RegisterPage() {
               </span>
             </label>
 
-            <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-line bg-line-soft px-3.5 py-3 text-xs leading-relaxed text-ink-2">
-              <input
-                type="checkbox"
-                name="dataLocationConsent"
-                required
-                className="mt-0.5 h-[18px] w-[18px] flex-shrink-0 accent-cat"
-              />
-              <span>
-                Verilerin <strong className="text-cart">Avrupa Birliği bölgesinde</strong>{' '}
-                işlenmesine açık rıza veriyorum (KVKK Md. 9).{' '}
-                <a href="/kvkk#veri-aktarimi" className="font-bold text-cat hover:underline">
-                  Detay
-                </a>
-              </span>
-            </label>
-
             <button
               type="submit"
               disabled={pending}
@@ -234,7 +228,7 @@ export default function RegisterPage() {
                 <span className="text-xs tracking-wider">Hesap oluşturuluyor...</span>
               ) : (
                 <>
-                  Pet shop&apos;umu oluştur
+                  PetShop&apos;u oluştur
                   <span>→</span>
                 </>
               )}
@@ -249,11 +243,6 @@ export default function RegisterPage() {
             >
               Giriş yap
             </a>
-          </div>
-
-          <div className="mt-5 rounded-lg border border-line bg-paper px-3 py-2.5 text-[12px] leading-snug text-ink-4 text-center">
-            <strong className="text-cart">Cloudflare Turnstile</strong> bot koruması +{' '}
-            <strong className="text-cart">HIBP</strong> şifre sızıntı kontrolü Sprint 2.3&apos;te aktif olacak.
           </div>
         </div>
       </section>

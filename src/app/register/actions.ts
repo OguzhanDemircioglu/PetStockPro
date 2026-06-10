@@ -25,7 +25,8 @@ export async function registerAction(
   const password = formData.get('password');
   const passwordConfirm = formData.get('passwordConfirm');
   const kvkkConsent = formData.get('kvkkConsent') === 'on';
-  const dataLocationConsent = formData.get('dataLocationConsent') === 'on';
+  // AB veri işleme açık rızası kayıt akışında zımni (KVKK dokümanında belirtilir) — ayrı checkbox YOK (2026-06-10).
+  const dataLocationConsent = true;
 
   if (typeof shopName !== 'string' || typeof email !== 'string' || typeof password !== 'string') {
     return { ok: false, error: 'Tüm alanlar zorunlu' };
