@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import { cookies } from 'next/headers';
 import { ThemeProvider } from '@/components/theme/theme-provider';
 import { Providers } from './providers';
+import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -60,6 +62,9 @@ export default async function RootLayout({
               theme cookie-driven SSR, query client-only. */}
           <Providers>{children}</Providers>
         </ThemeProvider>
+        {/* Vercel Web Vitals + trafik analizi (performans izleme) */}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

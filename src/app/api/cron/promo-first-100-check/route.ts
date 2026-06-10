@@ -38,6 +38,9 @@ interface CronStats {
   errors: string[];
 }
 
+// Vercel Cron GET isteği gönderir → aynı POST iş mantığına yönlendir (CRON_SECRET auth aynı).
+export const GET = (req: Request) => POST(req);
+
 export async function POST(req: Request): Promise<Response> {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) {

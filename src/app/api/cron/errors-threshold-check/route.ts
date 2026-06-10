@@ -20,6 +20,9 @@ import { buildErrorBurstAlert } from '@/lib/telegram/messages';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+// Vercel Cron GET isteği gönderir → aynı POST iş mantığına yönlendir (CRON_SECRET auth aynı).
+export const GET = (req: Request) => POST(req);
+
 export async function POST(req: Request) {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) {
