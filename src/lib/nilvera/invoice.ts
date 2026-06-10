@@ -2,7 +2,7 @@
  * Nilvera Invoice Operations
  *
  * e-Arşiv fatura oluşturma + status sorgu + iptal.
- * Sprint 14'te iyzico subscription webhook'undan tetiklenir (renewal_success → invoice create).
+ * PayTR ödeme callback'inden (orchestrator) tetiklenir (başarılı ödeme → invoice create).
  *
  * Tüm fonksiyonlar:
  * 1. Input'u Zod ile validate

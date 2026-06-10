@@ -3,7 +3,7 @@
  *
  * Nilvera e-Arşiv API entegrasyonu için env config.
  * PetStockPro'nun kendi mali mühür sertifikası + Nilvera kurumsal hesabı kullanılır
- * (Sprint 14 MVP — Sprint 13 iyzico subscription webhook'undan tetiklenir).
+ * (PayTR ödeme callback'i / billing orchestrator tarafından tetiklenir).
  *
  * Sandbox + production switch için NILVERA_BASE_URL env değişkeniyle yapılır.
  * Anahtarlar kullanıcı tarafından canlıya çıkmadan önce verilir.

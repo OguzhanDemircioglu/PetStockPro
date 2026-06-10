@@ -353,7 +353,7 @@ export const branches = petstockproSchema.table('branches', {
 // PAYMENT-INTEGRATION.md §5 (subscription state machine)
 
 /**
- * SUBSCRIPTIONS — iyzico abonelik kayıtları
+ * SUBSCRIPTIONS — PayTR abonelik kayıtları
  *
  * FREE plan için subscription kaydı YOK (subscription = aktif para akışı).
  * PRO 1.000₺ + PRO+ 2.000₺ aboneleri için iyzico subscription ref'i tutulur.
@@ -409,8 +409,8 @@ export const subscriptions = petstockproSchema.table('subscriptions', {
  * RLS: SADECE süperadmin SELECT, INSERT backend (service_role).
  */
 export const processedWebhooks = petstockproSchema.table('processed_webhooks', {
-  eventId: varchar('event_id', { length: 200 }).primaryKey(), // iyzico/nilvera unique event ID
-  source: varchar('source', { length: 30 }).notNull(),         // 'iyzico' | 'nilvera'
+  eventId: varchar('event_id', { length: 200 }).primaryKey(), // paytr merchant_oid / nilvera event ID
+  source: varchar('source', { length: 30 }).notNull(),         // 'paytr' | 'nilvera'
   eventType: varchar('event_type', { length: 100 }).notNull(), // örn 'subscription.payment_succeeded'
   payload: jsonb('payload').notNull(),                          // tam event payload (debug için)
   processedAt: timestamp('processed_at', { withTimezone: true }).notNull().defaultNow(),

@@ -96,7 +96,7 @@ export default function UyelikSozlesmesiPage() {
               <p className="mt-2">
                 Plan ücretleri <strong>/fiyatlar</strong> sayfasında belirtildiği
                 gibidir. PRO ve PRO+ planları için ödeme aylık peşin tahsil
-                edilir; tahsilat iyzico üzerinden yapılır, e-Arşiv fatura
+                edilir; tahsilat PayTR üzerinden yapılır, e-Arşiv fatura
                 Nilvera üzerinden düzenlenir.
               </p>
               <p className="mt-2">

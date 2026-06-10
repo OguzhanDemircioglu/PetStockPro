@@ -19,7 +19,7 @@ export default async function PlanOverrideBypassPage() {
         </h1>
         <p className="mt-1 text-sm text-ink-3">
           Bir tenant&apos;ın plan&apos;ını manuel değiştir. Tipik kullanım:
-          iyzico webhook gecikmesi + müşteri PRO ödedi ama FREE görünüyor,
+          PayTR yenileme/callback gecikmesi + müşteri PRO ödedi ama FREE görünüyor,
           ya da geçici promosyon yükseltme.
         </p>
       </header>
@@ -29,7 +29,7 @@ export default async function PlanOverrideBypassPage() {
         className="rounded-xl border border-cat/30 bg-cat-soft px-4 py-3 text-sm text-ink-2"
       >
         ℹ <strong>Subscription tablosuna dokunulmaz.</strong> Sadece{' '}
-        <code>companies.plan</code> değiştirilir. iyzico webhook gerçek ödeme yansıtırsa
+        <code>companies.plan</code> değiştirilir. PayTR callback gerçek ödeme yansıtırsa
         plan tekrar sync olur. Audit log&apos;da süperadmin damgalı.
       </div>
 

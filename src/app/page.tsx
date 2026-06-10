@@ -190,7 +190,7 @@ export default async function Home() {
             <span>⚡ Cloudflare Workers</span>
             <span>🔒 KVKK uyumlu</span>
             <span>📜 Nilvera e-Arşiv</span>
-            <span>💳 iyzico güvenli ödeme</span>
+            <span>💳 PayTR güvenli ödeme</span>
             <span>🇹🇷 TR yerleşik</span>
           </div>
         </section>

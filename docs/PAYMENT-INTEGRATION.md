@@ -1,9 +1,11 @@
 # PetStockPro — Ödeme Entegrasyonu + Uyum
 
 **Tarih:** 2026-05-14
-**Kapsam:** iyzico Subscription (TR) + Nilvera e-Arşiv (TR)
-**Durum:** Sprint 13 (iyzico) + Sprint 14 (Nilvera) için referans
-**Otoritatif:** Bu doküman implementation + uyum + sözleşme + lansman checklist'i bir arada tutar
+**Kapsam:** PayTR (TR — tekrarlayan/otomatik ödeme) + Nilvera e-Arşiv (TR)
+**Durum:** Nilvera referans + 2026-06-10 PayTR geçişi
+**Otoritatif:** Uyum + sözleşme + lansman checklist (ödeme teknik akışı → PLAN-PAYTR-NILVERA.md)
+
+> **⚠ ÖDEME SAĞLAYICI GÜNCELLEMESİ (2026-06-10):** iyzico tamamen **bırakıldı**, yerine **PayTR (tekrarlayan/otomatik ödeme — kart saklama + cron çekim)** geldi. Bu dokümandaki **iyzico'ya özgü teknik akış bölümleri geçersizdir**; güncel PayTR mimarisi + 6 faz + tam test matrisi için **otoritatif kaynak: [`PLAN-PAYTR-NILVERA.md`](PLAN-PAYTR-NILVERA.md)**. Uyum / KVKK / sözleşme / lansman checklist bölümleri (iyzico→PayTR isim değişikliği dışında) geçerliliğini korur.
 
 > **🇹🇷 TR-only Kararı (2026-05-14):** Bu sürüm **yalnızca Türkiye** kapsamı içindir. Paddle MoR yurt dışı abonelik entegrasyonu, KVKK Madde 9 yurt dışı veri aktarım açık rıza akışı, GDPR cookie banner ve sub-processor olarak Paddle bu sürümden **kaldırıldı**. Yurt dışı pet shop talebi gelirse Faz 2'de yeniden değerlendirilecek (bkz. §10 Karar Geçmişi).
 

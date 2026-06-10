@@ -40,7 +40,7 @@ export const RETENTION_RULES: readonly RetentionRule[] = [
   {
     table: 'processed_webhooks',
     ageDays: 90,
-    description: 'iyzico webhook idempotency guard',
+    description: 'PayTR/Nilvera webhook idempotency guard',
   },
   {
     table: 'notifications',

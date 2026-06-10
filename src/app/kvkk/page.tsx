@@ -102,7 +102,7 @@ export default function KvkkPage() {
                 <li>Hizmetin sağlanması (stok takip + satış kaydı + vitrin)</li>
                 <li>Üyelik kaydı ve oturum yönetimi (KVKK m. 5/2-c)</li>
                 <li>
-                  Abonelik faturalandırma (iyzico ödeme + Nilvera e-Arşiv;
+                  Abonelik faturalandırma (PayTR ödeme + Nilvera e-Arşiv;
                   KVKK m. 5/2-a)
                 </li>
                 <li>
@@ -133,7 +133,7 @@ export default function KvkkPage() {
                   altyapısı (ABD/AB karma)
                 </li>
                 <li>
-                  <strong>iyzico (TR):</strong> Abonelik ödeme tahsilatı
+                  <strong>PayTR (TR):</strong> Abonelik ödeme tahsilatı
                 </li>
                 <li>
                   <strong>Nilvera (TR):</strong> e-Arşiv fatura

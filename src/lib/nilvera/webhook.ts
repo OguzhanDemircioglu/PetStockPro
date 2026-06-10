@@ -1,7 +1,7 @@
 /**
  * Nilvera Webhook — pure functions (signature + parse + event ID)
  *
- * iyzico webhook ile aynı pattern (timing-safe HMAC-SHA256 + Zod parse + idempotency key).
+ * PayTR callback ile aynı pattern (timing-safe HMAC-SHA256 + Zod parse + idempotency key).
  * DB write Sprint 14 billing orchestrator'da bağlanır.
  *
  * Webhook header: `x-nilvera-signature`

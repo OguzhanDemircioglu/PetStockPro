@@ -226,5 +226,5 @@ CRON_SECRET                                                    # yenileme cron a
 | 2 checkout backend | ✅ paytr-checkout + 5 test |
 | 2 billing UI | ✅ /admin/settings/billing — **E2E doğrulandı** (gerçek PayTR get-token + iframe + incomplete subscription) |
 | 3 (recurring+cron+dunning) | ✅ listSavedCards + runBillingRenewals + /api/cron/billing-renew + wrangler cron · 22 test |
-| 4 (UI+iptal+fatura) | ⏳ |
-| 5 (doc+smoke+temizlik) | ⏳ |
+| 4 (iptal + reactivate) | ✅ cancel/reactivate + UI · E2E (reactivate → DB cancel=false doğrulandı) · 4 test |
+| 5 (doc + metin temizliği) | ✅ iyzico→PayTR (legal/landing/superadmin/env panel) + PAYMENT-INTEGRATION not · 1858 test |

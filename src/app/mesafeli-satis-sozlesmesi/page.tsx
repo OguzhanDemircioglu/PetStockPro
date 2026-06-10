@@ -127,7 +127,7 @@ export default function MesafeliSatisSozlesmesiPage() {
               </ul>
               <p className="mt-2">
                 Ödeme tahsilatı her dönem başında otomatik olarak Alıcı&apos;nın
-                kayıtlı kredi kartı/banka kartından <strong>iyzico</strong>
+                kayıtlı kredi kartı/banka kartından <strong>PayTR</strong>
                 {' '}altyapısı üzerinden yapılır. e-Arşiv fatura{' '}
                 <strong>Nilvera</strong> üzerinden düzenlenip Alıcı&apos;nın
                 kayıtlı e-postasına gönderilir.

@@ -100,7 +100,7 @@ export function PlanOverrideForm() {
           minLength={10}
           maxLength={500}
           rows={3}
-          placeholder="Örn: Müşteri PRO satın aldı 12:30'da, iyzico webhook gecikti hâlâ FREE — manuel düzeltme"
+          placeholder="Örn: Müşteri PRO satın aldı 12:30'da, PayTR callback gecikti hâlâ FREE — manuel düzeltme"
           disabled={pending}
           data-testid="reason"
           aria-invalid={hasError || undefined}

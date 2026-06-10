@@ -3,7 +3,7 @@ import Link from 'next/link';
 /**
  * MarketingFooter — public sayfaların alt menüsü.
  *
- * iyzico üye işyeri başvuru gereği: yasal sayfa linkleri + firma bilgileri
+ * PayTR üye işyeri başvuru gereği: yasal sayfa linkleri + firma bilgileri
  * tüm public sayfalarda erişilebilir olmalı.
  *
  * NOT: Firma bilgileri (VKN, MERSİS, adres) şirket kuruluş sonrası
