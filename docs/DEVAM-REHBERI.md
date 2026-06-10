@@ -1,8 +1,28 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-05-22 (Mobile Responsive **TAMAMLANDI** — Faz 1-4 + final test)
-**Mevcut Branch:** `cray61` — bekleyen commit (kullanıcı onayı isteniyor)
-**Son commit:** `ea082fb` feat(ai): Faz 7 — USER-MANUAL §21 AI Asistanı + süperadmin AI istat
+**Tarih:** 2026-06-10 (PayTR + Nilvera entegrasyonu **TAMAMLANDI** — Faz 0-5)
+**Mevcut Branch:** `cray61` — **14 commit PUSH BEKLİYOR** (kullanıcı "push et" demedi)
+**Son commit:** `13840b5` chore(paytr): iyzico→PayTR metin temizliği (Faz 5)
+
+---
+
+## ✅ PAYTR + NİLVERA ENTEGRASYONU TAMAMLANDI (2026-06-10 — tek oturum, 6 faz)
+
+**Karar:** iyzico tamamen bırakıldı → **PayTR (tekrarlayan/otomatik ödeme: kart saklama + cron çekim)** + **Nilvera test ortamı**. Otoritatif plan: `docs/PLAN-PAYTR-NILVERA.md`.
+
+- **Faz 0** — iyzico kodu (`lib/iyzico` + webhook route + orchestrator) silindi; Nilvera `SELLER_VKN` 10/11 hane (şahıs şirketi TCKN)
+- **Faz 1** — `src/lib/paytr/`: config + hash (token/callback/recurring/saved-cards HMAC) + client (get-token + chargeSavedCard + listSavedCards) + types · 50 test
+- **Faz 2** — Migration **0029** (subscriptions iyzico→PayTR kart token alanları + `invoices.merchant_oid` + enum `incomplete`; **Supabase + Aiven**'a uygulandı + doğrulandı) + orchestrator (`processPaytrCallback`, **transaction'lı** — idempotency + tutar doğrulama + dunning) + `/api/webhooks/paytr` callback + `paytr-checkout.ts` + billing UI. **Gerçek PayTR get-token + iframe E2E doğrulandı.**
+- **Faz 3** — `runBillingRenewals` (saklı kartla otomatik çekim + dunning retry 1/3/5g + süresi dolanı FREE) + `/api/cron/billing-renew` (CRON_SECRET) + wrangler cron `0 5 * * *`
+- **Faz 4** — abonelik iptal (`cancelAtPeriodEnd` — dönem sonuna kadar aktif) + reactivate + UI · reactivate **E2E doğrulandı** (DB cancel=false)
+- **Faz 5** — iyzico→PayTR metin temizliği (legal/landing/superadmin/env panel) + PAYMENT-INTEGRATION notu
+
+**Test:** 1858 pass (126 dosya) · typecheck/lint 0. **14 commit** (`c0c7569`..`13840b5`).
+
+**⏳ Bekleyen kullanıcı aksiyonları:**
+- **Push:** 14 commit local'de — kullanıcı "push et" deyince `origin/cray61`'e.
+- **PayTR Non3D + Kart Saklama yetkisi:** Faz 3 (otomatik recurring çekim) PayTR hesabında "Direkt API + Non3D ile ödeme" yetkisi olmadan CANLI çalışmaz (kod + mock test hazır). Test ortamında teyit/talep et.
+- Gerçek PayTR test `merchant_id/key/salt` `.env`'de dolu (get-token E2E geçti). Nilvera test VKN/title dolu.
 
 ---
 
