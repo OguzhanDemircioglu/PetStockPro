@@ -23,9 +23,7 @@
     "db:seed:demo": "tsx src/db/seed/staging-demo.ts",
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare preview",
-    "cf:deploy:staging": "opennextjs-cloudflare build && wrangler deploy --config wrangler.staging.toml",
-    "pages:build": "npx @cloudflare/next-on-pages",
-    "pages:deploy": "npx @cloudflare/next-on-pages && wrangler pages deploy .vercel/output/static --project-name petstockpro"
+    "cf:deploy:staging": "opennextjs-cloudflare build && wrangler deploy --config wrangler.staging.toml"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.4",
@@ -42,7 +40,6 @@
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.36.4",
     "exceljs": "^4.4.0",
-    "iyzipay": "^2.0.67",
     "jose": "^5.9.6",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.469.0",
@@ -65,7 +62,6 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.1",
-    "@cloudflare/next-on-pages": "^1.13.16",
     "@next/bundle-analyzer": "^16.2.6",
     "@opennextjs/cloudflare": "^1.19.11",
     "@playwright/test": "^1.49.1",
@@ -76,7 +72,6 @@
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.5.2",
     "@types/bcryptjs": "^2.4.6",
-    "@types/iyzipay": "^2.0.3",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^20",
     "@types/qrcode": "^1.5.6",
