@@ -91,10 +91,13 @@ crons = [
 # - SUPABASE_SERVICE_ROLE_KEY         # server-only (Sprint 3.3 image upload bloker)
 # - SUPABASE_JWT_SECRET               # Auth.js JWT signing
 # - AUTH_SECRET                       # Auth.js (openssl rand -base64 32)
-# - IYZICO_API_KEY                    # Sprint 13 production
-# - IYZICO_SECRET_KEY                 # Sprint 13 production
-# - IYZICO_WEBHOOK_SECRET             # Sprint 13 webhook signature
-# - NILVERA_API_KEY                   # Sprint 14 e-Arşiv
+# - PAYTR_MERCHANT_ID                 # PayTR mağaza no
+# - PAYTR_MERCHANT_KEY                # PayTR mağaza parola (token + callback hash)
+# - PAYTR_MERCHANT_SALT               # PayTR gizli anahtar (callback hash doğrulama)
+# - NILVERA_API_KEY                   # Nilvera e-Arşiv
+# - NILVERA_SELLER_VKN                # Satıcı VKN/TCKN (10/11 hane)
+# - NILVERA_SELLER_TITLE              # Satıcı ünvanı (e-Arşiv satıcı adı)
+#   (NOT secret → wrangler.toml [vars]: PAYTR_TEST_MODE=0, PAYTR_BASE_URL, NILVERA_BASE_URL=canlı)
 # - BREVO_API_KEY                     # Transactional email
 # - TELEGRAM_BOT_TOKEN                # Süperadmin alert kanalı
 # - TURNSTILE_SECRET_KEY              # Sprint 2 bot koruma server-side verify
