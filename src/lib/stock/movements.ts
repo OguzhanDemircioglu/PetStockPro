@@ -22,6 +22,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { DbClient } from '@/lib/db/client';
+import { getProductLimitContext } from '@/lib/promo/first-100';
 import {
   stockMovements,
   branchInventory,
@@ -280,9 +281,12 @@ export type StockMovementResult =
         | 'not_found'
         | 'insufficient_stock'
         | 'invalid_state'
+        | 'product_limit_exceeded'
         | 'unknown';
       issues?: string[];
       meta?: { available?: number; requested?: number };
+      /** product_limit_exceeded için: kaç ürünü var / plan limiti / plan. */
+      planContext?: { currentCount: number; limit: number; plan: string };
     };
 
 export async function recordStockIn(
@@ -301,6 +305,18 @@ export async function recordStockIn(
     };
   }
   const data = parsed.data;
+
+  // Plan limit guard: tenant ürün limitini AŞMIŞSA (örn. PRO+ → PRO downgrade sonrası
+  // 700 ürün / limit 500) stok girişi BLOKE. Kullanıcı limite (500) düşürene (ürün sil)
+  // veya plan yükseltene kadar yeni stok ekleyemez. Satış/çıkış serbest (stoğu eritebilsin).
+  const planCtx = await getProductLimitContext(db, companyId);
+  if (planCtx.exceeded) {
+    return {
+      ok: false,
+      reason: 'product_limit_exceeded',
+      planContext: { currentCount: planCtx.currentCount, limit: planCtx.limit, plan: planCtx.plan },
+    };
+  }
 
   const info = await fetchVariantStockInfo(
     companyId,

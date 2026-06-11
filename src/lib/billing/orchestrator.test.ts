@@ -9,11 +9,13 @@ vi.mock('./alerts', () => ({
   alertDunning: vi.fn(),
 }));
 vi.mock('./emails', () => ({ sendDunningEmail: vi.fn() }));
+vi.mock('./downgrade-reconcile', () => ({ unpublishVitrinOverLimit: vi.fn().mockResolvedValue(0) }));
 
 import { processPaytrCallback, RETRY_SCHEDULE_DAYS, type PaytrCallbackInput } from './orchestrator';
 import { writeAuditLog } from '@/lib/audit/log';
 import { alertPaymentAnomaly, alertDunning } from './alerts';
-import { PLAN_LIMITS } from '@/lib/constants/plan-limits';
+import { unpublishVitrinOverLimit } from './downgrade-reconcile';
+import { PLAN_LIMITS, planVitrinLimit } from '@/lib/constants/plan-limits';
 import { processedWebhooks, subscriptions, invoices, companies, users } from '@/db/schema';
 
 const NOW = new Date('2026-06-10T12:00:00.000Z');
@@ -284,6 +286,21 @@ describe('processPaytrCallback', () => {
     });
     const res = await processPaytrCallback({ ...baseInput, totalAmount: oldKurus }, { db, now });
     expect(res.outcome).toBe('amount_mismatch');
+  });
+
+  it('H2 downgrade: pendingPlan PRO → plan PRO + vitrin over-limit reconcile çağrılır', async () => {
+    const proKurus = String(Math.round(PLAN_LIMITS.PRO.priceMonthlyTry * 100));
+    const { db, calls } = makeDb({
+      subRow: subRow({ status: 'active', plan: 'PRO_PLUS', pendingPlan: 'PRO', amountTry: '20.00' }),
+      company: { name: 'Pet A', vatNo: '1234567890' },
+    });
+
+    const res = await processPaytrCallback({ ...baseInput, totalAmount: proKurus }, { db, now });
+
+    expect(res.outcome).toBe('payment_succeeded');
+    expect(calls.updates.find((u) => u.table === 'subscriptions')!.vals.plan).toBe('PRO');
+    // Downgrade → yeni planın (PRO) vitrin limitine göre over-limit ürünler vitrin'den çekilir.
+    expect(unpublishVitrinOverLimit).toHaveBeenCalledWith(expect.anything(), 'comp-1', planVitrinLimit('PRO'), NOW);
   });
 
   it('Nilvera hata → success ama invoice pending + nilveraError', async () => {

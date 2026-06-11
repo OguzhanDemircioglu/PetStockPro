@@ -59,6 +59,8 @@ function reasonToMessage(reason: string, fallback: string): string {
     not_found: 'Variant veya şube bulunamadı',
     insufficient_stock: 'Yetersiz stok',
     invalid_state: 'Geçersiz durum',
+    product_limit_exceeded:
+      'Ürün limitini aştın — yeni stok eklemek için ürün sayını plan limitine düşür (ürün sil) ya da planını yükselt',
     no_change: 'Sayım sistemdeki miktarla aynı — düzeltme yok',
     observer_read_only: 'İzleyici modundasın — bu işlem yapılamaz',
     permission_required: 'Bu işlem için yetki yok — Bayi Admin\'den iste',
@@ -150,10 +152,17 @@ function buildState<
           : null,
     };
   }
+  // Over-limit (PRO+ → PRO downgrade sonrası) → sayıları içeren net mesaj.
+  const pc = 'planContext' in result ? result.planContext : undefined;
+  const message =
+    result.reason === 'product_limit_exceeded' && pc
+      ? `Ürün limitini aştın (${pc.currentCount}/${pc.limit}). Yeni stok eklemek için ürün sayını ${pc.limit}'e düşür (ürün sil) ya da planını yükselt.`
+      : reasonToMessage(result.reason, 'Hata');
+
   return {
     ...EMPTY,
     scope,
-    message: reasonToMessage(result.reason, 'Hata'),
+    message,
     issues: 'issues' in result ? result.issues ?? [] : [],
     meta: 'meta' in result ? result.meta ?? null : null,
   };

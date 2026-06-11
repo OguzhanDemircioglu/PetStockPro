@@ -2153,7 +2153,7 @@ Sıralama algoritması: Mesafe %40 + Stok ✓ %25 + Son güncelleme %15 + Profil
 
 Hayır — yorum sistemi yok (Faz 2'ye saklı). Sadece WhatsApp tıklamasından sonra müşteriye 5 emoji sticky balon gösterilir (😊/🙂/😐/😕/😞). Bu rating'i Ayarlar → Vitrin → "WhatsApp Geri Bildirimleri" panelinde görürsün.
 
-### 19.5 Plan soruları (8 soru)
+### 19.5 Plan soruları (9 soru)
 
 #### "PRO'ya geçtikten sonra ne olur?"
 
@@ -2166,7 +2166,7 @@ Hayır — yorum sistemi yok (Faz 2'ye saklı). Sadece WhatsApp tıklamasından 
 
 #### "Aboneliği iptal edersem hemen mi düşer?"
 
-Hayır — **dönem sonuna kadar** PRO/PRO+ aktif kalır. Dönem bitince otomatik FREE'ye düşer. Verilerin korunur (PRO+ → FREE düşüşte fazla ürünler "Pasif modda" görünür, 30 gün içinde seçim yaparsın).
+Hayır — **dönem sonuna kadar** PRO/PRO+ aktif kalır. Dönem bitince otomatik FREE'ye düşer. Verilerin ve ürünlerin **silinmez**; sadece FREE vitrin limitini (10) aşan ürünler otomatik vitrin'den çekilir (silinmez, PRO'ya dönünce tekrar yayınlanır). Plan limitini aştığın sürece **yeni ürün ve yeni stok ekleyemezsin** — ürün silerek limite düşersin ya da planını yükseltirsin.
 
 #### "14 gün cayma hakkı nasıl çalışır?"
 
@@ -2185,7 +2185,7 @@ Sadece stok takip için kullanıyorsan bu adımları atlayabilirsin — Nilvera 
 
 #### "Kart bilgilerim güvenli mi?"
 
-Evet — kart bilgilerin **bize hiç gelmez**. iyzico hosted checkout kullanıyoruz, kart bilgisi doğrudan iyzico'ya gider. iyzico BDDK lisanslı ödeme kuruluşudur ve PCI DSS sertifikalıdır. 3D Secure mandatory (banka SMS doğrulama her seferde).
+Evet — kart bilgilerin **bize hiç gelmez**. **PayTR** ödeme altyapısını kullanıyoruz; kart bilgisi doğrudan PayTR'a gider. PayTR BDDK lisanslı ödeme kuruluşudur ve PCI DSS sertifikalıdır. İlk ödemede 3D Secure (banka SMS doğrulama); sonraki yenilemeler saklı kartla otomatik çekilir.
 
 #### "Ödemem başarısız oldu, ne yapmalıyım?"
 
@@ -2195,16 +2195,25 @@ Evet — kart bilgilerin **bize hiç gelmez**. iyzico hosted checkout kullanıyo
 2. **Kart limit yetersiz** — banka kartının limiti aşıldı veya bloklu, banka ile görüş
 3. **Kart süresi dolmuş** — Settings'ten yeni kart bilgisini gir
 
-iyzico otomatik 3 deneme yapar (24 saat aralıklarla). 3 hatadan sonra plan FREE'ye düşer.
+PayTR yenileme başarısız olursa sistem otomatik tekrar dener (1., 3. ve 5. gün) ve sana "kartını güncelle" e-postası gönderir. Denemeler tükenirse plan FREE'ye düşer. Kartını güncellersen sorun çözülür.
+
+#### "PRO ile PRO+ arasında nasıl geçiş yaparım? Ne zaman ücret alınır?"
+
+Ayarlar → Abonelik'te "Plan değiştir" ile geçersin. **Geçiş dönem sonunda olur, anında değil:**
+
+- Geçiş anında **hiçbir ücret alınmaz** — sadece "X tarihinde geçecek" olarak işaretlenir (iptal edebilirsin).
+- **Dönem sonundaki yenilemede** yeni planın güncel ücreti çekilir (PRO+ için 2.000 ₺, PRO için 1.000 ₺).
+- Yükseltme sonrası **eski/düşük tutar bir daha asla çekilmez** — yenileme her zaman güncel planın fiyatını alır.
+- Oransal hesap (proration) yok: ödediğin ayı sonuna kadar mevcut planınla kullanırsın.
 
 #### "Plan düşmesi sonrası fazla ürünlerime ne olur?"
 
-PRO+ (∞) → PRO (500) düşersen 500'den fazla ürün "Pasif modda" görünür (vitrin'den çekilir, listede gri olur). 30 gün içinde:
+PRO+ (∞) → PRO (500) düşersen — ya da FREE'ye düşersen — **ürünlerin silinmez**, hepsi listede durur. Ama:
 
-- Hangilerini aktif tutmak istediğini manuel seçersin
-- Seçim yapmazsan sistem **en yeni 500 ürünü** aktif tutar
-
-Veri kaybolmaz (90 gün geri açma mümkün).
+- Yeni planın **vitrin limitini** aşan ürünler otomatik vitrin'den çekilir (en eskiler; silinmez, `plan_downgrade` sebebiyle kapatılır, tekrar yayınlanabilir).
+- Plan **ürün limitini** (PRO 500 / FREE 50) aştığın sürece **yeni ürün ve yeni stok ekleyemezsin** — net bir hata mesajı görürsün (örn. "Ürün limitini aştın: 700/500").
+- Açmak için: ürün silerek sayını limite (500'e) düşür **veya** planını yükselt.
+- Satış/çıkış serbesttir (stoğunu eritmene engel yok). Veri kaybolmaz.
 
 #### "Faturamı nereden indirebilirim?"
 
@@ -2385,6 +2394,20 @@ Eksikleri tamamla, tekrar "Aç" tıkla.
 **Problem:** Pano üst menüsünde 🛡 "Süperadmin" linki yok
 
 **Olası sebep:** Hesabın **SUPERADMIN rolü değil**. Bu link sadece PetStockPro yönetimi (sahibi) tarafından kullanılır. Normal pet shop sahipleri ve çalışanlar görmez.
+
+### 20.16 Ürün veya stok ekleyemiyorum ("limit aşıldı" hatası)
+
+**Problem:** Yeni ürün eklerken veya stok girişi yaparken "Ürün limitini aştın (örn. 700/500)" gibi bir hata alıyorsun.
+
+**Sebep:** Plan **ürün limitini** aşmış durumdasın. Bu genelde **plan düşüşünden** sonra olur — örneğin PRO+ (sınırsız) iken 700 ürün eklemişsin, sonra PRO'ya (500 limit) geçmişsin. Mevcut 700 ürün silinmez ama limitin (500) üstünde olduğun için sistem **yeni ürün eklemeyi ve yeni stok girişini bloke eder** (kasıtlı — planınla uyumlu hâle gelmen için).
+
+**Çözüm (üçünden biri):**
+
+1. **Ürün sayını limite düşür** — gereksiz/eski ürünleri sil (`/admin/products` → ürün → Sil). 500'e (veya FREE'de 50'ye) indiğinde ekleme tekrar açılır.
+2. **Planını yükselt** — PRO → PRO+ (sınırsız) veya FREE → PRO. Ayarlar → Abonelik. (Plan değişimi dönem sonunda geçerli olur.)
+3. **Sadece satış yap** — satış/stok çıkışı her zaman serbesttir; mevcut stoğunu eritip ürün sayını doğal yoldan azaltabilirsin.
+
+> Not: Bu durumda vitrin'deki limit-üstü ürünler de otomatik kapatılmış olabilir (vitrin'e "plan düşüşü" sebebiyle çekilmiş). Limite indikten veya yükselttikten sonra bunları `/admin/products` → Satışa Aç ile tekrar yayınlayabilirsin.
 
 ---
 

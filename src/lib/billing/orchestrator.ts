@@ -28,7 +28,8 @@ import { processedWebhooks, subscriptions, invoices, companies, users } from '@/
 import { addMonths, computeInvoiceTotals, type InvoiceTotals } from './totals';
 import { alertPaymentAnomaly, alertDunning, type PaymentAnomalyInput } from './alerts';
 import { sendDunningEmail } from './emails';
-import { PLAN_LIMITS } from '@/lib/constants/plan-limits';
+import { unpublishVitrinOverLimit } from './downgrade-reconcile';
+import { PLAN_LIMITS, planVitrinLimit } from '@/lib/constants/plan-limits';
 
 /**
  * Bir abonelik için bu dönem geçerli plan + KDV-dahil tutar (₺).
@@ -308,6 +309,12 @@ async function applySuccess(
     .where(eq(subscriptions.id, sub.id));
 
   await tx.update(companies).set({ plan: effective.plan, updatedAt: now }).where(eq(companies.id, sub.companyId));
+
+  // (b) Plan düşüşünde (örn. PRO+ → PRO) yeni planın vitrin limitini aşan ürünleri
+  // otomatik vitrin'den çek (FREE expire ile aynı davranış). Upgrade'de ∞ → no-op.
+  if (planChanged) {
+    await unpublishVitrinOverLimit(tx as unknown as DbClient, sub.companyId, planVitrinLimit(effective.plan), now);
+  }
 
   const totals = computeInvoiceTotals(effective.amountTry);
   const invRows = await tx

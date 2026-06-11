@@ -194,6 +194,10 @@ describe('transferSchema', () => {
 // recordStockIn
 // ─────────────────────────────────────────────────────────────────
 
+// getProductLimitContext (db.execute) mock — ürün limiti AŞILMADI (5/500).
+const okLimitExecute = () =>
+  vi.fn().mockResolvedValue([{ plan: 'PRO', promo_eligible: false, promo_until: null, product_count: 5 }]);
+
 describe('recordStockIn', () => {
   it('happy path — yeni inventory satırı (ilk giriş)', async () => {
     const select = makeSelectChain([
@@ -212,7 +216,7 @@ describe('recordStockIn', () => {
     const transaction = vi
       .fn()
       .mockImplementation(async (cb: (t: unknown) => Promise<unknown>) => cb(tx));
-    const db = { select, transaction } as unknown as DbClient;
+    const db = { select, transaction, execute: okLimitExecute() } as unknown as DbClient;
 
     const result = await recordStockIn(
       COMPANY,
@@ -253,7 +257,7 @@ describe('recordStockIn', () => {
     const transaction = vi
       .fn()
       .mockImplementation(async (cb: (t: unknown) => Promise<unknown>) => cb(tx));
-    const db = { select, transaction } as unknown as DbClient;
+    const db = { select, transaction, execute: okLimitExecute() } as unknown as DbClient;
 
     const result = await recordStockIn(
       COMPANY,
@@ -284,7 +288,7 @@ describe('recordStockIn', () => {
         },
       ],
     ]);
-    const db = { select } as unknown as DbClient;
+    const db = { select, execute: okLimitExecute() } as unknown as DbClient;
 
     const result = await recordStockIn(
       COMPANY,
@@ -294,6 +298,28 @@ describe('recordStockIn', () => {
     );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe('not_found');
+  });
+
+  it('ürün limiti AŞILDIYSA → product_limit_exceeded (stok eklenemez, net mesaj)', async () => {
+    // PRO+ → PRO downgrade sonrası 700 ürün, limit 500 → over-limit kilidi.
+    const execute = vi
+      .fn()
+      .mockResolvedValue([{ plan: 'PRO', promo_eligible: false, promo_until: null, product_count: 700 }]);
+    const db = { execute } as unknown as DbClient;
+
+    const result = await recordStockIn(
+      COMPANY,
+      USER,
+      { branchId: BRANCH, variantId: VARIANT, quantity: 10 },
+      db,
+      NOW,
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe('product_limit_exceeded');
+      expect(result.planContext).toEqual({ currentCount: 700, limit: 500, plan: 'PRO' });
+    }
   });
 
   it('Zod fail → invalid_input + issues', async () => {

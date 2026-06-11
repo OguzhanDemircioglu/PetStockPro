@@ -150,6 +150,9 @@ export async function createProductAction(
       if (ctx?.hadPromo && !ctx.promoActive) {
         // T+0 sonrası: promo bitti, kullanıcı 50+ ürünle FREE'ye düştü.
         msg = `⛔ PRO promosyonun bitti. ${ctx.currentCount}/${ctx.limit} ürün dolu. Yeni ürün eklemek için PRO aboneliğini başlatman gerekiyor (Sol menüde 💳 Plan ve Fatura).`;
+      } else if (ctx?.plan === 'PRO') {
+        // PRO kullanıcı 500 üstünde (örn. PRO+ → PRO downgrade) — zaten PRO, düşür ya da PRO+'a yükselt.
+        msg = `⛔ PRO ürün limitini aştın: ${ctx.currentCount}/${ctx.limit}. Yeni ürün eklemek için ürün sayını ${ctx.limit}'e düşür (ürün sil) ya da PRO+'a yükselt (Sol menüde 💳 Plan ve Fatura).`;
       } else {
         // Generic FREE limit aşıldı (hiç promo almamış)
         msg = `⛔ Plan limit doldu: ${ctx?.currentCount}/${ctx?.limit} ürün. PRO'ya geçerek 500 ürüne kadar genişletebilirsin (Sol menüde 💳 Plan ve Fatura).`;

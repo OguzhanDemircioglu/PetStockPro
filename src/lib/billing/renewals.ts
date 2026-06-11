@@ -17,9 +17,9 @@
  * Bağımlılıklar (charge/listCards/processCallback) inject edilebilir → kolay test.
  */
 
-import { and, eq, lte, isNull, isNotNull, or, inArray, desc } from 'drizzle-orm';
+import { and, eq, lte, isNull, isNotNull, or, inArray } from 'drizzle-orm';
 import type { DbClient } from '@/lib/db/client';
-import { subscriptions, companies, users, products } from '@/db/schema';
+import { subscriptions, companies, users } from '@/db/schema';
 import { writeAuditLog } from '@/lib/audit/log';
 import { createNilveraInvoice } from '@/lib/nilvera/invoice';
 import { chargeSavedCard, listSavedCards } from '@/lib/paytr/client';
@@ -27,6 +27,7 @@ import { PLAN_LIMITS } from '@/lib/constants/plan-limits';
 import { processPaytrCallback, effectivePlanAndAmount } from './orchestrator';
 import { makeMerchantOid } from './paytr-checkout';
 import { sendPlanDowngradedEmail } from './emails';
+import { unpublishVitrinOverLimit } from './downgrade-reconcile';
 
 export interface RenewalDeps {
   db: DbClient;
@@ -198,7 +199,7 @@ async function expireDueSubscriptions(db: DbClient, now: Date): Promise<number> 
     await db.update(companies).set({ plan: 'FREE', updatedAt: now }).where(eq(companies.id, row.companyId));
 
     // I2: FREE vitrin limitini aşan ürünleri otomatik vitrin'den çek (plan_downgrade).
-    const unpublishedCount = await unpublishVitrinOverFreeLimit(db, row.companyId, now);
+    const unpublishedCount = await unpublishVitrinOverLimit(db, row.companyId, PLAN_LIMITS.FREE.vitrinLimit, now);
 
     // Owner (audit yazarı + I1 downgrade e-postası alıcısı)
     const ownerRows = await db
@@ -234,35 +235,6 @@ async function expireDueSubscriptions(db: DbClient, now: Date): Promise<number> 
     }
   }
   return rows.length;
-}
-
-/**
- * I2: Plan FREE'ye düştüğünde FREE vitrin limitini aşan ürünleri otomatik vitrin'den
- * çeker (en eski yayınlananlar). Ürünler SİLİNMEZ — sadece vitrinPublished=false +
- * reason='plan_downgrade'. En yeni `limit` ürün vitrin'de kalır.
- *
- * @returns vitrin'den çekilen ürün sayısı
- */
-async function unpublishVitrinOverFreeLimit(db: DbClient, companyId: string, now: Date): Promise<number> {
-  const limit = PLAN_LIMITS.FREE.vitrinLimit;
-  const published = await db
-    .select({ id: products.id })
-    .from(products)
-    .where(and(eq(products.companyId, companyId), eq(products.vitrinPublished, true)))
-    .orderBy(desc(products.vitrinPublishedAt));
-  if (published.length <= limit) return 0;
-
-  const toUnpublish = published.slice(limit).map((p) => p.id);
-  await db
-    .update(products)
-    .set({
-      vitrinPublished: false,
-      vitrinAutoUnpublishedAt: now,
-      vitrinAutoUnpublishedReason: 'plan_downgrade',
-      updatedAt: now,
-    })
-    .where(inArray(products.id, toUnpublish));
-  return toUnpublish.length;
 }
 
 // ══════════════════════════════════════════════════════════════
