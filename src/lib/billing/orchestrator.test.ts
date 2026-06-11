@@ -4,9 +4,16 @@ vi.mock('@/lib/audit/log', () => ({
   writeAuditLog: vi.fn(),
   writeAuditLogAsync: vi.fn(),
 }));
+vi.mock('./alerts', () => ({
+  alertPaymentAnomaly: vi.fn(),
+  alertDunning: vi.fn(),
+}));
+vi.mock('./emails', () => ({ sendDunningEmail: vi.fn() }));
 
 import { processPaytrCallback, RETRY_SCHEDULE_DAYS, type PaytrCallbackInput } from './orchestrator';
 import { writeAuditLog } from '@/lib/audit/log';
+import { alertPaymentAnomaly, alertDunning } from './alerts';
+import { PLAN_LIMITS } from '@/lib/constants/plan-limits';
 import { processedWebhooks, subscriptions, invoices, companies, users } from '@/db/schema';
 
 const NOW = new Date('2026-06-10T12:00:00.000Z');
@@ -17,6 +24,7 @@ interface SubRow {
   id: string;
   companyId: string;
   plan: 'FREE' | 'PRO' | 'PRO_PLUS';
+  pendingPlan: 'FREE' | 'PRO' | 'PRO_PLUS' | null;
   status: string;
   currentPeriodStart: Date;
   currentPeriodEnd: Date;
@@ -29,6 +37,7 @@ function subRow(over: Partial<SubRow> = {}): SubRow {
     id: 'sub-1',
     companyId: 'comp-1',
     plan: 'PRO',
+    pendingPlan: null,
     status: 'incomplete',
     currentPeriodStart: new Date('2026-06-10T12:00:00.000Z'),
     currentPeriodEnd: new Date('2026-07-10T12:00:00.000Z'),
@@ -180,6 +189,7 @@ describe('processPaytrCallback', () => {
     expect(calls.updates.find((u) => u.table === 'subscriptions')).toBeUndefined();
     expect(calls.invoiceInsert).toHaveLength(0);
     expect(auditAction()).toBe('subscription.amount_mismatch');
+    expect(alertPaymentAnomaly).toHaveBeenCalledWith(expect.objectContaining({ kind: 'amount_mismatch' }));
   });
 
   it('ilk ödeme failed → incomplete kalır, pending temizlenir', async () => {
@@ -206,6 +216,8 @@ describe('processPaytrCallback', () => {
     expect(subUpd.vals.paymentRetryCount).toBe(1);
     expect(subUpd.vals.nextRetryAt).toEqual(new Date(NOW.getTime() + RETRY_SCHEDULE_DAYS[0] * DAY));
     expect(auditAction()).toBe('subscription.payment_failed');
+    // I1/C3: dunning alert (retry sürüyor → exhausted false)
+    expect(alertDunning).toHaveBeenCalledWith(expect.objectContaining({ exhausted: false, retryCount: 1 }));
   });
 
   it('yenileme failed, retry tükendi (count=3) → nextRetryAt null', async () => {
@@ -232,10 +244,46 @@ describe('processPaytrCallback', () => {
     expect(res.outcome).toBe('subscription_not_found');
   });
 
-  it('BAYI_SAHIBI yok → company_user_missing', async () => {
-    const { db } = makeDb({ subRow: subRow(), ownerId: null });
+  it('C1: owner yok → ödeme YİNE uygulanır (payment_succeeded) + owner_missing alert', async () => {
+    const { db, calls } = makeDb({ subRow: subRow(), ownerId: null });
     const res = await processPaytrCallback(baseInput, { db, now });
-    expect(res.outcome).toBe('company_user_missing');
+
+    // Para alındı → plan + fatura yine yazıldı ("para alındı, plan açılmadı" önlendi)
+    expect(res.outcome).toBe('payment_succeeded');
+    expect(calls.updates.find((u) => u.table === 'companies')?.vals.plan).toBe('PRO');
+    expect(calls.invoiceInsert).toHaveLength(1);
+    // audit yazarı bulunamadı → audit atlandı (ama ödeme uygulandı)
+    expect(writeAuditLog).not.toHaveBeenCalled();
+    // süperadmin'e owner_missing alert gönderildi
+    expect(alertPaymentAnomaly).toHaveBeenCalledWith(expect.objectContaining({ kind: 'owner_missing' }));
+  });
+
+  it('H2: pendingPlan set → yenilemede YENİ plan fiyatı beklenir + plan değişir, pendingPlan temizlenir', async () => {
+    const newAmount = PLAN_LIMITS.PRO_PLUS.priceMonthlyTry.toFixed(2);
+    const newKurus = String(Math.round(PLAN_LIMITS.PRO_PLUS.priceMonthlyTry * 100));
+    const { db, calls } = makeDb({
+      subRow: subRow({ status: 'active', plan: 'PRO', pendingPlan: 'PRO_PLUS', amountTry: '10.00' }),
+      company: { name: 'Pet A', vatNo: '1234567890' },
+    });
+
+    const res = await processPaytrCallback({ ...baseInput, totalAmount: newKurus }, { db, now });
+
+    expect(res.outcome).toBe('payment_succeeded');
+    const subUpd = calls.updates.find((u) => u.table === 'subscriptions')!;
+    expect(subUpd.vals.plan).toBe('PRO_PLUS'); // plan değişti
+    expect(subUpd.vals.pendingPlan).toBeNull(); // temizlendi
+    expect(subUpd.vals.amountTry).toBe(newAmount); // yeni fiyat snapshot
+    expect(calls.updates.find((u) => u.table === 'companies')?.vals.plan).toBe('PRO_PLUS');
+    expect(auditAction()).toBe('subscription.plan_changed');
+  });
+
+  it('H2: pendingPlan set ama callback ESKİ tutarla gelirse → amount_mismatch (yeni fiyat beklenir)', async () => {
+    const oldKurus = '1000'; // eski PRO snapshot (10₺) — yeni plan fiyatı beklenirken gelirse reddedilir
+    const { db } = makeDb({
+      subRow: subRow({ status: 'active', plan: 'PRO', pendingPlan: 'PRO_PLUS', amountTry: '10.00' }),
+    });
+    const res = await processPaytrCallback({ ...baseInput, totalAmount: oldKurus }, { db, now });
+    expect(res.outcome).toBe('amount_mismatch');
   });
 
   it('Nilvera hata → success ama invoice pending + nilveraError', async () => {
@@ -245,7 +293,10 @@ describe('processPaytrCallback', () => {
 
     expect(res.outcome).toBe('payment_succeeded');
     expect(res.nilveraError).toContain('Nilvera 502');
-    expect(calls.updates.find((u) => u.table === 'invoices')).toBeUndefined(); // issued'a güncellenmedi
+    // Nilvera fail → invoice 'issued'a güncellenmedi (pending kaldı); sadece lastNilveraError kaydedildi (C2 reconcile için)
+    const invUpd = calls.updates.find((u) => u.table === 'invoices');
+    expect(invUpd?.vals.status).toBeUndefined();
+    expect(invUpd?.vals.lastNilveraError).toContain('Nilvera 502');
   });
 
   it('şirket VKN yok → Nilvera atlanır, invoice pending, yine success', async () => {

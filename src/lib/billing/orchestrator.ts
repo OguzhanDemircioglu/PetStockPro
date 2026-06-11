@@ -26,6 +26,25 @@ import { writeAuditLog } from '@/lib/audit/log';
 import { createNilveraInvoice } from '@/lib/nilvera/invoice';
 import { processedWebhooks, subscriptions, invoices, companies, users } from '@/db/schema';
 import { addMonths, computeInvoiceTotals, type InvoiceTotals } from './totals';
+import { alertPaymentAnomaly, alertDunning, type PaymentAnomalyInput } from './alerts';
+import { sendDunningEmail } from './emails';
+import { PLAN_LIMITS } from '@/lib/constants/plan-limits';
+
+/**
+ * Bir abonelik için bu dönem geçerli plan + KDV-dahil tutar (₺).
+ * pendingPlan (dönem-sonu değişim) set ise YENİ plan + güncel fiyat geçerli olur (H2),
+ * aksi halde abonelik snapshot'ı (amountTry) korunur (grandfather).
+ */
+export function effectivePlanAndAmount(sub: {
+  plan: 'FREE' | 'PRO' | 'PRO_PLUS';
+  pendingPlan: 'FREE' | 'PRO' | 'PRO_PLUS' | null;
+  amountTry: string;
+}): { plan: 'FREE' | 'PRO' | 'PRO_PLUS'; amountTry: string } {
+  if (sub.pendingPlan && sub.pendingPlan !== 'FREE') {
+    return { plan: sub.pendingPlan, amountTry: PLAN_LIMITS[sub.pendingPlan].priceMonthlyTry.toFixed(2) };
+  }
+  return { plan: sub.plan, amountTry: sub.amountTry };
+}
 
 // ══════════════════════════════════════════════════════════════
 // Dunning konfigürasyonu
@@ -79,6 +98,7 @@ interface SubscriptionRow {
   id: string;
   companyId: string;
   plan: 'FREE' | 'PRO' | 'PRO_PLUS';
+  pendingPlan: 'FREE' | 'PRO' | 'PRO_PLUS' | null;
   status: string;
   currentPeriodStart: Date;
   currentPeriodEnd: Date;
@@ -86,10 +106,14 @@ interface SubscriptionRow {
   paymentRetryCount: number;
 }
 
-/** Transaction içinden dönen sonuç + (varsa) post-tx Nilvera bağlamı. */
+/** Transaction içinden dönen sonuç + (varsa) post-tx Nilvera bağlamı + post-tx alert. */
 interface TxOutcome {
   result: PaytrCallbackResult;
   nilveraCtx?: { invoiceId: string; companyId: string; plan: 'FREE' | 'PRO' | 'PRO_PLUS'; totals: InvoiceTotals };
+  /** Tx commit sonrası gönderilecek süperadmin alert (network çağrısı tx DIŞINDA). */
+  alert?: PaymentAnomalyInput;
+  /** Tx commit sonrası dunning bildirimi (yenileme başarısız) — Telegram + kullanıcı e-postası. */
+  dunning?: { companyId: string; subscriptionId: string; retryCount: number; exhausted: boolean };
 }
 
 // Drizzle transaction callback'ine geçen client (db ile aynı arayüz).
@@ -114,6 +138,16 @@ export async function processPaytrCallback(
       return { outcome: 'duplicate', merchantOid: input.merchantOid };
     }
     throw err; // gerçek hata → route non-OK döner → PayTR retry → temiz reprocess
+  }
+
+  // Post-tx: anomali alert (network — tx DIŞINDA, fire-and-forget)
+  if (txOut.alert) {
+    alertPaymentAnomaly(txOut.alert);
+  }
+
+  // Post-tx: dunning (yenileme başarısız) → Telegram alert + kullanıcı e-postası
+  if (txOut.dunning) {
+    await notifyDunning(deps, txOut.dunning);
   }
 
   // Post-tx: Nilvera best-effort (yalnız başarılı ödeme + nilvera dep varsa)
@@ -141,39 +175,58 @@ async function processInTransaction(input: PaytrCallbackInput, tx: Tx, now: Date
   // 2. Subscription lookup
   const sub = await findSubscriptionByPendingOid(tx, input.merchantOid);
   if (!sub) {
-    return { result: { outcome: 'subscription_not_found', merchantOid: input.merchantOid } };
+    return {
+      result: { outcome: 'subscription_not_found', merchantOid: input.merchantOid },
+      alert: { kind: 'subscription_not_found', merchantOid: input.merchantOid },
+    };
   }
 
-  // 3. Audit author
+  // 3. Audit author (opsiyonel). C1: owner null olsa BİLE ödeme uygulanır — "para
+  //    alındı, plan açılmadı" durumunu önler. Eksikse post-tx alert ile işaretlenir.
   const ownerUserId = await findCompanyOwner(tx, sub.companyId);
-  if (!ownerUserId) {
-    return { result: { outcome: 'company_user_missing', merchantOid: input.merchantOid, subscriptionId: sub.id } };
-  }
+  const ownerMissingAlert: PaymentAnomalyInput | undefined = ownerUserId
+    ? undefined
+    : { kind: 'owner_missing', merchantOid: input.merchantOid, companyId: sub.companyId, subscriptionId: sub.id };
 
   // 4. Dispatch
   if (input.status === 'failed') {
-    return { result: await applyFailure(input, sub, ownerUserId, tx, now) };
+    const fail = await applyFailure(input, sub, ownerUserId, tx, now);
+    return { result: fail.result, alert: ownerMissingAlert, dunning: fail.dunning };
   }
 
-  // success → tutar doğrula (manipülasyon koruması)
-  const expectedKurus = Math.round(Number(sub.amountTry) * 100);
+  // success → tutar doğrula (manipülasyon koruması). Uyuşmazsa plan AÇILMAZ + alert.
+  // pendingPlan (dönem-sonu plan değişimi) set ise beklenen tutar YENİ plan fiyatıdır (H2).
+  const effective = effectivePlanAndAmount(sub);
+  const expectedKurus = Math.round(Number(effective.amountTry) * 100);
   if (!Number.isFinite(Number(input.totalAmount)) || Number(input.totalAmount) !== expectedKurus) {
-    await writeAuditLog(
-      {
+    if (ownerUserId) {
+      await writeAuditLog(
+        {
+          companyId: sub.companyId,
+          userId: ownerUserId,
+          action: 'subscription.amount_mismatch',
+          entityType: 'subscription',
+          entityId: sub.id,
+          afterState: { expectedKurus, gotKurus: input.totalAmount, merchantOid: input.merchantOid },
+        },
+        tx,
+        now,
+      );
+    }
+    return {
+      result: { outcome: 'amount_mismatch', merchantOid: input.merchantOid, subscriptionId: sub.id },
+      alert: {
+        kind: 'amount_mismatch',
+        merchantOid: input.merchantOid,
         companyId: sub.companyId,
-        userId: ownerUserId,
-        action: 'subscription.amount_mismatch',
-        entityType: 'subscription',
-        entityId: sub.id,
-        afterState: { expectedKurus, gotKurus: input.totalAmount, merchantOid: input.merchantOid },
+        subscriptionId: sub.id,
+        detail: `beklenen ${expectedKurus} kuruş, gelen ${input.totalAmount}`,
       },
-      tx,
-      now,
-    );
-    return { result: { outcome: 'amount_mismatch', merchantOid: input.merchantOid, subscriptionId: sub.id } };
+    };
   }
 
-  return applySuccess(input, sub, ownerUserId, tx, now);
+  const txOut = await applySuccess(input, sub, ownerUserId, tx, now);
+  return { ...txOut, alert: ownerMissingAlert };
 }
 
 // ── DB reads ───────────────────────────────────────────────────
@@ -184,6 +237,7 @@ async function findSubscriptionByPendingOid(tx: Tx, merchantOid: string): Promis
       id: subscriptions.id,
       companyId: subscriptions.companyId,
       plan: subscriptions.plan,
+      pendingPlan: subscriptions.pendingPlan,
       status: subscriptions.status,
       currentPeriodStart: subscriptions.currentPeriodStart,
       currentPeriodEnd: subscriptions.currentPeriodEnd,
@@ -197,12 +251,22 @@ async function findSubscriptionByPendingOid(tx: Tx, merchantOid: string): Promis
 }
 
 async function findCompanyOwner(tx: Tx, companyId: string): Promise<string | null> {
-  const rows = await tx
+  // Audit yazarı: önce tenant sahibi (BAYI_SAHIBI), yoksa şirketin herhangi bir
+  // kullanıcısı. Hiç kullanıcı yoksa (patolojik) null — ödeme yine uygulanır,
+  // audit atlanır + owner_missing alert gönderilir (C1).
+  const owner = await tx
     .select({ id: users.id })
     .from(users)
     .where(and(eq(users.companyId, companyId), eq(users.role, 'BAYI_SAHIBI')))
     .limit(1);
-  return rows[0]?.id ?? null;
+  if (owner[0]?.id) return owner[0].id;
+
+  const anyUser = await tx
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.companyId, companyId))
+    .limit(1);
+  return anyUser[0]?.id ?? null;
 }
 
 // ── Success (tx içi) ───────────────────────────────────────────
@@ -210,7 +274,7 @@ async function findCompanyOwner(tx: Tx, companyId: string): Promise<string | nul
 async function applySuccess(
   input: PaytrCallbackInput,
   sub: SubscriptionRow,
-  ownerUserId: string,
+  ownerUserId: string | null,
   tx: Tx,
   now: Date,
 ): Promise<TxOutcome> {
@@ -218,10 +282,18 @@ async function applySuccess(
   const newPeriodStart = isFirstPayment ? now : sub.currentPeriodEnd;
   const newPeriodEnd = addMonths(newPeriodStart, 1);
 
+  // H2: pendingPlan (dönem-sonu plan değişimi) set ise bu dönemden itibaren YENİ plan
+  // + güncel fiyat geçerli; aksi halde mevcut plan/snapshot korunur. pendingPlan temizlenir.
+  const effective = effectivePlanAndAmount(sub);
+  const planChanged = effective.plan !== sub.plan;
+
   await tx
     .update(subscriptions)
     .set({
       status: 'active',
+      plan: effective.plan,
+      amountTry: effective.amountTry,
+      pendingPlan: null,
       currentPeriodStart: newPeriodStart,
       currentPeriodEnd: newPeriodEnd,
       pendingMerchantOid: null,
@@ -235,9 +307,9 @@ async function applySuccess(
     })
     .where(eq(subscriptions.id, sub.id));
 
-  await tx.update(companies).set({ plan: sub.plan, updatedAt: now }).where(eq(companies.id, sub.companyId));
+  await tx.update(companies).set({ plan: effective.plan, updatedAt: now }).where(eq(companies.id, sub.companyId));
 
-  const totals = computeInvoiceTotals(sub.amountTry);
+  const totals = computeInvoiceTotals(effective.amountTry);
   const invRows = await tx
     .insert(invoices)
     .values({
@@ -256,29 +328,36 @@ async function applySuccess(
     .returning({ id: invoices.id });
   const invoiceId = invRows[0]?.id as string;
 
-  await writeAuditLog(
-    {
-      companyId: sub.companyId,
-      userId: ownerUserId,
-      action: isFirstPayment ? 'subscription.payment_succeeded' : 'subscription.renewed',
-      entityType: 'subscription',
-      entityId: sub.id,
-      afterState: {
-        plan: sub.plan,
-        periodStart: newPeriodStart.toISOString(),
-        periodEnd: newPeriodEnd.toISOString(),
-        amountTotal: totals.total,
-        invoiceId,
-        merchantOid: input.merchantOid,
+  if (ownerUserId) {
+    await writeAuditLog(
+      {
+        companyId: sub.companyId,
+        userId: ownerUserId,
+        action: isFirstPayment
+          ? 'subscription.payment_succeeded'
+          : planChanged
+            ? 'subscription.plan_changed'
+            : 'subscription.renewed',
+        entityType: 'subscription',
+        entityId: sub.id,
+        afterState: {
+          plan: effective.plan,
+          previousPlan: planChanged ? sub.plan : undefined,
+          periodStart: newPeriodStart.toISOString(),
+          periodEnd: newPeriodEnd.toISOString(),
+          amountTotal: totals.total,
+          invoiceId,
+          merchantOid: input.merchantOid,
+        },
       },
-    },
-    tx,
-    now,
-  );
+      tx,
+      now,
+    );
+  }
 
   return {
     result: { outcome: 'payment_succeeded', merchantOid: input.merchantOid, subscriptionId: sub.id, invoiceId },
-    nilveraCtx: { invoiceId, companyId: sub.companyId, plan: sub.plan, totals },
+    nilveraCtx: { invoiceId, companyId: sub.companyId, plan: effective.plan, totals },
   };
 }
 
@@ -287,10 +366,10 @@ async function applySuccess(
 async function applyFailure(
   input: PaytrCallbackInput,
   sub: SubscriptionRow,
-  ownerUserId: string,
+  ownerUserId: string | null,
   tx: Tx,
   now: Date,
-): Promise<PaytrCallbackResult> {
+): Promise<{ result: PaytrCallbackResult; dunning?: TxOutcome['dunning'] }> {
   const isFirstPayment = sub.status === 'incomplete';
 
   if (isFirstPayment) {
@@ -298,19 +377,22 @@ async function applyFailure(
       .update(subscriptions)
       .set({ pendingMerchantOid: null, updatedAt: now })
       .where(eq(subscriptions.id, sub.id));
-    await writeAuditLog(
-      {
-        companyId: sub.companyId,
-        userId: ownerUserId,
-        action: 'subscription.checkout_failed',
-        entityType: 'subscription',
-        entityId: sub.id,
-        afterState: { reason: input.failedReason ?? null, merchantOid: input.merchantOid },
-      },
-      tx,
-      now,
-    );
-    return { outcome: 'payment_failed', merchantOid: input.merchantOid, subscriptionId: sub.id };
+    if (ownerUserId) {
+      await writeAuditLog(
+        {
+          companyId: sub.companyId,
+          userId: ownerUserId,
+          action: 'subscription.checkout_failed',
+          entityType: 'subscription',
+          entityId: sub.id,
+          afterState: { reason: input.failedReason ?? null, merchantOid: input.merchantOid },
+        },
+        tx,
+        now,
+      );
+    }
+    // İlk ödeme (checkout) başarısız — dunning YOK (henüz aktif abonelik değil).
+    return { result: { outcome: 'payment_failed', merchantOid: input.merchantOid, subscriptionId: sub.id } };
   }
 
   // Yenileme başarısız → past_due + dunning
@@ -331,25 +413,35 @@ async function applyFailure(
     })
     .where(eq(subscriptions.id, sub.id));
 
-  await writeAuditLog(
-    {
-      companyId: sub.companyId,
-      userId: ownerUserId,
-      action: 'subscription.payment_failed',
-      entityType: 'subscription',
-      entityId: sub.id,
-      afterState: {
-        status: 'past_due',
-        retryCount: newRetryCount,
-        nextRetryAt: nextRetryAt?.toISOString() ?? null,
-        reason: input.failedReason ?? null,
+  if (ownerUserId) {
+    await writeAuditLog(
+      {
+        companyId: sub.companyId,
+        userId: ownerUserId,
+        action: 'subscription.payment_failed',
+        entityType: 'subscription',
+        entityId: sub.id,
+        afterState: {
+          status: 'past_due',
+          retryCount: newRetryCount,
+          nextRetryAt: nextRetryAt?.toISOString() ?? null,
+          reason: input.failedReason ?? null,
+        },
       },
-    },
-    tx,
-    now,
-  );
+      tx,
+      now,
+    );
+  }
 
-  return { outcome: 'payment_failed', merchantOid: input.merchantOid, subscriptionId: sub.id };
+  return {
+    result: { outcome: 'payment_failed', merchantOid: input.merchantOid, subscriptionId: sub.id },
+    dunning: {
+      companyId: sub.companyId,
+      subscriptionId: sub.id,
+      retryCount: newRetryCount,
+      exhausted: nextRetryAt === null,
+    },
+  };
 }
 
 // ── Nilvera (post-tx, best-effort) ─────────────────────────────
@@ -394,8 +486,44 @@ async function issueAndRecordNilvera(
 
     return { nilveraInvoiceId: resp.invoiceId };
   } catch (err) {
-    // Invoice 'pending' kalır — background retry için işaret. Akış bozulmaz.
-    return { nilveraError: err instanceof Error ? err.message : String(err) };
+    // Invoice 'pending' kalır — invoice-reconcile cron (C2) yeniden dener. Akış bozulmaz.
+    const msg = err instanceof Error ? err.message : String(err);
+    try {
+      await deps.db
+        .update(invoices)
+        .set({ lastNilveraError: msg.slice(0, 500), updatedAt: now })
+        .where(eq(invoices.id, ctx.invoiceId));
+    } catch {
+      // log yazımı da başarısızsa yut — pending durumu reconcile yakalar
+    }
+    return { nilveraError: msg };
+  }
+}
+
+// ── Dunning (post-tx, fire-and-forget) ─────────────────────────
+
+async function notifyDunning(
+  deps: OrchestratorDeps,
+  dunning: NonNullable<TxOutcome['dunning']>,
+): Promise<void> {
+  alertDunning(dunning); // süperadmin Telegram (fire-and-forget)
+  try {
+    const rows = await deps.db
+      .select({ email: users.email, companyName: companies.name })
+      .from(users)
+      .innerJoin(companies, eq(companies.id, users.companyId))
+      .where(and(eq(users.companyId, dunning.companyId), eq(users.role, 'BAYI_SAHIBI')))
+      .limit(1);
+    const owner = rows[0];
+    if (owner?.email) {
+      sendDunningEmail({
+        to: owner.email,
+        companyName: owner.companyName ?? 'PetStockPro',
+        retryCount: dunning.retryCount,
+      });
+    }
+  } catch {
+    // owner lookup başarısızsa yut — Telegram alert zaten gönderildi
   }
 }
 

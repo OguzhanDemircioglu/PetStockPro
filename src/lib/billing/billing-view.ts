@@ -10,6 +10,8 @@ export interface BillingSubscription {
   id: string;
   status: string; // active | past_due | incomplete | cancelled | expired
   plan: 'FREE' | 'PRO' | 'PRO_PLUS';
+  /** Dönem sonunda geçilecek plan (H2). NULL = bekleyen değişiklik yok. */
+  pendingPlan: 'FREE' | 'PRO' | 'PRO_PLUS' | null;
   currentPeriodEnd: Date;
   cancelAtPeriodEnd: boolean;
   cardMasked: string | null;
@@ -30,6 +32,7 @@ export async function getCurrentSubscription(
       id: subscriptions.id,
       status: subscriptions.status,
       plan: subscriptions.plan,
+      pendingPlan: subscriptions.pendingPlan,
       currentPeriodEnd: subscriptions.currentPeriodEnd,
       cancelAtPeriodEnd: subscriptions.cancelAtPeriodEnd,
       cardMasked: subscriptions.paytrCardMasked,

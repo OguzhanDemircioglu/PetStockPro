@@ -5,7 +5,12 @@ import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { getCompanyProfile } from '@/lib/company/settings';
 import { startPaytrCheckout, CheckoutError, type PaidPlan } from '@/lib/billing/paytr-checkout';
-import { cancelSubscription, reactivateSubscription } from '@/lib/billing/manage';
+import {
+  cancelSubscription,
+  reactivateSubscription,
+  schedulePlanChange,
+  cancelScheduledPlanChange,
+} from '@/lib/billing/manage';
 import { isPaytrConfigured } from '@/lib/paytr/config';
 import { revalidatePath } from 'next/cache';
 
@@ -78,6 +83,39 @@ export async function reactivateSubscriptionAction(): Promise<{ ok: boolean; err
   if (!session?.user?.companyId) return { ok: false, error: 'Oturum bulunamadı.' };
   const res = await reactivateSubscription(session.user.companyId, db);
   if (!res.ok) return { ok: false, error: 'İptal edilmiş abonelik bulunamadı.' };
+  revalidatePath('/admin/settings/billing');
+  return { ok: true };
+}
+
+/**
+ * Dönem-sonu plan değişimi planla (PRO↔PRO+) — H2. Anlık tahsilat YOK; yeni fiyat
+ * bir sonraki yenilemede geçerli olur.
+ */
+export async function schedulePlanChangeAction(
+  targetPlan: 'PRO' | 'PRO_PLUS',
+): Promise<{ ok: boolean; error?: string }> {
+  const session = await auth();
+  if (!session?.user?.companyId) return { ok: false, error: 'Oturum bulunamadı.' };
+  const res = await schedulePlanChange(session.user.companyId, targetPlan, db);
+  if (!res.ok) {
+    const msg =
+      res.reason === 'same_plan'
+        ? 'Zaten bu plandasınız.'
+        : res.reason === 'not_found'
+          ? 'Aktif abonelik bulunamadı.'
+          : 'Geçersiz plan.';
+    return { ok: false, error: msg };
+  }
+  revalidatePath('/admin/settings/billing');
+  return { ok: true };
+}
+
+/** Bekleyen plan değişimini iptal et — H2. */
+export async function cancelScheduledPlanChangeAction(): Promise<{ ok: boolean; error?: string }> {
+  const session = await auth();
+  if (!session?.user?.companyId) return { ok: false, error: 'Oturum bulunamadı.' };
+  const res = await cancelScheduledPlanChange(session.user.companyId, db);
+  if (!res.ok) return { ok: false, error: 'Bekleyen plan değişikliği yok.' };
   revalidatePath('/admin/settings/billing');
   return { ok: true };
 }

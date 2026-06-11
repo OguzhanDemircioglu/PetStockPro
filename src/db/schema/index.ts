@@ -369,6 +369,10 @@ export const subscriptions = petstockproSchema.table('subscriptions', {
   plan: planEnum('plan').notNull(), // PRO veya PRO_PLUS (FREE için kayıt yok)
   status: subscriptionStatusEnum('status').notNull().default('active'),
 
+  // Dönem-sonu plan değişimi (PRO↔PRO+). NULL = bekleyen değişiklik yok.
+  // Renewal'da çekimden ÖNCE uygulanır: yeni amountTry = PLAN_LIMITS[pendingPlan] (proration yok).
+  pendingPlan: planEnum('pending_plan'),
+
   // PayTR kart saklama — recurring tahsilat için (ilk ödeme callback'inde doldurulur)
   paytrUtoken: varchar('paytr_utoken', { length: 128 }),         // kullanıcı token (saklı kartlar sahibi)
   paytrCtoken: varchar('paytr_ctoken', { length: 190 }),         // saklı kart token (recurring charge)
@@ -452,6 +456,10 @@ export const invoices = petstockproSchema.table('invoices', {
 
   status: invoiceStatusEnum('status').notNull().default('pending'),
   issuedAt: timestamp('issued_at', { withTimezone: true }),                 // Nilvera kesilme zamanı
+
+  // Nilvera mutabakat (invoice-reconcile cron) — 'pending' kalan faturanın otomatik retry takibi
+  nilveraRetryCount: integer('nilvera_retry_count').notNull().default(0),
+  lastNilveraError: text('last_nilvera_error'),
 
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

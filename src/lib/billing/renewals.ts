@@ -17,14 +17,16 @@
  * Bağımlılıklar (charge/listCards/processCallback) inject edilebilir → kolay test.
  */
 
-import { and, eq, lte, isNull, isNotNull, or, inArray } from 'drizzle-orm';
+import { and, eq, lte, isNull, isNotNull, or, inArray, desc } from 'drizzle-orm';
 import type { DbClient } from '@/lib/db/client';
-import { subscriptions, companies, users } from '@/db/schema';
+import { subscriptions, companies, users, products } from '@/db/schema';
 import { writeAuditLog } from '@/lib/audit/log';
 import { createNilveraInvoice } from '@/lib/nilvera/invoice';
 import { chargeSavedCard, listSavedCards } from '@/lib/paytr/client';
-import { processPaytrCallback } from './orchestrator';
+import { PLAN_LIMITS } from '@/lib/constants/plan-limits';
+import { processPaytrCallback, effectivePlanAndAmount } from './orchestrator';
 import { makeMerchantOid } from './paytr-checkout';
+import { sendPlanDowngradedEmail } from './emails';
 
 export interface RenewalDeps {
   db: DbClient;
@@ -43,14 +45,19 @@ export interface RenewalSummary {
   waitCallback: number;
   expired: number;
   errors: number;
+  /** C4: önceki çekimi çözülmemiş (in-flight) olduğu için atlanan abonelikler — çift çekim koruması. */
+  skippedInFlight: number;
 }
 
 interface DueRow {
   id: string;
   companyId: string;
+  plan: 'FREE' | 'PRO' | 'PRO_PLUS';
+  pendingPlan: 'FREE' | 'PRO' | 'PRO_PLUS' | null;
   amountTry: string;
   paytrUtoken: string | null;
   paytrCtoken: string | null;
+  pendingMerchantOid: string | null;
   ownerEmail: string | null;
   companyName: string | null;
   whatsappPhone: string | null;
@@ -67,22 +74,39 @@ export async function runBillingRenewals(deps: RenewalDeps): Promise<RenewalSumm
   const expired = await expireDueSubscriptions(deps.db, now);
 
   // 2. RENEW / RETRY
-  const due = await findDueSubscriptions(deps.db, now);
   let renewed = 0;
   let failed = 0;
   let waitCallback = 0;
   let errors = 0;
+  let skippedInFlight = 0;
 
-  for (const sub of due) {
-    try {
+  // H1 (concurrency): "claim" transaction — due abonelikleri FOR UPDATE OF subscriptions
+  // SKIP LOCKED ile seç + pendingMerchantOid ata (atomik). Eşzamanlı cron çalışması
+  // kilitli satırları atlar → aynı abonelik iki kez çekilmez.
+  // C4: pendingMerchantOid zaten set ise (önceki çekim çözülmemiş) claim ETME, atla.
+  const claimed = await deps.db.transaction(async (tx) => {
+    const dueRows = await findDueSubscriptions(tx as unknown as DbClient, now);
+    const out: Array<DueRow & { merchantOid: string }> = [];
+    for (const sub of dueRows) {
+      if (sub.pendingMerchantOid) {
+        skippedInFlight++;
+        continue;
+      }
       const merchantOid = makeMerchantOid();
-      const amountKurus = Math.round(Number(sub.amountTry) * 100);
-
-      // pending_merchant_oid ata (callback / processCallback lookup için)
-      await deps.db
+      await tx
         .update(subscriptions)
         .set({ pendingMerchantOid: merchantOid, updatedAt: now })
         .where(eq(subscriptions.id, sub.id));
+      out.push({ ...sub, merchantOid });
+    }
+    return out;
+  });
+
+  for (const sub of claimed) {
+    try {
+      const merchantOid = sub.merchantOid;
+      // H2: pendingPlan set ise yeni plan fiyatı çekilir (dönem-sonu plan değişimi).
+      const amountKurus = Math.round(Number(effectivePlanAndAmount(sub).amountTry) * 100);
 
       // ctoken bul
       let ctoken = sub.paytrCtoken;
@@ -144,7 +168,7 @@ export async function runBillingRenewals(deps: RenewalDeps): Promise<RenewalSumm
     }
   }
 
-  return { due: due.length, renewed, failed, waitCallback, expired, errors };
+  return { due: claimed.length, renewed, failed, waitCallback, expired, errors, skippedInFlight };
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -173,16 +197,36 @@ async function expireDueSubscriptions(db: DbClient, now: Date): Promise<number> 
       .where(eq(subscriptions.id, row.id));
     await db.update(companies).set({ plan: 'FREE', updatedAt: now }).where(eq(companies.id, row.companyId));
 
-    const ownerId = await findCompanyOwner(db, row.companyId);
-    if (ownerId) {
+    // I2: FREE vitrin limitini aşan ürünleri otomatik vitrin'den çek (plan_downgrade).
+    const unpublishedCount = await unpublishVitrinOverFreeLimit(db, row.companyId, now);
+
+    // Owner (audit yazarı + I1 downgrade e-postası alıcısı)
+    const ownerRows = await db
+      .select({ userId: users.id, email: users.email, companyName: companies.name })
+      .from(users)
+      .innerJoin(companies, eq(companies.id, users.companyId))
+      .where(and(eq(users.companyId, row.companyId), eq(users.role, 'BAYI_SAHIBI')))
+      .limit(1);
+    const owner = ownerRows[0];
+
+    // I1: downgrade e-postası — abonelik sona erdi, FREE plan + (varsa) vitrin bilgisi.
+    if (owner?.email) {
+      sendPlanDowngradedEmail({
+        to: owner.email,
+        companyName: owner.companyName ?? 'PetStockPro',
+        unpublishedCount,
+      });
+    }
+
+    if (owner?.userId) {
       await writeAuditLog(
         {
           companyId: row.companyId,
-          userId: ownerId,
+          userId: owner.userId,
           action: 'subscription.expired',
           entityType: 'subscription',
           entityId: row.id,
-          afterState: { status: 'expired', companyPlan: 'FREE' },
+          afterState: { status: 'expired', companyPlan: 'FREE', vitrinUnpublished: unpublishedCount },
         },
         db,
         now,
@@ -190,6 +234,35 @@ async function expireDueSubscriptions(db: DbClient, now: Date): Promise<number> 
     }
   }
   return rows.length;
+}
+
+/**
+ * I2: Plan FREE'ye düştüğünde FREE vitrin limitini aşan ürünleri otomatik vitrin'den
+ * çeker (en eski yayınlananlar). Ürünler SİLİNMEZ — sadece vitrinPublished=false +
+ * reason='plan_downgrade'. En yeni `limit` ürün vitrin'de kalır.
+ *
+ * @returns vitrin'den çekilen ürün sayısı
+ */
+async function unpublishVitrinOverFreeLimit(db: DbClient, companyId: string, now: Date): Promise<number> {
+  const limit = PLAN_LIMITS.FREE.vitrinLimit;
+  const published = await db
+    .select({ id: products.id })
+    .from(products)
+    .where(and(eq(products.companyId, companyId), eq(products.vitrinPublished, true)))
+    .orderBy(desc(products.vitrinPublishedAt));
+  if (published.length <= limit) return 0;
+
+  const toUnpublish = published.slice(limit).map((p) => p.id);
+  await db
+    .update(products)
+    .set({
+      vitrinPublished: false,
+      vitrinAutoUnpublishedAt: now,
+      vitrinAutoUnpublishedReason: 'plan_downgrade',
+      updatedAt: now,
+    })
+    .where(inArray(products.id, toUnpublish));
+  return toUnpublish.length;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -201,9 +274,12 @@ async function findDueSubscriptions(db: DbClient, now: Date): Promise<DueRow[]> 
     .select({
       id: subscriptions.id,
       companyId: subscriptions.companyId,
+      plan: subscriptions.plan,
+      pendingPlan: subscriptions.pendingPlan,
       amountTry: subscriptions.amountTry,
       paytrUtoken: subscriptions.paytrUtoken,
       paytrCtoken: subscriptions.paytrCtoken,
+      pendingMerchantOid: subscriptions.pendingMerchantOid,
       ownerEmail: users.email,
       companyName: companies.name,
       whatsappPhone: companies.whatsappPhone,
@@ -227,15 +303,9 @@ async function findDueSubscriptions(db: DbClient, now: Date): Promise<DueRow[]> 
           lte(subscriptions.nextRetryAt, now),
         ),
       ),
-    );
+    )
+    // H1: yalnız subscriptions satırlarını kilitle (leftJoin nullable tarafı FOR UPDATE
+    // hatası vermesin) + kilitli satırları atla (eşzamanlı cron çift çekim koruması).
+    .for('update', { of: subscriptions, skipLocked: true });
   return rows as DueRow[];
-}
-
-async function findCompanyOwner(db: DbClient, companyId: string): Promise<string | null> {
-  const rows = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(and(eq(users.companyId, companyId), eq(users.role, 'BAYI_SAHIBI')))
-    .limit(1);
-  return rows[0]?.id ?? null;
 }

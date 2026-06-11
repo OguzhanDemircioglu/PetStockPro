@@ -8,9 +8,12 @@ import { subscriptions, companies, users } from '@/db/schema';
 interface DueRow {
   id: string;
   companyId: string;
+  plan: 'FREE' | 'PRO' | 'PRO_PLUS';
+  pendingPlan: 'FREE' | 'PRO' | 'PRO_PLUS' | null;
   amountTry: string;
   paytrUtoken: string | null;
   paytrCtoken: string | null;
+  pendingMerchantOid: string | null;
   ownerEmail: string | null;
   companyName: string | null;
   whatsappPhone: string | null;
@@ -20,9 +23,12 @@ function dueRow(over: Partial<DueRow> = {}): DueRow {
   return {
     id: 'sub-1',
     companyId: 'comp-1',
+    plan: 'PRO',
+    pendingPlan: null,
     amountTry: '1000.00',
     paytrUtoken: 'utok-1',
     paytrCtoken: 'ctok-1',
+    pendingMerchantOid: null,
     ownerEmail: 'owner@pet.com',
     companyName: 'Pet A',
     whatsappPhone: '+905551112233',
@@ -47,11 +53,23 @@ function makeDb(config: { dueRows?: DueRow[]; expireRows?: { id: string; company
         hasJoin = true;
         return b;
       },
+      innerJoin() {
+        hasJoin = true;
+        return b;
+      },
       where() {
         return b;
       },
+      orderBy() {
+        return b;
+      },
+      for() {
+        return b;
+      },
       limit() {
-        if (fromTable === users) return Promise.resolve([{ id: 'owner-1' }]);
+        if (fromTable === users) {
+          return Promise.resolve([{ userId: 'owner-1', email: 'owner@pet.com', companyName: 'Pet A' }]);
+        }
         return Promise.resolve([]);
       },
       then(resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) {
@@ -79,6 +97,10 @@ function makeDb(config: { dueRows?: DueRow[]; expireRows?: { id: string; company
         },
       };
     },
+    // H1: claim transaction — aynı mock db'yi tx olarak geçir (select/update aynı).
+    transaction<T>(cb: (tx: unknown) => Promise<T>): Promise<T> {
+      return cb(db);
+    },
   };
   return { db, calls };
 }
@@ -93,7 +115,39 @@ describe('runBillingRenewals', () => {
   it('due + expire yoksa → hepsi 0', async () => {
     const { db } = makeDb({});
     const summary = await runBillingRenewals({ db, now });
-    expect(summary).toEqual({ due: 0, renewed: 0, failed: 0, waitCallback: 0, expired: 0, errors: 0 });
+    expect(summary).toEqual({
+      due: 0,
+      renewed: 0,
+      failed: 0,
+      waitCallback: 0,
+      expired: 0,
+      errors: 0,
+      skippedInFlight: 0,
+    });
+  });
+
+  it('C4: pendingMerchantOid set (in-flight) → çekme atlanır, skippedInFlight 1', async () => {
+    const { db } = makeDb({ dueRows: [dueRow({ pendingMerchantOid: 'PSP-inflight' })] });
+    const charge = vi.fn();
+    const processCallback = vi.fn();
+
+    const summary = await runBillingRenewals({ db, charge, processCallback, now });
+
+    expect(summary.skippedInFlight).toBe(1);
+    expect(summary.due).toBe(0); // claim edilmedi
+    expect(charge).not.toHaveBeenCalled();
+  });
+
+  it('H2: pendingPlan set → yeni plan fiyatı çekilir (PRO_PLUS = 200000 kuruş... test fiyatıyla)', async () => {
+    // amountTry eski plan snapshot'ı (1000) AMA pendingPlan=PRO_PLUS → PLAN_LIMITS fiyatı kullanılır.
+    const { db } = makeDb({ dueRows: [dueRow({ plan: 'PRO', pendingPlan: 'PRO_PLUS', amountTry: '10.00' })] });
+    const charge = vi.fn().mockResolvedValue({ status: 'success' });
+    const processCallback = vi.fn().mockResolvedValue({ outcome: 'payment_succeeded' });
+
+    await runBillingRenewals({ db, charge, processCallback, now });
+
+    // PLAN_LIMITS.PRO_PLUS.priceMonthlyTry (test fiyatı 20) × 100 = 2000 kuruş — amountTry(10) DEĞİL.
+    expect(charge.mock.calls[0][0].paymentAmount).toBe(2000);
   });
 
   it('active due + charge success → renewed 1 + processCallback success', async () => {

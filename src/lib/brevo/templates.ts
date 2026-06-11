@@ -662,3 +662,102 @@ PRO Aboneliği: ${input.upgradeUrl}
     textContent: text,
   };
 }
+
+// ── Billing: dunning (ödeme başarısız) + downgrade (FREE'ye düşüş) — I1 ──────────
+
+export interface DunningEmailTemplateInput {
+  companyName: string;
+  retryCount: number;
+  manageUrl: string; // /admin/settings/billing
+}
+
+export function buildDunningEmailTemplate(input: DunningEmailTemplateInput): VerifyEmailTemplate {
+  const html = emailShell(`
+    <h2 style="margin:0 0 16px;font-size:22px;color:${BRAND_CART};letter-spacing:-.3px;">
+      Aboneliğin için ödeme alınamadı
+    </h2>
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.6;">Merhaba ${input.companyName},</p>
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.6;">
+      Aboneliğinin yenileme ödemesi kayıtlı kartından çekilemedi (${input.retryCount}. deneme).
+      Kesinti yaşamamak için kartını güncellemen gerekiyor.
+    </p>
+    <table cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td align="center" style="padding:8px 0 24px;">
+      <a href="${input.manageUrl}" style="display:inline-block;background:${BRAND_CAT};color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-weight:bold;font-size:14px;">
+        Aboneliği yönet →
+      </a>
+    </td></tr></table>
+    <p style="margin:0;font-size:12px;color:#5f6b7c;line-height:1.5;">
+      Birkaç başarısız denemeden sonra hesabın otomatik olarak <strong>FREE</strong> plana düşer.
+      Ödeme tekrar denenecek; kartını güncellersen sorun çözülür.
+    </p>
+  `);
+
+  const text = `Merhaba ${input.companyName},
+
+Aboneliğinin yenileme ödemesi kayıtlı kartından çekilemedi (${input.retryCount}. deneme).
+Kesinti yaşamamak için kartını güncelle: ${input.manageUrl}
+
+Birkaç başarısız denemeden sonra hesabın otomatik FREE plana düşer.
+
+—
+© 2026 PetStockPro`;
+
+  return {
+    subject: 'PetStockPro · Ödeme alınamadı — kartını güncelle',
+    htmlContent: html,
+    textContent: text,
+  };
+}
+
+export interface PlanDowngradedEmailTemplateInput {
+  companyName: string;
+  unpublishedCount: number;
+  manageUrl: string;
+}
+
+export function buildPlanDowngradedEmailTemplate(input: PlanDowngradedEmailTemplateInput): VerifyEmailTemplate {
+  const unpublishedBlock =
+    input.unpublishedCount > 0
+      ? `
+    <div style="border-left:4px solid ${BRAND_CAT};padding:12px 16px;background:#fff5ef;border-radius:0 8px 8px 0;margin:0 0 24px;">
+      <strong style="display:block;font-size:13px;color:${BRAND_CART};margin-bottom:6px;">
+        ⚠ ${input.unpublishedCount} ürün vitrin'den çekildi
+      </strong>
+      <span style="font-size:13px;color:#5f6b7c;line-height:1.6;">
+        FREE plan vitrin limiti (10) nedeniyle bu ürünler vitrinden kaldırıldı.
+        Ürünlerin <strong>silinmedi</strong>; PRO'ya dönünce tekrar yayınlayabilirsin.
+      </span>
+    </div>`
+      : '';
+
+  const html = emailShell(`
+    <h2 style="margin:0 0 16px;font-size:22px;color:${BRAND_CART};letter-spacing:-.3px;">
+      Aboneliğin sona erdi — FREE plandasın
+    </h2>
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.6;">Merhaba ${input.companyName},</p>
+    <p style="margin:0 0 24px;font-size:14px;line-height:1.6;">
+      Aboneliğin sona erdi ve hesabın <strong>FREE</strong> plana geçti. Verilerin ve ürünlerin korunuyor.
+    </p>
+    ${unpublishedBlock}
+    <table cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td align="center" style="padding:8px 0 24px;">
+      <a href="${input.manageUrl}" style="display:inline-block;background:${BRAND_CART};color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-weight:bold;font-size:14px;">
+        PRO'ya geri dön →
+      </a>
+    </td></tr></table>
+  `);
+
+  const text = `Merhaba ${input.companyName},
+
+Aboneliğin sona erdi ve hesabın FREE plana geçti. Verilerin ve ürünlerin korunuyor.
+${input.unpublishedCount > 0 ? `\n⚠ FREE vitrin limiti (10) nedeniyle ${input.unpublishedCount} ürün vitrinden çekildi. Ürünlerin silinmedi; PRO'ya dönünce tekrar yayınlayabilirsin.\n` : ''}
+PRO'ya geri dön: ${input.manageUrl}
+
+—
+© 2026 PetStockPro`;
+
+  return {
+    subject: 'PetStockPro · Aboneliğin sona erdi (FREE plan)',
+    htmlContent: html,
+    textContent: text,
+  };
+}

@@ -11,6 +11,7 @@ import { POST as sitemapRebuild } from '../sitemap-rebuild/route';
 import { POST as errorsThreshold } from '../errors-threshold-check/route';
 import { POST as cleanupLogs } from '../cleanup-old-logs/route';
 import { POST as billingRenew } from '../billing-renew/route';
+import { POST as invoiceReconcile } from '../invoice-reconcile/route';
 import { POST as dailySummary } from '../daily-summary/route';
 import { POST as promoCheck } from '../promo-first-100-check/route';
 
@@ -20,6 +21,7 @@ export const maxDuration = 60; // Hobby üst sınırı — tüm job'lar paralel 
 
 const JOBS: ReadonlyArray<readonly [string, (req: Request) => Promise<Response>]> = [
   ['billing-renew', billingRenew],
+  ['invoice-reconcile', invoiceReconcile],
   ['cleanup-old-logs', cleanupLogs],
   ['errors-threshold-check', errorsThreshold],
   ['daily-summary', dailySummary],

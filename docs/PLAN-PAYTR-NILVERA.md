@@ -228,3 +228,37 @@ CRON_SECRET                                                    # yenileme cron a
 | 3 (recurring+cron+dunning) | ✅ listSavedCards + runBillingRenewals + /api/cron/billing-renew + wrangler cron · 22 test |
 | 4 (iptal + reactivate) | ✅ cancel/reactivate + UI · E2E (reactivate → DB cancel=false doğrulandı) · 4 test |
 | 5 (doc + metin temizliği) | ✅ iyzico→PayTR (legal/landing/superadmin/env panel) + PAYMENT-INTEGRATION not · 1858 test |
+| Hardening (C1-C4 / I1-I3 / H1-H2) | ✅ plan `precious-popping-mochi` — aşağıda §9 |
+
+---
+
+## 9. Ödeme Sağlamlaştırma (2026-06-11, plan: precious-popping-mochi)
+
+Uçtan uca denetim sonrası kapatılan açıklar + eklenen gözlemlenebilirlik.
+
+### 9.1 Anomali → alert → aksiyon
+Süperadmin Telegram alert'leri: `src/lib/billing/alerts.ts` (fire-and-forget, tx DIŞINDA).
+
+| Durum | Davranış | Süperadmin aksiyonu |
+|---|---|---|
+| **owner_missing** (C1) | Ödeme YİNE uygulanır (plan + fatura); audit yazarı = herhangi bir tenant kullanıcısı, yoksa atlanır | Tenant'a BAYI_SAHIBI rolü ata |
+| **amount_mismatch** (I3) | Plan AÇILMAZ (manipülasyon koruması); audit + alert | Para PayTR'da çekildiyse **PayTR panelinden manuel iade** |
+| **Nilvera fatura fail** (C2) | invoice `pending` kalır; `invoice-reconcile` cron N kez dener, sonra alert | VKN/Nilvera ayarını düzelt; gerekirse manuel "Faturayı yeniden çek" |
+| **dunning** (yenileme fail) | `past_due` + retry (1/3/5g) + kullanıcıya "kartını güncelle" e-postası + alert; retry tükenince FREE + downgrade e-postası | Genelde otomatik; kalıcı sorunlu tenant'a ulaş |
+| **skippedInFlight** (C4) | Çözülmemiş `pendingMerchantOid` olan abonelik tekrar ÇEKİLMEZ (çift tahsilat koruması) | Uzun süre takılırsa PayTR panelinden ödeme durumunu kontrol et |
+
+### 9.2 Manuel iade / chargeback prosedürü (H3)
+PetStockPro'da **otomatik iade akışı YOK** (MVP — para akışı PayTR'da). İade gereken durumlar:
+1. **amount_mismatch** sonrası yanlış tahsilat, veya **çift çekim** (lost wait_callback + manuel zorlama).
+2. Müşteri itirazı / chargeback.
+
+**Adımlar:** (a) PayTR Mağaza Panel → İşlemler → ilgili `merchant_oid`'i bul → **İade Et**. (b) İlgili `invoices` satırını süperadmin DB Inspector'dan kontrol et/not düş. (c) Gerekirse Nilvera'dan faturayı **iptal et** (`cancelNilveraInvoice`, 3 gün içinde — `src/lib/nilvera/invoice.ts`). Chargeback'te PayTR e-posta ile bilgilendirir; itiraz belgesi PayTR panelinden yüklenir.
+
+### 9.3 Dönem-sonu plan değişimi (H2)
+`subscriptions.pending_plan` (PRO↔PRO+). Anlık tahsilat YOK; değişim **bir sonraki yenilemede** geçerli (proration yok). Renewal çekimden ÖNCE yeni plan fiyatını uygular (`effectivePlanAndAmount`) → callback'te `plan`+`amountTry` güncellenir, `pendingPlan` temizlenir. Böylece **yükseltmeden sonra eski (düşük) tutar asla çekilmez**. UI: `/admin/settings/billing` → "Plan değiştir" + "📅 X tarihinde geçecek (iptal et)".
+
+### 9.4 Downgrade vitrin mutabakatı (I2)
+Abonelik expire → FREE olunca FREE vitrin limitini (10) aşan ürünler otomatik vitrin'den çekilir (`vitrinAutoUnpublishedReason='plan_downgrade'`, en eskiler). Ürünler **silinmez**; PRO'ya dönünce tekrar yayınlanabilir.
+
+### 9.5 Eşzamanlılık (H1)
+`runBillingRenewals` "claim" transaction: due abonelikler `FOR UPDATE OF subscriptions SKIP LOCKED` ile seçilip `pendingMerchantOid` atanır → eşzamanlı cron çalışması aynı aboneliği iki kez çekemez.

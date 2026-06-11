@@ -21,7 +21,7 @@ describe('POST /api/cron/billing-renew', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv('CRON_SECRET', 'secret-x');
-    vi.mocked(runBillingRenewals).mockResolvedValue({ due: 1, renewed: 1, failed: 0, waitCallback: 0, expired: 0, errors: 0 });
+    vi.mocked(runBillingRenewals).mockResolvedValue({ due: 1, renewed: 1, failed: 0, waitCallback: 0, expired: 0, errors: 0, skippedInFlight: 0 });
   });
   afterEach(() => {
     vi.unstubAllEnvs();

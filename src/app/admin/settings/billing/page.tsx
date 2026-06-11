@@ -98,8 +98,13 @@ export default async function BillingPage({
           </section>
         )}
 
-        {sub && (sub.status === 'active' || sub.status === 'past_due') && (
-          <SubscriptionActions cancelScheduled={sub.cancelAtPeriodEnd} />
+        {sub && (sub.status === 'active' || sub.status === 'past_due') && sub.plan !== 'FREE' && (
+          <SubscriptionActions
+            cancelScheduled={sub.cancelAtPeriodEnd}
+            currentPlan={sub.plan}
+            pendingPlan={sub.pendingPlan === 'PRO' || sub.pendingPlan === 'PRO_PLUS' ? sub.pendingPlan : null}
+            periodEndLabel={fmtDate(sub.currentPeriodEnd)}
+          />
         )}
 
         {!profile.vatNo && (
