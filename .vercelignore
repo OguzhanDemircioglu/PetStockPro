@@ -1,0 +1,16 @@
+# Vercel CLI deploy — bu dosyalar UPLOAD edilmesin.
+# Secret'lar (.env) ASLA yüklenmez; env değişkenleri Vercel dashboard'dan gelir.
+.env
+.env.*
+!.env.example
+
+# Build artifact + local
+.next
+.open-next
+node_modules
+.git
+*.log
+/tmp
+coverage
+playwright-report
+test-results
