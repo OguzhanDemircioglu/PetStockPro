@@ -75,7 +75,8 @@ describe('startPaytrCheckout', () => {
     vi.mocked(createPaytrIframeToken).mockResolvedValue('iframe-token-xyz');
   });
 
-  it('PRO happy → incomplete insert + token + 100000 kuruş + store_card', async () => {
+  // ⚠️ Tutarlar GEÇİCİ TEST FİYATINI yansıtır (PRO 10₺ = 1000 kuruş) — gerçek 1000₺, lansman öncesi geri al.
+  it('PRO happy → incomplete insert + token + 1000 kuruş + store_card', async () => {
     const { db, calls } = makeDb({});
     const res = await startPaytrCheckout({ db, targetPlan: 'PRO', ...base });
 
@@ -84,12 +85,12 @@ describe('startPaytrCheckout', () => {
     const ins = calls.inserts[0];
     expect(ins.status).toBe('incomplete');
     expect(ins.plan).toBe('PRO');
-    expect(ins.amountTry).toBe('1000.00');
+    expect(ins.amountTry).toBe('10.00');
     expect(ins.pendingMerchantOid).toBe(res.merchantOid);
     expect(ins.paytrUtoken).toBe('uabc123def');
 
     const tokenArgs = vi.mocked(createPaytrIframeToken).mock.calls[0][0];
-    expect(tokenArgs.paymentAmount).toBe(100000);
+    expect(tokenArgs.paymentAmount).toBe(1000);
     expect(tokenArgs.storeCard).toBe(1);
     expect(tokenArgs.utoken).toBe('uabc123def');
     expect(tokenArgs.merchantOid).toBe(res.merchantOid);
@@ -98,10 +99,10 @@ describe('startPaytrCheckout', () => {
     expect(res.iframeUrl).toContain('/odeme/guvenli/iframe-token-xyz');
   });
 
-  it('PRO_PLUS → 200000 kuruş', async () => {
+  it('PRO_PLUS → 2000 kuruş (test fiyatı)', async () => {
     const { db } = makeDb({});
     await startPaytrCheckout({ db, targetPlan: 'PRO_PLUS', ...base });
-    expect(vi.mocked(createPaytrIframeToken).mock.calls[0][0].paymentAmount).toBe(200000);
+    expect(vi.mocked(createPaytrIframeToken).mock.calls[0][0].paymentAmount).toBe(2000);
   });
 
   it('zaten aktif abonelik → CheckoutError already_subscribed, insert YOK', async () => {

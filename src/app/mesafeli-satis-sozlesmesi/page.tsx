@@ -122,8 +122,8 @@ export default function MesafeliSatisSozlesmesiPage() {
               </h2>
               <ul className="mt-2 list-disc pl-5">
                 <li>FREE plan: 0 ₺ (sürekli ücretsiz)</li>
-                <li>PRO plan: 1.000 ₺/ay, KDV dahil</li>
-                <li>PRO+ plan: 2.000 ₺/ay, KDV dahil</li>
+                <li>PRO plan: 10 ₺/ay, KDV dahil</li>
+                <li>PRO+ plan: 20 ₺/ay, KDV dahil</li>
               </ul>
               <p className="mt-2">
                 Ödeme tahsilatı her dönem başında otomatik olarak Alıcı&apos;nın
