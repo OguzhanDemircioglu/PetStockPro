@@ -55,12 +55,12 @@ export function AdminSidebar({
   return (
     <aside
       data-testid="admin-sidebar"
-      className="sticky top-0 hidden h-screen w-[220px] shrink-0 flex-col overflow-y-auto border-r border-line bg-paper/75 px-3 pb-5 backdrop-blur-xl md:flex"
+      className="sticky top-0 hidden h-screen w-[220px] shrink-0 flex-col border-r border-line bg-paper/75 px-3 pb-5 backdrop-blur-xl md:flex"
     >
       {/* Brand — Pano başlığı hizasında shiny header + altında icon + tenant adı */}
       <Link
         href={'/admin' as never}
-        className="-mx-3 mb-4 block"
+        className="-mx-3 mb-4 block shrink-0"
         data-testid="sidebar-brand"
       >
         {/* Üst: PetStockPro shiny — 66px header içinde dikey ortada */}
@@ -97,8 +97,11 @@ export function AdminSidebar({
         </div>
       </Link>
 
-      {/* Nav groups */}
-      <nav className="flex flex-col gap-4 text-[13.5px]" data-testid="sidebar-nav">
+      {/* Nav groups — kaydırılabilir orta alan (plan kartı + footer dipte sabit kalsın) */}
+      <nav
+        className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto text-[13.5px]"
+        data-testid="sidebar-nav"
+      >
         {groups.map((g, gi) => (
           <div key={gi} className="flex flex-col gap-0.5">
             {g.label && (
@@ -146,10 +149,13 @@ export function AdminSidebar({
         ))}
       </nav>
 
-      {/* Plan card — gradient cart bg, dark-safe (white text fixed) */}
-      <div
+      {/* Plan card — gradient cart bg, dark-safe (white text fixed).
+          Tüm kart tıklanabilir → /admin/settings/billing (abonelik planları).
+          shrink-0 + nav flex-1 sayesinde her zaman dipte ve görünür kalır. */}
+      <Link
+        href={'/admin/settings/billing' as never}
         data-testid="sidebar-plan-card"
-        className="mt-auto relative overflow-hidden rounded-2xl bg-gradient-to-br from-cart to-cart-7 p-3.5 text-white shadow-[0_8px_24px_rgba(26,85,136,.32)]"
+        className="group relative mt-3 block shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br from-cart to-cart-7 p-3.5 text-white shadow-[0_8px_24px_rgba(26,85,136,.32)] transition-transform hover:-translate-y-0.5"
       >
         <div
           aria-hidden
@@ -192,18 +198,14 @@ export function AdminSidebar({
             <div className="h-1.5 rounded-full bg-gradient-to-r from-arrow to-arrow-2" />
           )}
         </div>
-        {plan === 'FREE' && (
-          <Link
-            href={'/admin/settings' as never}
-            className="relative mt-3 block rounded-[9px] bg-white/18 px-2.5 py-2 text-center text-[13px] font-bold text-white transition-colors hover:bg-white/30"
-          >
-            PRO&apos;ya geç →
-          </Link>
-        )}
-      </div>
+        {/* CTA — her planda görünür "buton" */}
+        <span className="relative mt-3 block rounded-[9px] bg-white/18 px-2.5 py-2 text-center text-[13px] font-bold text-white transition-colors group-hover:bg-white/30">
+          {plan === 'FREE' ? "PRO'ya geç →" : 'Aboneliği yönet →'}
+        </span>
+      </Link>
 
       {/* Footer mini */}
-      <p className="mt-3 text-center text-[10.5px] text-ink-4">
+      <p className="mt-3 shrink-0 text-center text-[10.5px] text-ink-4">
         © 2026 PetStockPro
       </p>
     </aside>

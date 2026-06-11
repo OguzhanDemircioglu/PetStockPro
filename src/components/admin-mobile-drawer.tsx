@@ -216,9 +216,14 @@ export function AdminMobileDrawer({
           ))}
         </nav>
 
-        {/* Plan card */}
+        {/* Plan card — tüm kart tıklanabilir → /admin/settings/billing (abonelik planları) */}
         <div className="border-t border-line bg-line-soft/30 p-3">
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-cart to-cart-7 p-3 text-white shadow-[0_8px_24px_rgba(26,85,136,.32)]">
+          <Link
+            href={'/admin/settings/billing' as never}
+            onClick={onClose}
+            data-testid="drawer-plan-card"
+            className="group relative block overflow-hidden rounded-2xl bg-gradient-to-br from-cart to-cart-7 p-3 text-white shadow-[0_8px_24px_rgba(26,85,136,.32)]"
+          >
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-[11px] font-bold uppercase tracking-wider opacity-75">PLAN</div>
@@ -248,16 +253,11 @@ export function AdminMobileDrawer({
                 <div className="h-1.5 rounded-full bg-gradient-to-r from-arrow to-arrow-2" />
               )}
             </div>
-            {plan === 'FREE' && (
-              <Link
-                href={'/admin/settings' as never}
-                onClick={onClose}
-                className="mt-2 block rounded-[9px] bg-white/18 px-2.5 py-2 text-center text-[12.5px] font-bold text-white hover:bg-white/30 transition-colors"
-              >
-                PRO&apos;ya geç →
-              </Link>
-            )}
-          </div>
+            {/* CTA — her planda görünür */}
+            <span className="mt-2 block rounded-[9px] bg-white/18 px-2.5 py-2 text-center text-[12.5px] font-bold text-white transition-colors group-hover:bg-white/30">
+              {plan === 'FREE' ? "PRO'ya geç →" : 'Aboneliği yönet →'}
+            </span>
+          </Link>
 
           {/* Logout — mobile drawer'da topbar logout butonu sm altında gizli */}
           <form action={logoutAction} className="mt-3">
