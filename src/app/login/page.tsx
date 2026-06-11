@@ -2,9 +2,17 @@
 
 import { useActionState, useRef, useState } from 'react';
 import Image from 'next/image';
+import { Package, Store, BarChart3, type LucideIcon } from 'lucide-react';
 import { extractRecoveryCodesFromText } from '@/lib/auth/recovery-codes';
 import { useSwalOnError, useSwalOnErrorString } from '@/lib/ui/use-swal-on-error';
 import { loginAction, type LoginState } from './actions';
+
+const HERO_FEATURES: { title: string; sub: string; icon?: LucideIcon; img?: string }[] = [
+  { icon: Package, title: 'Stok Takip', sub: 'Çoklu şube, sayım, immutable ledger' },
+  { icon: Store, title: 'Vitrin', sub: 'Müşteri bul, WhatsApp ile sat' },
+  { icon: BarChart3, title: '6 Rapor', sub: 'Kâr-zarar, KDV, en çok satan' },
+  { img: '/chatbot.png', title: 'PetPro Asistan', sub: 'Sipariş + transfer + indirim önerisi' },
+];
 
 /**
  * Login Page — Sprint 2.1
@@ -134,23 +142,27 @@ export default function LoginPage() {
 
         {/* FEATURE GRID — 4 kart */}
         <div className="relative z-10 mt-10 grid grid-cols-2 gap-3">
-          {[
-            { ic: '📦', title: 'Stok Takip', sub: 'Çoklu şube, sayım, immutable ledger' },
-            { ic: '🏪', title: 'Vitrin', sub: 'Müşteri bul, WhatsApp ile sat' },
-            { ic: '📊', title: '6 Rapor', sub: 'Kâr-zarar, KDV, en çok satan' },
-            { ic: '🤖', title: 'PetPro Asistan', sub: 'Sipariş + transfer + indirim önerisi' },
-          ].map((f) => (
-            <div
-              key={f.title}
-              className="rounded-2xl border border-white/20 bg-white/10 px-5 py-4 backdrop-blur-md transition-all hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/15"
-            >
-              <div className="mb-2 grid h-9 w-9 place-items-center rounded-xl border border-white/20 bg-white/20 text-lg">
-                {f.ic}
+          {HERO_FEATURES.map((f) => {
+            const Icon = f.icon;
+            return (
+              <div
+                key={f.title}
+                className="group relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 px-5 py-4 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-white/40 hover:bg-white/[0.16] hover:shadow-[0_16px_34px_rgba(0,0,0,0.22)]"
+              >
+                {/* hover glow */}
+                <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/20 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100" />
+                <div className="relative mb-2.5 grid h-12 w-12 place-items-center overflow-hidden rounded-2xl bg-gradient-to-br from-white/40 to-white/10 shadow-lg ring-1 ring-inset ring-white/30 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3">
+                  {f.img ? (
+                    <Image src={f.img} alt="" width={48} height={48} className="h-full w-full object-cover" />
+                  ) : Icon ? (
+                    <Icon className="h-[23px] w-[23px] text-white drop-shadow" strokeWidth={2.2} />
+                  ) : null}
+                </div>
+                <div className="text-sm font-bold leading-tight">{f.title}</div>
+                <div className="mt-1 text-[13px] leading-snug opacity-80">{f.sub}</div>
               </div>
-              <div className="text-sm font-bold leading-tight">{f.title}</div>
-              <div className="mt-1 text-[13px] leading-snug opacity-80">{f.sub}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* BOTTOM: Tech credibility */}
