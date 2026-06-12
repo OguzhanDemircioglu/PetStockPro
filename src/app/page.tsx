@@ -34,5 +34,12 @@ export default async function Home() {
     redirect('/admin' as never);
   }
 
+  // Staging (lansman öncesi): anonim ziyaretçi login yapamaz → sadece mockup
+  // önizleme (Bayi paneli + Vitrin) /yapim-asamasinda'da. Staging kapalıyken
+  // (canlı) login tek giriş kapısı; buraya asla /yapim-asamasinda gelmez.
+  if (process.env.NEXT_PUBLIC_STAGING_MODE === 'true') {
+    redirect('/yapim-asamasinda' as never);
+  }
+
   redirect('/login' as never);
 }
