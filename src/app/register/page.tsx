@@ -2,15 +2,15 @@
 
 import { useActionState } from 'react';
 import Image from 'next/image';
-import { Package, Store, BarChart3, type LucideIcon } from 'lucide-react';
+import { Package, Store, BarChart3, Bot, type LucideIcon } from 'lucide-react';
 import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import { registerAction, type RegisterState } from './actions';
 
-const HERO_FEATURES: { title: string; sub: string; icon?: LucideIcon; img?: string }[] = [
-  { icon: Package, title: 'Stok Takip', sub: 'Çoklu şube, sayım, immutable ledger' },
-  { icon: Store, title: 'Vitrin', sub: 'Müşteri bul, WhatsApp ile sat' },
-  { icon: BarChart3, title: '6 Rapor', sub: 'Kâr-zarar, KDV, en çok satan' },
-  { img: '/chatbot.png', title: 'PetPro Asistan', sub: 'Sipariş + transfer + indirim önerisi' },
+const HERO_FEATURES: { title: string; sub: string; icon: LucideIcon }[] = [
+  { icon: Package, title: 'Stok Takibi', sub: 'Çoklu şube, canlı sayım, kaybolmayan kayıt' },
+  { icon: Store, title: 'Dijital Vitrin', sub: 'Müşteriler seni bulsun, WhatsApp’tan sat' },
+  { icon: BarChart3, title: '6 Canlı Rapor', sub: 'Kâr-zarar, KDV ve en çok satanlar' },
+  { icon: Bot, title: 'PetPro Asistan', sub: 'Sipariş, transfer, indirimde akıllı öneri' },
 ];
 
 /**
@@ -98,14 +98,10 @@ export default function RegisterPage() {
                 {/* hover glow */}
                 <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/20 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100" />
                 <div className="relative mb-2.5 grid h-12 w-12 place-items-center overflow-hidden rounded-2xl bg-gradient-to-br from-white/40 to-white/10 shadow-lg ring-1 ring-inset ring-white/30 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3">
-                  {f.img ? (
-                    <Image src={f.img} alt="" width={48} height={48} className="h-full w-full object-cover" />
-                  ) : Icon ? (
-                    <Icon className="h-[23px] w-[23px] text-white drop-shadow" strokeWidth={2.2} />
-                  ) : null}
+                  <Icon className="h-[23px] w-[23px] text-white drop-shadow" strokeWidth={2.2} />
                 </div>
-                <div className="text-sm font-bold leading-tight">{f.title}</div>
-                <div className="mt-1 text-[13px] leading-snug opacity-80">{f.sub}</div>
+                <div className="text-[15px] font-bold leading-tight tracking-tight drop-shadow-sm">{f.title}</div>
+                <div className="mt-1 text-[12.5px] font-medium leading-snug text-white/85">{f.sub}</div>
               </div>
             );
           })}
