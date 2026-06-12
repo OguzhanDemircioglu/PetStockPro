@@ -136,7 +136,6 @@ export default function LoginPage() {
           <p className="mt-4 max-w-[480px] text-[16.5px] leading-relaxed opacity-95">
             Pet shop&apos;unun envanteri, satışı, vitrini ve raporları —{' '}
             <strong className="rounded bg-white/20 px-2 py-0.5 font-bold">tek panelde, sade</strong>.
-            Cloudflare edge altyapısında çalışır.
           </p>
         </div>
 
