@@ -8,16 +8,16 @@ import { companies, storefrontSettings, users } from '@/db/schema';
 import { hashPassword } from '@/lib/auth/password';
 
 /**
- * Staging demo bayi admin (pet shop yönetim) paneli auto-login.
+ * Demo bayi admin (pet shop yönetim) paneli auto-login — "Yönetim panelini
+ * önizle" butonu (login/register hero + /yapim-asamasinda).
  *
- * Mockup ziyaretçisi için akış (gerçek BAYI_SAHIBI deneyimi — impersonation YOK):
- *   1. DB'den onaylı + aktif vitrin'li ilk tenant'ı çek (mock data dolu)
- *   2. O tenant'a bağlı BAYI_SAHIBI demo user'ı var mı kontrol et
- *   3. Yoksa: yarat (email = STAGING_DEMO_BAYI_EMAIL, password hash'i ile)
- *   4. signIn credentials ile bu hesaba gir
- *   5. /admin'e redirect → gerçek bayi pano, "Süperadmin'e dön" buton YOK
- *
- * Sadece NEXT_PUBLIC_STAGING_MODE=true iken çalışır. Production'da no-op.
+ * Akış (gerçek BAYI_SAHIBI deneyimi — impersonation YOK):
+ *   1. Demo BAYI_SAHIBI user'ı (STAGING_DEMO_BAYI_EMAIL) var mı?
+ *   2. VARSA → her modda güvenle signIn (sabit demo tenant'ına bağlı).
+ *   3. YOKSA → yalnız staging'de oluştur: onaylı + aktif vitrin'li ilk tenant'a
+ *      bağla. (Güvenlik: production'da rastgele GERÇEK tenant'a bağlamamak için
+ *      oluşturma staging-gated. Demo tenant lansman öncesi seed edilmeli.)
+ *   4. signIn → /admin'e redirect.
  *
  * Env (staging):
  *   STAGING_DEMO_BAYI_EMAIL=demo-bayi@petstockpro.local (default)
@@ -27,34 +27,10 @@ const DEFAULT_DEMO_EMAIL = 'demo-bayi@petstockpro.local';
 const DEFAULT_DEMO_PASSWORD = 'DemoBayi123!';
 
 export async function stagingDemoLoginAction(): Promise<void> {
-  if (process.env.NEXT_PUBLIC_STAGING_MODE !== 'true') {
-    redirect('/' as never);
-  }
-
   const email = process.env.STAGING_DEMO_BAYI_EMAIL ?? DEFAULT_DEMO_EMAIL;
   const password = process.env.STAGING_DEMO_BAYI_PASSWORD ?? DEFAULT_DEMO_PASSWORD;
 
-  // Demo tenant — onaylı + aktif vitrin'li, mock data dolu ilk pet shop
-  const [demoTenant] = await db
-    .select({ id: companies.id })
-    .from(companies)
-    .innerJoin(
-      storefrontSettings,
-      eq(storefrontSettings.companyId, companies.id),
-    )
-    .where(
-      and(
-        eq(companies.storefrontStatus, 'approved'),
-        eq(storefrontSettings.isEnabled, true),
-      ),
-    )
-    .limit(1);
-
-  if (!demoTenant) {
-    redirect('/yapim-asamasinda' as never);
-  }
-
-  // Demo BAYI_SAHIBI user'ı var mı? Yoksa yarat (idempotent)
+  // Demo BAYI_SAHIBI user'ı var mı?
   const [existingUser] = await db
     .select({ id: users.id })
     .from(users)
@@ -62,6 +38,31 @@ export async function stagingDemoLoginAction(): Promise<void> {
     .limit(1);
 
   if (!existingUser) {
+    // Demo kullanıcı YOK → yalnız staging'de oluştur (production güvenliği).
+    if (process.env.NEXT_PUBLIC_STAGING_MODE !== 'true') {
+      redirect('/' as never);
+    }
+
+    // Demo tenant — onaylı + aktif vitrin'li, mock data dolu ilk pet shop
+    const [demoTenant] = await db
+      .select({ id: companies.id })
+      .from(companies)
+      .innerJoin(
+        storefrontSettings,
+        eq(storefrontSettings.companyId, companies.id),
+      )
+      .where(
+        and(
+          eq(companies.storefrontStatus, 'approved'),
+          eq(storefrontSettings.isEnabled, true),
+        ),
+      )
+      .limit(1);
+
+    if (!demoTenant) {
+      redirect('/yapim-asamasinda' as never);
+    }
+
     const passwordHash = await hashPassword(password);
     await db.insert(users).values({
       email,
@@ -82,7 +83,7 @@ export async function stagingDemoLoginAction(): Promise<void> {
       redirect: false,
     });
   } catch {
-    redirect('/yapim-asamasinda' as never);
+    redirect('/' as never);
   }
 
   // Demo bayi her açılışta kar yağışı default — Snowfall mount'ta bu
