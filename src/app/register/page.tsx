@@ -4,6 +4,7 @@ import { useActionState } from 'react';
 import Image from 'next/image';
 import { Package, Store, BarChart3, Bot, type LucideIcon } from 'lucide-react';
 import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
+import { HeroDemoButtons } from '@/components/auth/hero-demo-buttons';
 import { registerAction, type RegisterState } from './actions';
 
 const HERO_FEATURES: { title: string; sub: string; icon: LucideIcon }[] = [
@@ -39,7 +40,7 @@ export default function RegisterPage() {
   return (
     <div className="grid h-screen w-screen grid-cols-1 overflow-hidden md:grid-cols-2">
       {/* ============ SOL HERO PANEL ============ */}
-      <aside className="relative flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#d44a14] via-[#ed6a2c] to-[#c25510] px-14 py-14 text-white">
+      <aside className="relative flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#d44a14] via-[#ed6a2c] to-[#c25510] px-14 py-10 text-white">
         {/* Logo watermark — sağ-alt (eski paw pattern + mascot SVG yerine) */}
         <div className="pointer-events-none absolute -bottom-12 -right-12 z-0 h-72 w-72 rotate-[-8deg] opacity-[0.08]">
           <Image
@@ -72,7 +73,7 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        <div className="relative z-10 mt-12">
+        <div className="relative z-10 mt-8">
           <h1 className="text-[45.5px] font-bold leading-[1.06] tracking-tight">
             Stoktan satışa,
             <br />
@@ -87,13 +88,16 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        <div className="relative z-10 mt-10 grid grid-cols-2 gap-3">
+        {/* Demo önizleme — özellik kartlarının üstünde */}
+        <HeroDemoButtons />
+
+        <div className="relative z-10 mt-6 grid grid-cols-2 gap-3">
           {HERO_FEATURES.map((f) => {
             const Icon = f.icon;
             return (
               <div
                 key={f.title}
-                className="group relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 px-5 py-4 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-white/40 hover:bg-white/[0.16] hover:shadow-[0_16px_34px_rgba(0,0,0,0.22)]"
+                className="group relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 px-5 py-3 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-white/40 hover:bg-white/[0.16] hover:shadow-[0_16px_34px_rgba(0,0,0,0.22)]"
               >
                 {/* hover glow */}
                 <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/20 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100" />
