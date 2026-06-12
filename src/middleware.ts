@@ -44,6 +44,18 @@ function shouldGateForStaging(pathname: string): boolean {
   );
 }
 
+/** Auth.js v5 JWT session token'ını cookie'den çözer (edge uyumlu). */
+function readSessionToken(req: NextRequest) {
+  return getToken({
+    req,
+    secret: process.env.AUTH_SECRET,
+    // Auth.js v5 default cookie ismi
+    cookieName: process.env.NODE_ENV === 'production'
+      ? '__Secure-authjs.session-token'
+      : 'authjs.session-token',
+  });
+}
+
 export async function middleware(req: NextRequest) {
   // Staging gate önce: login/register/admin → yapım aşamasında
   if (shouldGateForStaging(req.nextUrl.pathname)) {
@@ -53,20 +65,28 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(gateUrl);
   }
 
+  // Giriş yapmış kullanıcı /login'e gelirse formu görmesin → "/"'a yönlendir.
+  // "/" (app/page.tsx) authed kullanıcıyı role + onboarding'e göre route'lar:
+  // SUPERADMIN → /admin/superadmin, diğer → /admin (veya /onboarding). Tek
+  // doğruluk kaynağı için role hesabını orada bırakıyoruz.
+  if (req.nextUrl.pathname === '/login') {
+    const loginToken = await readSessionToken(req);
+    if (loginToken) {
+      const homeUrl = req.nextUrl.clone();
+      homeUrl.pathname = '/';
+      homeUrl.search = '';
+      return NextResponse.redirect(homeUrl);
+    }
+    return NextResponse.next();
+  }
+
   // Sadece /admin/superadmin/* yollarında kontrol — diğer /admin sayfaları layout'ta
   // requireSession yapıyor zaten.
   if (!req.nextUrl.pathname.startsWith('/admin/superadmin')) {
     return NextResponse.next();
   }
 
-  const token = await getToken({
-    req,
-    secret: process.env.AUTH_SECRET,
-    // Auth.js v5 default cookie ismi
-    cookieName: process.env.NODE_ENV === 'production'
-      ? '__Secure-authjs.session-token'
-      : 'authjs.session-token',
-  });
+  const token = await readSessionToken(req);
 
   // Session yok → login
   if (!token) {
