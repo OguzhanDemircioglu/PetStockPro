@@ -26,9 +26,9 @@ import { and, eq, sql } from 'drizzle-orm';
 export const revalidate = 60; // 1 dk ISR — popüler products + nearby
 
 export const metadata = buildVitrinPageMetadata({
-  title: 'PetStockPro Vitrin — Yakınındaki pet shop\'tan al',
+  title: "En yakın pet shop'tan al — fiyat ve stok karşılaştır",
   description:
-    "Türkiye'deki pet shop'lar tek vitrin'de. Mamasını yakınındaki pet shop'tan WhatsApp ile sor, online satış yok — direkt iletişim.",
+    "Türkiye'deki pet shop'lar tek vitrin'de. Fiyatı ve stoğu gör, en yakınındaki pet shop'tan mama, oyuncak ve aksesuarı WhatsApp ile al. Online satış yok.",
   path: '/vitrin',
 });
 
@@ -159,13 +159,15 @@ export default async function VitrinHomePage({
               </>
             )}
           </div>
-          {/* 2026-05-22 Tur 7 YT7-8: konum yokken "yakınındaki" iddiası yanlış —
-              koşullu metin. UX dürüstlük 5f4ce60'in atladığı h1 satırı. */}
+          {/* H1 SEO-kritik (en önemli sinyal): server-render edilen konumsuz hâl
+              "en yakınındaki pet shop" yerel arama sorgusunu hedefler. Konum
+              verilince zaten mesafeye göre sıralanır → iddia canlı veriyle
+              desteklenir, "yakınındaki"ye iner. */}
           <h1 className="text-4xl font-bold leading-tight tracking-tight text-cart lg:text-5xl">
             Fiyatı ve stoğu gör,
             <br />
             <span className="text-cat">
-              {location ? 'yakınındaki' : "Türkiye'deki"}
+              {location ? 'yakınındaki' : 'en yakınındaki'}
             </span>{' '}
             pet shop&apos;tan al<span className="text-arrow">.</span>
           </h1>
