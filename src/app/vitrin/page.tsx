@@ -708,9 +708,6 @@ export default async function VitrinHomePage({
           >
             Hemen Başla →
           </Link>
-          <span className="text-center text-[11.5px] opacity-75">
-            Kredi kartı gerekmez
-          </span>
         </div>
       </section>
     </main>
