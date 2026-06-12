@@ -149,7 +149,7 @@ export function ChatInterface({ userName, plan: _plan, initialUsage, dailyLimit 
   }
 
   return (
-    <div className="flex h-full flex-1 flex-col overflow-hidden rounded-2xl border border-line/40 bg-white/40">
+    <div className="flex h-full flex-1 flex-col overflow-hidden rounded-2xl border border-line/40 bg-paper/40">
       {capReached && (
         <div
           role="status"
@@ -179,7 +179,7 @@ export function ChatInterface({ userName, plan: _plan, initialUsage, dailyLimit 
               <MessageBubble key={m.id} message={m} />
             ))}
             {askMutation.isPending && (
-              <div className="flex items-center gap-2 self-start rounded-2xl rounded-tl-sm border border-line/30 bg-white/70 px-3 py-2 text-[12.5px] text-ink-4">
+              <div className="flex items-center gap-2 self-start rounded-2xl rounded-tl-sm border border-line/30 bg-paper/70 px-3 py-2 text-[12.5px] text-ink-4">
                 <PetSpinner size="sm" />
                 <span>düşünüyor…</span>
               </div>
@@ -191,7 +191,7 @@ export function ChatInterface({ userName, plan: _plan, initialUsage, dailyLimit 
       {/* Input */}
       <form
         onSubmit={handleSubmit}
-        className="border-t border-line/40 bg-white/60 p-3"
+        className="border-t border-line/40 bg-paper/60 p-3"
         data-testid="ai-chat-form"
       >
         <div className="flex items-end gap-2">
@@ -208,7 +208,7 @@ export function ChatInterface({ userName, plan: _plan, initialUsage, dailyLimit 
             rows={2}
             maxLength={500}
             disabled={askMutation.isPending || capReached}
-            className="flex-1 resize-none rounded-xl border border-line/40 bg-white px-3 py-2 text-[13.5px] text-ink placeholder:text-ink-4 focus:outline-none focus:ring-2 focus:ring-cat/40 disabled:opacity-50"
+            className="flex-1 resize-none rounded-xl border border-line/40 bg-paper px-3 py-2 text-[13.5px] text-ink placeholder:text-ink-4 focus:outline-none focus:ring-2 focus:ring-cat/40 disabled:opacity-50"
             data-testid="ai-chat-input"
           />
           <button
@@ -258,7 +258,7 @@ function WelcomeScreen({
             type="button"
             onClick={() => onSuggest(s.text)}
             disabled={disabled}
-            className="flex items-center gap-2 rounded-xl border border-line/40 bg-white px-3 py-2.5 text-left text-[13px] text-ink transition hover:border-cat/50 hover:bg-cat-soft/40 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl border border-line/40 bg-paper px-3 py-2.5 text-left text-[13px] text-ink transition hover:border-cat/50 hover:bg-cat-soft/40 disabled:cursor-not-allowed disabled:opacity-50"
             data-testid={`ai-suggestion-${s.text.slice(0, 20)}`}
           >
             <span>{s.emoji}</span>
@@ -280,7 +280,7 @@ function MessageBubble({ message }: { message: Message }) {
             ? 'rounded-tr-sm bg-cat text-white'
             : message.error
               ? 'rounded-tl-sm border border-danger/40 bg-danger-soft text-ink'
-              : 'rounded-tl-sm border border-line/30 bg-white text-ink'
+              : 'rounded-tl-sm border border-line/30 bg-paper text-ink'
         }`}
       >
         {isUser ? (
