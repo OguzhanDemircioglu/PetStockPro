@@ -2,10 +2,14 @@
 
 import { useActionState, useRef, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Package, Store, BarChart3, Bot, type LucideIcon } from 'lucide-react';
 import { extractRecoveryCodesFromText } from '@/lib/auth/recovery-codes';
 import { useSwalOnError, useSwalOnErrorString } from '@/lib/ui/use-swal-on-error';
+import { StagingDemoButton } from '../staging-demo-button';
 import { loginAction, type LoginState } from './actions';
+
+const IS_STAGING = process.env.NEXT_PUBLIC_STAGING_MODE === 'true';
 
 const HERO_FEATURES: { title: string; sub: string; icon: LucideIcon }[] = [
   { icon: Package, title: 'Stok Takibi', sub: 'Çoklu şube, canlı sayım, kaybolmayan kayıt' },
@@ -160,12 +164,42 @@ export default function LoginPage() {
           })}
         </div>
 
-        {/* BOTTOM: Tech credibility */}
-        <div className="relative z-10 mt-auto flex items-center gap-3 pt-6 text-[12.5px] font-bold uppercase tracking-wider opacity-80">
-          <span>⚡ Cloudflare Workers</span>
-          <span className="h-1 w-1 rounded-full bg-white/40" />
-          <span>🔒 KVKK uyumlu</span>
-        </div>
+        {/* BOTTOM: Website demo önizleme — kayıt olmadan ürünü gez.
+            Demo auto-login güvenlik gereği yalnızca staging'de çalışır →
+            bölüm de sadece staging'de görünür, lansman sonrası gizlenir. */}
+        {IS_STAGING ? (
+          <div className="relative z-10 mt-auto pt-6">
+            <div className="mb-2.5 text-[11px] font-bold uppercase tracking-wider opacity-80">
+              🛠 Kayıt olmadan dene
+            </div>
+            <div className="grid grid-cols-2 gap-2.5">
+              <StagingDemoButton
+                testId="login-demo-admin"
+                className="flex h-full flex-col items-start gap-1 rounded-xl border border-white/25 bg-white/10 px-3.5 py-3 text-left backdrop-blur-md transition-all hover:-translate-y-0.5 hover:border-white/45 hover:bg-white/[0.18] disabled:cursor-progress disabled:opacity-70"
+                pendingText="Açılıyor…"
+              >
+                <span className="text-lg">🛡</span>
+                <span className="text-[13px] font-bold leading-tight">Bayi panelini önizle</span>
+                <span className="text-[11px] leading-snug opacity-75">Demo veriyle gez</span>
+              </StagingDemoButton>
+              <Link
+                href={'/vitrin' as never}
+                data-testid="login-demo-vitrin"
+                className="flex h-full flex-col items-start gap-1 rounded-xl border border-white/25 bg-white/10 px-3.5 py-3 text-left backdrop-blur-md transition-all hover:-translate-y-0.5 hover:border-white/45 hover:bg-white/[0.18]"
+              >
+                <span className="text-lg">🏪</span>
+                <span className="text-[13px] font-bold leading-tight">Vitrin&apos;i önizle</span>
+                <span className="text-[11px] leading-snug opacity-75">Müşteri tarafı</span>
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="relative z-10 mt-auto flex items-center gap-3 pt-6 text-[12.5px] font-bold uppercase tracking-wider opacity-80">
+            <span>🔒 KVKK uyumlu</span>
+            <span className="h-1 w-1 rounded-full bg-white/40" />
+            <span>🇹🇷 TR yerleşik</span>
+          </div>
+        )}
       </aside>
 
       {/* ============ SAĞ FORM PANELİ ============ */}

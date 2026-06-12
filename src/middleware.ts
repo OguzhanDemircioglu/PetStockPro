@@ -23,7 +23,9 @@ import { getToken } from 'next-auth/jwt';
 // Anonim ziyaretçi /admin'e giderse layout'taki requireSession /login'e
 // yönlendirir, /login gate burada zaten staging gate'ler.
 const STAGING_GATED_PATHS = [
-  '/login',
+  // '/login' kasıtlı GATE'lenmez (2026-06-12): login tek giriş kapısı, demo
+  // önizleme sol panelinde — staging'de de erişilebilir olmalı. Authed kullanıcı
+  // zaten aşağıda "/"'a yönlendirilir.
   '/register',
   '/forgot-password',
   '/reset-password',
