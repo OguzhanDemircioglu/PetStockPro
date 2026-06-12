@@ -10,7 +10,7 @@ const HERO_FEATURES: { title: string; sub: string; icon: LucideIcon }[] = [
   { icon: Package, title: 'Stok Takibi', sub: 'Çoklu şube, canlı sayım, kaybolmayan kayıt' },
   { icon: Store, title: 'Dijital Vitrin', sub: 'Müşteriler seni bulsun, WhatsApp’tan sat' },
   { icon: BarChart3, title: '6 Canlı Rapor', sub: 'Kâr-zarar, KDV ve en çok satanlar' },
-  { icon: Bot, title: 'PetPro Asistan', sub: 'Sipariş, transfer, indirimde akıllı öneri' },
+  { icon: Bot, title: 'AI Asistan', sub: 'Sipariş, transfer, indirimde akıllı öneri' },
 ];
 
 /**
