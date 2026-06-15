@@ -65,20 +65,11 @@ function makeMockDb(opts: MockOptions): DbClient {
     }),
   }));
 
-  // Transaction insert mock — sıra: 1. companies.returning, 2. users.returning,
-  // 3. categories ROOT.returning (slug+id map için, seed 2-fazlı), 4. categories
-  // CHILD insert.values (returning yok, awaitable Promise gibi davranmalı).
+  // Transaction insert mock — sıra: 1. companies.returning, 2. users.returning.
+  // (Kategori seed'i Migration 0026 sonrası register'dan kaldırıldı — global tablo.)
   const txReturning = vi.fn()
     .mockResolvedValueOnce([{ id: opts.insertCompanyId ?? 'comp_1' }])
-    .mockResolvedValueOnce([{ id: opts.insertUserId ?? 'user_1' }])
-    .mockResolvedValueOnce([
-      { id: 'root-kedi', slug: 'kedi' },
-      { id: 'root-kopek', slug: 'kopek' },
-      { id: 'root-kus', slug: 'kus' },
-      { id: 'root-akvaryum', slug: 'akvaryum' },
-      { id: 'root-kemirgen', slug: 'kemirgen' },
-      { id: 'root-surungenler', slug: 'surungenler' },
-    ]);
+    .mockResolvedValueOnce([{ id: opts.insertUserId ?? 'user_1' }]);
 
   // values() awaitable PromiseLike — children insert returning'siz await ediliyor.
   // returning() de aynı obje üzerinde mevcut → root insert chain'i `.returning`
