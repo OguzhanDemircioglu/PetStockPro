@@ -135,9 +135,18 @@ export async function nilveraRequest<T>(opts: NilveraRequestOptions): Promise<T>
       });
       clearTimeout(timeoutId);
 
-      // Response body parse (boş 204 No Content da olabilir)
+      // Response body parse (boş 204 No Content da olabilir). JSON dışı yanıt
+      // (ör. yanlış endpoint'te "default backend - 404" düz metni) status koduyla
+      // birlikte NilveraApiError'a sarılır — sessizce network hatası gibi maskelenmez.
       const text = await response.text();
-      const responseBody = text.length > 0 ? JSON.parse(text) : null;
+      let responseBody: unknown = null;
+      if (text.length > 0) {
+        try {
+          responseBody = JSON.parse(text);
+        } catch {
+          responseBody = text; // ham metin koru (4xx/5xx tanı için kritik)
+        }
+      }
 
       if (response.ok) {
         return responseBody as T;

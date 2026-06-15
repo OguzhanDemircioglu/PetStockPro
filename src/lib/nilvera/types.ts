@@ -34,12 +34,8 @@ export type NilveraInvoiceStatus = z.infer<typeof nilveraInvoiceStatusSchema>;
 export const nilveraInvoiceLineSchema = z.object({
   name: z.string().min(1).max(500),                  // ürün/hizmet adı (örn "PetStockPro PRO plan - 1 ay")
   quantity: z.number().positive().default(1),
-  unitPrice: z.number().nonnegative(),                // KDV hariç birim fiyat
-  vatRate: z.number().int().nonnegative(),            // %20 / %10 / %8 / %0
-  // Hesaplama field'ları (server-side hesaplanır ama caller verebilir):
-  totalWithoutVat: z.number().nonnegative().optional(),
-  vatAmount: z.number().nonnegative().optional(),
-  totalWithVat: z.number().nonnegative().optional(),
+  unitPrice: z.number().nonnegative(),                // KDV hariç birim fiyat (matrah)
+  vatRate: z.number().int().nonnegative(),            // %20 / %10 / %8 / %1 / %0
 });
 
 // ══════════════════════════════════════════════════════════════
@@ -49,23 +45,28 @@ export const nilveraInvoiceLineSchema = z.object({
 export const nilveraCustomerSchema = z.object({
   taxNumber: z.string().min(10).max(11),  // VKN (10) veya TC (11)
   title: z.string().min(1).max(500),       // şirket adı veya kişi adı
-  address: z.string().min(1).max(1000),
-  city: z.string().min(1).max(100),
-  country: z.string().default('Türkiye'),
+  address: z.string().max(1000).optional(),
+  district: z.string().max(100).optional(),
+  city: z.string().max(100).optional(),
+  country: z.string().max(100).default('Türkiye'),
   email: z.string().email().optional(),    // e-fatura yerine e-arşiv için opsiyonel
   phone: z.string().optional(),
 });
 
 // ══════════════════════════════════════════════════════════════
-// Invoice Create Request
+// Invoice Create Request (yüksek seviye — orchestrator bunu geçer;
+// invoice.ts gerçek Nilvera ArchiveInvoice modeline çevirir)
 // ══════════════════════════════════════════════════════════════
 
 export const nilveraInvoiceCreateRequestSchema = z.object({
-  // Bizim tarafımızdan üretilen unique fatura referansı (idempotency için)
+  // Bizim invoice.id — idempotency + Nilvera UUID (ETTN) kaynağı.
   externalRef: z.string().min(1).max(100),
 
   // Fatura tarihi (ISO 8601)
   invoiceDate: z.string(),
+
+  // e-Arşiv serisi (InvoiceSerieOrNumber). Yoksa NILVERA_SERIE env kullanılır.
+  series: z.string().min(1).max(10).optional(),
 
   // Müşteri (faturaya alıcı taraf yazılacak pet shop bilgileri)
   customer: nilveraCustomerSchema,
@@ -76,26 +77,44 @@ export const nilveraInvoiceCreateRequestSchema = z.object({
   // Para birimi (default TRY)
   currency: nilveraCurrencySchema.default('TRY'),
 
-  // Notes (opsiyonel açıklama)
-  notes: z.string().max(2000).optional(),
+  // Notes (opsiyonel açıklama satırları)
+  notes: z.array(z.string()).optional(),
 });
 
 // ══════════════════════════════════════════════════════════════
-// Invoice Response (Nilvera'dan dönen)
+// Nilvera e-Arşiv Send/Model ham yanıtı (POST /earchive/Send/Model)
 // ══════════════════════════════════════════════════════════════
 
-export const nilveraInvoiceResponseSchema = z.object({
-  invoiceId: z.string(),                  // Nilvera UUID
-  invoiceNumber: z.string().optional(),   // Resmi fatura no (örn "PSP2026000147") — GİB onayından sonra
-  externalRef: z.string(),                // bizim gönderdiğimiz referans (echo)
-  status: nilveraInvoiceStatusSchema,
-  pdfUrl: z.string().url().optional(),    // PDF indirme URL (Nilvera tarafında)
-  xmlUrl: z.string().url().optional(),    // XML UBL (e-Arşiv format)
-  createdAt: z.string(),
-  issuedAt: z.string().optional(),        // GİB onay zamanı
-  totalAmount: z.number().nonnegative(),
-  vatTotal: z.number().nonnegative(),
+export const nilveraSendResponseSchema = z.object({
+  UUID: z.string(),                  // Nilvera ETTN UUID
+  InvoiceNumber: z.string().nullish(), // Resmi fatura no (ör. "ABC2026000147")
 });
+
+// ══════════════════════════════════════════════════════════════
+// Nilvera e-Arşiv durum yanıtı (GET /earchive/Invoices/{UUID}/Status)
+// ══════════════════════════════════════════════════════════════
+
+export const nilveraStatusCodeSchema = z.enum(['unknown', 'waiting', 'succeed', 'error']);
+
+export const nilveraStatusResponseSchema = z
+  .object({
+    StatusDetail: z.string().nullish(),
+    StatusCode: nilveraStatusCodeSchema,
+    ReportStatus: z.enum(['NotReported', 'Reported']).nullish(),
+    CancelStatus: z.boolean().optional(),
+  })
+  .passthrough();
+
+// ══════════════════════════════════════════════════════════════
+// App-facing fatura sonucu (orchestrator + invoice.ts kullanır)
+// ══════════════════════════════════════════════════════════════
+
+export interface NilveraInvoiceResult {
+  invoiceId: string;       // Nilvera ETTN UUID
+  invoiceNumber?: string;  // Resmi fatura no (ör. ABC2026000147)
+  externalRef: string;     // bizim referans (echo)
+  pdfUrl?: string;         // Send/Model PDF dönmez; ayrı PDF endpoint'inden alınır
+}
 
 // ══════════════════════════════════════════════════════════════
 // Webhook Event
@@ -133,5 +152,6 @@ export const nilveraWebhookPayloadSchema = z.object({
 export type NilveraInvoiceLine = z.input<typeof nilveraInvoiceLineSchema>;
 export type NilveraCustomer = z.input<typeof nilveraCustomerSchema>;
 export type NilveraInvoiceCreateRequest = z.input<typeof nilveraInvoiceCreateRequestSchema>;
-export type NilveraInvoiceResponse = z.infer<typeof nilveraInvoiceResponseSchema>;
+export type NilveraSendResponse = z.infer<typeof nilveraSendResponseSchema>;
+export type NilveraStatusResponse = z.infer<typeof nilveraStatusResponseSchema>;
 export type NilveraWebhookPayload = z.infer<typeof nilveraWebhookPayloadSchema>;

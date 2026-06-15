@@ -487,6 +487,7 @@ async function issueAndRecordNilvera(
         pdfUrl: resp.pdfUrl ?? null,
         status: 'issued',
         issuedAt: now,
+        lastNilveraError: null, // başarıda eski hata kalıntısını temizle
         updatedAt: now,
       })
       .where(eq(invoices.id, ctx.invoiceId));

@@ -21,6 +21,11 @@ const nilveraEnvSchema = z.object({
   // Satıcı (PetStockPro) vergi no: tüzel kişi VKN 10 hane VEYA şahıs şirketi TCKN 11 hane.
   NILVERA_SELLER_VKN: z.string().regex(/^\d{10,11}$/, 'VKN 10 hane veya TC 11 hane (sadece rakam)').optional(),
   NILVERA_SELLER_TITLE: z.string().optional(), // "PetStockPro Yazılım A.Ş." vs.
+
+  // e-Arşiv fatura serisi (InvoiceSerieOrNumber). Nilvera Portal'da firmaya tanımlı
+  // 3 karakterli seri (ör. "PSP"). Nilvera sıra numarasını otomatik üretir.
+  // Test hesabında "ABC" gibi hazır seriler tanımlıdır; production'da kendi serimiz.
+  NILVERA_SERIE: z.string().min(1).optional(),
 });
 
 export type NilveraConfig = z.infer<typeof nilveraEnvSchema>;
@@ -43,6 +48,7 @@ export function getNilveraConfig(): NilveraConfig {
     NILVERA_WEBHOOK_SECRET: emptyToUndefined(process.env.NILVERA_WEBHOOK_SECRET),
     NILVERA_SELLER_VKN: emptyToUndefined(process.env.NILVERA_SELLER_VKN),
     NILVERA_SELLER_TITLE: emptyToUndefined(process.env.NILVERA_SELLER_TITLE),
+    NILVERA_SERIE: emptyToUndefined(process.env.NILVERA_SERIE),
   });
 
   if (!parsed.success) {
