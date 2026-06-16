@@ -408,6 +408,10 @@ export default function LoginPage() {
                 </>
               )}
             </button>
+
+            <p className="mt-3 text-center text-[11.5px] leading-relaxed text-ink-4">
+              Giriş yaparak Üyelik Sözleşmesi ve KVKK Aydınlatma Metni&apos;ni kabul etmiş olursun.
+            </p>
           </form>
 
           <div className="mt-5 text-center text-[14.5px] text-ink-3">

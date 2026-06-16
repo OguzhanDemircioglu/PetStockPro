@@ -260,7 +260,7 @@ export default function RegisterPage() {
               </p>
             </div>
 
-            {/* KVKK Aydınlatma onayı (Madde 10) — zorunlu. AB veri işleme rızası KVKK dokümanında belirtilir. */}
+            {/* Üyelik Sözleşmesi + KVKK Aydınlatma onayı — zorunlu. AB veri işleme rızası KVKK dokümanında belirtilir. */}
             <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-line bg-line-soft px-3.5 py-3 text-xs leading-relaxed text-ink-2">
               <input
                 type="checkbox"
@@ -269,10 +269,24 @@ export default function RegisterPage() {
                 className="mt-0.5 h-[18px] w-[18px] flex-shrink-0 accent-cat"
               />
               <span>
-                <strong className="text-cart">KVKK Aydınlatma Metni</strong>&apos;ni okudum, kişisel verilerimin işlenmesini onaylıyorum (Md. 10).{' '}
-                <a href="/kvkk" className="font-bold text-cat hover:underline">
-                  Detay
+                <a
+                  href="/uyelik-sozlesmesi"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold text-cat hover:underline"
+                >
+                  Üyelik Sözleşmesi
                 </a>
+                &apos;ni ve{' '}
+                <a
+                  href="/kvkk"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold text-cat hover:underline"
+                >
+                  KVKK Aydınlatma Metni
+                </a>
+                &apos;ni okudum, kabul ediyorum.
               </span>
             </label>
 
