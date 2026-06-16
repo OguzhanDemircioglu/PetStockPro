@@ -5,10 +5,8 @@ import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
 import {
   branchAction,
   storefrontAction,
-  firstProductAction,
   type BranchState,
   type StorefrontState,
-  type FirstProductState,
 } from './actions';
 
 interface CityOption {
@@ -36,11 +34,13 @@ interface OnboardingWizardProps {
 }
 
 /**
- * Onboarding 3-Step Wizard — Sprint 3.0
+ * Onboarding 2-Step Wizard
  *
  * Step 1: İlk şube ekle (zorunlu — branches INSERT)
- * Step 2: İlk ürün ekle (opsiyonel — products + variant; atlanabilir)
- * Step 3: Vitrin profili (opsiyonel — companies.slug update; atlanabilir)
+ * Step 2: Vitrin profili (opsiyonel — companies.slug update; atlanabilir)
+ *
+ * (2026-06-16: "İlk ürün ekle" adımı kaldırıldı — ürünler sonradan Ürünler
+ * sayfasından eklenir, onboarding sürtünmesi azaltıldı.)
  *
  * Tüm adımlar başarıyla / atlanarak biter → /?onboarding=complete dashboard.
  */
@@ -51,7 +51,7 @@ export function OnboardingWizard({
   citiesList,
   catalogBrandCount: _catalogBrandCount, // 0026: kullanılmıyor, geriye uyum
 }: OnboardingWizardProps) {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2>(1);
   const [selectedCityId, setSelectedCityId] = useState<number | null>(null);
   const [districts, setDistricts] = useState<DistrictOption[]>([]);
   const [districtsLoading, setDistrictsLoading] = useState(false);
@@ -65,25 +65,14 @@ export function OnboardingWizard({
     return result;
   }, null);
 
-  const [productState, productFormAction, productPending] = useActionState<
-    FirstProductState | null,
-    FormData
-  >(async (prev, formData) => {
-    const result = await firstProductAction(prev, formData);
-    if (result.ok) setStep(3);
-    return result;
-  }, null);
-
   const [storefrontState, storefrontFormAction, storefrontPending] = useActionState<
     StorefrontState | null,
     FormData
   >(storefrontAction, null);
   useSwalOnError(branchState);
-  useSwalOnError(productState);
   useSwalOnError(storefrontState);
-  // Field-level kızartma — her form için ayrı hasError (3 wizard adımı).
+  // Field-level kızartma — her form için ayrı hasError (2 wizard adımı).
   const hasBranchError = !!branchState?.error;
-  const hasProductError = !!productState?.error;
   const hasStorefrontError = !!storefrontState?.error;
 
   // İl seçince ilçeleri çek. AbortController ile yarış kontrolü (kullanıcı il'i hızlı değiştirirse).
@@ -120,7 +109,7 @@ export function OnboardingWizard({
       <div className="w-full max-w-xl rounded-3xl bg-white p-10 shadow-[var(--shadow-lg)]">
         {/* Step indicator */}
         <div className="mb-8 flex items-center justify-between">
-          {[1, 2, 3].map((s) => (
+          {[1, 2].map((s) => (
             <div key={s} className="flex flex-1 items-center">
               <div
                 className={`grid h-9 w-9 place-items-center rounded-full text-sm font-bold ${
@@ -129,7 +118,7 @@ export function OnboardingWizard({
               >
                 {step > s ? '✓' : s}
               </div>
-              {s < 3 && (
+              {s < 2 && (
                 <div
                   className={`h-0.5 flex-1 ${step > s ? 'bg-cat' : 'bg-line-soft'}`}
                 />
@@ -285,113 +274,11 @@ export function OnboardingWizard({
           </div>
         )}
 
-        {/* STEP 2: İlk ürün (opsiyonel) */}
+        {/* STEP 2: Vitrin (opsiyonel) */}
         {step === 2 && (
           <div>
             <div className="mb-2 text-[13px] font-bold uppercase tracking-wider text-cat">
-              Adım 2 / 3 — Opsiyonel
-            </div>
-            <h1 className="text-2xl font-bold leading-tight tracking-tight text-cart">
-              İlk ürününü ekle
-            </h1>
-            <p className="mt-3 text-sm leading-relaxed text-ink-3">
-              Kataloga ilk ürünü kaydet — en sık sattığın bir ürün uygun (Royal Canin 2kg,
-              kedi kumu vs). Sonra Ürünler sayfasından daha fazla ekleyebilirsin.
-            </p>
-
-            <form action={productFormAction} className="mt-6 flex flex-col gap-4">
-              <div>
-                <label
-                  className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
-                  htmlFor="product-name"
-                >
-                  Ürün adı *
-                </label>
-                <input
-                  id="product-name"
-                  name="name"
-                  type="text"
-                  placeholder="Royal Canin Adult Kedi 2kg"
-                  required
-                  disabled={productPending}
-                  aria-invalid={hasProductError || undefined}
-                  className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label
-                    className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
-                    htmlFor="product-sku"
-                  >
-                    SKU *
-                  </label>
-                  <input
-                    id="product-sku"
-                    name="sku"
-                    type="text"
-                    placeholder="RC-AD-KEDI-2KG"
-                    required
-                    disabled={productPending}
-                    aria-invalid={hasProductError || undefined}
-                    className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 font-mono text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
-                    htmlFor="product-price"
-                  >
-                    Satış fiyatı (₺) *
-                  </label>
-                  <input
-                    id="product-price"
-                    name="salePrice"
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="180"
-                    required
-                    disabled={productPending}
-                    aria-invalid={hasProductError || undefined}
-                    className="w-full rounded-xl border-[1.5px] border-cat bg-white px-4 py-3 font-mono text-sm font-bold text-cart focus:outline-none focus:ring-4 focus:ring-cat/15"
-                  />
-                </div>
-              </div>
-
-              <div className="rounded-xl bg-paper px-4 py-3 text-[13px] text-ink-3">
-                💡 Detaylı bilgi (kategori, marka, alış fiyatı, barkod, görsel) sonradan
-                Ürünler sayfasından eklenebilir.
-              </div>
-
-              <button
-                type="submit"
-                disabled={productPending}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-cat to-cat-2 px-6 py-3.5 text-sm font-bold text-white shadow-[0_12px_28px_rgba(212,74,20,0.34)] transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
-              >
-                {productPending ? 'Kaydediliyor...' : 'Ürünü kaydet ve devam et →'}
-              </button>
-
-              <button
-                type="submit"
-                name="skip"
-                value="true"
-                disabled={productPending}
-                formNoValidate
-                className="text-center text-xs text-ink-4 hover:text-cart"
-              >
-                Sonra hallederim, atla →
-              </button>
-            </form>
-          </div>
-        )}
-
-        {/* STEP 3: Vitrin (opsiyonel) */}
-        {step === 3 && (
-          <div>
-            <div className="mb-2 text-[13px] font-bold uppercase tracking-wider text-cat">
-              Adım 3 / 3 — Opsiyonel
+              Adım 2 / 2 — Opsiyonel
             </div>
             <h1 className="text-2xl font-bold leading-tight tracking-tight text-cart">
               Vitrin profilini hazırla

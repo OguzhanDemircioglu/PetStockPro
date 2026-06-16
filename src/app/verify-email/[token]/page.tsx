@@ -3,7 +3,6 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { users } from '@/db/schema';
 import { verifyEmailToken } from '@/lib/auth/email-verification';
-import { claimPromoSlot } from '@/lib/promo/first-100';
 
 /**
  * Verify Email Token Handler — Server Component
@@ -67,16 +66,8 @@ export default async function VerifyEmailTokenPage({
     })
     .where(eq(users.id, user.id));
 
-  // İlk 100 Promo — sadece BAYI_SAHIBI (tenant sahibi) verify olunca claim et.
-  // Atomik UPDATE, idempotent (zaten claim edilmişse no-op).
-  if (user.companyId && user.role === 'BAYI_SAHIBI') {
-    try {
-      await claimPromoSlot(db, user.companyId);
-    } catch (e) {
-      // Promo claim hatası verify akışını bozmamalı (silent fail, log).
-      console.error('[verify-email] claimPromoSlot failed:', (e as Error).message);
-    }
-  }
+  // 2026-06-16: "İlk 100 PRO promosyonu" kaldırıldı — yeni hesaplar FREE başlar
+  // (ödeme testi FREE→PRO PayTR ile). Eskiden burada claimPromoSlot çağrılıyordu.
 
   return <VerifyResult status="success" email={user.email} />;
 }

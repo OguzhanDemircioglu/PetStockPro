@@ -1,12 +1,11 @@
 'use server';
 
 /**
- * Onboarding Server Actions — Sprint 2.6
+ * Onboarding Server Actions
  *
- * Wizard 3 adım (Sprint 2.6'da 2 + complete):
- *   1. branchAction → createFirstBranch
- *   2. storefrontAction → saveStorefront (opsiyonel)
- *   3. completeAction → completeOnboarding + redirect /
+ * Wizard 2 adım (2026-06-16: "İlk ürün" adımı kaldırıldı):
+ *   1. branchAction → createFirstBranch (zorunlu)
+ *   2. storefrontAction → saveStorefront + completeOnboarding (opsiyonel/atla)
  */
 
 import { redirect } from 'next/navigation';
@@ -17,7 +16,6 @@ import {
   saveStorefront,
   completeOnboarding,
 } from '@/lib/onboarding/actions';
-import { createProduct } from '@/lib/catalog/products';
 
 export interface BranchState {
   ok: boolean;
@@ -127,69 +125,4 @@ export async function storefrontAction(
 
   await completeOnboarding(session.user.id, db);
   redirect('/?onboarding=complete' as never);
-}
-
-// Sprint 3.0 — Onboarding 2. adım: İlk ürün (opsiyonel — atla ya da ekle, ikisi de Step 3'e geçer)
-
-export interface FirstProductState {
-  ok: boolean;
-  error: string | null;
-  /** true ise wizard kullanıcıya success göstermez, doğrudan Step 3'e geçer */
-  skipped: boolean;
-}
-
-export async function firstProductAction(
-  _prevState: FirstProductState | null,
-  formData: FormData,
-): Promise<FirstProductState> {
-  const session = await auth();
-  if (!session?.user?.id || !session.user.companyId) {
-    redirect('/login' as never);
-  }
-
-  const skip = formData.get('skip') === 'true';
-  if (skip) {
-    return { ok: true, error: null, skipped: true };
-  }
-
-  const name = formData.get('name');
-  const sku = formData.get('sku');
-  const salePrice = formData.get('salePrice');
-
-  if (typeof name !== 'string' || typeof sku !== 'string' || typeof salePrice !== 'string') {
-    return { ok: false, error: 'Ürün adı, SKU ve satış fiyatı zorunlu', skipped: false };
-  }
-
-  const result = await createProduct(
-    session.user.companyId,
-    {
-      name,
-      variant: {
-        valueLabel: 'Standart',
-        sku,
-        salePrice,
-        threshold: 5,
-      },
-    },
-    db,
-  );
-
-  if (!result.ok) {
-    const msg: string = (() => {
-      if (result.reason === 'plan_limit_exceeded') {
-        // Onboarding'de plan limit aşılması teorik olarak imkansız (yeni tenant 0 ürün),
-        // ama tip güvenliği için handle et.
-        return `Plan limit doldu (${result.planContext?.currentCount}/${result.planContext?.limit}).`;
-      }
-      return ({
-        invalid_input: result.issues?.[0] ?? 'Geçersiz alan',
-        sku_taken: 'Bu SKU zaten kullanılıyor',
-        slug_taken: 'Aynı isimde ürün var',
-        unknown: 'Ürün oluşturulamadı',
-      } as Record<string, string>)[result.reason] ?? 'Ürün oluşturulamadı';
-    })();
-    return { ok: false, error: msg, skipped: false };
-  }
-
-  return { ok: true, error: null, skipped: false };
 }
