@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import Image from 'next/image';
 import { Package, Store, BarChart3, Bot, type LucideIcon } from 'lucide-react';
 import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
@@ -36,6 +36,9 @@ export default function RegisterPage() {
   useSwalOnError(state);
   // Field-level kızartma — error varsa shopName/email/password input'una aria-invalid set et.
   const hasError = !!state?.error;
+  // Şifre göster/gizle — her iki alan bağımsız (login ile aynı desen).
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
 
   return (
     <div className="grid h-screen w-screen grid-cols-1 overflow-hidden md:grid-cols-2">
@@ -170,34 +173,88 @@ export default function RegisterPage() {
               <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3" htmlFor="password">
                 Şifre
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="En az 8 karakter, 1 büyük + 1 rakam"
-                autoComplete="new-password"
-                required
-                disabled={pending}
-                aria-invalid={hasError || undefined}
-                className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink transition-all focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="En az 8 karakter, 1 büyük + 1 rakam"
+                  autoComplete="new-password"
+                  required
+                  disabled={pending}
+                  aria-invalid={hasError || undefined}
+                  className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 pr-12 text-sm text-ink transition-all focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+                />
+                <button
+                  type="button"
+                  data-testid="password-toggle"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
+                  aria-pressed={showPassword}
+                  title={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
+                  tabIndex={-1}
+                  disabled={pending}
+                  className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-ink-3 transition-colors hover:bg-cat-soft hover:text-cat focus:outline-none focus:ring-2 focus:ring-cat/30 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {showPassword ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                      <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                      <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                      <line x1="2" y1="2" x2="22" y2="22" />
+                    </svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
 
             <div>
               <label className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3" htmlFor="passwordConfirm">
                 Şifre tekrar
               </label>
-              <input
-                id="passwordConfirm"
-                name="passwordConfirm"
-                type="password"
-                placeholder="Aynı şifreyi tekrar gir"
-                autoComplete="new-password"
-                required
-                disabled={pending}
-                aria-invalid={hasError || undefined}
-                className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink transition-all focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
-              />
+              <div className="relative">
+                <input
+                  id="passwordConfirm"
+                  name="passwordConfirm"
+                  type={showPasswordConfirm ? 'text' : 'password'}
+                  placeholder="Aynı şifreyi tekrar gir"
+                  autoComplete="new-password"
+                  required
+                  disabled={pending}
+                  aria-invalid={hasError || undefined}
+                  className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 pr-12 text-sm text-ink transition-all focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
+                />
+                <button
+                  type="button"
+                  data-testid="password-confirm-toggle"
+                  onClick={() => setShowPasswordConfirm((v) => !v)}
+                  aria-label={showPasswordConfirm ? 'Şifreyi gizle' : 'Şifreyi göster'}
+                  aria-pressed={showPasswordConfirm}
+                  title={showPasswordConfirm ? 'Şifreyi gizle' : 'Şifreyi göster'}
+                  tabIndex={-1}
+                  disabled={pending}
+                  className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-ink-3 transition-colors hover:bg-cat-soft hover:text-cat focus:outline-none focus:ring-2 focus:ring-cat/30 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {showPasswordConfirm ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                      <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                      <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                      <line x1="2" y1="2" x2="22" y2="22" />
+                    </svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </div>
               <p className="mt-1 text-[11.5px] text-ink-4">
                 Yanlış yazımdan korunmak için ikinci kez gir — şifreler aynı olmalı.
               </p>
