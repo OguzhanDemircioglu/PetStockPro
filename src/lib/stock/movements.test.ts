@@ -196,7 +196,7 @@ describe('transferSchema', () => {
 
 // getProductLimitContext (db.execute) mock — ürün limiti AŞILMADI (5/500).
 const okLimitExecute = () =>
-  vi.fn().mockResolvedValue([{ plan: 'PRO', promo_eligible: false, promo_until: null, product_count: 5 }]);
+  vi.fn().mockResolvedValue([{ plan: 'PRO', product_count: 5 }]);
 
 describe('recordStockIn', () => {
   it('happy path — yeni inventory satırı (ilk giriş)', async () => {
@@ -304,7 +304,7 @@ describe('recordStockIn', () => {
     // PRO+ → PRO downgrade sonrası 700 ürün, limit 500 → over-limit kilidi.
     const execute = vi
       .fn()
-      .mockResolvedValue([{ plan: 'PRO', promo_eligible: false, promo_until: null, product_count: 700 }]);
+      .mockResolvedValue([{ plan: 'PRO', product_count: 700 }]);
     const db = { execute } as unknown as DbClient;
 
     const result = await recordStockIn(

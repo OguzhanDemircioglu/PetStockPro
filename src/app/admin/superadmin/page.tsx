@@ -3,7 +3,6 @@ import { db } from '@/lib/db/client';
 import { requireSuperadmin } from '@/lib/superadmin/access';
 import { listAllTenants, getSystemStats } from '@/lib/superadmin/tenants';
 import { getAiSystemStats } from '@/lib/ai/stats';
-import { getPromoSystemStats, PROMO_SLOT_LIMIT } from '@/lib/promo/first-100';
 import { getDatabaseStats } from '@/lib/superadmin/db-stats';
 import {
   getVitrinEventStats,
@@ -29,7 +28,7 @@ const STOREFRONT_LABELS: Record<string, { label: string; cls: string }> = {
 export default async function SuperadminTenantsPage() {
   await requireSuperadmin();
 
-  const [tenants, stats, dbStats, vitrinStats, activityStats, aiStats, promoStats] =
+  const [tenants, stats, dbStats, vitrinStats, activityStats, aiStats] =
     await Promise.all([
       listAllTenants(db, 50),
       getSystemStats(db),
@@ -37,7 +36,6 @@ export default async function SuperadminTenantsPage() {
       getVitrinEventStats(db, 7),
       getTenantActivityStats(db),
       getAiSystemStats(db, 7),
-      getPromoSystemStats(db),
     ]);
 
   const usageDanger = dbStats.usagePct > 80;
@@ -157,37 +155,6 @@ export default async function SuperadminTenantsPage() {
         />
       </section>
 
-      <ZoneLabel emoji="🎉" label={`İlk 100 Promosyon · ${promoStats.totalSlotsUsed}/${PROMO_SLOT_LIMIT} slot`} />
-
-      <section
-        data-testid="promo-first-100-metrics"
-        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
-      >
-        <KpiBold
-          tone="arrow"
-          label="Kalan slot"
-          value={promoStats.slotsRemaining}
-          sub={`${promoStats.totalSlotsUsed}/${PROMO_SLOT_LIMIT} kullanıldı`}
-        />
-        <KpiBold
-          tone="bars"
-          label="Aktif promo"
-          value={promoStats.activePromos}
-          sub="PRO ücretsiz devam ediyor"
-        />
-        <KpiBold
-          tone="cart"
-          label="Dolan promo"
-          value={promoStats.expiredHandled}
-          sub="plan FREE'ye revert"
-        />
-        <KpiBold
-          tone={promoStats.expiredPending > 0 ? 'cat' : 'arrow'}
-          label="Beklemede"
-          value={promoStats.expiredPending}
-          sub={promoStats.expiredPending > 0 ? '⚠ cron T+0 henüz revert etmedi' : 'queue temiz'}
-        />
-      </section>
 
       <ZoneLabel emoji="🤖" label="AI Asistanı · Son 7 gün" />
 

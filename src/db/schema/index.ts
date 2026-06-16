@@ -245,17 +245,6 @@ export const companies = petstockproSchema.table('companies', {
   temporaryBranchLimitOverride: integer('temporary_branch_limit_override'),
   temporaryBranchLimitOverrideUntil: timestamp('temporary_branch_limit_override_until', { withTimezone: true }),
 
-  // 2026-05-22 — İlk 100 Promo (Migration 0028)
-  // E-posta verify olan ilk 100 tenant otomatik 3 ay PRO ücretsiz promosyon alır.
-  // T+0'da cron plan='PRO' → 'FREE' revert eder. Mevcut FREE limit'leri devreye girer,
-  // reject mesajları "PRO promo bitti" CTA ile güçlendirilir. UI banner sadece BAYI_SAHIBI'a.
-  promoFirst100Eligible: boolean('promo_first_100_eligible').notNull().default(false),
-  promoFirst100Until: timestamp('promo_first_100_until', { withTimezone: true }),
-  promoFirst100SlotNumber: integer('promo_first_100_slot_number'),  // 1-100 audit
-  promoExpiredHandledAt: timestamp('promo_expired_handled_at', { withTimezone: true }),  // T+0 revert idempotent
-  promoReminder7Sent: boolean('promo_reminder_7_sent').notNull().default(false),  // T-7 email idempotent
-  promoReminder1Sent: boolean('promo_reminder_1_sent').notNull().default(false),  // T-1 email idempotent
-
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

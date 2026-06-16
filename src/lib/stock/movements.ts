@@ -22,7 +22,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { DbClient } from '@/lib/db/client';
-import { getProductLimitContext } from '@/lib/promo/first-100';
+import { getProductLimitContext } from '@/lib/catalog/product-limit';
 import {
   stockMovements,
   branchInventory,

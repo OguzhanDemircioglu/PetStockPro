@@ -12,7 +12,7 @@ import { z } from 'zod';
 import { makeSlug } from '@/lib/utils/slug';
 import { moderateFields, type ModerationReason } from '@/lib/moderation/check';
 import type { DbClient } from '@/lib/db/client';
-import { getProductLimitContext } from '@/lib/promo/first-100';
+import { getProductLimitContext } from '@/lib/catalog/product-limit';
 import {
   products,
   productVariants,
@@ -65,8 +65,6 @@ export type CreateProductResult =
         currentCount: number;
         limit: number;
         plan: string;
-        hadPromo: boolean;
-        promoActive: boolean;
       };
     };
 
@@ -82,9 +80,8 @@ export async function createProduct(
   }
   const data = parsed.data;
 
-  // Plan limit guard — First-100 Promo (Migration 0028):
-  // Promo aktifken plan='PRO' (limit 500). Promo bittikten sonra plan='FREE' (limit 50).
-  // Limit aşılırsa reject + planContext (UI ayrı SWAL: "PRO promo bitti" vs generic).
+  // Plan limit guard: tenant ürün limitini (FREE 50 / PRO 500 / PRO+ ∞) aşmışsa
+  // reject + planContext (UI ayrı SWAL: PRO limit vs generic FREE).
   const planCtx = await getProductLimitContext(db, companyId);
   if (planCtx.exceeded) {
     return {
@@ -94,8 +91,6 @@ export async function createProduct(
         currentCount: planCtx.currentCount,
         limit: planCtx.limit,
         plan: planCtx.plan,
-        hadPromo: planCtx.hadPromo,
-        promoActive: planCtx.promoActive,
       },
     };
   }

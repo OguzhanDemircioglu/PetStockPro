@@ -13,7 +13,6 @@ import { POST as cleanupLogs } from '../cleanup-old-logs/route';
 import { POST as billingRenew } from '../billing-renew/route';
 import { POST as invoiceReconcile } from '../invoice-reconcile/route';
 import { POST as dailySummary } from '../daily-summary/route';
-import { POST as promoCheck } from '../promo-first-100-check/route';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -25,7 +24,6 @@ const JOBS: ReadonlyArray<readonly [string, (req: Request) => Promise<Response>]
   ['cleanup-old-logs', cleanupLogs],
   ['errors-threshold-check', errorsThreshold],
   ['daily-summary', dailySummary],
-  ['promo-first-100-check', promoCheck],
   ['sitemap-rebuild', sitemapRebuild],
 ];
 
