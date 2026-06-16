@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { StagingDemoButton } from '../staging-demo-button';
 
 export const metadata: Metadata = {
@@ -11,6 +12,13 @@ export const metadata: Metadata = {
 };
 
 export default function YapimAsamasindaPage() {
+  // Staging kapalıyken (lansman/production) "yapım aşamasında" sayfası erişilmez —
+  // ziyaretçi /login'e yönlenir. Yalnızca NEXT_PUBLIC_STAGING_MODE=true iken
+  // (lansman öncesi mockup önizleme) görünür.
+  if (process.env.NEXT_PUBLIC_STAGING_MODE !== 'true') {
+    redirect('/login' as never);
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-paper to-cat-soft/30">
       <div className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center px-6 py-12 text-center">
