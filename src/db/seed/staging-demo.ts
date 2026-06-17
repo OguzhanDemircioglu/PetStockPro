@@ -27,6 +27,7 @@ import {
   products,
   productVariants,
   branchInventory,
+  stockMovements,
   categories,
 } from '../schema';
 import { hashPassword } from '../../lib/auth/password';
@@ -191,7 +192,7 @@ async function ensureTenant(t: DemoTenant): Promise<{ created: boolean; skipped:
 
   // Owner user
   const passwordHash = await hashPassword(DEMO_PASSWORD);
-  await db.insert(users).values({
+  const [owner] = await db.insert(users).values({
     email: t.ownerEmail,
     passwordHash,
     role: 'BAYI_SAHIBI',
@@ -200,7 +201,7 @@ async function ensureTenant(t: DemoTenant): Promise<{ created: boolean; skipped:
     emailVerifiedAt: new Date(),
     onboardingCompletedAt: new Date(),
     kvkkConsentedAt: new Date(),
-  });
+  }).returning({ id: users.id });
 
   // Branch
   const [branch] = await db.insert(branches).values({
@@ -303,6 +304,21 @@ async function ensureTenant(t: DemoTenant): Promise<{ created: boolean; skipped:
       branchId: branch.id,
       variantId: variant.id,
       stockQty: p.stockQty,
+      lastReceivedAt: new Date(),
+    });
+    // Açılış stoğu → ledger backing. Reconcile (Faz 3) için her envanter satırının
+    // karşılığında stock_movement olmalı; aksi halde "envanter var, ledger yok" drift'i.
+    await db.insert(stockMovements).values({
+      companyId: company.id,
+      branchId: branch.id,
+      variantId: variant.id,
+      type: 'stock_in',
+      quantity: p.stockQty,
+      beforeQty: 0,
+      afterQty: p.stockQty,
+      unitCost: p.costPrice,
+      note: 'Açılış stoğu (demo seed)',
+      createdById: owner.id,
     });
     productsAdded++;
   }

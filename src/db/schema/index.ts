@@ -775,6 +775,8 @@ export const stockMovements = petstockproSchema.table('stock_movements', {
   index('idx_stock_movements_transfer_group').on(t.transferGroupId),
   index('idx_stock_movements_supplier').on(t.supplierId),
   index('idx_stock_movements_type').on(t.type, t.subtype),
+  // Faz 3 (migration 0034) — reconcile join (branch+variant) için composite.
+  index('idx_stock_movements_variant_branch').on(t.variantId, t.branchId),
   // Faz 1A (migration 0032) — DB-seviyesi invariant'lar.
   check('chk_sm_credit_requires_customer', sql`${t.paymentMethod} IS DISTINCT FROM 'credit' OR ${t.customerRef} IS NOT NULL`),
   check('chk_sm_money_nonneg', sql`(${t.unitCost} IS NULL OR ${t.unitCost} >= 0) AND (${t.unitPrice} IS NULL OR ${t.unitPrice} >= 0) AND (${t.discountAmount} IS NULL OR ${t.discountAmount} >= 0)`),

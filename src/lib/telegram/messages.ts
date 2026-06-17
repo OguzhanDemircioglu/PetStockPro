@@ -480,3 +480,54 @@ export function buildRetentionCleanupSummary(
     disableNotification: severity === 'info' && input.totalDeleted < 10_000,
   };
 }
+
+// ─────────────────────────────────────────────────────────────────
+// Faz 3 — Stok bütünlüğü reconcile drift alert
+// ─────────────────────────────────────────────────────────────────
+
+export interface StockDriftAlertInput {
+  stockDriftCount: number;
+  counterDriftCount: number;
+  stockDriftSample: Array<{
+    branchId: string;
+    variantId: string;
+    cached: number;
+    ledgerSum: number;
+    diff: number;
+  }>;
+  triggeredAt: string;
+  panelUrl?: string;
+}
+
+/**
+ * Ledger ↔ cache sapması bulununca critical alert. Sapma = sistemin çekirdek
+ * vaadi ("kayıtlı stok = gerçek") bozulmuş demek → acil incele.
+ */
+export function buildStockDriftAlert(input: StockDriftAlertInput): TelegramSendRequest {
+  const lines: string[] = [
+    '🚨 <b>Stok tutarlılık sapması (reconcile)</b>',
+    '',
+    `<b>Zaman:</b> <code>${input.triggeredAt}</code>`,
+    `<b>Ledger↔envanter sapması:</b> ${input.stockDriftCount} satır`,
+    `<b>Sayaç (totalStockQty) sapması:</b> ${input.counterDriftCount} ürün`,
+    '',
+  ];
+  for (const r of input.stockDriftSample.slice(0, 8)) {
+    lines.push(
+      `· variant <code>${r.variantId.slice(0, 8)}</code> @ şube <code>${r.branchId.slice(0, 8)}</code>: cache ${r.cached} ≠ ledger ${r.ledgerSum} (Δ${r.diff})`,
+    );
+  }
+  lines.push(
+    '',
+    '<i>Ledger tek doğruluk kaynağı. Cache saptı — applyInventoryChange dışı bir yazma/bug olabilir. İncele; AUTO-REPAIR yok.</i>',
+  );
+  if (input.panelUrl) {
+    lines.push('', `<a href="${input.panelUrl}">Süperadmin panelinde gör →</a>`);
+  }
+  return {
+    text: lines.filter(Boolean).join('\n'),
+    parseMode: 'HTML',
+    severity: 'critical',
+    disableNotification: false,
+  };
+}

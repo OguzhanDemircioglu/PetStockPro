@@ -13,6 +13,7 @@ import { POST as cleanupLogs } from '../cleanup-old-logs/route';
 import { POST as billingRenew } from '../billing-renew/route';
 import { POST as invoiceReconcile } from '../invoice-reconcile/route';
 import { POST as dailySummary } from '../daily-summary/route';
+import { POST as reconcileStock } from '../reconcile-stock/route';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -25,6 +26,7 @@ const JOBS: ReadonlyArray<readonly [string, (req: Request) => Promise<Response>]
   ['errors-threshold-check', errorsThreshold],
   ['daily-summary', dailySummary],
   ['sitemap-rebuild', sitemapRebuild],
+  ['reconcile-stock', reconcileStock],
 ];
 
 async function handler(req: Request): Promise<Response> {
