@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
@@ -106,6 +106,7 @@ export async function addBrandAction(
 
   revalidatePath('/admin/brands');
   revalidatePath('/admin/products');
+  updateTag('brands');
   redirect(`/admin/brands?created=success${moderationRedirectSuffix(result.moderationFlags)}` as never);
 }
 
@@ -166,6 +167,7 @@ export async function updateBrandAction(
 
   revalidatePath('/admin/brands');
   revalidatePath('/admin/products');
+  updateTag('brands');
   redirect(`/admin/brands?updated=success${moderationRedirectSuffix(result.moderationFlags)}` as never);
 }
 
@@ -205,6 +207,7 @@ export async function deleteBrandAction(brandId: string): Promise<BrandActionSta
 
   revalidatePath('/admin/brands');
   revalidatePath('/admin/products');
+  updateTag('brands');
   return {
     ok: true,
     brandId,

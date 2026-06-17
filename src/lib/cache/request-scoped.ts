@@ -26,6 +26,8 @@ import {
   products,
   branchInventory,
   notifications,
+  brands,
+  categories,
 } from '@/db/schema';
 
 /**
@@ -132,4 +134,45 @@ export const getAllCities = unstable_cache(
   },
   ['cities-all'],
   { revalidate: 86400, tags: ['cities'] },
+);
+
+/**
+ * Global kategoriler — Migration 0026'dan beri tenant'tan bağımsız (ortak referans).
+ * Statik veri → cross-request cache, 1 saat revalidate. Ürün formu (new + edit)
+ * her açılışta DB sorgusu yerine cache'ten okur. Süperadmin kategori CRUD'unda
+ * `revalidateTag('categories')` ile anında tazelenir.
+ * Faz 2B (PLAN-MIMARI-SAGLAMLASTIRMA-VE-STATE) — getAllCities pattern'i.
+ */
+export const getCachedCategories = unstable_cache(
+  async () => {
+    return db
+      .select({
+        id: categories.id,
+        name: categories.name,
+        emoji: categories.emoji,
+        slug: categories.slug,
+        parentId: categories.parentId,
+        displayOrder: categories.displayOrder,
+        sktRequired: categories.sktRequired,
+      })
+      .from(categories)
+      .orderBy(categories.displayOrder);
+  },
+  ['categories-all'],
+  { revalidate: 3600, tags: ['categories'] },
+);
+
+/**
+ * Global markalar — Migration 0026'dan beri tenant'tan bağımsız.
+ * Süperadmin marka CRUD'unda `revalidateTag('brands')` ile tazelenir.
+ */
+export const getCachedBrands = unstable_cache(
+  async () => {
+    return db
+      .select({ id: brands.id, name: brands.name, slug: brands.slug, logoUrl: brands.logoUrl })
+      .from(brands)
+      .orderBy(brands.name);
+  },
+  ['brands-all'],
+  { revalidate: 3600, tags: ['brands'] },
 );

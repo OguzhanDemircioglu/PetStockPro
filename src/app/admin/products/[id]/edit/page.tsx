@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
-import { brands, categories } from '@/db/schema';
+import { getCachedCategories, getCachedBrands } from '@/lib/cache/request-scoped';
 import { getProductDetail } from '@/lib/catalog/products';
 import { listVariants, listBranchOptions } from '@/lib/catalog/variants';
 import { validateForStorefront } from '@/lib/catalog/storefront';
@@ -29,14 +29,8 @@ export default async function EditProductPage({
 
   const [categoryList, brandList, variants, branchOptions, validation, images] =
     await Promise.all([
-      db
-        .select({ id: categories.id, name: categories.name, emoji: categories.emoji })
-        .from(categories)
-        .orderBy(categories.displayOrder),
-      db
-        .select({ id: brands.id, name: brands.name })
-        .from(brands)
-        .orderBy(brands.name),
+      getCachedCategories(),
+      getCachedBrands(),
       listVariants(session.user.companyId, id, db),
       listBranchOptions(session.user.companyId, db),
       // Sprint 3.3 aktif — requireImage=true ile vitrin'e açmak için en az 1 görsel zorunlu

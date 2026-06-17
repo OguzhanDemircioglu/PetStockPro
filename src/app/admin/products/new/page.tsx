@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
-import { brands, categories } from '@/db/schema';
+import { getCachedCategories, getCachedBrands } from '@/lib/cache/request-scoped';
 import { ProductForm } from './form';
 
 /**
@@ -21,20 +20,8 @@ export default async function NewProductPage() {
   }
 
   const [categoryList, brandList] = await Promise.all([
-    db
-      .select({
-        id: categories.id,
-        name: categories.name,
-        emoji: categories.emoji,
-        slug: categories.slug,
-        parentId: categories.parentId,
-      })
-      .from(categories)
-      .orderBy(categories.displayOrder),
-    db
-      .select({ id: brands.id, name: brands.name })
-      .from(brands)
-      .orderBy(brands.name),
+    getCachedCategories(),
+    getCachedBrands(),
   ]);
 
   // R2 public URL'i server-side env'den oku → client component'e prop olarak geç.

@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
@@ -107,6 +107,7 @@ export async function addCategoryAction(
 
   revalidatePath('/admin/categories');
   revalidatePath('/admin/products');
+  updateTag('categories');
   redirect(`/admin/categories?created=success${moderationRedirectSuffix(result.moderationFlags)}` as never);
 }
 
@@ -165,6 +166,7 @@ export async function updateCategoryAction(
 
   revalidatePath('/admin/categories');
   revalidatePath('/admin/products');
+  updateTag('categories');
   redirect(`/admin/categories?updated=success${moderationRedirectSuffix(result.moderationFlags)}` as never);
 }
 
@@ -204,6 +206,7 @@ export async function deleteCategoryAction(
 
   revalidatePath('/admin/categories');
   revalidatePath('/admin/products');
+  updateTag('categories');
   return {
     ok: true,
     categoryId,
