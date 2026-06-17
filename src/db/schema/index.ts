@@ -20,6 +20,7 @@ import {
   jsonb,
   index,
   uniqueIndex,
+  check,
   date,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
@@ -656,6 +657,8 @@ export const productVariants = petstockproSchema.table('product_variants', {
   uniqueIndex('idx_variants_company_sku').on(t.companyId, t.sku),
   index('idx_variants_product').on(t.productId),
   index('idx_variants_barcode').on(t.barcode),
+  // Faz 1A (migration 0032) — DB-seviyesi invariant: fiyatlar negatif olamaz.
+  check('chk_pv_prices_nonneg', sql`${t.costPrice} >= 0 AND ${t.salePrice} >= 0`),
 ]);
 
 /**
@@ -704,6 +707,8 @@ export const branchInventory = petstockproSchema.table('branch_inventory', {
   uniqueIndex('idx_branch_inventory_unique').on(t.branchId, t.variantId),
   index('idx_branch_inventory_company').on(t.companyId),
   index('idx_branch_inventory_low').on(t.branchId, t.stockQty),
+  // Faz 1A (migration 0032) — DB-seviyesi invariant: stok eksiye düşemez.
+  check('chk_bi_stock_qty_nonneg', sql`${t.stockQty} >= 0`),
 ]);
 
 /**
@@ -770,6 +775,9 @@ export const stockMovements = petstockproSchema.table('stock_movements', {
   index('idx_stock_movements_transfer_group').on(t.transferGroupId),
   index('idx_stock_movements_supplier').on(t.supplierId),
   index('idx_stock_movements_type').on(t.type, t.subtype),
+  // Faz 1A (migration 0032) — DB-seviyesi invariant'lar.
+  check('chk_sm_credit_requires_customer', sql`${t.paymentMethod} IS DISTINCT FROM 'credit' OR ${t.customerRef} IS NOT NULL`),
+  check('chk_sm_money_nonneg', sql`(${t.unitCost} IS NULL OR ${t.unitCost} >= 0) AND (${t.unitPrice} IS NULL OR ${t.unitPrice} >= 0) AND (${t.discountAmount} IS NULL OR ${t.discountAmount} >= 0)`),
 ]);
 
 // ═══════════════════════════════════════════════════════════════
