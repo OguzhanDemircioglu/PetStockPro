@@ -8,27 +8,44 @@ if (!process.env.DATABASE_URL) {
 
 /**
  * Postgres bağlantı havuzu.
- * Supabase Frankfurt (eu-central-1) hedefli, search_path=petstockpro.
  *
- * Connection pooling stratejisi:
- * - Cloudflare Workers'da Hyperdrive kullanılacak (production)
- * - Local dev'de direkt postgres-js
+ * Topoloji (2026-06-17):
+ * - PRODUCTION → Supabase (Vercel serverless). Serverless'ta DIRECT bağlantı
+ *   (db.<ref>.supabase.co:5432) önerilmez — her instance kendi bağlantısını
+ *   açar, çok instance = bağlantı fırtınası ("too many connections"). Vercel
+ *   DATABASE_URL'i Supabase **transaction-mode pooler**'a ayarlanmalı:
+ *   aws-0-<region>.pooler.supabase.com:6543 (user: postgres.<ref>).
+ * - LOCAL DEV → Aiven (direct / session mode).
  *
- * NOT: LOCAL_DB_* env vars `.env`'de rezerve — production'a çıktıktan sonra
- * local Aiven/Postgres'e geçiş için. Şu an aktif değil.
+ * `prepare` connection tipine göre OTOMATİK:
+ * - Transaction-mode pooler (pgBouncer/Supavisor): prepared statement'lar
+ *   paylaşılan bağlantıda çakışır ("prepared statement already exists") →
+ *   prepare KAPALI olmalı.
+ * - Direct/session (Aiven local, Supabase direct): prepare AÇIK — Postgres plan
+ *   cache, per-request planlama 4-12ms → <1ms.
  */
-/**
- * Tur 3 (P0-3): `prepare: true` aktive — Postgres query plan cache,
- * per-request planning 4-12ms → <1ms. Production'da Cloudflare Hyperdrive
- * (Workers) prepared statements destekler. Local dev'de Supabase direct
- * connection (PgBouncer session mode) prepare destekler. PgBouncer transaction
- * mode için DATABASE_URL'e `?pgbouncer=true` query param eklenir.
- */
+function isTransactionPooler(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return (
+      /pooler\./.test(u.hostname) ||                  // Supabase Supavisor
+      u.port === '6543' ||                            // pgBouncer transaction portu
+      u.searchParams.get('pgbouncer') === 'true'
+    );
+  } catch {
+    return false;
+  }
+}
+
+const pooled = isTransactionPooler(process.env.DATABASE_URL);
+
 const queryClient = postgres(process.env.DATABASE_URL, {
-  max: 10,
+  // Serverless: instance başına küçük havuz. Pooler arkasında multiplex edildiği
+  // için 1 yeter; direct'te 3 (önceki max:10 serverless'ta bağlantı fırtınası riski).
+  max: pooled ? 1 : 3,
   idle_timeout: 20,
   connect_timeout: 10,
-  prepare: true,
+  prepare: !pooled,
   connection: {
     search_path: 'petstockpro,public',
   },
