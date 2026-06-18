@@ -14,7 +14,7 @@ import { and, asc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { moderateFields } from '@/lib/moderation/check';
 import type { ModerationFlagsResult } from '@/lib/moderation/redirect-suffix';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { suppliers, stockMovements } from '@/db/schema';
 
 // ─────────────────────────────────────────────────────────────────
@@ -41,7 +41,7 @@ export interface SupplierListItem {
 
 export async function listSuppliers(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<SupplierListItem[]> {
   return db
     .select({
@@ -75,7 +75,7 @@ export async function listSuppliers(
 export async function getSupplierDetail(
   companyId: string,
   supplierId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<SupplierListItem | null> {
   const rows = await listSuppliers(companyId, db);
   return rows.find((s) => s.id === supplierId) ?? null;
@@ -135,7 +135,7 @@ export type AddSupplierResult =
 export async function addSupplier(
   companyId: string,
   input: SupplierInput,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<AddSupplierResult> {
   const parsed = supplierSchema.safeParse(input);
   if (!parsed.success) {
@@ -206,7 +206,7 @@ export async function updateSupplier(
   companyId: string,
   supplierId: string,
   input: SupplierInput,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<UpdateSupplierResult> {
   const parsed = supplierSchema.safeParse(input);
   if (!parsed.success) {
@@ -279,7 +279,7 @@ export async function setSupplierActive(
   companyId: string,
   supplierId: string,
   active: boolean,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<SetSupplierActiveResult> {
   const existing = await db
     .select({ id: suppliers.id })

@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import {
   addSupplier,
   updateSupplier,
@@ -74,11 +75,14 @@ export async function addSupplierAction(
 ): Promise<SupplierActionState> {
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+  const companyId = session.user.companyId;
 
   const input = parseFormInput(formData);
   if (!input) return { ...EMPTY, message: 'Tedarikçi adı zorunlu' };
 
-  const result = await addSupplier(session.user.companyId, input, db);
+  const result = await withTenant(companyId, (tx) =>
+    addSupplier(companyId, input, tx),
+  );
   if (!result.ok) {
     return {
       ...EMPTY,
@@ -124,16 +128,14 @@ export async function updateSupplierAction(
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
 
+  const companyId = session.user.companyId;
   const input = parseFormInput(formData);
   if (!input) {
     return { ...EMPTY, supplierId, message: 'Tedarikçi adı zorunlu' };
   }
 
-  const result = await updateSupplier(
-    session.user.companyId,
-    supplierId,
-    input,
-    db,
+  const result = await withTenant(companyId, (tx) =>
+    updateSupplier(companyId, supplierId, input, tx),
   );
   if (!result.ok) {
     return {
@@ -179,12 +181,10 @@ export async function toggleSupplierActiveAction(
 ): Promise<SupplierActionState> {
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+  const companyId = session.user.companyId;
 
-  const result = await setSupplierActive(
-    session.user.companyId,
-    supplierId,
-    active,
-    db,
+  const result = await withTenant(companyId, (tx) =>
+    setSupplierActive(companyId, supplierId, active, tx),
   );
   if (!result.ok) {
     return {

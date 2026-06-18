@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { listSuppliers } from '@/lib/suppliers/manage';
 import { xlsxResponse } from '@/lib/utils/xlsx';
 import { companies } from '@/db/schema';
@@ -18,14 +18,17 @@ export async function GET() {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const [items, [tenant]] = await Promise.all([
-    listSuppliers(session.user.companyId, db),
-    db
-      .select({ name: companies.name })
-      .from(companies)
-      .where(eq(companies.id, session.user.companyId))
-      .limit(1),
-  ]);
+  const companyId = session.user.companyId;
+  const [items, [tenant]] = await withTenant(companyId, (tx) =>
+    Promise.all([
+      listSuppliers(companyId, tx),
+      tx
+        .select({ name: companies.name })
+        .from(companies)
+        .where(eq(companies.id, companyId))
+        .limit(1),
+    ]),
+  );
 
   return xlsxResponse(`tedarikciler-${new Date().toISOString().slice(0, 10)}`, {
     sheetName: 'Tedarikçiler',

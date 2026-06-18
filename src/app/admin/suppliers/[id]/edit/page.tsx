@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { getSupplierDetail } from '@/lib/suppliers/manage';
 import { SupplierForm } from '../../supplier-form';
 import { updateSupplierAction } from '../../actions';
@@ -15,7 +15,8 @@ export default async function EditSupplierPage({
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
 
-  const supplier = await getSupplierDetail(session.user.companyId, id, db);
+  const companyId = session.user.companyId;
+  const supplier = await withTenant(companyId, (tx) => getSupplierDetail(companyId, id, tx));
   if (!supplier) notFound();
 
   const boundUpdate = updateSupplierAction.bind(null, id);

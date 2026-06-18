@@ -62,7 +62,13 @@ Denetimin #1 bulgusu için **ucuz tripwire**: RLS dekoratif (owner rolü bypass)
 
 > 4A unutulan filtreyi CI'da yakalar ama runtime sızıntıyı durdurmaz. 4B yapısal duvar: unutulan `WHERE company_id` → **0 satır** (fail-closed). `tenant.ts` listesi hazır girdi.
 
-**🟡 4B KOD HAZIR — UYGULANMADI (2026-06-18, "önce güvenli kod hazırlığı" kararı).** Otoritatif runbook: **[docs/PLAN-FAZ-4B-RLS.md](PLAN-FAZ-4B-RLS.md)**. Hiçbir şey prod'a dokunmadı; prod runtime davranışı değişmedi.
+**🟢 4B RLS TASARIMI KANITLANDI + RETROFIT BAŞLADI (2026-06-18).** Otoritatif runbook: **[docs/PLAN-FAZ-4B-RLS.md](PLAN-FAZ-4B-RLS.md)**.
+- **✅ RLS uçtan uca KANITLANDI (Aiven'de):** `app_user` (NOBYPASSRLS) + 0035 (27 policy) + 2 test tenant → `rls.test.ts` **8/8 yeşil**: cross-tenant 0-satır (A↔B) + filtre-unutulsa-da scoped + GUC-boş→0 (fail-closed) + global-read + ardışık izolasyon. (Aiven = local dev DB; app owner avnadmin ile bağlanıp bypass eder, app_user testle.)
+- **✅ `withTenant` REDIRECT-SAFE:** `redirect()`/`notFound()` throw'unda COMMIT+rethrow (rollback footgun = sessiz veri kaybı kapandı) + 5 unit test.
+- **✅ Retrofit dilim #1 — suppliers (kanonik):** 5 helper → `TenantDb`; 6 call-site (page/edit/export/3 action) `withTenant` ile sarıldı. Pattern: withTenant yalnız DATA helper'ı sarar, audit (owner) + redirect dışında. **Owner altında güvenli** (davranış değişmedi).
+- **⏳ Kalan retrofit (~12 domain):** products/branches/stock-movements/stocktake/reports/dashboard/notifications/company/storefront/users/audit-log/low-stock — aynı mekanik pattern. + audit fire-forget'ı owner-conn'a çevir (Phase 2 öncesi global). + **Phase 2 enforcement:** Supabase'de app_user + 0035 + Vercel env (DATABASE_URL_OWNER + DATABASE_URL→app_user) — **senin Vercel adımın.**
+
+**Önceki hazırlık (değişmedi):**
 - `src/db/migrations/0035_rls_tenant_isolation.sql` — GRANT + ENABLE RLS + 27 politika (17 scoped + 3 child parent-EXISTS + companies/users + 5 global SELECT). `TO app_user`, owner bypass (non-FORCE), fail-closed `nullif(GUC,'')::uuid`. **Journal'a girmez, UYGULANMADI.**
 - `src/lib/db/with-tenant.ts` — `withTenant(companyId, fn, client)` (tx + `set_config` is_local) + `withOwner(fn)` (özel yollar) + `TenantTx`/`TenantDb`. **Canlı path'e bağlı değil; default client lazy** (test DATABASE_URL'siz import eder).
 - `src/lib/db/rls.test.ts` — cross-tenant 0-satır + fail-closed + global-read; `RLS_TEST_DATABASE_URL` yoksa **skip** (7 skip, 1 guard pass).

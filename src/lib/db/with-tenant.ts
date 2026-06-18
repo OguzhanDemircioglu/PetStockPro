@@ -52,12 +52,32 @@ export type TenantTx = Parameters<Parameters<DbClient['transaction']>[0]>[0];
 export type TenantDb = DbClient | TenantTx;
 
 /**
+ * Next.js kontrol-akış throw'u mu? `redirect()` → digest 'NEXT_REDIRECT;...',
+ * `notFound()` → 'NEXT_NOT_FOUND'. Bunlar GERÇEK hata değil — framework yönlendirmesi.
+ */
+function isNextControlFlow(e: unknown): boolean {
+  if (typeof e !== 'object' || e === null) return false;
+  const digest = (e as { digest?: unknown }).digest;
+  return (
+    typeof digest === 'string' &&
+    (digest.startsWith('NEXT_REDIRECT') || digest === 'NEXT_NOT_FOUND')
+  );
+}
+
+/**
  * Tenant-scoped bir iş bloğunu RLS context'i içinde çalıştırır.
  *
  * Transaction açar, `app.current_company_id` GUC'unu **transaction-local** set
  * eder (3. arg true = is_local; transaction bitince otomatik temizlenir, pooled
  * bağlantı sızdırmaz), sonra `fn(tx)`'i çalıştırır. `fn` boyunca tüm sorgular
  * o tenant'a RLS ile kısıtlıdır.
+ *
+ * ⚠ REDIRECT-SAFE: Server action'lar gövdenin sonunda `redirect()`/`notFound()`
+ * çağırır — bunlar throw eder. Düz bir transaction bu throw'da ROLLBACK eder →
+ * yapılan INSERT/UPDATE geri alınır ama kullanıcı "başarılı"ya yönlenir = SESSİZ
+ * VERİ KAYBI. Bu yüzden Next kontrol-akış throw'unda transaction COMMIT edilir
+ * (gerçek iş zaten bitti) ve hata callback dışında yeniden fırlatılır. Gerçek
+ * hatalar normal şekilde ROLLBACK eder.
  *
  * @param companyId  Aktif tenant (geçerli uuid — auth session'dan)
  * @param fn         RLS-context'li tx ile çalışan iş bloğu
@@ -69,13 +89,25 @@ export async function withTenant<T>(
   client?: DbClient,
 ): Promise<T> {
   const c = client ?? (await defaultClient());
-  return c.transaction(async (tx) => {
+  let controlFlow: unknown;
+  const result = await c.transaction(async (tx) => {
     // is_local=true → yalnız bu transaction. set_config parametrik (SQL injection yok).
     await tx.execute(
       sql`select set_config('app.current_company_id', ${companyId}, true)`,
     );
-    return fn(tx);
+    try {
+      return await fn(tx);
+    } catch (e) {
+      if (isNextControlFlow(e)) {
+        // COMMIT (throw etme) — sonra dışarıda yeniden fırlat.
+        controlFlow = e;
+        return undefined as T;
+      }
+      throw e; // gerçek hata → ROLLBACK
+    }
   });
+  if (controlFlow !== undefined) throw controlFlow;
+  return result;
 }
 
 /**

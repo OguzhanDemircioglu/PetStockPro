@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { listSuppliers } from '@/lib/suppliers/manage';
 import { ModerationQueryBanner } from '@/components/moderation/moderation-query-banner';
 import { ToggleSupplierActive } from './toggle-supplier-active';
@@ -26,7 +26,8 @@ export default async function SuppliersPage({
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
 
-  const items = await listSuppliers(session.user.companyId, db);
+  const companyId = session.user.companyId;
+  const items = await withTenant(companyId, (tx) => listSuppliers(companyId, tx));
   const params = await searchParams;
   const activeCount = items.filter((s) => s.isActive).length;
 
