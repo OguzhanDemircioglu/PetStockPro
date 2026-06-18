@@ -1,10 +1,19 @@
 import { describe, it, expect, vi } from 'vitest';
 
-vi.mock('@/lib/db/client', () => ({
-  db: {
-    select: vi.fn(),
-  },
-}));
+// withTenant (Faz 4B) tx + set_config kullanır: db.transaction(cb) → cb(tx),
+// tx.execute (GUC) + tx.select (sorgu) aynı select mock'unu paylaşır.
+vi.mock('@/lib/db/client', () => {
+  const select = vi.fn();
+  const execute = vi.fn(() => Promise.resolve());
+  const tx = { select, execute };
+  return {
+    db: {
+      select,
+      execute,
+      transaction: (cb: (t: typeof tx) => unknown) => cb(tx),
+    },
+  };
+});
 
 const COMPANY = '00000000-0000-0000-0000-00000000c001';
 const USER = '00000000-0000-0000-0000-00000000a001';

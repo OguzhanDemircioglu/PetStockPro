@@ -19,6 +19,7 @@ import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import {
   cities as citiesTable,
   companies,
@@ -34,83 +35,91 @@ import {
  * Company lookup by ID — request-scoped.
  * Layout + pano + 8+ admin sayfa'da kullanılır.
  */
-export const getCompanyById = cache(async (companyId: string) => {
-  const rows = await db
-    .select({
-      id: companies.id,
-      name: companies.name,
-      plan: companies.plan,
-      slug: companies.slug,
-      vatNo: companies.vatNo,
-      storefrontStatus: companies.storefrontStatus,
-    })
-    .from(companies)
-    .where(eq(companies.id, companyId))
-    .limit(1);
-  return rows[0] ?? null;
-});
+export const getCompanyById = cache(async (companyId: string) =>
+  // Faz 4B — tenant tablosu; RLS context'i içinde (cached değer tek tx'te hesaplanır).
+  withTenant(companyId, async (tx) => {
+    const rows = await tx
+      .select({
+        id: companies.id,
+        name: companies.name,
+        plan: companies.plan,
+        slug: companies.slug,
+        vatNo: companies.vatNo,
+        storefrontStatus: companies.storefrontStatus,
+      })
+      .from(companies)
+      .where(eq(companies.id, companyId))
+      .limit(1);
+    return rows[0] ?? null;
+  }),
+);
 
 /**
  * Aktif ürün sayısı (soft delete hariç) — request-scoped.
  * Layout (plan progress) + pano (kpi-trio) duplicate.
  */
-export const getProductCountForCompany = cache(async (companyId: string) => {
-  const rows = await db
-    .select({ count: sql<number>`COUNT(*)::int` })
-    .from(products)
-    .where(
-      and(
-        eq(products.companyId, companyId),
-        isNull(products.deletedAt),
-      ),
-    );
-  return rows[0]?.count ?? 0;
-});
+export const getProductCountForCompany = cache(async (companyId: string) =>
+  withTenant(companyId, async (tx) => {
+    const rows = await tx
+      .select({ count: sql<number>`COUNT(*)::int` })
+      .from(products)
+      .where(
+        and(
+          eq(products.companyId, companyId),
+          isNull(products.deletedAt),
+        ),
+      );
+    return rows[0]?.count ?? 0;
+  }),
+);
 
 /**
  * Düşük stok variant sayısı (threshold per branch JSONB) — request-scoped.
  * Layout (sidebar rozet) + pano (alert band) + low-stock detay.
  */
-export const getLowStockCountForCompany = cache(async (companyId: string) => {
-  const rows = await db
-    .select({ count: sql<number>`COUNT(*)::int` })
-    .from(branchInventory)
-    .innerJoin(
-      productVariants,
-      eq(productVariants.id, branchInventory.variantId),
-    )
-    .where(
-      and(
-        eq(branchInventory.companyId, companyId),
-        eq(productVariants.isActive, true),
-        sql`${branchInventory.stockQty} <= COALESCE(
-          (${productVariants.branchThresholds} ->> ${branchInventory.branchId}::text)::int,
-          ${productVariants.threshold}
-        )`,
-      ),
-    );
-  return rows[0]?.count ?? 0;
-});
+export const getLowStockCountForCompany = cache(async (companyId: string) =>
+  withTenant(companyId, async (tx) => {
+    const rows = await tx
+      .select({ count: sql<number>`COUNT(*)::int` })
+      .from(branchInventory)
+      .innerJoin(
+        productVariants,
+        eq(productVariants.id, branchInventory.variantId),
+      )
+      .where(
+        and(
+          eq(branchInventory.companyId, companyId),
+          eq(productVariants.isActive, true),
+          sql`${branchInventory.stockQty} <= COALESCE(
+            (${productVariants.branchThresholds} ->> ${branchInventory.branchId}::text)::int,
+            ${productVariants.threshold}
+          )`,
+        ),
+      );
+    return rows[0]?.count ?? 0;
+  }),
+);
 
 /**
  * Kullanıcı için okunmamış bildirim sayısı — request-scoped.
  * Layout (bell badge) + pano (notif-feed) + bell client component.
  */
 export const getUnreadNotificationCount = cache(
-  async (companyId: string, userId: string) => {
-    const rows = await db
-      .select({ count: sql<number>`COUNT(*)::int` })
-      .from(notifications)
-      .where(
-        and(
-          eq(notifications.companyId, companyId),
-          // userId null = company-wide notification, eşleşir
-          sql`(${notifications.userId} IS NULL OR ${notifications.userId} = ${userId})`,
-          isNull(notifications.readAt),
-        ),
-      );
-    return rows[0]?.count ?? 0;
-  },
+  async (companyId: string, userId: string) =>
+    withTenant(companyId, async (tx) => {
+      const rows = await tx
+        .select({ count: sql<number>`COUNT(*)::int` })
+        .from(notifications)
+        .where(
+          and(
+            eq(notifications.companyId, companyId),
+            // userId null = company-wide notification, eşleşir
+            sql`(${notifications.userId} IS NULL OR ${notifications.userId} = ${userId})`,
+            isNull(notifications.readAt),
+          ),
+        );
+      return rows[0]?.count ?? 0;
+    }),
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
