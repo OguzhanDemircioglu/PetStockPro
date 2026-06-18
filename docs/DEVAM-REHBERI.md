@@ -1,8 +1,45 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-06-10 (PayTR + Nilvera entegrasyonu **TAMAMLANDI** — Faz 0-5)
-**Mevcut Branch:** `cray61` — **14 commit PUSH BEKLİYOR** (kullanıcı "push et" demedi)
-**Son commit:** `13840b5` chore(paytr): iyzico→PayTR metin temizliği (Faz 5)
+**Tarih:** 2026-06-18 (Mimari Sağlamlaştırma **Faz 1-3 TAMAMLANDI** — tek oturum)
+**Mevcut Branch:** `cray61` — origin ile **SYNC** (tüm commit'ler push edili)
+**Son commit:** `1331a34` feat(stock): Faz 3 — ledger↔cache reconcile cron + drift alert
+
+---
+
+## ✅ MİMARİ SAĞLAMLAŞTIRMA Faz 1-3 TAMAMLANDI (2026-06-18 — tek oturum)
+
+**Bağlam:** 2 mimari denetim (mimari + frontend state) + state tartışması → otoritatif plan **`docs/PLAN-MIMARI-SAGLAMLASTIRMA-VE-STATE.md`** (6 faz). Bu oturumda **Faz 1-3** yapıldı (7 commit, `8475347`..`1331a34`).
+
+**🔑 Topoloji netleşti (kullanıcı):** prod = **Supabase** (Vercel serverless, transaction pooler), local dev = **Aiven** (direct). Migration'lar **İKİ DB'ye** uygulanır (bkz. memory `reference_db_migration_access`). Yeni session migration eklerken ikisine birden uygulamalı.
+
+**Faz 1 — DB güvenliği (iki DB'de uygulandı):**
+- **1A** `60f4a11` — 4 CHECK constraint (migration **0032**): veresiye→customer_ref, stock_qty≥0, variant fiyat≥0, hareket para≥0. Şema `check()` ile senkron. Ön-tarama temiz, rejection testi geçti.
+- **1B** `702a8f5` — ledger immutability trigger (migration **0033**): `stock_movements` DELETE yasak + UPDATE yalnız 6 meşru kolon (reversed_by_id/credit_paid_at/reason/note/customer_ref/document_no); `audit_logs` tam immutable. Kod taraması 3 meşru UPDATE yolunu korudu (reversal/veresiye kapama/metadata-fix). Canlı test hepsi geçti.
+- **1C** `c900bc4` — `client.ts` adaptif `prepare` (pooler→false, direct→true) + `max` 10→(pooled?1:3) + bayat CF yorumu/`cf:*` script temizliği. **Kullanıcı Vercel prod `DATABASE_URL`'i Supabase transaction pooler'a çevirdi → prod healthy (son 6h 0 error log, deploy READY).**
+
+**Faz 2 — Frontend state (`137b75c`):**
+- **2A** Zustand kaldırıldı (0 import, ölü dep). **2B** global kategori/marka → server-side `unstable_cache` (`getCachedCategories`/`getCachedBrands` in `lib/cache/request-scoped.ts`, `getAllCities` pattern'i) + ürün formu (new+edit) cache'ten + süperadmin CRUD'da **`updateTag()`** (Next 16 read-your-own-writes; `revalidateTag` artık 2-arg/deprecated). **2C/2D** state kuralı: **`docs/STATE-MANAGEMENT-KURALI.md`** (kanonik optimistic pattern + Zustand/async-store yasağı).
+- Tarayıcı: /admin/products/new dropdown 7 kategori + 99 marka cache'ten doldu, 2 navigasyonda categories sorgusu 1 kez (cache hit), 0 console hatası. **Not:** screenshot tool sandbox'ta timeout — snapshot+log+console ile doğrulandı; login `form.requestSubmit()` ile (preview_click formu tetiklemiyor).
+
+**Faz 3 — Stok reconcile (`1331a34`):**
+- `lib/stock/reconcile.ts` (2 invariant tripwire: envanter==SUM(ledger) + totalStockQty==SUM(envanter); **AUTO-REPAIR YOK**) + `/api/cron/reconcile-stock` (drift→ system_errors critical + Telegram) **run-all dispatcher'a eklendi** + migration **0034** composite index (iki DB) + `buildStockDriftAlert`.
+- **Seed gerçekçi yapıldı** (kullanıcı kararı): `staging-demo.ts` artık her envanter satırı için açılış `stock_in` movement üretir → ledger backing. **Mevcut 33 orphan satır iki DB'de backfill edildi → reconcile temiz.**
+- Doğrulama: SQL canlı 33→0, cron e2e (dev server + Supabase) `{drift:false, stock=0, counter=0}`, 6 route testi + **1865 total** yeşil.
+
+**Test:** 1865 pass (129 dosya) · typecheck/lint 0. **DB:** Supabase + Aiven'da migration 0032+0033+0034 senkron + reconcile temiz.
+
+### ⏭ SIRADAKİ — Faz 4 (🔴 BÜYÜK TAŞ — RLS tenant izolasyonu, denetimin #1 bulgusu)
+
+> RLS şu an dekoratif (app owner rolüyle bağlanıp bypass ediyor). İzolasyon %100 elle `WHERE company_id`. Plan §FAZ 4.
+
+- **4A** (ucuz, GÜVENLİ, DB değişikliği YOK — yeni session buradan başlasın): tenant-scope test guard. Her tenant helper'ının `companyId` aldığını statik doğrulayan test ağı (`src/lib/db/tenant-guard.test.ts`). Unutulan filtreyi CI'da yakalar.
+- **4B** (⚠ KULLANICI KATILIMI ŞART — barrel-in ETME): gerçek RLS. `app_user` (**NOBYPASSRLS**, owner değil) DB rolü oluştur + runtime o role bağlanır (migrator `postgres`/owner kalır) + her request `SET LOCAL app.current_company_id` + ~20 tenant tablosuna tek-tip politika (`company_id = current_setting(...)::uuid`, fail-closed). Global tablolar (cities/brands/categories) permissive read. Impersonation → SET LOCAL ile DB-zorlamalı. **Env değişikliği** (Vercel + Aiven: runtime DATABASE_URL = app_user, migrator DATABASE_URL = owner) + **staging-first test**. En kritik yeni test: cross-tenant 0-satır (sızıntı yok).
+- Sonra **Faz 5** (branch `isActive`/`status` tek-kaynak + yanıltıcı şema yorumlarını düzelt + güvenli `companies` delete) ve **Faz 6** (ertelenenler: OCC/partitioning/animalTypes-normalize/local-first sync — YAPMA, tetikleyici bekle).
+
+### ⚙ Yeni session başlangıç notları
+- Önce oku: bu rehber + `docs/PLAN-MIMARI-SAGLAMLASTIRMA-VE-STATE.md` + `docs/STATE-MANAGEMENT-KURALI.md`.
+- Migration eklerken İKİ DB (Supabase MCP/node + Aiven node-postgres, `dangerouslyDisableSandbox`). Aiven free-tier oto-pause olabilir — erişilemezse kullanıcıdan açmasını iste.
+- Test verisi (demo tenant'lar + 33 backfill) lansman öncesi silinecek (kullanıcı notu). Süperadmin gerçek hesabı: oguzhanturgut611@gmail.com.
 
 ---
 
