@@ -269,15 +269,16 @@ describe('setBranchActive', () => {
       [{ id: BRANCH, isActive: true }],
       [{ c: 3 }], // 3 aktif var
     ]);
-    const update = vi.fn().mockReturnValue({
-      set: vi.fn().mockReturnValue({
-        where: vi.fn().mockResolvedValue(undefined),
-      }),
+    const setFn = vi.fn().mockReturnValue({
+      where: vi.fn().mockResolvedValue(undefined),
     });
+    const update = vi.fn().mockReturnValue({ set: setFn });
     const db = { select, update } as unknown as DbClient;
 
     const result = await setBranchActive(COMPANY, BRANCH, false, db);
     expect(result).toEqual({ ok: true, isActive: false });
+    // Faz 5A — is_active generated; tek kaynak status'a yazılır (is_active DEĞİL).
+    expect(setFn).toHaveBeenCalledWith({ status: 'inactive' });
   });
 
   it('aktif → pasif — son aktif şube → last_active_branch', async () => {
@@ -296,15 +297,16 @@ describe('setBranchActive', () => {
     const select = makeSelectChain([
       [{ id: BRANCH, isActive: false }],
     ]);
-    const update = vi.fn().mockReturnValue({
-      set: vi.fn().mockReturnValue({
-        where: vi.fn().mockResolvedValue(undefined),
-      }),
+    const setFn = vi.fn().mockReturnValue({
+      where: vi.fn().mockResolvedValue(undefined),
     });
+    const update = vi.fn().mockReturnValue({ set: setFn });
     const db = { select, update } as unknown as DbClient;
 
     const result = await setBranchActive(COMPANY, BRANCH, true, db);
     expect(result).toEqual({ ok: true, isActive: true });
+    // Faz 5A — pasif→aktif status='active' yazar (is_active generated).
+    expect(setFn).toHaveBeenCalledWith({ status: 'active' });
   });
 
   it('not_found', async () => {

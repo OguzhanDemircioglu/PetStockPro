@@ -200,7 +200,7 @@ export async function addBranch(
         districtId: data.districtId,
         address: data.address ?? null,
         whatsappPhone: data.whatsappPhone ?? null,
-        isActive: true,
+        // status default 'active' → is_active (generated) = true
       })
       .returning({ id: branches.id });
     const moderation = await moderateFields({
@@ -358,7 +358,9 @@ export async function setBranchActive(
   try {
     await db
       .update(branches)
-      .set({ isActive: active })
+      // is_active generated (Faz 5A) → tek kaynak status'a yaz. 2-state toggle
+      // 'holiday'ı temsil edemez; aktif=active, pasif=inactive.
+      .set({ status: active ? 'active' : 'inactive' })
       .where(eq(branches.id, branchId));
     return { ok: true, isActive: active };
   } catch {

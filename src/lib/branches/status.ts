@@ -8,10 +8,11 @@
  *
  * `branch_status` enum + `branches.status` column (Migration 0021).
  *
- * `isActive` boolean korunur (geri uyumluluk):
- *   status='active'   ↔ isActive=true
- *   status='holiday'  ↔ isActive=true   (operasyon devam ediyor)
- *   status='inactive' ↔ isActive=false
+ * `status` TEK KAYNAK (Faz 5A). `is_active` artık status'tan TÜRETİLEN generated
+ * column (`status <> 'inactive'`, migration 0036) — yazılamaz, drift imkansız:
+ *   status='active'   → is_active=true
+ *   status='holiday'  → is_active=true   (operasyon devam ediyor)
+ *   status='inactive' → is_active=false
  *
  * Son aktif şube koruması — tenant'ın her zaman en az 1 'active' veya 'holiday'
  * (operasyonel) şubesi olmalı (transfer + stok-in için zorunlu). Tüm şubeler
@@ -66,7 +67,7 @@ interface BranchStatusRow {
  *   - inactive → active/holiday: serbest (re-activate, kontrolsüz)
  *   - aynı status → no_change (idempotent)
  *
- * `isActive` boolean'ı da senkronize edilir.
+ * `is_active` generated column otomatik türer (ayrıca yazılmaz).
  */
 export async function setBranchStatus(
   companyId: string,
@@ -109,11 +110,10 @@ export async function setBranchStatus(
   }
 
   try {
-    // isActive sync: inactive ↔ false, diğer (active/holiday) ↔ true
-    const newIsActive = newStatus !== 'inactive';
+    // is_active generated (Faz 5A) — status'tan türer, ayrıca yazılmaz.
     await db
       .update(branches)
-      .set({ status: newStatus, isActive: newIsActive })
+      .set({ status: newStatus })
       .where(eq(branches.id, branchId));
 
     return { ok: true, previousStatus, newStatus };

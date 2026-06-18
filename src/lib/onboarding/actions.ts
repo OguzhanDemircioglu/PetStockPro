@@ -72,7 +72,7 @@ export async function createFirstBranch(
         districtId: data.districtId,
         address: data.address ?? null,
         whatsappPhone: data.whatsappPhone ?? null,
-        isActive: true,
+        // status default 'active' → is_active (generated) = true
       })
       .returning({ id: branches.id });
 

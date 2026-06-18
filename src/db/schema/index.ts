@@ -107,7 +107,8 @@ export const movementSubtypeEnum = petstockproSchema.enum('movement_subtype', [
   'sale', 'waste', 'gift', 'sample', 'return', 'internal_use', 'other',
 ]);
 
-// 'credit' = veresiye — payment_method='credit' → customer_ref NULL OLAMAZ (DB CHECK Sprint 4)
+// 'credit' = veresiye — payment_method='credit' → customer_ref NULL OLAMAZ
+// (DB CHECK: chk_credit_requires_customer — migration 0032, Faz 1A)
 export const paymentMethodEnum = petstockproSchema.enum('payment_method', [
   'cash', 'card', 'bank_transfer', 'credit',
 ]);
@@ -132,7 +133,8 @@ export const stocktakeReasonEnum = petstockproSchema.enum('stocktake_reason', [
 ]);
 
 // Sprint 15 — Notification türleri (admin bildirim feed)
-// Çoğu trigger Sprint 12+ tarafından üretilir; MVP'de stocktake/low-stock/auto-unpublish kullanılır.
+// App-side üretilir (lib/notifications + stock-triggers.ts); MVP'de
+// stocktake/low-stock/auto-unpublish. DB trigger DEĞİL — mantıksal tetik.
 export const notificationTypeEnum = petstockproSchema.enum('notification_type', [
   'low_stock_critical',
   'out_of_stock',
@@ -246,6 +248,13 @@ export const companies = petstockproSchema.table('companies', {
   temporaryBranchLimitOverride: integer('temporary_branch_limit_override'),
   temporaryBranchLimitOverrideUntil: timestamp('temporary_branch_limit_override_until', { withTimezone: true }),
 
+  // Faz 5C (2026-06-18) — Soft-delete. deletedAt set → tenant pasif (GERİ ALINABİLİR,
+  // restoreCompany). HARD-delete (cascade) bilinçli olarak feature DEĞİL ve yapısal
+  // olarak engelli: audit_logs immutability (0033) cascade DELETE'i bloklar + invoices
+  // FK 'restrict' (KVKK 5y/vergi 10y). Yanlış bir DELETE ödeyen tenant'ı/defterini silemez.
+  // Bkz. lib/superadmin/company-lifecycle.ts.
+  deletedAt: timestamp('deleted_at', { withTimezone: true }),
+
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -316,9 +325,10 @@ export interface RecoveryCode {
 // Şubeler (multi-location)
 //
 // Faz 1 (2026-05-21) — `status` 3-state enum eklendi (Migration 0021).
-// `isActive` geri uyumluluk için korunur, status ile sync edilir (status='active'
-// ↔ isActive=true; status='inactive' ↔ isActive=false; status='holiday' →
-// isActive=true ama vitrin disabled). Manage helper'ları status üzerinden çalışır.
+// Faz 5A (2026-06-18) — `status` TEK KAYNAK. `is_active` artık status'tan TÜRETİLEN
+//   generated column (`status <> 'inactive'`, migration 0036) — drift imkansız,
+//   ayrıca yazılamaz. Okuyucular (liste/filtre/export) değişmeden çalışır; yazan
+//   tüm yollar status'a yazar (setBranchStatus 3-state, setBranchActive 2-state).
 export const branches = petstockproSchema.table('branches', {
   id: uuid('id').defaultRandom().primaryKey(),
   companyId: uuid('company_id').notNull().references(() => companies.id),
@@ -329,8 +339,9 @@ export const branches = petstockproSchema.table('branches', {
   lat: text('lat'),
   lng: text('lng'),
   whatsappPhone: varchar('whatsapp_phone', { length: 20 }),
-  isActive: boolean('is_active').notNull().default(true),
   status: branchStatusEnum('status').notNull().default('active'),
+  // Türetilen (generated stored) — status='inactive' dışında true. Yazılamaz.
+  isActive: boolean('is_active').notNull().generatedAlwaysAs(sql`status <> 'inactive'`),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index('idx_branches_company').on(t.companyId),
@@ -464,7 +475,8 @@ export const invoices = petstockproSchema.table('invoices', {
 /**
  * AUDIT_LOGS — Immutable audit trail (her tenant + sistem aksiyonu)
  *
- * INSERT-only (trigger ile UPDATE/DELETE engellenir — Sprint 1A sonunda).
+ * INSERT-only — UPDATE/DELETE DB trigger ile tamamen engellenir
+ * (audit_logs_immutable — migration 0033, Faz 1B).
  * R3 basit: action varchar(100) — esnek pattern (entity.action), enum yerine string.
  * Süperadmin override aksiyonları ayrı flag + actionType ile kategorize.
  *
@@ -510,7 +522,7 @@ export const auditLogs = petstockproSchema.table('audit_logs', {
  * CATEGORIES — Ürün kategorileri (tenant başına)
  *
  * Hierarchical: parentId nullable self-reference. MVP'de 1-2 derinlik kullanılır.
- * sktRequired: true ise stok_movements'da expiryDate zorunlu (Sprint 4 trigger).
+ * sktRequired: true ise stok girişinde expiryDate beklenir (app-side doğrulama; DB trigger YOK).
  *
  * RLS: tenant SELECT/INSERT/UPDATE/DELETE kendi categories'lerini, super_admin all access.
  */
@@ -585,7 +597,8 @@ export const suppliers = petstockproSchema.table('suppliers', {
  * vitrinPublished PARENT-LEVEL. Variant bazlı vitrin toggle YOK (Faz 2).
  * isActive: soft delete. isPublished: taslak/yayın.
  *
- * Stok 0 → otomatik vitrin'den çekme (Sprint 4 trigger). Manuel "Satışa Aç" ile geri açılır.
+ * Stok 0 → otomatik vitrin'den çekme — app-side (lib/stock/movements.ts
+ * applyInventoryChange auto-unpublish; DB trigger değil). Manuel "Satışa Aç" ile geri açılır.
  */
 export const products = petstockproSchema.table('products', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -609,7 +622,8 @@ export const products = petstockproSchema.table('products', {
   vitrinAutoUnpublishedAt: timestamp('vitrin_auto_unpublished_at', { withTimezone: true }),
   vitrinAutoUnpublishedReason: varchar('vitrin_auto_unpublished_reason', { length: 50 }),
 
-  // Denormalized stats (background job — Sprint 4)
+  // Denormalize: app-side applyInventoryChange güncelle (lib/stock/movements.ts);
+  // Faz 3 reconcile cron (lib/stock/reconcile.ts) ledger ile tutarlılığı doğrular.
   totalStockQty: integer('total_stock_qty').notNull().default(0),
   lastSupplierId: uuid('last_supplier_id').references(() => suppliers.id, { onDelete: 'set null' }),
 
@@ -682,7 +696,7 @@ export const productImages = petstockproSchema.table('product_images', {
  * BRANCH_INVENTORY — Şube bazlı stok sayısı (per-branch + per-variant)
  *
  * Tek satır per (branch, variant). stockQty güncel toplam.
- * Stok hareketi yapılınca trigger ile güncellenir (Sprint 4).
+ * Stok hareketi yapılınca app-side güncellenir (applyInventoryChange; DB trigger değil).
  *
  * unique (branchId, variantId) — aynı şubede aynı variant için tek satır.
  */
@@ -693,10 +707,10 @@ export const branchInventory = petstockproSchema.table('branch_inventory', {
   variantId: uuid('variant_id').notNull().references(() => productVariants.id, { onDelete: 'cascade' }),
 
   stockQty: integer('stock_qty').notNull().default(0),
-  expiryDate: date('expiry_date'), // SKT — sktRequired kategoriler için zorunlu (Sprint 4 trigger)
+  expiryDate: date('expiry_date'), // SKT — sktRequired kategorilerde app-side beklenir (DB trigger YOK)
   lotNumber: varchar('lot_number', { length: 100 }),
 
-  // Background job stats
+  // App-side denormalize (applyInventoryChange)
   lastSoldAt: timestamp('last_sold_at', { withTimezone: true }),
   lastReceivedAt: timestamp('last_received_at', { withTimezone: true }),
   totalSoldQty: integer('total_sold_qty').notNull().default(0),
@@ -714,7 +728,8 @@ export const branchInventory = petstockproSchema.table('branch_inventory', {
 /**
  * STOCK_MOVEMENTS — Immutable ledger (her stok değişimi)
  *
- * UPDATE/DELETE bloklanır (Sprint 4 trigger). Sadece INSERT.
+ * UPDATE/DELETE DB trigger ile bloklanır (stock_movements_immutable — migration 0033,
+ * yalnız reversal/metadata kolonları). Sadece INSERT.
  * type+subtype: stock_in/stock_out (sale/waste/gift/sample/return/internal_use/other)/transfer/stocktake/stocktake_initial.
  *
  * reversesId / reversedById: geri alma (R1 — 24 saat içinde herkes, süresiz SUPERADMIN).
@@ -742,7 +757,7 @@ export const stockMovements = petstockproSchema.table('stock_movements', {
   // Bağlam (tipe göre dolar)
   supplierId: uuid('supplier_id').references(() => suppliers.id, { onDelete: 'set null' }), // stock_in
   customerRef: varchar('customer_ref', { length: 100 }), // sale — "Misafir alıcı" / telefon / ad
-  paymentMethod: paymentMethodEnum('payment_method'), // sale (credit ise customer_ref zorunlu — Sprint 4 CHECK)
+  paymentMethod: paymentMethodEnum('payment_method'), // sale (credit ise customer_ref zorunlu — DB CHECK 0032, ↓ chk_sm_credit_requires_customer)
   creditPaidAt: timestamp('credit_paid_at', { withTimezone: true }), // veresiye kapama
   documentNo: varchar('document_no', { length: 100 }), // irsaliye
   lotNumber: varchar('lot_number', { length: 100 }),
@@ -818,7 +833,7 @@ export const sessions = petstockproSchema.table('sessions', {
  * Bir sayım: branch + mode (full/category/manual). categoryId category modunda dolar.
  * status: in_progress (sayım sürerken) → waiting (kayıt için bekliyor) → completed.
  * cancelled = iptal (item'lar saklanır audit için).
- * softLock=true iken trigger Sprint 4+ aynı şubede stok hareketi engelleyebilir (Faz 2).
+ * softLock=true (henüz uygulanmadı — Faz 2 planı): aynı şubede sayım sürerken stok hareketi engellenebilir.
  *
  * Tamamlandığında her diff != 0 item için stock_movements (type='stocktake') üretilir.
  *
@@ -833,7 +848,7 @@ export const stocktakes = petstockproSchema.table('stocktakes', {
   softLock: boolean('soft_lock').notNull().default(true),
   status: stocktakeStatusEnum('status').notNull().default('in_progress'),
 
-  // Sayım istatistikleri (background — Sprint 4+)
+  // Sayım istatistikleri — app-side güncellenir (lib/stocktake/sessions.ts)
   totalItems: integer('total_items').notNull().default(0),
   countedItems: integer('counted_items').notNull().default(0),
   diffItems: integer('diff_items').notNull().default(0),
@@ -852,7 +867,7 @@ export const stocktakes = petstockproSchema.table('stocktakes', {
  * STOCKTAKE_ITEMS — Sayım kalemleri (variant × oturum)
  *
  * Sayım başlangıcında her aktif variant için satır açılır (systemQty snapshot).
- * Kullanıcı countedQty girer → diff = counted - system (trigger ile veya app-side).
+ * Kullanıcı countedQty girer → diff = counted - system (app-side: lib/stocktake/sessions.ts).
  * isSkipped: bu variant sayılmayacak (depo dışı, vs).
  *
  * Tamamlandığında diff != 0 olan satırlar için stock_movements oluşturulur, stocktakeId FK ile.

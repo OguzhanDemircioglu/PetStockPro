@@ -1,8 +1,22 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-06-18 (Mimari Sağlamlaştırma **Faz 1-3 + 4A TAMAMLANDI**)
+**Tarih:** 2026-06-18 (Mimari Sağlamlaştırma **Faz 1-5 TAMAMLANDI** — 4B kod-hazır/gated)
 **Mevcut Branch:** `cray61` — origin ile **SYNC**
-**Son commit:** `test(db): Faz 4A — tenant-scope statik guard + assertBranchOperational companyId fix` (bu oturum)
+**Son commit:** `refactor(schema): Faz 5 — branch state tek-kaynak + dürüst yorumlar + companies soft-delete` (bu oturum)
+
+---
+
+## ✅ FAZ 5 TAMAMLANDI (2026-06-18 — veri modeli temizliği, planın SON kod fazı)
+
+Plan §FAZ 5. Test 1874 → **1884 pass** (+10) · typecheck/lint 0.
+
+- **5B — dürüst şema yorumları:** `schema/index.ts`'te 13 yanıltıcı yorum gerçekle hizalandı — artık gerçek olanlar migration referansı aldı (credit CHECK → 0032; ledger/audit immutability → 0033), app-side olduğu halde "trigger/background job" denenler netleşti (auto-unpublish/denormalize/stocktake stats = app-side), gerçekten yok olanlar "Faz 2 planı / DB trigger YOK" diye işaretlendi (SKT trigger, softLock).
+- **5A — branch state TEK KAYNAK:** `branches.is_active` artık `status`'tan TÜRETİLEN generated column (`status <> 'inactive'`, **migration 0036**). Drift YAPISAL imkansız + ayrıca yazılamaz. **Gerçek bir bug kapandı:** eski `setBranchActive` yalnız is_active yazıp status'u bırakıyordu (ayrışma) → artık status'a yazar. 3 yazma site temizlendi (addBranch/onboarding insert + setBranchStatus/setBranchActive set), okuyucular (liste/filtre/export) değişmedi. +2 test assertion (status yazıldığını kanıtlar).
+- **5C — companies güvenli soft-delete:** `companies.deletedAt` (**migration 0037**, additive) + `lib/superadmin/company-lifecycle.ts` (softDeleteCompany/restoreCompany/isPurgeEligible, audit'li) + `listAllTenants` deletedAt bayrağı + 10 test. **Bulgu:** companies HARD-delete zaten yapısal imkansız (audit_logs immutability 0033 cascade DELETE'i bloklar + invoices FK restrict — KVKK/vergi) → bilinçli olarak feature DEĞİL; soft-delete tek güvenli yol.
+
+### ⚠ FAZ 5 MIGRATION APPLY (henüz UYGULANMADI — sıra önemli)
+- **0037** (companies.deletedAt) — **additive, sıra önemsiz, GÜVENLE şimdi uygulanabilir** (iki DB). Eski kod referans etmez; yeni kod (listAllTenants/soft-delete) `deleted_at`'i sorgular → deploy'dan önce/eşzamanlı uygulanmalı yoksa süperadmin tenant listesi kırılır.
+- **0036** (branches is_active generated — DROP COLUMN) — ⚠ **DEPLOY SONRASI uygula.** Eski kod (is_active yazan) generated kolona yazıp 500 verir. Sıra: önce bu commit deploy → sonra 0036 (iki DB). Arada kısa drift penceresi (status değişimi is_active'e yansımaz) — kabul edilebilir, 0036 ile kapanır.
 
 ---
 
@@ -51,7 +65,7 @@ Denetimin #1 bulgusu için **ucuz tripwire**: RLS dekoratif (owner rolü bypass)
 - **Kullanıcı bloker:** `app_user` rol+parola (Aiven+Supabase) · `DATABASE_URL_OWNER` env · staging DB. Runbook §Açık Kararlar 5 madde bekliyor.
 
 - **4B** (⚠ KULLANICI KATILIMI ŞART — barrel-in ETME): gerçek RLS. `app_user` (**NOBYPASSRLS**, owner değil) DB rolü oluştur + runtime o role bağlanır (migrator `postgres`/owner kalır) + her request `SET LOCAL app.current_company_id` + ~20 tenant tablosuna tek-tip politika (`company_id = current_setting(...)::uuid`, fail-closed). Global tablolar (cities/brands/categories) permissive read. Impersonation → SET LOCAL ile DB-zorlamalı. **Env değişikliği** (Vercel + Aiven: runtime DATABASE_URL = app_user, migrator DATABASE_URL = owner) + **staging-first test**. En kritik yeni test: cross-tenant 0-satır (sızıntı yok).
-- Sonra **Faz 5** (branch `isActive`/`status` tek-kaynak + yanıltıcı şema yorumlarını düzelt + güvenli `companies` delete) ve **Faz 6** (ertelenenler: OCC/partitioning/animalTypes-normalize/local-first sync — YAPMA, tetikleyici bekle).
+- **Faz 5** ✅ TAMAMLANDI (yukarı bkz.). **Faz 6** = bilinçli ertelenenler (OCC/partitioning/animalTypes-normalize/local-first sync — **KOD YOK**, tetikleyici bekle). Yani Faz 5 sonrası planın aktif kod işi bitti; geriye yalnız **4B cutover** (senin elini gerektiren) + Faz 5 migration apply'ları kaldı.
 
 ### ⚙ Yeni session başlangıç notları
 - Önce oku: bu rehber + `docs/PLAN-MIMARI-SAGLAMLASTIRMA-VE-STATE.md` + `docs/STATE-MANAGEMENT-KURALI.md`.

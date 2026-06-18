@@ -25,6 +25,8 @@ export interface TenantSummary {
   branchCount: number;
   totalStockQty: number;
   createdAt: Date;
+  /** Faz 5C — soft-delete bayrağı (set → tenant pasif, geri alınabilir). */
+  deletedAt: Date | null;
 }
 
 export async function listAllTenants(
@@ -44,6 +46,7 @@ export async function listAllTenants(
       branchCount: sql<number>`(SELECT COUNT(*)::int FROM petstockpro.branches b WHERE b.company_id = petstockpro.companies.id AND b.is_active = true)`,
       totalStockQty: sql<number>`COALESCE((SELECT SUM(p.total_stock_qty)::int FROM petstockpro.products p WHERE p.company_id = petstockpro.companies.id AND p.deleted_at IS NULL), 0)`,
       createdAt: companies.createdAt,
+      deletedAt: companies.deletedAt,
     })
     .from(companies)
     .orderBy(sql`${companies.createdAt} DESC`)
