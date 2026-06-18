@@ -43,6 +43,13 @@ Denetimin #1 bulgusu için **ucuz tripwire**: RLS dekoratif (owner rolü bypass)
 
 > 4A unutulan filtreyi CI'da yakalar ama runtime sızıntıyı durdurmaz. 4B yapısal duvar: unutulan `WHERE company_id` → **0 satır** (fail-closed). `tenant.ts` listesi hazır girdi.
 
+**🟡 4B KOD HAZIR — UYGULANMADI (2026-06-18, "önce güvenli kod hazırlığı" kararı).** Otoritatif runbook: **[docs/PLAN-FAZ-4B-RLS.md](PLAN-FAZ-4B-RLS.md)**. Hiçbir şey prod'a dokunmadı; prod runtime davranışı değişmedi.
+- `src/db/migrations/0035_rls_tenant_isolation.sql` — GRANT + ENABLE RLS + 27 politika (17 scoped + 3 child parent-EXISTS + companies/users + 5 global SELECT). `TO app_user`, owner bypass (non-FORCE), fail-closed `nullif(GUC,'')::uuid`. **Journal'a girmez, UYGULANMADI.**
+- `src/lib/db/with-tenant.ts` — `withTenant(companyId, fn, client)` (tx + `set_config` is_local) + `withOwner(fn)` (özel yollar) + `TenantTx`/`TenantDb`. **Canlı path'e bağlı değil; default client lazy** (test DATABASE_URL'siz import eder).
+- `src/lib/db/rls.test.ts` — cross-tenant 0-satır + fail-closed + global-read; `RLS_TEST_DATABASE_URL` yoksa **skip** (7 skip, 1 guard pass).
+- **🔑 Cutover içgörüsü:** retrofit'i (call-site `withTenant`/`withOwner`) önce **owner altında** yap (davranış değişmez, owner RLS bypass) → atlanan yer app_user fail-closed yapmadan ÖNCE staging smoke'da çıkar → sonra `app_user`+0035 enforcement. **Özel yollar** (auth/cron/webhook/superadmin/vitrin/global-yazma) = guard'ın muaf bölgeleri = `withOwner`.
+- **Kullanıcı bloker:** `app_user` rol+parola (Aiven+Supabase) · `DATABASE_URL_OWNER` env · staging DB. Runbook §Açık Kararlar 5 madde bekliyor.
+
 - **4B** (⚠ KULLANICI KATILIMI ŞART — barrel-in ETME): gerçek RLS. `app_user` (**NOBYPASSRLS**, owner değil) DB rolü oluştur + runtime o role bağlanır (migrator `postgres`/owner kalır) + her request `SET LOCAL app.current_company_id` + ~20 tenant tablosuna tek-tip politika (`company_id = current_setting(...)::uuid`, fail-closed). Global tablolar (cities/brands/categories) permissive read. Impersonation → SET LOCAL ile DB-zorlamalı. **Env değişikliği** (Vercel + Aiven: runtime DATABASE_URL = app_user, migrator DATABASE_URL = owner) + **staging-first test**. En kritik yeni test: cross-tenant 0-satır (sızıntı yok).
 - Sonra **Faz 5** (branch `isActive`/`status` tek-kaynak + yanıltıcı şema yorumlarını düzelt + güvenli `companies` delete) ve **Faz 6** (ertelenenler: OCC/partitioning/animalTypes-normalize/local-first sync — YAPMA, tetikleyici bekle).
 
