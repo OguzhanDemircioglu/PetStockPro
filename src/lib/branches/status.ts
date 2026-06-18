@@ -144,11 +144,17 @@ export interface AssertBranchOperationalOptions {
  *
  * Throw eden BranchNotOperationalError ile server action 403 döndürür.
  *
- * @param branchId  Hedef şube
- * @param db        Drizzle client
+ * Tenant-scope (Faz 4A): branchId dış-input (formData) olduğundan SELECT
+ * companyId ile filtrelenir — başka tenant'ın şube durumunu okumak/sızdırmak
+ * yasak. Yabancı/yok branchId → not-found gibi davranır (fail-closed).
+ *
+ * @param companyId  Oturum tenant'ı (zorunlu scope)
+ * @param branchId   Hedef şube
+ * @param db         Drizzle client
  * @param opts.requireActive  Vitrin gibi sadece 'active' isteyen yerler için
  */
 export async function assertBranchOperational(
+  companyId: string,
   branchId: string,
   db: DbClient,
   opts: AssertBranchOperationalOptions = {},
@@ -156,7 +162,7 @@ export async function assertBranchOperational(
   const rows = (await db
     .select({ status: branches.status })
     .from(branches)
-    .where(eq(branches.id, branchId))
+    .where(and(eq(branches.id, branchId), eq(branches.companyId, companyId)))
     .limit(1)) as Array<{ status: BranchStatus }>;
 
   if (rows.length === 0) {
@@ -180,12 +186,13 @@ export async function assertBranchOperational(
  * Throw etmeyen versiyon — UI'dan button disabled check için.
  */
 export async function isBranchOperational(
+  companyId: string,
   branchId: string,
   db: DbClient,
   opts: AssertBranchOperationalOptions = {},
 ): Promise<boolean> {
   try {
-    await assertBranchOperational(branchId, db, opts);
+    await assertBranchOperational(companyId, branchId, db, opts);
     return true;
   } catch {
     return false;

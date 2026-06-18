@@ -148,17 +148,17 @@ describe('setBranchStatus', () => {
 describe('assertBranchOperational', () => {
   it("default (holiday OK): 'active' → pass", async () => {
     const db = mockAssert('active');
-    await expect(assertBranchOperational(BRANCH, db)).resolves.toBeUndefined();
+    await expect(assertBranchOperational(COMPANY, BRANCH, db)).resolves.toBeUndefined();
   });
 
   it("default (holiday OK): 'holiday' → pass", async () => {
     const db = mockAssert('holiday');
-    await expect(assertBranchOperational(BRANCH, db)).resolves.toBeUndefined();
+    await expect(assertBranchOperational(COMPANY, BRANCH, db)).resolves.toBeUndefined();
   });
 
   it("default: 'inactive' → throw BranchNotOperationalError", async () => {
     const db = mockAssert('inactive');
-    await expect(assertBranchOperational(BRANCH, db)).rejects.toBeInstanceOf(
+    await expect(assertBranchOperational(COMPANY, BRANCH, db)).rejects.toBeInstanceOf(
       BranchNotOperationalError,
     );
   });
@@ -166,22 +166,22 @@ describe('assertBranchOperational', () => {
   it("requireActive=true: 'holiday' → throw (vitrin için tatilde de yasak)", async () => {
     const db = mockAssert('holiday');
     await expect(
-      assertBranchOperational(BRANCH, db, { requireActive: true }),
+      assertBranchOperational(COMPANY, BRANCH, db, { requireActive: true }),
     ).rejects.toBeInstanceOf(BranchNotOperationalError);
   });
 
   it('Şube bulunamadı → throw', async () => {
     const db = mockAssert(null);
-    await expect(assertBranchOperational(BRANCH, db)).rejects.toBeInstanceOf(
+    await expect(assertBranchOperational(COMPANY, BRANCH, db)).rejects.toBeInstanceOf(
       BranchNotOperationalError,
     );
   });
 
   it('isBranchOperational: throw yerine boolean döner', async () => {
     const dbInactive = mockAssert('inactive');
-    expect(await isBranchOperational(BRANCH, dbInactive)).toBe(false);
+    expect(await isBranchOperational(COMPANY, BRANCH, dbInactive)).toBe(false);
     const dbActive = mockAssert('active');
-    expect(await isBranchOperational(BRANCH, dbActive)).toBe(true);
+    expect(await isBranchOperational(COMPANY, BRANCH, dbActive)).toBe(true);
   });
 });
 

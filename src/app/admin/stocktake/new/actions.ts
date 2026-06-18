@@ -47,7 +47,7 @@ export async function startStocktakeAction(
   }
 
   try {
-    await assertBranchOperational(branchId, db);
+    await assertBranchOperational(session.user.companyId, branchId, db);
   } catch (e) {
     if (e instanceof BranchNotOperationalError) {
       return { error: 'Şube pasif — sayım başlatılamaz' };

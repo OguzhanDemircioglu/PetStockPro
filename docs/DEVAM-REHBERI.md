@@ -1,8 +1,8 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-06-18 (Mimari Sağlamlaştırma **Faz 1-3 TAMAMLANDI** — tek oturum)
-**Mevcut Branch:** `cray61` — origin ile **SYNC** (tüm commit'ler push edili)
-**Son commit:** `1331a34` feat(stock): Faz 3 — ledger↔cache reconcile cron + drift alert
+**Tarih:** 2026-06-18 (Mimari Sağlamlaştırma **Faz 1-3 + 4A TAMAMLANDI**)
+**Mevcut Branch:** `cray61` — origin ile **SYNC**
+**Son commit:** `test(db): Faz 4A — tenant-scope statik guard + assertBranchOperational companyId fix` (bu oturum)
 
 ---
 
@@ -28,11 +28,21 @@
 
 **Test:** 1865 pass (129 dosya) · typecheck/lint 0. **DB:** Supabase + Aiven'da migration 0032+0033+0034 senkron + reconcile temiz.
 
-### ⏭ SIRADAKİ — Faz 4 (🔴 BÜYÜK TAŞ — RLS tenant izolasyonu, denetimin #1 bulgusu)
+## ✅ FAZ 4A TAMAMLANDI (2026-06-18 — tenant-scope statik guard, DB değişikliği YOK)
 
-> RLS şu an dekoratif (app owner rolüyle bağlanıp bypass ediyor). İzolasyon %100 elle `WHERE company_id`. Plan §FAZ 4.
+Denetimin #1 bulgusu için **ucuz tripwire**: RLS dekoratif (owner rolü bypass), izolasyon elle `WHERE company_id`. 4A unutulan filtreyi CI'da yakalar.
 
-- **4A** (ucuz, GÜVENLİ, DB değişikliği YOK — yeni session buradan başlasın): tenant-scope test guard. Her tenant helper'ının `companyId` aldığını statik doğrulayan test ağı (`src/lib/db/tenant-guard.test.ts`). Unutulan filtreyi CI'da yakalar.
+- **SOT:** `src/lib/db/tenant.ts` — 30 tablo 4 kategoride: **TENANT_SCOPED 17** (doğrudan company_id) / **TENANT_CHILD 3** (stocktakeItems/productImages/userPermissions, parent FK) / **GLOBAL 5** (cities/districts/brands/categories/catalogSeedProducts) / **SYSTEM_IDENTITY 5** (companies/users/sessions/processedWebhooks/systemErrors). Faz 4B RLS politika üretimi de bu listeyi tüketecek.
+- **Guard:** `src/lib/db/tenant-guard.test.ts` — TS AST ile `src/lib`'i tarar; tenant tablosuna (scoped+child) bir sorgu fiili (from/insert/update/delete/join/`${}`) ile dokunan her **exported** helper `companyId` görmek ZORUNDA. "Sınıflandırma eksiksizliği" testi yeni tablo eklenince kategoriye atamaya zorlar. 8 test (3 sentinel dahil — guard'ın kendini doğrular).
+- **Bulgu→çözüm:** 14 ihlal → **13 meşru** (allowlist + gerekçe: süperadmin AI KPI `getAiSystemStats`; global brand/category ürün-kullanım sayımı 4 fn; userId-keyed yetki 7 fn — sahiplik call-layer'da) + **1 gerçek düzeltildi**: `assertBranchOperational`/`isBranchOperational` artık `companyId` alıp filtreliyor (branchId dış-input'tu → başka tenant'ın şube durumu okunabiliyordu; `guardMutation` + 4 çağıran + `stocktake/new` threading edildi, fail-closed).
+- **Muaf bölgeler** (gerekçeli, guard içinde dökümante): `superadmin/` + `vitrin/` (public) + `auth/` dizinleri; `billing/{orchestrator,renewals,*-reconcile}` + `cleanup/retention` + `stock/reconcile` (webhook/cron cross-tenant).
+- **SINIR:** AĞ, DUVAR değil — "companyId mevcut mu" doğrular, "WHERE'de gerçekten kullanıldı mı" DEĞİL. Yapısal garanti Faz 4B'de (unutulan filtre → 0 satır).
+- **Test:** 1865 → **1873 pass** (+8) · typecheck/lint 0. **DB değişikliği YOK.**
+
+### ⏭ SIRADAKİ — Faz 4B (🔴 BÜYÜK TAŞ — gerçek RLS, ⚠ KULLANICI KATILIMI ŞART)
+
+> 4A unutulan filtreyi CI'da yakalar ama runtime sızıntıyı durdurmaz. 4B yapısal duvar: unutulan `WHERE company_id` → **0 satır** (fail-closed). `tenant.ts` listesi hazır girdi.
+
 - **4B** (⚠ KULLANICI KATILIMI ŞART — barrel-in ETME): gerçek RLS. `app_user` (**NOBYPASSRLS**, owner değil) DB rolü oluştur + runtime o role bağlanır (migrator `postgres`/owner kalır) + her request `SET LOCAL app.current_company_id` + ~20 tenant tablosuna tek-tip politika (`company_id = current_setting(...)::uuid`, fail-closed). Global tablolar (cities/brands/categories) permissive read. Impersonation → SET LOCAL ile DB-zorlamalı. **Env değişikliği** (Vercel + Aiven: runtime DATABASE_URL = app_user, migrator DATABASE_URL = owner) + **staging-first test**. En kritik yeni test: cross-tenant 0-satır (sızıntı yok).
 - Sonra **Faz 5** (branch `isActive`/`status` tek-kaynak + yanıltıcı şema yorumlarını düzelt + güvenli `companies` delete) ve **Faz 6** (ertelenenler: OCC/partitioning/animalTypes-normalize/local-first sync — YAPMA, tetikleyici bekle).
 

@@ -89,6 +89,7 @@ function reasonToMessage(reason: string, fallback: string): string {
 async function guardMutation(
   scope: NonNullable<MovementActionState['scope']>,
   userId: string,
+  companyId: string,
   session: { user?: { role?: string } | null } | null,
   requiredKey: PermissionKey | null,
   branchId: string | null,
@@ -116,7 +117,7 @@ async function guardMutation(
 
   if (branchId !== null) {
     try {
-      await assertBranchOperational(branchId, db, { requireActive: requireActiveBranch });
+      await assertBranchOperational(companyId, branchId, db, { requireActive: requireActiveBranch });
     } catch (e) {
       if (e instanceof BranchNotOperationalError) {
         return {
@@ -208,6 +209,7 @@ export async function stockInAction(
       const gate = await guardMutation(
         'stock_in',
         session.user!.id!,
+        session.user!.companyId!,
         session,
         PERMISSION_KEYS.STOCK_IN_CREATE,
         branchId,
@@ -321,6 +323,7 @@ export async function stockOutAction(
   const gate = await guardMutation(
     'stock_out',
     session.user.id,
+    session.user.companyId,
     session,
     subtypeToKey[subtype],
     branchId,
@@ -430,6 +433,7 @@ export async function transferAction(
   const gateSource = await guardMutation(
     'transfer',
     session.user.id,
+    session.user.companyId,
     session,
     PERMISSION_KEYS.TRANSFER_CREATE,
     sourceBranchId,
@@ -437,7 +441,7 @@ export async function transferAction(
   if (gateSource) return gateSource;
 
   try {
-    await assertBranchOperational(targetBranchId, db);
+    await assertBranchOperational(session.user.companyId, targetBranchId, db);
   } catch (e) {
     if (e instanceof BranchNotOperationalError) {
       return {
@@ -509,6 +513,7 @@ export async function stocktakeAction(
   const gate = await guardMutation(
     'stocktake',
     session.user.id,
+    session.user.companyId,
     session,
     PERMISSION_KEYS.STOCKTAKE_CREATE,
     branchId,
