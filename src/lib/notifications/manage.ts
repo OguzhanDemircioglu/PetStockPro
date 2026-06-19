@@ -12,7 +12,7 @@
  */
 
 import { and, desc, eq, isNull, or, sql } from 'drizzle-orm';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { companies, notifications, type NotificationContent } from '@/db/schema';
 import { sendTenantTelegramAlert } from '@/lib/telegram/client';
 
@@ -56,7 +56,7 @@ export interface CreateNotificationInput {
  */
 export async function createNotification(
   input: CreateNotificationInput,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
   opts: { awaitTelegram?: boolean } = {},
 ): Promise<{ ok: boolean; id?: string }> {
@@ -93,7 +93,7 @@ export async function createNotification(
 }
 
 /** Fire-and-forget — caller awaitlemez. */
-export function createNotificationAsync(input: CreateNotificationInput, db: DbClient): void {
+export function createNotificationAsync(input: CreateNotificationInput, db: TenantDb): void {
   void createNotification(input, db).catch(() => {});
 }
 
@@ -103,7 +103,7 @@ export function createNotificationAsync(input: CreateNotificationInput, db: DbCl
  */
 async function fanOutTelegram(
   input: CreateNotificationInput,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<void> {
   const cfg = await db
     .select({
@@ -155,7 +155,7 @@ export interface NotificationRow {
 export async function listForUser(
   companyId: string,
   userId: string,
-  db: DbClient,
+  db: TenantDb,
   opts?: { limit?: number; unreadOnly?: boolean },
 ): Promise<NotificationRow[]> {
   const whereClauses = [
@@ -187,7 +187,7 @@ export async function listForUser(
 export async function unreadCountForUser(
   companyId: string,
   userId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<number> {
   const rows = await db
     .select({
@@ -211,7 +211,7 @@ export async function markAsRead(
   companyId: string,
   userId: string,
   notificationId: string,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<{ ok: boolean }> {
   try {
@@ -235,7 +235,7 @@ export async function markAsRead(
 export async function markAllAsRead(
   companyId: string,
   userId: string,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<{ ok: boolean }> {
   try {

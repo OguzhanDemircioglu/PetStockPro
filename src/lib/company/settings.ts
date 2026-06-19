@@ -12,7 +12,7 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { moderateFields } from '@/lib/moderation/check';
 import type { ModerationFlagsResult } from '@/lib/moderation/redirect-suffix';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { companies } from '@/db/schema';
 
 export interface CompanyProfile {
@@ -32,7 +32,7 @@ export interface CompanyProfile {
 
 export async function getCompanyProfile(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<CompanyProfile | null> {
   const rows = await db
     .select({
@@ -126,7 +126,7 @@ export type UpdateCompanyResult =
 export async function updateCompanyProfile(
   companyId: string,
   input: CompanyProfileInput,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<UpdateCompanyResult> {
   const parsed = companyProfileSchema.safeParse(input);

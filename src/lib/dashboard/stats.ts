@@ -13,7 +13,7 @@
  */
 
 import { and, desc, eq, sql } from 'drizzle-orm';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import {
   branches,
   branchInventory,
@@ -34,7 +34,7 @@ export interface DashboardStats {
 
 export async function getDashboardStats(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<DashboardStats> {
   // Tek SELECT'te tüm aggregates — performans için.
   // "Bugün" hesabı için DATE_TRUNC('day', NOW()) — Drizzle parametre
@@ -124,7 +124,7 @@ export interface ListLowStockOptions {
 
 export async function listLowStock(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   limitOrOpts: number | ListLowStockOptions = 10,
 ): Promise<LowStockItem[]> {
   const opts: ListLowStockOptions =
@@ -183,7 +183,7 @@ export interface ActivityItem {
 
 export async function listRecentActivity(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   limit: number = 8,
 ): Promise<ActivityItem[]> {
   return db
