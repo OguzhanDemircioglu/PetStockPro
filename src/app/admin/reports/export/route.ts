@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { dailySalesSummary, topSellingVariants } from '@/lib/reports/sales';
 import { xlsxResponse } from '@/lib/utils/xlsx';
 import { companies } from '@/db/schema';
@@ -22,14 +22,19 @@ export async function GET(req: Request) {
     ? (kindRaw as 'daily' | 'top')
     : 'daily';
 
-  const [tenant] = await db
-    .select({ name: companies.name })
-    .from(companies)
-    .where(eq(companies.id, session.user.companyId))
-    .limit(1);
+  const companyId = session.user.companyId;
+  const [tenant] = await withTenant(companyId, (tx) =>
+    tx
+      .select({ name: companies.name })
+      .from(companies)
+      .where(eq(companies.id, companyId))
+      .limit(1),
+  );
 
   if (kind === 'top') {
-    const rows = await topSellingVariants(session.user.companyId, db, days, 50);
+    const rows = await withTenant(companyId, (tx) =>
+      topSellingVariants(companyId, tx, days, 50),
+    );
     return xlsxResponse(`en-cok-satan-${days}gun`, {
       sheetName: 'En Çok Satanlar',
       title: '🏆 En Çok Satan Ürünler',
@@ -51,7 +56,9 @@ export async function GET(req: Request) {
     });
   }
 
-  const rows = await dailySalesSummary(session.user.companyId, db, days);
+  const rows = await withTenant(companyId, (tx) =>
+    dailySalesSummary(companyId, tx, days),
+  );
   return xlsxResponse(`gunluk-satis-${days}gun`, {
     sheetName: 'Günlük Satış',
     title: '📈 Günlük Satış Raporu',

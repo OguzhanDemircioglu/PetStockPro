@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { upsertStorefrontSettings } from '@/lib/storefront/settings';
 import { writeAuditLogAsync } from '@/lib/audit/log';
 import { logModerationFlag } from '@/lib/moderation/audit';
@@ -28,25 +29,28 @@ export async function saveStorefrontAction(
 ): Promise<StorefrontFormState> {
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+  const companyId = session.user.companyId;
 
   const isEnabled = formData.get('isEnabled') === 'on';
 
-  const result = await upsertStorefrontSettings(
-    session.user.companyId,
-    {
-      isEnabled,
-      aboutContent: asStr(formData.get('aboutContent')),
-      contactPhone: asStr(formData.get('contactPhone')),
-      contactWhatsapp: asStr(formData.get('contactWhatsapp')),
-      contactTelegram: asStr(formData.get('contactTelegram')),
-      contactEmail: asStr(formData.get('contactEmail')),
-      socialInstagram: asStr(formData.get('socialInstagram')),
-      socialFacebook: asStr(formData.get('socialFacebook')),
-      socialTwitter: asStr(formData.get('socialTwitter')),
-      socialTiktok: asStr(formData.get('socialTiktok')),
-      metaDescription: asStr(formData.get('metaDescription')),
-    },
-    db,
+  const result = await withTenant(companyId, (tx) =>
+    upsertStorefrontSettings(
+      companyId,
+      {
+        isEnabled,
+        aboutContent: asStr(formData.get('aboutContent')),
+        contactPhone: asStr(formData.get('contactPhone')),
+        contactWhatsapp: asStr(formData.get('contactWhatsapp')),
+        contactTelegram: asStr(formData.get('contactTelegram')),
+        contactEmail: asStr(formData.get('contactEmail')),
+        socialInstagram: asStr(formData.get('socialInstagram')),
+        socialFacebook: asStr(formData.get('socialFacebook')),
+        socialTwitter: asStr(formData.get('socialTwitter')),
+        socialTiktok: asStr(formData.get('socialTiktok')),
+        metaDescription: asStr(formData.get('metaDescription')),
+      },
+      tx,
+    ),
   );
 
   if (!result.ok) {

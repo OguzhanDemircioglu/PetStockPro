@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { settleCredit } from '@/lib/reports/open-credits';
 
 export interface SettleCreditActionState {
@@ -27,17 +27,16 @@ export async function settleCreditAction(
   if (!session?.user?.companyId || !session.user.id) {
     return { ok: false, message: 'Yetki yok.' };
   }
+  const companyId = session.user.companyId;
+  const userId = session.user.id;
 
   const movementId = formData.get('movementId');
   if (typeof movementId !== 'string' || movementId.length === 0) {
     return { ok: false, message: 'Geçersiz hareket id.' };
   }
 
-  const result = await settleCredit(
-    session.user.companyId,
-    session.user.id,
-    movementId,
-    db,
+  const result = await withTenant(companyId, (tx) =>
+    settleCredit(companyId, userId, movementId, tx),
   );
 
   if (!result.ok) {

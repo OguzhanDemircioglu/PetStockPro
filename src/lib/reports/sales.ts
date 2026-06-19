@@ -8,7 +8,7 @@
  */
 
 import { and, desc, eq, sql } from 'drizzle-orm';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import {
   stockMovements,
   productVariants,
@@ -24,7 +24,7 @@ export interface DailySalesRow {
 
 export async function dailySalesSummary(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   days: number = 30,
   now: Date = new Date(),
 ): Promise<DailySalesRow[]> {
@@ -68,7 +68,7 @@ export interface TopVariantRow {
 
 export async function topSellingVariants(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   days: number = 30,
   limit: number = 10,
   now: Date = new Date(),
@@ -114,7 +114,7 @@ export interface PeriodSummary {
 
 export async function periodSummary(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   days: number = 30,
   now: Date = new Date(),
 ): Promise<PeriodSummary> {

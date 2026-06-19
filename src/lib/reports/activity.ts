@@ -5,7 +5,7 @@
  */
 
 import { and, eq, gte, sql } from 'drizzle-orm';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { auditLogs } from '@/db/schema';
 
 export interface ActivityCountRow {
@@ -19,7 +19,7 @@ export interface ActivityCountRow {
  */
 export async function activityCountByAction(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   days: number = 30,
   limit: number = 10,
 ): Promise<ActivityCountRow[]> {
@@ -54,7 +54,7 @@ export interface ActivityDailyRow {
  */
 export async function activityDailySummary(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   days: number = 30,
 ): Promise<ActivityDailyRow[]> {
   const sinceIso = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
@@ -85,7 +85,7 @@ export interface ActivityTotals {
 
 export async function activityTotals(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   days: number = 30,
 ): Promise<ActivityTotals> {
   const sinceIso = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();

@@ -8,7 +8,7 @@
  */
 
 import { and, eq, gte, sql } from 'drizzle-orm';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { stocktakes, branches, users } from '@/db/schema';
 
 export interface StocktakeHistoryRow {
@@ -36,7 +36,7 @@ export interface StocktakeHistorySummary {
  */
 export async function listStocktakeHistory(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   days: number = 30,
   limit: number = 10,
 ): Promise<StocktakeHistoryRow[]> {
@@ -82,7 +82,7 @@ export async function listStocktakeHistory(
  */
 export async function stocktakeHistorySummary(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   days: number = 30,
 ): Promise<StocktakeHistorySummary> {
   const sinceIso = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();

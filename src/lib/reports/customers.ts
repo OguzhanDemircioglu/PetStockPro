@@ -17,7 +17,7 @@
  */
 
 import { and, eq, sql } from 'drizzle-orm';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { stockMovements } from '@/db/schema';
 
 export interface TopCustomerRow {
@@ -30,7 +30,7 @@ export interface TopCustomerRow {
 
 export async function topCustomers(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   days: number = 30,
   limit: number = 10,
   now: Date = new Date(),
@@ -71,7 +71,7 @@ export interface CustomerSummary {
 
 export async function customerSummary(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   days: number = 30,
   now: Date = new Date(),
 ): Promise<CustomerSummary> {
@@ -124,7 +124,7 @@ export interface HourlyBreakdownRow {
 
 export async function busiestHours(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   days: number = 30,
   now: Date = new Date(),
 ): Promise<HourlyBreakdownRow[]> {

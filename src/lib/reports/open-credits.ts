@@ -12,7 +12,7 @@
  */
 
 import { and, asc, eq, sql } from 'drizzle-orm';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import {
   stockMovements,
   productVariants,
@@ -45,7 +45,7 @@ export interface ListOpenCreditsOpts {
 
 export async function listOpenCredits(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   opts: ListOpenCreditsOpts = {},
 ): Promise<OpenCreditRow[]> {
   const now = opts.now ?? new Date();
@@ -107,7 +107,7 @@ export interface OpenCreditsSummary {
 
 export async function getOpenCreditsSummary(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<OpenCreditsSummary> {
   const nowIso = now.toISOString();
@@ -223,7 +223,7 @@ export async function settleCredit(
   companyId: string,
   userId: string,
   movementId: string,
-  db: DbClient,
+  db: TenantDb,
   opts: SettleCreditOpts = {},
 ): Promise<SettleCreditResult> {
   const now = opts.now ?? new Date();

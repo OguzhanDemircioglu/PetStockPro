@@ -18,6 +18,7 @@ import { createHash } from 'node:crypto';
 import { and, eq, gte, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { vitrinWhatsappFeedback } from '@/db/schema';
 
 export const feedbackRatingValues = [
@@ -193,7 +194,7 @@ const ratingScore: Record<string, number> = {
 
 export async function getFeedbackSummary(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   windowDays: number = 30,
 ): Promise<FeedbackSummary> {
   const cutoff = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);

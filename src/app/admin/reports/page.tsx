@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { companies } from '@/db/schema';
 import { hasAdvancedReports } from '@/lib/billing/plan-features';
 import {
@@ -49,6 +49,7 @@ export default async function ReportsPage({
 }) {
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
+  const companyId = session.user.companyId;
 
   const params = await searchParams;
   const daysRaw = params.days ? parseInt(params.days, 10) : 30;
@@ -58,11 +59,13 @@ export default async function ReportsPage({
   // FREE plan'da Pano KPI yeterli (temel ciro/hareket/düşük stok); detaylı
   // /admin/reports sayfası (period comparison + top selling + customer report
   // + open credits + inventory value + activity actions) PRO'ya özel.
-  const [companyPlan] = await db
-    .select({ plan: companies.plan })
-    .from(companies)
-    .where(eq(companies.id, session.user.companyId))
-    .limit(1);
+  const [companyPlan] = await withTenant(companyId, (tx) =>
+    tx
+      .select({ plan: companies.plan })
+      .from(companies)
+      .where(eq(companies.id, companyId))
+      .limit(1),
+  );
   if (!hasAdvancedReports(companyPlan?.plan ?? 'FREE')) {
     return (
       <main className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">
@@ -131,25 +134,27 @@ export default async function ReportsPage({
     cmpMonth,
     openCredits,
     openCreditsSummary,
-  ] = await Promise.all([
-    periodSummary(session.user.companyId, db, days),
-    dailySalesSummary(session.user.companyId, db, days),
-    topSellingVariants(session.user.companyId, db, days, 10),
-    listStocktakeHistory(session.user.companyId, db, days, 10),
-    stocktakeHistorySummary(session.user.companyId, db, days),
-    activityCountByAction(session.user.companyId, db, days, 10),
-    activityTotals(session.user.companyId, db, days),
-    getInventoryValueSummary(session.user.companyId, db),
-    getInventoryValueByCategory(session.user.companyId, db, 8),
-    getTopInventoryValueVariants(session.user.companyId, db, 10),
-    topCustomers(session.user.companyId, db, days, 10),
-    customerSummary(session.user.companyId, db, days),
-    busiestHours(session.user.companyId, db, days),
-    getPeriodComparison(session.user.companyId, db, 'week'),
-    getPeriodComparison(session.user.companyId, db, 'month'),
-    listOpenCredits(session.user.companyId, db, { limit: 50 }),
-    getOpenCreditsSummary(session.user.companyId, db),
-  ]);
+  ] = await withTenant(companyId, (tx) =>
+    Promise.all([
+      periodSummary(companyId, tx, days),
+      dailySalesSummary(companyId, tx, days),
+      topSellingVariants(companyId, tx, days, 10),
+      listStocktakeHistory(companyId, tx, days, 10),
+      stocktakeHistorySummary(companyId, tx, days),
+      activityCountByAction(companyId, tx, days, 10),
+      activityTotals(companyId, tx, days),
+      getInventoryValueSummary(companyId, tx),
+      getInventoryValueByCategory(companyId, tx, 8),
+      getTopInventoryValueVariants(companyId, tx, 10),
+      topCustomers(companyId, tx, days, 10),
+      customerSummary(companyId, tx, days),
+      busiestHours(companyId, tx, days),
+      getPeriodComparison(companyId, tx, 'week'),
+      getPeriodComparison(companyId, tx, 'month'),
+      listOpenCredits(companyId, tx, { limit: 50 }),
+      getOpenCreditsSummary(companyId, tx),
+    ]),
+  );
 
   // Maks qty bul, bar grafik için ölçek
   const maxDailyQty = daily.reduce((m, r) => Math.max(m, r.qty), 0);

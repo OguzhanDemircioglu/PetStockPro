@@ -12,7 +12,7 @@
  */
 
 import { and, desc, eq, sql } from 'drizzle-orm';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import {
   branchInventory,
   productVariants,
@@ -30,7 +30,7 @@ export interface InventoryValueSummary {
 
 export async function getInventoryValueSummary(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<InventoryValueSummary> {
   const rows = (await db.execute(sql`
     SELECT
@@ -81,7 +81,7 @@ export interface InventoryValueByCategoryRow {
 
 export async function getInventoryValueByCategory(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   limit: number = 10,
 ): Promise<InventoryValueByCategoryRow[]> {
   const rows = await db
@@ -132,7 +132,7 @@ export interface InventoryValueTopVariant {
 
 export async function getTopInventoryValueVariants(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   limit: number = 20,
 ): Promise<InventoryValueTopVariant[]> {
   return db

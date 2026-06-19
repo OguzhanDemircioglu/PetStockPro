@@ -7,7 +7,7 @@
  */
 
 import { sql } from 'drizzle-orm';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { stockMovements } from '@/db/schema';
 
 export interface PeriodSummary {
@@ -18,7 +18,7 @@ export interface PeriodSummary {
 
 async function rangeSummary(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   from: Date,
   to: Date,
 ): Promise<PeriodSummary> {
@@ -57,7 +57,7 @@ function pct(curr: number, prev: number): number | null {
 
 export async function getPeriodComparison(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   label: 'week' | 'month',
   now: Date = new Date(),
 ): Promise<PeriodComparisonResult> {

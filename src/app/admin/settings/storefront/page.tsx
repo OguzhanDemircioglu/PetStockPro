@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { getStorefrontSettings } from '@/lib/storefront/settings';
 import { getFeedbackSummary } from '@/lib/vitrin/feedback';
 import { SettingsShell } from '@/components/settings-shell';
@@ -17,11 +17,14 @@ const RATING_LABEL: Record<string, { emoji: string; label: string }> = {
 export default async function StorefrontSettingsPage() {
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
+  const companyId = session.user.companyId;
 
-  const [profile, feedback] = await Promise.all([
-    getStorefrontSettings(session.user.companyId, db),
-    getFeedbackSummary(session.user.companyId, db, 30),
-  ]);
+  const [profile, feedback] = await withTenant(companyId, (tx) =>
+    Promise.all([
+      getStorefrontSettings(companyId, tx),
+      getFeedbackSummary(companyId, tx, 30),
+    ]),
+  );
 
   const totalActivity =
     feedback.totalSubmitted + feedback.totalClosedManually + feedback.totalDismissed;

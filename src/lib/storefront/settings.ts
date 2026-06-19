@@ -11,7 +11,7 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { moderateFields } from '@/lib/moderation/check';
 import type { ModerationFlagsResult } from '@/lib/moderation/redirect-suffix';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { companies, storefrontSettings } from '@/db/schema';
 
 const phoneRegex = /^(\+90|0)?\s?(5\d{2})\s?\d{3}\s?\d{2}\s?\d{2}$/;
@@ -101,7 +101,7 @@ export interface StorefrontSettingsRow {
 
 export async function getStorefrontSettings(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<StorefrontSettingsRow | null> {
   const rows = await db
     .select()
@@ -123,7 +123,7 @@ export type UpsertResult =
 export async function upsertStorefrontSettings(
   companyId: string,
   input: StorefrontSettingsInput,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<UpsertResult> {
   const parsed = storefrontSettingsSchema.safeParse(input);
