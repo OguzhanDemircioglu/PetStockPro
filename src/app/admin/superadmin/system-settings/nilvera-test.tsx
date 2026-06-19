@@ -1,15 +1,27 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { testNilveraConnectionAction, type NilveraTestResult } from './nilvera-actions';
+import {
+  testNilveraConnectionAction,
+  retryPendingInvoiceAction,
+  type NilveraTestResult,
+  type InvoiceRetryResult,
+} from './nilvera-actions';
 
 export function NilveraConnectionTest() {
   const [result, setResult] = useState<NilveraTestResult | null>(null);
   const [pending, start] = useTransition();
+  const [retry, setRetry] = useState<InvoiceRetryResult | null>(null);
+  const [retryPending, startRetry] = useTransition();
 
   const run = () =>
     start(async () => {
       setResult(await testNilveraConnectionAction());
+    });
+
+  const runRetry = () =>
+    startRetry(async () => {
+      setRetry(await retryPendingInvoiceAction());
     });
 
   return (
@@ -76,6 +88,39 @@ export function NilveraConnectionTest() {
           )}
         </div>
       )}
+
+      <div className="mt-4 border-t border-line pt-4">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[13px] text-ink-3">
+            Bekleyen (pending) faturayı yeniden kesmeyi dener — başarısızsa
+            Nilvera&apos;nın <strong>tam hata sebebini</strong> gösterir.
+          </p>
+          <button
+            type="button"
+            onClick={runRetry}
+            disabled={retryPending}
+            data-testid="nilvera-retry-btn"
+            className="shrink-0 rounded-xl border border-cat/40 bg-paper px-4 py-2.5 text-[13px] font-bold text-cart hover:bg-cat hover:text-white disabled:opacity-60"
+          >
+            {retryPending ? 'Deneniyor...' : 'Bekleyen faturayı yeniden dene'}
+          </button>
+        </div>
+        {retry && (
+          <div className="mt-3" data-testid="nilvera-retry-result">
+            {retry.ok ? (
+              <div className="rounded-xl border border-arrow/40 bg-arrow-soft px-3 py-2 text-[13px] font-bold text-arrow-7">
+                ✓ Fatura kesildi — {retry.kind === 'efatura' ? 'e-Fatura' : 'e-Arşiv'}
+                {retry.invoiceNumber ? ` · No ${retry.invoiceNumber}` : ''} · ETTN{' '}
+                {retry.nilveraId}
+              </div>
+            ) : (
+              <pre className="overflow-x-auto whitespace-pre-wrap rounded-lg border border-danger/30 bg-danger-soft/30 px-3 py-2 text-[12px] text-danger-7">
+                {retry.message}
+              </pre>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

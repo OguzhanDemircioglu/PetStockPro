@@ -24,7 +24,15 @@ export class NilveraApiError extends Error {
   readonly responseBody: unknown;
 
   constructor(operation: string, status: number, responseBody: unknown, message?: string) {
-    super(message ?? `Nilvera API ${operation} → HTTP ${status}`);
+    // Hata mesajına Nilvera'nın yanıt gövdesini de kat (400/422 tanı için kritik —
+    // aksi halde "HTTP 400" ile sebep kaybolur). Mesaj last_nilvera_error'a saklanır.
+    const detail =
+      responseBody == null
+        ? ''
+        : typeof responseBody === 'string'
+          ? responseBody
+          : JSON.stringify(responseBody);
+    super(message ?? `Nilvera API ${operation} → HTTP ${status}${detail ? `: ${detail.slice(0, 400)}` : ''}`);
     this.name = 'NilveraApiError';
     this.operation = operation;
     this.status = status;
