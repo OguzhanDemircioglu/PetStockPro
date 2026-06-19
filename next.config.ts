@@ -21,7 +21,9 @@ const withBundleAnalyzer = bundleAnalyzer({
  * Beklenen dış kaynaklar:
  *   - Supabase: REST + Realtime (https/wss *.supabase.co)
  *   - Brevo: SMTP webhook (https *.brevo.com — server-side)
- *   - iyzico: subscription/webhook (https sandbox/prod URL — server-side, browser değil)
+ *   - PayTR: ödeme iframe (https://www.paytr.com/odeme/guvenli/<token>) — BROWSER-SIDE,
+ *     frame-src + script-src (iframeResizer.min.js) izin gerekir. 3D Secure adımı
+ *     PayTR iframe'inin KENDİ içinde olur (banka domain'leri bizim CSP'ye eklenmez).
  *   - Nilvera: e-Arşiv API (server-side, browser değil)
  *   - Telegram: bot API (server-side, browser değil)
  *   - Cloudflare Turnstile: bot koruma widget (https challenges.cloudflare.com)
@@ -40,7 +42,7 @@ const withBundleAnalyzer = bundleAnalyzer({
 function buildCsp(): string {
   const directives: string[] = [
     "default-src 'self'",
-    `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://challenges.cloudflare.com`,
+    `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://challenges.cloudflare.com https://www.paytr.com`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https://*.supabase.co https://*.r2.cloudflarestorage.com https://*.r2.dev https://imagedelivery.net https://*.tile.openstreetmap.org https://tile.openstreetmap.org",
     "font-src 'self' data:",
@@ -53,7 +55,7 @@ function buildCsp(): string {
       'https://*.r2.cloudflarestorage.com',
       'https://*.r2.dev',
     ].join(' '),
-    "frame-src 'self' https://challenges.cloudflare.com",
+    "frame-src 'self' https://challenges.cloudflare.com https://www.paytr.com https://paytr.com",
     "frame-ancestors 'none'",
     "form-action 'self'",
     "base-uri 'self'",
