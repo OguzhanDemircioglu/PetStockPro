@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { and, eq, sql } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { branches, companies } from '@/db/schema';
 import { getAllCities } from '@/lib/cache/request-scoped';
 import {
@@ -28,13 +28,16 @@ export default async function NewBranchPage({
 }) {
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
+  const companyId = session.user.companyId;
 
   const params = await searchParams;
   const isStep2 =
     params.step === '2' && typeof params.branchId === 'string' && params.branchId.length > 0;
 
   if (isStep2) {
-    const branch = await getBranchDetail(session.user.companyId, params.branchId!, db);
+    const branch = await withTenant(companyId, (tx) =>
+      getBranchDetail(companyId, params.branchId!, tx),
+    );
     if (!branch) redirect('/admin/branches' as never);
 
     return (
@@ -64,27 +67,30 @@ export default async function NewBranchPage({
 
   // 2026-05-22 Karar A revize — şube limit PRO upsell paneli
   // FREE plan tek şube; 2. şubeye eklemek isteyen kullanıcı banner görür.
-  const [companyRow] = await db
-    .select({
-      plan: companies.plan,
-      temporaryVitrinLimitOverride: companies.temporaryVitrinLimitOverride,
-      temporaryVitrinLimitOverrideUntil: companies.temporaryVitrinLimitOverrideUntil,
-      temporaryBranchLimitOverride: companies.temporaryBranchLimitOverride,
-      temporaryBranchLimitOverrideUntil: companies.temporaryBranchLimitOverrideUntil,
-    })
-    .from(companies)
-    .where(eq(companies.id, session.user.companyId))
-    .limit(1);
-
-  const [branchCountRow] = await db
-    .select({ count: sql<number>`COUNT(*)::int` })
-    .from(branches)
-    .where(
-      and(
-        eq(branches.companyId, session.user.companyId),
-        sql`${branches.status} != 'inactive'`,
-      ),
-    );
+  const [[companyRow], [branchCountRow]] = await withTenant(companyId, (tx) =>
+    Promise.all([
+      tx
+        .select({
+          plan: companies.plan,
+          temporaryVitrinLimitOverride: companies.temporaryVitrinLimitOverride,
+          temporaryVitrinLimitOverrideUntil: companies.temporaryVitrinLimitOverrideUntil,
+          temporaryBranchLimitOverride: companies.temporaryBranchLimitOverride,
+          temporaryBranchLimitOverrideUntil: companies.temporaryBranchLimitOverrideUntil,
+        })
+        .from(companies)
+        .where(eq(companies.id, companyId))
+        .limit(1),
+      tx
+        .select({ count: sql<number>`COUNT(*)::int` })
+        .from(branches)
+        .where(
+          and(
+            eq(branches.companyId, companyId),
+            sql`${branches.status} != 'inactive'`,
+          ),
+        ),
+    ]),
+  );
   const activeBranchCount = branchCountRow?.count ?? 0;
   const branchLimitCheck = companyRow
     ? canAddBranch(companyRow, activeBranchCount)

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { getBranchDetail } from '@/lib/branches/manage';
 import {
   listBranchVariantStock,
@@ -25,14 +25,19 @@ export default async function BranchDetailPage({
 }) {
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
+  const companyId = session.user.companyId;
 
   const { id } = await params;
-  const [branch, variantStock, movements, assigned] = await Promise.all([
-    getBranchDetail(session.user.companyId, id, db),
-    listBranchVariantStock(session.user.companyId, id, db),
-    listBranchRecentMovements(session.user.companyId, id, db, 12),
-    listBranchAssignedUsers(session.user.companyId, id, db),
-  ]);
+  const [branch, variantStock, movements, assigned] = await withTenant(
+    companyId,
+    (tx) =>
+      Promise.all([
+        getBranchDetail(companyId, id, tx),
+        listBranchVariantStock(companyId, id, tx),
+        listBranchRecentMovements(companyId, id, tx, 12),
+        listBranchAssignedUsers(companyId, id, tx),
+      ]),
+  );
 
   if (!branch) notFound();
 

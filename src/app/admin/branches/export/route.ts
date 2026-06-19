@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { listBranches } from '@/lib/branches/manage';
 import { xlsxResponse } from '@/lib/utils/xlsx';
 import { companies } from '@/db/schema';
@@ -11,14 +11,17 @@ export async function GET() {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const [items, [tenant]] = await Promise.all([
-    listBranches(session.user.companyId, db),
-    db
-      .select({ name: companies.name })
-      .from(companies)
-      .where(eq(companies.id, session.user.companyId))
-      .limit(1),
-  ]);
+  const companyId = session.user.companyId;
+  const [items, [tenant]] = await withTenant(companyId, (tx) =>
+    Promise.all([
+      listBranches(companyId, tx),
+      tx
+        .select({ name: companies.name })
+        .from(companies)
+        .where(eq(companies.id, companyId))
+        .limit(1),
+    ]),
+  );
 
   return xlsxResponse(`subeler-${new Date().toISOString().slice(0, 10)}`, {
     sheetName: 'Şubeler',

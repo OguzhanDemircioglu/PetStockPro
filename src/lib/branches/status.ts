@@ -20,7 +20,7 @@
  */
 
 import { and, eq, sql } from 'drizzle-orm';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { branches } from '@/db/schema';
 
 export type BranchStatus = 'active' | 'holiday' | 'inactive';
@@ -73,7 +73,7 @@ export async function setBranchStatus(
   companyId: string,
   branchId: string,
   newStatus: BranchStatus,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<SetBranchStatusResult> {
   if (!BRANCH_STATUS_VALUES.includes(newStatus)) {
     return { ok: false, reason: 'invalid_status' };
@@ -156,7 +156,7 @@ export interface AssertBranchOperationalOptions {
 export async function assertBranchOperational(
   companyId: string,
   branchId: string,
-  db: DbClient,
+  db: TenantDb,
   opts: AssertBranchOperationalOptions = {},
 ): Promise<void> {
   const rows = (await db
@@ -188,7 +188,7 @@ export async function assertBranchOperational(
 export async function isBranchOperational(
   companyId: string,
   branchId: string,
-  db: DbClient,
+  db: TenantDb,
   opts: AssertBranchOperationalOptions = {},
 ): Promise<boolean> {
   try {

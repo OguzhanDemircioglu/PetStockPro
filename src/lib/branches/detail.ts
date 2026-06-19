@@ -4,7 +4,7 @@
  */
 
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import {
   branchInventory,
   productVariants,
@@ -46,7 +46,7 @@ export interface BranchMovementRow {
 export async function listBranchVariantStock(
   companyId: string,
   branchId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<BranchVariantStock[]> {
   const rows = await db
     .select({
@@ -94,7 +94,7 @@ export async function listBranchVariantStock(
 export async function listBranchRecentMovements(
   companyId: string,
   branchId: string,
-  db: DbClient,
+  db: TenantDb,
   limit: number = 12,
 ): Promise<BranchMovementRow[]> {
   const rows = await db
@@ -155,7 +155,7 @@ export interface BranchAssignedUsers {
 export async function listBranchAssignedUsers(
   companyId: string,
   branchId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<BranchAssignedUsers> {
   const rows = await db
     .select({

@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import {
   addBranch,
   updateBranch,
@@ -91,6 +92,7 @@ export async function addBranchAction(
   const gate = rejectIfObserver(session);
   if (gate) return gate;
 
+  const companyId = session.user.companyId;
   const input = parseFormInput(formData);
   if (!input) {
     return {
@@ -99,7 +101,7 @@ export async function addBranchAction(
     };
   }
 
-  const result = await addBranch(session.user.companyId, input, db);
+  const result = await withTenant(companyId, (tx) => addBranch(companyId, input, tx));
   if (!result.ok) {
     if (result.reason === 'branch_limit_exceeded') {
       return {
@@ -159,6 +161,7 @@ export async function updateBranchAction(
   const gate = rejectIfObserver(session, branchId);
   if (gate) return gate;
 
+  const companyId = session.user.companyId;
   const input = parseFormInput(formData);
   if (!input) {
     return {
@@ -168,7 +171,9 @@ export async function updateBranchAction(
     };
   }
 
-  const result = await updateBranch(session.user.companyId, branchId, input, db);
+  const result = await withTenant(companyId, (tx) =>
+    updateBranch(companyId, branchId, input, tx),
+  );
   if (!result.ok) {
     return {
       ...EMPTY,
@@ -223,7 +228,10 @@ export async function removeBranchManagerAction(
     };
   }
 
-  const result = await removeBranchManager(session.user.companyId, branchId, db);
+  const companyId = session.user.companyId;
+  const result = await withTenant(companyId, (tx) =>
+    removeBranchManager(companyId, branchId, tx),
+  );
   if (!result.ok) {
     return {
       ...EMPTY,
@@ -266,11 +274,9 @@ export async function toggleBranchActiveAction(
   const gate = rejectIfObserver(session, branchId);
   if (gate) return gate;
 
-  const result = await setBranchActive(
-    session.user.companyId,
-    branchId,
-    active,
-    db,
+  const companyId = session.user.companyId;
+  const result = await withTenant(companyId, (tx) =>
+    setBranchActive(companyId, branchId, active, tx),
   );
   if (!result.ok) {
     return {
@@ -338,11 +344,9 @@ export async function setBranchStatusAction(
     };
   }
 
-  const result = await setBranchStatus(
-    session.user.companyId,
-    branchId,
-    newStatus,
-    db,
+  const companyId = session.user.companyId;
+  const result = await withTenant(companyId, (tx) =>
+    setBranchStatus(companyId, branchId, newStatus, tx),
   );
 
   if (!result.ok) {

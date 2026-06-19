@@ -14,7 +14,7 @@ import { and, asc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { moderateFields } from '@/lib/moderation/check';
 import type { ModerationFlagsResult } from '@/lib/moderation/redirect-suffix';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { canAddBranch } from '@/lib/billing/plan-features';
 import {
   branches,
@@ -49,7 +49,7 @@ export interface BranchListItem {
 
 export async function listBranches(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<BranchListItem[]> {
   return db
     .select({
@@ -83,7 +83,7 @@ export async function listBranches(
 export async function getBranchDetail(
   companyId: string,
   branchId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<BranchListItem | null> {
   const rows = await listBranches(companyId, db);
   return rows.find((b) => b.id === branchId) ?? null;
@@ -126,7 +126,7 @@ export type AddBranchResult =
 export async function addBranch(
   companyId: string,
   input: BranchInput,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<AddBranchResult> {
   const parsed = branchSchema.safeParse(input);
   if (!parsed.success) {
@@ -246,7 +246,7 @@ export async function updateBranch(
   companyId: string,
   branchId: string,
   input: BranchInput,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<UpdateBranchResult> {
   const parsed = branchSchema.safeParse(input);
   if (!parsed.success) {
@@ -333,7 +333,7 @@ export async function setBranchActive(
   companyId: string,
   branchId: string,
   active: boolean,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<ToggleActiveResult> {
   const existing = await db
     .select({ id: branches.id, isActive: branches.isActive })
@@ -392,7 +392,7 @@ export type RemoveBranchManagerResult =
 export async function removeBranchManager(
   companyId: string,
   branchId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<RemoveBranchManagerResult> {
   const branchOwn = await db
     .select({ id: branches.id })
@@ -432,7 +432,7 @@ export async function removeBranchManager(
 export async function getBranchInventorySummary(
   companyId: string,
   branchId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<{ totalStockQty: number; variantCount: number; productCount: number }> {
   const rows = await db
     .select({

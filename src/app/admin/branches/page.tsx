@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { listBranches } from '@/lib/branches/manage';
 import { ModerationQueryBanner } from '@/components/moderation/moderation-query-banner';
 import { BranchStatusControl } from './branch-status-control';
@@ -27,8 +27,9 @@ export default async function BranchesPage({
 }) {
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
+  const companyId = session.user.companyId;
 
-  const items = await listBranches(session.user.companyId, db);
+  const items = await withTenant(companyId, (tx) => listBranches(companyId, tx));
   const params = await searchParams;
   const activeCount = items.filter((b) => b.status === 'active').length;
   const holidayCount = items.filter((b) => b.status === 'holiday').length;

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { asc, eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { districts } from '@/db/schema';
 import { getBranchDetail } from '@/lib/branches/manage';
 import { getAllCities } from '@/lib/cache/request-scoped';
@@ -18,8 +19,9 @@ export default async function EditBranchPage({
   const { id } = await params;
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
+  const companyId = session.user.companyId;
 
-  const branch = await getBranchDetail(session.user.companyId, id, db);
+  const branch = await withTenant(companyId, (tx) => getBranchDetail(companyId, id, tx));
   if (!branch) notFound();
 
   // 2026-05-22 Tur 7 YT7-6: getAllCities (unstable_cache 24h)
