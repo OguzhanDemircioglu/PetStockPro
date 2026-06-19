@@ -1,9 +1,14 @@
 'use client';
 
-import { useActionState, useEffect, useMemo, useState } from 'react';
+import { useActionState, useEffect, useMemo, useState, useTransition } from 'react';
 import { ModerationWarning } from '@/components/moderation/moderation-warning';
 import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
-import { updateCompanyAction, type CompanyActionState } from './actions';
+import {
+  updateCompanyAction,
+  verifyVatNoAction,
+  type CompanyActionState,
+  type VatVerifyState,
+} from './actions';
 
 interface CityOption {
   id: number;
@@ -18,11 +23,30 @@ interface DistrictOption {
 interface Initial {
   name: string;
   vatNo: string | null;
+  vatNoStatus: string | null;
+  vatNoTitle: string | null;
+  vatNoVerifiedAt: string | null;
+  billingAddress: string | null;
   whatsappPhone: string | null;
   cityId: number | null;
   districtId: string | null;
   locationLat: string | null;
   locationLng: string | null;
+}
+
+type StatusTone = 'ok' | 'err' | 'warn';
+
+/** Mükellef sorgu sonucu → kullanıcıya gösterilecek etiket + renk. */
+function kindView(
+  kind: string | undefined,
+  title: string | null | undefined,
+): { text: string; tone: StatusTone } | null {
+  if (kind === 'efatura') {
+    return { text: `✓ e-Fatura mükellefi${title ? ` — ${title}` : ''}`, tone: 'ok' };
+  }
+  if (kind === 'earsiv') return { text: '✓ Geçerli — e-Arşiv ile faturalanır', tone: 'ok' };
+  if (kind === 'invalid') return { text: '✗ Geçersiz VKN/TCKN', tone: 'err' };
+  return null;
 }
 
 interface Props {
@@ -55,6 +79,24 @@ export function CompanyForm({ initial, cities, initialDistricts }: Props) {
   const [lat, setLat] = useState<string>(initial.locationLat ?? '');
   const [lng, setLng] = useState<string>(initial.locationLng ?? '');
   const [geoStatus, setGeoStatus] = useState<string>('');
+
+  // VKN doğrulama (Nilvera mükellef sorgusu)
+  const [vatNoValue, setVatNoValue] = useState<string>(initial.vatNo ?? '');
+  const [verifying, startVerify] = useTransition();
+  const [verifyResult, setVerifyResult] = useState<VatVerifyState | null>(null);
+
+  const onVerify = () => {
+    startVerify(async () => {
+      setVerifyResult(await verifyVatNoAction(vatNoValue));
+    });
+  };
+
+  // Taze sorgu sonucu varsa onu, yoksa kayıtlı (initial) durumu göster.
+  const statusView = verifyResult
+    ? verifyResult.ok
+      ? kindView(verifyResult.kind, verifyResult.title)
+      : ({ text: verifyResult.message ?? 'Doğrulanamadı', tone: 'warn' } as const)
+    : kindView(initial.vatNoStatus ?? undefined, initial.vatNoTitle);
 
   const detectLocation = () => {
     if (!('geolocation' in navigator)) {
@@ -120,18 +162,58 @@ export function CompanyForm({ initial, cities, initialDistricts }: Props) {
           />
         </Field>
         <Field label="Vergi numarası (VKN/TC)" htmlFor="vatNo">
-          <input
-            id="vatNo"
-            name="vatNo"
-            type="text"
-            maxLength={11}
-            defaultValue={initial.vatNo ?? ''}
-            placeholder="10 hane VKN veya 11 hane TC"
-            data-testid="company-vat-no"
-            className={`${fieldClasses} font-mono`}
+          <div className="flex gap-2">
+            <input
+              id="vatNo"
+              name="vatNo"
+              type="text"
+              maxLength={11}
+              value={vatNoValue}
+              onChange={(e) => {
+                setVatNoValue(e.target.value);
+                setVerifyResult(null); // değişince eski sonucu temizle
+              }}
+              placeholder="10 hane VKN veya 11 hane TC"
+              data-testid="company-vat-no"
+              className={`${fieldClasses} font-mono`}
+            />
+            <button
+              type="button"
+              onClick={onVerify}
+              disabled={verifying}
+              data-testid="verify-vat-btn"
+              className="shrink-0 rounded-xl border border-cat/40 bg-paper px-4 py-3 text-sm font-bold text-cart hover:bg-cat hover:text-white disabled:opacity-60"
+            >
+              {verifying ? 'Sorgulanıyor...' : 'Doğrula'}
+            </button>
+          </div>
+          {statusView && (
+            <p
+              data-testid="vat-status"
+              className={`mt-1.5 text-[12.5px] font-bold ${statusView.tone === 'ok' ? 'text-arrow-7' : statusView.tone === 'err' ? 'text-danger-7' : 'text-ink-3'}`}
+            >
+              {statusView.text}
+            </p>
+          )}
+          <p className="mt-1 text-[12.5px] text-ink-4">
+            10 hane = kurumsal (VKN), 11 hane = TC. <strong>Doğrula</strong> ile
+            Nilvera&apos;da kontrol edilir. Boş bırakırsan faturalar nihai tüketici
+            (e-Arşiv) olarak kesilir. Vitrin için zorunlu.
+          </p>
+        </Field>
+        <Field label="Fatura adresi" htmlFor="billingAddress">
+          <textarea
+            id="billingAddress"
+            name="billingAddress"
+            rows={2}
+            maxLength={500}
+            defaultValue={initial.billingAddress ?? ''}
+            placeholder="Açık adres (faturada görünür)"
+            data-testid="company-billing-address"
+            className={fieldClasses}
           />
           <p className="mt-1 text-[12.5px] text-ink-4">
-            Vitrin&apos;de ürün yayınlamak için zorunlu.
+            e-Arşiv/e-Fatura&apos;da görünür. İl/ilçe aşağıdaki konum bilgisinden alınır.
           </p>
         </Field>
       </Section>

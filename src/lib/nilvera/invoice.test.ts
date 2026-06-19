@@ -1,9 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   createNilveraInvoice,
+  createEInvoice,
+  resolveAndIssueInvoice,
   retrieveNilveraInvoice,
   cancelNilveraInvoice,
+  type IssueInvoiceInput,
 } from './invoice';
+import { NIHAI_TUKETICI_TAX_NUMBER } from './lookup';
 import { _resetNilveraConfigCache } from './config';
 import type { NilveraInvoiceCreateRequest } from './types';
 
@@ -226,6 +230,120 @@ describe('nilvera invoice operations', () => {
 
     it('boş uuid → throw', async () => {
       await expect(cancelNilveraInvoice('')).rejects.toThrow(/zorunlu/);
+    });
+  });
+
+  // ────────────────────────────────────────────────────────────────
+  // createEInvoice (POST /einvoice/Send/Model — e-Fatura)
+  // ────────────────────────────────────────────────────────────────
+
+  describe('createEInvoice', () => {
+    it('başarılı POST → /einvoice/Send/Model + EInvoice + CustomerAlias', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        makeMockResponse(200, validSendResponse),
+      );
+
+      const result = await createEInvoice(validInvoiceInput, 'urn:mail:pk@mavi.com');
+
+      expect(result.invoiceId).toBe('nv-ettn-uuid-123');
+      expect(fetchSpy).toHaveBeenCalledWith(
+        'https://apitest.nilvera.com/einvoice/Send/Model',
+        expect.objectContaining({ method: 'POST' }),
+      );
+      const body = JSON.parse((fetchSpy.mock.calls[0][1] as RequestInit).body as string);
+      expect(body.CustomerAlias).toBe('urn:mail:pk@mavi.com');
+      expect(body.EInvoice.InvoiceInfo.InvoiceType).toBe('SATIS');
+      expect(body.EInvoice.InvoiceInfo.PayableAmount).toBe(10);
+      // e-Fatura'da e-Arşiv'e özgü alanlar OLMAMALI
+      expect(body.EInvoice.InvoiceInfo.SalesPlatform).toBeUndefined();
+      expect(body.EInvoice.InvoiceInfo.SendType).toBeUndefined();
+      // e-Arşiv sarmalayıcısı kullanılmamalı
+      expect(body.ArchiveInvoice).toBeUndefined();
+    });
+
+    it('boş alias → throw (fetch yok)', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch');
+      await expect(createEInvoice(validInvoiceInput, '')).rejects.toThrow(/etiket|alias|CustomerAlias/i);
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  // ────────────────────────────────────────────────────────────────
+  // resolveAndIssueInvoice (yönlendirme)
+  // ────────────────────────────────────────────────────────────────
+
+  describe('resolveAndIssueInvoice', () => {
+    const baseIssueInput: IssueInvoiceInput = {
+      externalRef: INVOICE_UUID,
+      invoiceDate: '2026-06-19T10:00:00Z',
+      customer: { taxNumber: '1234567890', title: 'Mavi Pet Shop', city: 'İstanbul', district: 'Üsküdar' },
+      lines: [{ name: 'PetStockPro PRO planı', quantity: 1, unitPrice: 8.33, vatRate: 20 }],
+    };
+
+    it('vergi no yok → nihai tüketici e-Arşiv (TaxNumber=11111111111), checkTaxpayer çağrılmaz', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        makeMockResponse(200, validSendResponse),
+      );
+      const check = vi.fn();
+
+      const res = await resolveAndIssueInvoice(
+        { ...baseIssueInput, customer: { taxNumber: null, title: 'Ahmet Yılmaz', city: 'İzmir' } },
+        { checkTaxpayer: check },
+      );
+
+      expect(res.kind).toBe('earsiv');
+      expect(check).not.toHaveBeenCalled();
+      const body = JSON.parse((fetchSpy.mock.calls[0][1] as RequestInit).body as string);
+      expect(body.ArchiveInvoice.CustomerInfo.TaxNumber).toBe(NIHAI_TUKETICI_TAX_NUMBER);
+    });
+
+    it('VKN + checkTaxpayer efatura → createEInvoice (etikete)', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        makeMockResponse(200, validSendResponse),
+      );
+      const check = vi.fn().mockResolvedValue({
+        kind: 'efatura',
+        title: 'Mavi Pet A.Ş.',
+        alias: 'urn:mail:pk@mavi.com',
+      });
+
+      const res = await resolveAndIssueInvoice(baseIssueInput, { checkTaxpayer: check });
+
+      expect(res.kind).toBe('efatura');
+      expect(res.alias).toBe('urn:mail:pk@mavi.com');
+      expect(check).toHaveBeenCalledWith('1234567890');
+      const url = (fetchSpy.mock.calls[0][0] as string).toString();
+      expect(url).toContain('/einvoice/Send/Model');
+    });
+
+    it('VKN + checkTaxpayer earsiv → createNilveraInvoice (e-Arşiv)', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        makeMockResponse(200, validSendResponse),
+      );
+      const check = vi.fn().mockResolvedValue({ kind: 'earsiv', title: null, alias: null });
+
+      const res = await resolveAndIssueInvoice(baseIssueInput, { checkTaxpayer: check });
+
+      expect(res.kind).toBe('earsiv');
+      const url = (fetchSpy.mock.calls[0][0] as string).toString();
+      expect(url).toContain('/earchive/Send/Model');
+    });
+
+    it('checkTaxpayer invalid → throw (fatura kesilmez)', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch');
+      const check = vi.fn().mockResolvedValue({ kind: 'invalid', title: null, alias: null });
+
+      await expect(
+        resolveAndIssueInvoice(baseIssueInput, { checkTaxpayer: check }),
+      ).rejects.toThrow(/geçersiz/i);
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it('efatura ama alias yok → throw', async () => {
+      const check = vi.fn().mockResolvedValue({ kind: 'efatura', title: 'X', alias: null });
+      await expect(
+        resolveAndIssueInvoice(baseIssueInput, { checkTaxpayer: check }),
+      ).rejects.toThrow(/etiket|alias/i);
     });
   });
 });

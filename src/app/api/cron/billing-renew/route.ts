@@ -13,7 +13,7 @@
  */
 import { db } from '@/lib/db/client';
 import { runBillingRenewals } from '@/lib/billing/renewals';
-import { createNilveraInvoice } from '@/lib/nilvera/invoice';
+import { resolveAndIssueInvoice } from '@/lib/nilvera/invoice';
 import { isNilveraConfigured } from '@/lib/nilvera/config';
 
 export const runtime = 'nodejs';
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
   try {
     const summary = await runBillingRenewals({
       db,
-      nilvera: isNilveraConfigured() ? { createInvoice: createNilveraInvoice } : undefined,
+      nilvera: isNilveraConfigured() ? { issueInvoice: resolveAndIssueInvoice } : undefined,
     });
     return Response.json({ ok: true, ...summary }, { status: 200 });
   } catch (err) {

@@ -15,6 +15,7 @@ import {
   SITEMAP_STALE_THRESHOLD_HOURS,
 } from '@/lib/vitrin/sitemap-status';
 import { getRetentionStats } from '@/lib/cleanup/retention';
+import { NilveraConnectionTest } from './nilvera-test';
 
 interface EnvCheck {
   key: string;
@@ -165,6 +166,13 @@ export default async function SystemSettingsPage() {
             </tbody>
           </table>
         </div>
+      </section>
+
+      <section data-testid="nilvera-connection">
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
+          🧾 Nilvera bağlantı testi (canlı fatura altyapısı)
+        </h2>
+        <NilveraConnectionTest />
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">

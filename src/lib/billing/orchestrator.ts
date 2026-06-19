@@ -23,7 +23,8 @@
 import { eq, and } from 'drizzle-orm';
 import type { DbClient } from '@/lib/db/client';
 import { writeAuditLog } from '@/lib/audit/log';
-import { createNilveraInvoice } from '@/lib/nilvera/invoice';
+import { resolveAndIssueInvoice } from '@/lib/nilvera/invoice';
+import { loadInvoiceCustomer } from './invoice-customer';
 import { processedWebhooks, subscriptions, invoices, companies, users } from '@/db/schema';
 import { addMonths, computeInvoiceTotals, type InvoiceTotals } from './totals';
 import { alertPaymentAnomaly, alertDunning, type PaymentAnomalyInput } from './alerts';
@@ -91,7 +92,7 @@ export interface PaytrCallbackResult {
 
 export interface OrchestratorDeps {
   db: DbClient;
-  nilvera?: { createInvoice: typeof createNilveraInvoice };
+  nilvera?: { issueInvoice: typeof resolveAndIssueInvoice };
   now?: () => Date;
 }
 
@@ -152,7 +153,7 @@ export async function processPaytrCallback(
   }
 
   // Post-tx: Nilvera best-effort (yalnız başarılı ödeme + nilvera dep varsa)
-  if (txOut.nilveraCtx && deps.nilvera?.createInvoice) {
+  if (txOut.nilveraCtx && deps.nilvera?.issueInvoice) {
     const { nilveraInvoiceId, nilveraError } = await issueAndRecordNilvera(deps, txOut.nilveraCtx, now);
     return { ...txOut.result, nilveraInvoiceId, nilveraError };
   }
@@ -459,20 +460,17 @@ async function issueAndRecordNilvera(
   now: Date,
 ): Promise<{ nilveraInvoiceId?: string; nilveraError?: string }> {
   try {
-    const compRows = await deps.db
-      .select({ name: companies.name, vatNo: companies.vatNo })
-      .from(companies)
-      .where(eq(companies.id, ctx.companyId))
-      .limit(1);
-    const company = compRows[0];
-    if (!company?.vatNo) {
-      throw new Error(`Şirket VKN eksik (companyId=${ctx.companyId}) — Nilvera fatura atlandı`);
+    // Müşteri bilgisi (il/ilçe adı join + fatura adresi). vatNo null → nihai tüketici.
+    const customer = await loadInvoiceCustomer(deps.db, ctx.companyId);
+    if (!customer) {
+      throw new Error(`Şirket bulunamadı (companyId=${ctx.companyId}) — Nilvera fatura atlandı`);
     }
 
-    const resp = await deps.nilvera!.createInvoice({
+    // resolveAndIssueInvoice: VKN'ye göre e-Fatura / e-Arşiv / nihai tüketici yönlendirir.
+    const resp = await deps.nilvera!.issueInvoice({
       externalRef: ctx.invoiceId,
       invoiceDate: now.toISOString(),
-      customer: { taxNumber: company.vatNo, title: company.name, address: '—', city: '—' },
+      customer,
       lines: [
         { name: `PetStockPro ${ctx.plan} planı (aylık abonelik)`, quantity: 1, unitPrice: ctx.totals.matrah, vatRate: 20 },
       ],
@@ -484,6 +482,7 @@ async function issueAndRecordNilvera(
       .set({
         nilveraInvoiceId: resp.invoiceId,
         nilveraInvoiceNumber: resp.invoiceNumber ?? null,
+        invoiceKind: resp.kind, // 'efatura' | 'earsiv'
         pdfUrl: resp.pdfUrl ?? null,
         status: 'issued',
         issuedAt: now,

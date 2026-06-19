@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/lib/db/client', () => ({ db: {} }));
-vi.mock('@/lib/nilvera/invoice', () => ({ createNilveraInvoice: vi.fn() }));
+vi.mock('@/lib/nilvera/invoice', () => ({ resolveAndIssueInvoice: vi.fn() }));
 vi.mock('@/lib/nilvera/config', () => ({ isNilveraConfigured: vi.fn(() => true) }));
 vi.mock('@/lib/paytr/config', () => ({
   getPaytrConfig: vi.fn(() => ({ merchantKey: 'k', merchantSalt: 's', testMode: 1, baseUrl: 'https://www.paytr.com' })),

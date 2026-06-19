@@ -219,6 +219,15 @@ export const companies = petstockproSchema.table('companies', {
   plan: planEnum('plan').notNull().default('FREE'),
   vatNo: varchar('vat_no', { length: 11 }), // 10 (VKN) veya 11 (TC) — opsiyonel
   vatRequiredAt: timestamp('vat_required_at', { withTimezone: true }),
+  // Nilvera mükellef sorgusu sonucu (Migration 0038) — VKN canlı doğrulama.
+  // vatNoStatus: 'efatura' (e-Fatura mükellefi) | 'earsiv' (e-Arşiv) | 'invalid'.
+  // vatNoTitle: GİB'de kayıtlı resmi ünvan (e-Fatura mükellefinde dolu).
+  vatNoStatus: varchar('vat_no_status', { length: 20 }),
+  vatNoTitle: text('vat_no_title'),
+  vatNoVerifiedAt: timestamp('vat_no_verified_at', { withTimezone: true }),
+  // Fatura adresi (e-Arşiv/e-Fatura CustomerInfo.Address). cityId/districtId il/ilçe verir,
+  // bu alan açık adres satırı. Boşsa "Belirtilmemiş" placeholder kullanılır.
+  billingAddress: text('billing_address'),
   whatsappPhone: varchar('whatsapp_phone', { length: 20 }),
   cityId: integer('city_id').references(() => cities.id),
   districtId: uuid('district_id').references(() => districts.id),
@@ -461,6 +470,9 @@ export const invoices = petstockproSchema.table('invoices', {
   // Nilvera mutabakat (invoice-reconcile cron) — 'pending' kalan faturanın otomatik retry takibi
   nilveraRetryCount: integer('nilvera_retry_count').notNull().default(0),
   lastNilveraError: text('last_nilvera_error'),
+
+  // Kesilen fatura tipi (Migration 0038): 'efatura' (e-Fatura mükellefine) | 'earsiv' (e-Arşiv).
+  invoiceKind: varchar('invoice_kind', { length: 16 }),
 
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

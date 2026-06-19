@@ -7,6 +7,7 @@ import { db } from '@/lib/db/client';
 import { withTenant } from '@/lib/db/with-tenant';
 import {
   updateCompanyProfile,
+  verifyAndSaveVatNo,
   type CompanyProfileInput,
 } from '@/lib/company/settings';
 import { writeAuditLogAsync } from '@/lib/audit/log';
@@ -47,6 +48,7 @@ export async function updateCompanyAction(
   const input: CompanyProfileInput = {
     name,
     vatNo: asStr(formData.get('vatNo')),
+    billingAddress: asStr(formData.get('billingAddress')),
     whatsappPhone: asStr(formData.get('whatsappPhone')),
     cityId: cityId && Number.isFinite(cityId) ? cityId : null,
     districtId: asStr(formData.get('districtId')),
@@ -107,4 +109,47 @@ export async function updateCompanyAction(
     issues: [],
     ...(result.moderationFlags?.flagged ? { moderationFlags: result.moderationFlags } : {}),
   };
+}
+
+export interface VatVerifyState {
+  ok: boolean;
+  kind?: 'efatura' | 'earsiv' | 'invalid';
+  title?: string | null;
+  message?: string;
+}
+
+/**
+ * "Doğrula" butonu — VKN/TCKN'yi Nilvera'da sorgula, sonucu kaydet + göster.
+ * Geçerliyse vatNo da kaydedilir (verifyAndSaveVatNo).
+ */
+export async function verifyVatNoAction(vatNo: string): Promise<VatVerifyState> {
+  const session = await auth();
+  if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+  const companyId = session.user.companyId;
+
+  const res = await withTenant(companyId, (tx) => verifyAndSaveVatNo(companyId, vatNo, tx));
+  if (!res.ok) {
+    return {
+      ok: false,
+      message:
+        res.reason === 'empty'
+          ? 'Önce VKN/TCKN gir'
+          : 'Nilvera şu an yanıt vermedi, biraz sonra tekrar dene',
+    };
+  }
+
+  writeAuditLogAsync(
+    {
+      companyId,
+      userId: session.user.id,
+      action: 'company.vat_no_verified',
+      entityType: 'company',
+      entityId: companyId,
+      afterState: { kind: res.kind, hasTitle: !!res.title },
+    },
+    db,
+  );
+  revalidatePath('/admin/settings/company');
+  revalidatePath('/admin/products');
+  return { ok: true, kind: res.kind, title: res.title };
 }

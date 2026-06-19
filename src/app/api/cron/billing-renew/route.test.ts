@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('@/lib/db/client', () => ({ db: {} }));
-vi.mock('@/lib/nilvera/invoice', () => ({ createNilveraInvoice: vi.fn() }));
+vi.mock('@/lib/nilvera/invoice', () => ({ resolveAndIssueInvoice: vi.fn() }));
 vi.mock('@/lib/nilvera/config', () => ({ isNilveraConfigured: vi.fn(() => true) }));
 vi.mock('@/lib/billing/renewals', () => ({
   runBillingRenewals: vi.fn(async () => ({ due: 1, renewed: 1, failed: 0, waitCallback: 0, expired: 0, errors: 0 })),

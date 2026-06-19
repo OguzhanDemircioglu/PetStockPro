@@ -49,6 +49,10 @@ export default async function CompanySettingsPage() {
           initial={{
             name: profile.name,
             vatNo: profile.vatNo,
+            vatNoStatus: profile.vatNoStatus,
+            vatNoTitle: profile.vatNoTitle,
+            vatNoVerifiedAt: profile.vatNoVerifiedAt ? profile.vatNoVerifiedAt.toISOString() : null,
+            billingAddress: profile.billingAddress,
             whatsappPhone: profile.whatsappPhone,
             cityId: profile.cityId,
             districtId: profile.districtId,

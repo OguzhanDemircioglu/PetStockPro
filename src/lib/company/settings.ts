@@ -14,6 +14,7 @@ import { moderateFields } from '@/lib/moderation/check';
 import type { ModerationFlagsResult } from '@/lib/moderation/redirect-suffix';
 import type { TenantDb } from '@/lib/db/with-tenant';
 import { companies } from '@/db/schema';
+import { checkTaxpayer, type TaxpayerKind } from '@/lib/nilvera/lookup';
 
 export interface CompanyProfile {
   id: string;
@@ -21,6 +22,13 @@ export interface CompanyProfile {
   slug: string;
   vatNo: string | null;
   vatRequiredAt: Date | null;
+  /** Nilvera mükellef sorgusu sonucu: 'efatura' | 'earsiv' | 'invalid' | null (doğrulanmadı). */
+  vatNoStatus: string | null;
+  /** e-Fatura mükellefinin GİB'de kayıtlı resmi ünvanı. */
+  vatNoTitle: string | null;
+  vatNoVerifiedAt: Date | null;
+  /** Fatura adresi (açık adres satırı). */
+  billingAddress: string | null;
   whatsappPhone: string | null;
   cityId: number | null;
   districtId: string | null;
@@ -41,6 +49,10 @@ export async function getCompanyProfile(
       slug: companies.slug,
       vatNo: companies.vatNo,
       vatRequiredAt: companies.vatRequiredAt,
+      vatNoStatus: companies.vatNoStatus,
+      vatNoTitle: companies.vatNoTitle,
+      vatNoVerifiedAt: companies.vatNoVerifiedAt,
+      billingAddress: companies.billingAddress,
       whatsappPhone: companies.whatsappPhone,
       cityId: companies.cityId,
       districtId: companies.districtId,
@@ -67,6 +79,12 @@ export const companyProfileSchema = z.object({
     .string()
     .max(20)
     .regex(/^\+?\d{10,15}$/, 'Geçerli WhatsApp telefonu (+90... veya 0...)')
+    .nullable()
+    .optional()
+    .or(z.literal('').transform(() => null)),
+  billingAddress: z
+    .string()
+    .max(500, 'Fatura adresi en fazla 500 karakter')
     .nullable()
     .optional()
     .or(z.literal('').transform(() => null)),
@@ -150,6 +168,9 @@ export async function updateCompanyProfile(
   const firstTimeVatNo =
     !existing[0].vatNo && data.vatNo !== null && data.vatNo !== undefined;
 
+  // VKN değişirse önceki Nilvera doğrulaması geçersizleşir → status sıfırla (yeniden Doğrula gerek).
+  const vatNoChanged = (data.vatNo ?? null) !== (existing[0].vatNo ?? null);
+
   try {
     await db
       .update(companies)
@@ -157,6 +178,8 @@ export async function updateCompanyProfile(
         name: data.name,
         vatNo: data.vatNo ?? null,
         vatRequiredAt: firstTimeVatNo ? now : undefined,
+        ...(vatNoChanged ? { vatNoStatus: null, vatNoTitle: null, vatNoVerifiedAt: null } : {}),
+        billingAddress: data.billingAddress ?? null,
         whatsappPhone: data.whatsappPhone ?? null,
         cityId: data.cityId ?? null,
         districtId: data.districtId ?? null,
@@ -183,4 +206,58 @@ export async function updateCompanyProfile(
   } catch {
     return { ok: false, reason: 'unknown' };
   }
+}
+
+export type VerifyVatNoResult =
+  | { ok: true; kind: TaxpayerKind; title: string | null }
+  | { ok: false; reason: 'empty' | 'network' };
+
+/**
+ * VKN/TCKN'yi Nilvera'da doğrula + sonucu (status/title/verifiedAt) kaydet.
+ * "Doğrula" butonu çağırır. Geçerliyse vatNo'yu da kaydeder (atomik doğrula+kaydet).
+ *
+ *  - kind 'efatura' → e-Fatura mükellefi (resmi ünvan title'da)
+ *  - kind 'earsiv'  → e-Fatura mükellefi değil (e-Arşiv ile faturalanır)
+ *  - kind 'invalid' → geçersiz VKN/TCKN → vatNo KAYDEDİLMEZ (yalnız durum)
+ *
+ * Nilvera ağ hatası → { ok:false, reason:'network' } (kullanıcı sonra tekrar dener).
+ */
+export async function verifyAndSaveVatNo(
+  companyId: string,
+  vatNoRaw: string,
+  db: TenantDb,
+  opts: { checkTaxpayer?: typeof checkTaxpayer; now?: Date } = {},
+): Promise<VerifyVatNoResult> {
+  const check = opts.checkTaxpayer ?? checkTaxpayer;
+  const now = opts.now ?? new Date();
+  const vatNo = (vatNoRaw ?? '').replace(/\s+/g, '');
+  if (!vatNo) return { ok: false, reason: 'empty' };
+
+  let result;
+  try {
+    result = await check(vatNo);
+  } catch {
+    return { ok: false, reason: 'network' };
+  }
+
+  const existing = await db
+    .select({ vatNo: companies.vatNo })
+    .from(companies)
+    .where(eq(companies.id, companyId))
+    .limit(1);
+  const firstTimeVatNo = result.kind !== 'invalid' && !existing[0]?.vatNo;
+
+  await db
+    .update(companies)
+    .set({
+      vatNoStatus: result.kind,
+      vatNoTitle: result.title,
+      vatNoVerifiedAt: now,
+      ...(result.kind !== 'invalid' ? { vatNo } : {}), // geçersizse vatNo'ya dokunma
+      ...(firstTimeVatNo ? { vatRequiredAt: now } : {}),
+      updatedAt: now,
+    })
+    .where(eq(companies.id, companyId));
+
+  return { ok: true, kind: result.kind, title: result.title };
 }

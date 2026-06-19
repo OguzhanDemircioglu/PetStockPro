@@ -102,7 +102,9 @@ function makeDb(config: DbConfig) {
     select() {
       return {
         from(table: unknown) {
-          return {
+          // leftJoin opsiyonel (loadInvoiceCustomer cities/districts join'ler) — chainable.
+          const chain: Record<string, unknown> = {
+            leftJoin: () => chain,
             where() {
               return {
                 limit() {
@@ -114,6 +116,7 @@ function makeDb(config: DbConfig) {
               };
             },
           };
+          return chain;
         },
       };
     },
@@ -142,7 +145,7 @@ describe('processPaytrCallback', () => {
 
   it('ilk ödeme success → active + kart sakla + company.plan + invoice + Nilvera + audit', async () => {
     const { db, calls } = makeDb({ subRow: subRow(), company: { name: 'Pet A', vatNo: '1234567890' } });
-    const nilvera = { createInvoice: vi.fn().mockResolvedValue({ invoiceId: 'nv-1', invoiceNumber: 'N1', pdfUrl: 'u' }) };
+    const nilvera = { issueInvoice: vi.fn().mockResolvedValue({ invoiceId: 'nv-1', invoiceNumber: 'N1', kind: 'earsiv', pdfUrl: 'u' }) };
 
     const res = await processPaytrCallback(baseInput, { db, nilvera, now });
 
@@ -159,10 +162,11 @@ describe('processPaytrCallback', () => {
     expect(compUpd.vals.plan).toBe('PRO');
     expect(calls.invoiceInsert[0].merchantOid).toBe('PSP-OID-1');
     expect(calls.invoiceInsert[0].amountTotal).toBe('1000.00');
-    expect(nilvera.createInvoice).toHaveBeenCalledTimes(1);
+    expect(nilvera.issueInvoice).toHaveBeenCalledTimes(1);
     const invUpd = calls.updates.find((u) => u.table === 'invoices')!;
     expect(invUpd.vals.status).toBe('issued');
     expect(invUpd.vals.nilveraInvoiceId).toBe('nv-1');
+    expect(invUpd.vals.invoiceKind).toBe('earsiv');
     expect(auditAction()).toBe('subscription.payment_succeeded');
     expect(res.nilveraInvoiceId).toBe('nv-1');
   });
@@ -173,7 +177,7 @@ describe('processPaytrCallback', () => {
       subRow: subRow({ status: 'active', currentPeriodEnd: periodEnd }),
       company: { name: 'Pet A', vatNo: '1234567890' },
     });
-    const nilvera = { createInvoice: vi.fn().mockResolvedValue({ invoiceId: 'nv-2' }) };
+    const nilvera = { issueInvoice: vi.fn().mockResolvedValue({ invoiceId: 'nv-2', kind: 'earsiv' }) };
 
     const res = await processPaytrCallback(baseInput, { db, nilvera, now });
 
@@ -305,7 +309,7 @@ describe('processPaytrCallback', () => {
 
   it('Nilvera hata → success ama invoice pending + nilveraError', async () => {
     const { db, calls } = makeDb({ subRow: subRow(), company: { name: 'Pet A', vatNo: '1234567890' } });
-    const nilvera = { createInvoice: vi.fn().mockRejectedValue(new Error('Nilvera 502')) };
+    const nilvera = { issueInvoice: vi.fn().mockRejectedValue(new Error('Nilvera 502')) };
     const res = await processPaytrCallback(baseInput, { db, nilvera, now });
 
     expect(res.outcome).toBe('payment_succeeded');
@@ -316,14 +320,17 @@ describe('processPaytrCallback', () => {
     expect(invUpd?.vals.lastNilveraError).toContain('Nilvera 502');
   });
 
-  it('şirket VKN yok → Nilvera atlanır, invoice pending, yine success', async () => {
-    const { db } = makeDb({ subRow: subRow(), company: { name: 'Pet A', vatNo: null } });
-    const nilvera = { createInvoice: vi.fn() };
+  it('şirket VKN yok → nihai tüketici e-Arşiv kesilir (atlanmaz)', async () => {
+    const { db, calls } = makeDb({ subRow: subRow(), company: { name: 'Ahmet Yılmaz', vatNo: null } });
+    const nilvera = { issueInvoice: vi.fn().mockResolvedValue({ invoiceId: 'nv-nt', kind: 'earsiv' }) };
     const res = await processPaytrCallback(baseInput, { db, nilvera, now });
 
     expect(res.outcome).toBe('payment_succeeded');
-    expect(nilvera.createInvoice).not.toHaveBeenCalled();
-    expect(res.nilveraError).toContain('VKN eksik');
+    // null VKN → router'a taxNumber null geçer (nihai tüketici); fatura yine kesilir.
+    expect(nilvera.issueInvoice).toHaveBeenCalledTimes(1);
+    expect((nilvera.issueInvoice.mock.calls[0][0] as { customer: { taxNumber: unknown } }).customer.taxNumber).toBeNull();
+    expect(res.nilveraInvoiceId).toBe('nv-nt');
+    expect(calls.updates.find((u) => u.table === 'invoices')!.vals.status).toBe('issued');
   });
 
   it('nilvera dep yok → invoice pending, success', async () => {

@@ -229,6 +229,7 @@ CRON_SECRET                                                    # yenileme cron a
 | 4 (iptal + reactivate) | ✅ cancel/reactivate + UI · E2E (reactivate → DB cancel=false doğrulandı) · 4 test |
 | 5 (doc + metin temizliği) | ✅ iyzico→PayTR (legal/landing/superadmin/env panel) + PAYMENT-INTEGRATION not · 1858 test |
 | Hardening (C1-C4 / I1-I3 / H1-H2) | ✅ plan `precious-popping-mochi` — aşağıda §9 |
+| Nilvera canlı fatura — VKN doğrulama + e-Fatura/e-Arşiv/nihai tüketici yönlendirme | ✅ 2026-06-19 — aşağıda §10 · 1916 test |
 
 ---
 
@@ -262,3 +263,38 @@ Abonelik expire → FREE olunca FREE vitrin limitini (10) aşan ürünler otomat
 
 ### 9.5 Eşzamanlılık (H1)
 `runBillingRenewals` "claim" transaction: due abonelikler `FOR UPDATE OF subscriptions SKIP LOCKED` ile seçilip `pendingMerchantOid` atanır → eşzamanlı cron çalışması aynı aboneliği iki kez çekemez.
+
+---
+
+## 10. Canlı fatura — VKN doğrulama + fatura tipi yönlendirme (2026-06-19)
+
+Kullanıcı canlı `NILVERA_API_KEY` aldı. Önceki durum: HER fatura e-Arşiv kesiliyordu, müşteri VKN'si Nilvera'da doğrulanmıyordu, alıcı adresi `'—'` placeholder'dı. Kullanıcı kararları + yapılanlar:
+
+### 10.1 Kararlar
+- **Tam yönlendirme:** müşteri VKN'sine göre e-Fatura / e-Arşiv seçilir.
+- **VKN zorunlu değil:** 10 hane → kurumsal; vergi no boşsa **nihai tüketici** (ad+adres yeterli, TCKN istenmez).
+
+### 10.2 Yönlendirme (`resolveAndIssueInvoice` — `lib/nilvera/invoice.ts`)
+| Girdi | Sorgu | Sonuç |
+|---|---|---|
+| 10 hane VKN | `checkTaxpayer` → `GET /general/GlobalCompany/Check/TaxNumber/{vkn}?globalUserType=Invoice` | dizi dolu → **e-Fatura** (`POST /einvoice/Send/Model`, `{EInvoice, CustomerAlias}`); boş/404 → **e-Arşiv** |
+| 11 hane TCKN | (sorgu yok) | **e-Arşiv** |
+| boş | (sorgu yok) | **nihai tüketici e-Arşiv**, `TaxNumber=11111111111` |
+| geçersiz | — | throw → fatura `pending`, reconcile yeniden dener |
+
+e-Fatura etiketi (alias) = check yanıtındaki `Name`; ünvan = `Title`.
+
+### 10.3 Gerçek adres
+`lib/billing/invoice-customer.ts` (`loadInvoiceCustomer`/`buildInvoiceCustomer`): company `cityId`/`districtId` → il/ilçe **adına** join + `companies.billing_address`. Orchestrator + reconcile bunu kullanır.
+
+### 10.4 Migration 0038 (manuel, Supabase + Aiven)
+`companies` += `vat_no_status` / `vat_no_title` / `vat_no_verified_at` / `billing_address`; `invoices` += `invoice_kind` ('efatura' | 'earsiv').
+
+### 10.5 UI
+- `/admin/settings/company`: VKN **"Doğrula"** butonu (canlı `checkTaxpayer` → ünvan/mod gösterir, `verifyAndSaveVatNo`) + fatura adresi. VKN değişince doğrulama durumu sıfırlanır.
+- Süperadmin `system-settings`: **"Nilvera Bağlantı Testi"** (`GET /general/Company` → satıcı hesabını + serie durumunu gösterir; anahtarı paylaşmadan canlı kurulum doğrulama).
+
+### 10.6 Kullanıcı aksiyonları (canlı fatura için şart)
+- **Nilvera portal:** e-Arşiv serisi tanımla → kodu `NILVERA_SERIE` env'e (yoksa fatura kesilemez). Firma Bilgileri eksiksiz (satıcı tarafı otomatik buradan gelir).
+- **Vercel env:** `NILVERA_BASE_URL=https://api.nilvera.com` (apitest değil), `NILVERA_SELLER_VKN` + `NILVERA_SELLER_TITLE`, `NILVERA_SERIE`.
+- Doğrulama: süperadmin → Sistem Ayarları → "Nilvera Bağlantı Testi".

@@ -21,7 +21,7 @@ import { and, eq, lte, isNull, isNotNull, or, inArray } from 'drizzle-orm';
 import type { DbClient } from '@/lib/db/client';
 import { subscriptions, companies, users } from '@/db/schema';
 import { writeAuditLog } from '@/lib/audit/log';
-import { createNilveraInvoice } from '@/lib/nilvera/invoice';
+import { resolveAndIssueInvoice } from '@/lib/nilvera/invoice';
 import { chargeSavedCard, listSavedCards } from '@/lib/paytr/client';
 import { PLAN_LIMITS } from '@/lib/constants/plan-limits';
 import { processPaytrCallback, effectivePlanAndAmount } from './orchestrator';
@@ -34,7 +34,7 @@ export interface RenewalDeps {
   charge?: typeof chargeSavedCard;
   listCards?: typeof listSavedCards;
   processCallback?: typeof processPaytrCallback;
-  nilvera?: { createInvoice: typeof createNilveraInvoice };
+  nilvera?: { issueInvoice: typeof resolveAndIssueInvoice };
   now?: () => Date;
   appUrl?: string;
 }

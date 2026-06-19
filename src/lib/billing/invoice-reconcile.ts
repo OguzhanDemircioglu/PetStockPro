@@ -15,8 +15,9 @@
 
 import { and, eq, lt } from 'drizzle-orm';
 import type { DbClient } from '@/lib/db/client';
-import { invoices, companies, subscriptions } from '@/db/schema';
-import { createNilveraInvoice } from '@/lib/nilvera/invoice';
+import { invoices, companies, subscriptions, cities, districts } from '@/db/schema';
+import { resolveAndIssueInvoice } from '@/lib/nilvera/invoice';
+import { buildInvoiceCustomer } from './invoice-customer';
 import { SUBSCRIPTION_VAT_RATE } from './totals';
 import { alertInvoiceFailed } from './alerts';
 
@@ -27,7 +28,7 @@ const RECONCILE_MIN_AGE_MS = 10 * 60 * 1000; // 10 dk
 
 export interface InvoiceReconcileDeps {
   db: DbClient;
-  nilvera?: { createInvoice: typeof createNilveraInvoice };
+  nilvera?: { issueInvoice: typeof resolveAndIssueInvoice };
   now?: () => Date;
 }
 
@@ -51,7 +52,7 @@ export async function runInvoiceReconcile(
   const summary: InvoiceReconcileSummary = { pending: 0, issued: 0, failed: 0, skipped: 0, alerted: 0 };
 
   // Nilvera yapılandırılmamışsa hiçbir şey yapma (faturalar pending bekler).
-  if (!deps.nilvera?.createInvoice) return summary;
+  if (!deps.nilvera?.issueInvoice) return summary;
 
   const cutoff = new Date(now.getTime() - RECONCILE_MIN_AGE_MS);
 
@@ -64,10 +65,15 @@ export async function runInvoiceReconcile(
       plan: subscriptions.plan,
       vatNo: companies.vatNo,
       companyName: companies.name,
+      billingAddress: companies.billingAddress,
+      cityName: cities.name,
+      districtName: districts.name,
     })
     .from(invoices)
     .innerJoin(companies, eq(companies.id, invoices.companyId))
     .innerJoin(subscriptions, eq(subscriptions.id, invoices.subscriptionId))
+    .leftJoin(cities, eq(cities.id, companies.cityId))
+    .leftJoin(districts, eq(districts.id, companies.districtId))
     .where(
       and(
         eq(invoices.status, 'pending'),
@@ -81,25 +87,19 @@ export async function runInvoiceReconcile(
   for (const inv of rows) {
     const newCount = inv.retryCount + 1;
 
-    // VKN yoksa Nilvera kesilemez — sayaç artar, max'ta alert.
-    if (!inv.vatNo) {
-      await deps.db
-        .update(invoices)
-        .set({ nilveraRetryCount: newCount, lastNilveraError: 'company VKN/TCKN eksik', updatedAt: now })
-        .where(eq(invoices.id, inv.id));
-      summary.skipped++;
-      if (newCount >= INVOICE_RECONCILE_MAX_RETRIES) {
-        alertInvoiceFailed({ invoiceId: inv.id, companyId: inv.companyId, retryCount: newCount, error: 'company VKN/TCKN eksik' });
-        summary.alerted++;
-      }
-      continue;
-    }
-
     try {
-      const resp = await deps.nilvera.createInvoice({
+      // vatNo null → nihai tüketici; resolveAndIssueInvoice e-Fatura/e-Arşiv/nihai yönlendirir.
+      // Geçersiz VKN router'da throw eder → aşağıdaki catch (retry++ + max'ta alert).
+      const resp = await deps.nilvera.issueInvoice({
         externalRef: inv.id, // idempotent — aynı invoice.id ile çift fatura olmaz
         invoiceDate: now.toISOString(),
-        customer: { taxNumber: inv.vatNo, title: inv.companyName, address: '—', city: '—' },
+        customer: buildInvoiceCustomer({
+          name: inv.companyName,
+          vatNo: inv.vatNo,
+          billingAddress: inv.billingAddress,
+          cityName: inv.cityName,
+          districtName: inv.districtName,
+        }),
         lines: [
           {
             name: `PetStockPro ${inv.plan} planı (aylık abonelik)`,
@@ -116,6 +116,7 @@ export async function runInvoiceReconcile(
         .set({
           nilveraInvoiceId: resp.invoiceId,
           nilveraInvoiceNumber: resp.invoiceNumber ?? null,
+          invoiceKind: resp.kind, // 'efatura' | 'earsiv'
           pdfUrl: resp.pdfUrl ?? null,
           status: 'issued',
           issuedAt: now,

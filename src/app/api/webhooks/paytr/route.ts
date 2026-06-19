@@ -17,7 +17,7 @@
 import { getPaytrConfig } from '@/lib/paytr/config';
 import { verifyPaytrCallbackHash } from '@/lib/paytr/hash';
 import { processPaytrCallback } from '@/lib/billing/orchestrator';
-import { createNilveraInvoice } from '@/lib/nilvera/invoice';
+import { resolveAndIssueInvoice } from '@/lib/nilvera/invoice';
 import { isNilveraConfigured } from '@/lib/nilvera/config';
 import { db } from '@/lib/db/client';
 
@@ -65,7 +65,7 @@ export async function POST(request: Request): Promise<Response> {
       },
       {
         db,
-        nilvera: isNilveraConfigured() ? { createInvoice: createNilveraInvoice } : undefined,
+        nilvera: isNilveraConfigured() ? { issueInvoice: resolveAndIssueInvoice } : undefined,
         now: () => new Date(),
       },
     );
