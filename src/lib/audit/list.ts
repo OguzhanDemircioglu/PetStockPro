@@ -6,7 +6,7 @@
  */
 
 import { and, desc, eq, gte, lt, sql } from 'drizzle-orm';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { auditLogs, users } from '@/db/schema';
 
 export interface AuditLogListItem {
@@ -54,7 +54,7 @@ function parseDateBoundary(
 
 export async function listAuditLogs(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   opts: ListAuditLogOptions = {},
 ): Promise<AuditLogListItem[]> {
   const conditions = [eq(auditLogs.companyId, companyId)];
@@ -107,7 +107,7 @@ export async function listAuditLogs(
  */
 export async function countAuditLogs(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   opts: Pick<
     ListAuditLogOptions,
     'action' | 'entityType' | 'userId' | 'fromDate' | 'toDate'
@@ -150,7 +150,7 @@ export interface AuditUserOption {
  */
 export async function listAuditUsers(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<AuditUserOption[]> {
   return db
     .selectDistinctOn([auditLogs.userId], {

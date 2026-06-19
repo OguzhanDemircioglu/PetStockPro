@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { listAuditLogs } from '@/lib/audit/list';
 import { xlsxResponse } from '@/lib/utils/xlsx';
 import { companies } from '@/db/schema';
@@ -18,21 +18,24 @@ export async function GET(req: Request) {
   const fromDate = url.searchParams.get('from') ?? undefined;
   const toDate = url.searchParams.get('to') ?? undefined;
 
-  const [rows, [tenant]] = await Promise.all([
-    listAuditLogs(session.user.companyId, db, {
-      limit: 5000,
-      action: action || undefined,
-      entityType: entityType || undefined,
-      userId: userId || undefined,
-      fromDate: fromDate || undefined,
-      toDate: toDate || undefined,
-    }),
-    db
-      .select({ name: companies.name })
-      .from(companies)
-      .where(eq(companies.id, session.user.companyId))
-      .limit(1),
-  ]);
+  const companyId = session.user.companyId;
+  const [rows, [tenant]] = await withTenant(companyId, (tx) =>
+    Promise.all([
+      listAuditLogs(companyId, tx, {
+        limit: 5000,
+        action: action || undefined,
+        entityType: entityType || undefined,
+        userId: userId || undefined,
+        fromDate: fromDate || undefined,
+        toDate: toDate || undefined,
+      }),
+      tx
+        .select({ name: companies.name })
+        .from(companies)
+        .where(eq(companies.id, companyId))
+        .limit(1),
+    ]),
+  );
 
   const filterParts: string[] = [];
   if (action) filterParts.push(`Aksiyon: ${action}`);

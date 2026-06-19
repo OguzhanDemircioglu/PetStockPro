@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { countAuditLogs, listAuditLogs, listAuditUsers } from '@/lib/audit/list';
 import { SettingsShell } from '@/components/settings-shell';
 
@@ -74,31 +74,34 @@ export default async function AuditLogPage({
 }) {
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
+  const companyId = session.user.companyId;
 
   const params = await searchParams;
   const validAction = ACTION_GROUPS.find((g) => g.value === params.action)?.value;
   const page = Math.max(1, Number.parseInt(params.page ?? '1', 10) || 1);
   const offset = (page - 1) * PAGE_SIZE;
 
-  const [items, userOptions, totalCount] = await Promise.all([
-    listAuditLogs(session.user.companyId, db, {
-      limit: PAGE_SIZE,
-      offset,
-      action: validAction || undefined,
-      entityType: params.entity || undefined,
-      userId: params.userId || undefined,
-      fromDate: params.from || undefined,
-      toDate: params.to || undefined,
-    }),
-    listAuditUsers(session.user.companyId, db),
-    countAuditLogs(session.user.companyId, db, {
-      action: validAction || undefined,
-      entityType: params.entity || undefined,
-      userId: params.userId || undefined,
-      fromDate: params.from || undefined,
-      toDate: params.to || undefined,
-    }),
-  ]);
+  const [items, userOptions, totalCount] = await withTenant(companyId, (tx) =>
+    Promise.all([
+      listAuditLogs(companyId, tx, {
+        limit: PAGE_SIZE,
+        offset,
+        action: validAction || undefined,
+        entityType: params.entity || undefined,
+        userId: params.userId || undefined,
+        fromDate: params.from || undefined,
+        toDate: params.to || undefined,
+      }),
+      listAuditUsers(companyId, tx),
+      countAuditLogs(companyId, tx, {
+        action: validAction || undefined,
+        entityType: params.entity || undefined,
+        userId: params.userId || undefined,
+        fromDate: params.from || undefined,
+        toDate: params.to || undefined,
+      }),
+    ]),
+  );
 
   const hasFilter =
     !!validAction || !!params.entity || !!params.userId || !!params.from || !!params.to;

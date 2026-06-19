@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { asc, eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { listLowStock } from '@/lib/dashboard/stats';
 import { getTransferSuggestionsBulk } from '@/lib/stock/transfer-suggestions';
 import { branches as branchesTable, categories as categoriesTable } from '@/db/schema';
@@ -14,6 +14,7 @@ export default async function LowStockPage({
 }) {
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
+  const companyId = session.user.companyId;
 
   const params = await searchParams;
   const filters = {
@@ -26,26 +27,31 @@ export default async function LowStockPage({
   };
   const hasFilter = !!filters.categoryId || !!filters.branchId;
 
-  const [items, categoryList, branchList] = await Promise.all([
-    listLowStock(session.user.companyId, db, { limit: 200, ...filters }),
-    // 2026-05-22 Migration 0026 — categories GLOBAL (companyId yok)
-    db
-      .select({ id: categoriesTable.id, name: categoriesTable.name })
-      .from(categoriesTable)
-      .orderBy(asc(categoriesTable.name)),
-    db
-      .select({ id: branchesTable.id, name: branchesTable.name })
-      .from(branchesTable)
-      .where(eq(branchesTable.companyId, session.user.companyId))
-      .orderBy(asc(branchesTable.name)),
-  ]);
-
-  // Variant ID'lerini topla + transfer önerilerini getir
-  const variantIds = Array.from(new Set(items.map((i) => i.variantId)));
-  const suggestionsByVariant = await getTransferSuggestionsBulk(
-    session.user.companyId,
-    variantIds,
-    db,
+  const { items, categoryList, branchList, suggestionsByVariant } = await withTenant(
+    companyId,
+    async (tx) => {
+      const [items, categoryList, branchList] = await Promise.all([
+        listLowStock(companyId, tx, { limit: 200, ...filters }),
+        // 2026-05-22 Migration 0026 — categories GLOBAL (companyId yok)
+        tx
+          .select({ id: categoriesTable.id, name: categoriesTable.name })
+          .from(categoriesTable)
+          .orderBy(asc(categoriesTable.name)),
+        tx
+          .select({ id: branchesTable.id, name: branchesTable.name })
+          .from(branchesTable)
+          .where(eq(branchesTable.companyId, companyId))
+          .orderBy(asc(branchesTable.name)),
+      ]);
+      // Variant ID'lerini topla + transfer önerilerini getir (aynı tx)
+      const variantIds = Array.from(new Set(items.map((i) => i.variantId)));
+      const suggestionsByVariant = await getTransferSuggestionsBulk(
+        companyId,
+        variantIds,
+        tx,
+      );
+      return { items, categoryList, branchList, suggestionsByVariant };
+    },
   );
 
   // Variant bazında grupla (aynı variant farklı şubelerde olabilir)

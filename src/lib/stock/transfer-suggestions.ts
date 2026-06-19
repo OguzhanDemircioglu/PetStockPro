@@ -8,7 +8,7 @@
  */
 
 import { and, eq, sql } from 'drizzle-orm';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { branchInventory, productVariants, branches } from '@/db/schema';
 
 export interface TransferSuggestion {
@@ -30,7 +30,7 @@ export interface TransferSuggestion {
 export async function getTransferSuggestionsForVariant(
   companyId: string,
   variantId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<TransferSuggestion[]> {
   const rows = await db
     .select({
@@ -104,7 +104,7 @@ export async function getTransferSuggestionsForVariant(
 export async function getTransferSuggestionsBulk(
   companyId: string,
   variantIds: string[],
-  db: DbClient,
+  db: TenantDb,
 ): Promise<Map<string, TransferSuggestion[]>> {
   if (variantIds.length === 0) return new Map();
 
