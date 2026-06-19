@@ -10,7 +10,7 @@
  */
 
 import { and, desc, eq, inArray, isNotNull } from 'drizzle-orm';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { subscriptions, users } from '@/db/schema';
 import { writeAuditLog } from '@/lib/audit/log';
 
@@ -19,7 +19,7 @@ export interface ManageResult {
   reason?: 'not_found';
 }
 
-async function findCompanyOwner(db: DbClient, companyId: string): Promise<string | null> {
+async function findCompanyOwner(db: TenantDb, companyId: string): Promise<string | null> {
   const rows = await db
     .select({ id: users.id })
     .from(users)
@@ -33,7 +33,7 @@ async function findCompanyOwner(db: DbClient, companyId: string): Promise<string
  */
 export async function cancelSubscription(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   opts?: { now?: Date },
 ): Promise<ManageResult> {
   const now = opts?.now ?? new Date();
@@ -75,7 +75,7 @@ export async function cancelSubscription(
  */
 export async function reactivateSubscription(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   opts?: { now?: Date },
 ): Promise<ManageResult> {
   const now = opts?.now ?? new Date();
@@ -125,7 +125,7 @@ export async function reactivateSubscription(
 export async function schedulePlanChange(
   companyId: string,
   targetPlan: 'PRO' | 'PRO_PLUS',
-  db: DbClient,
+  db: TenantDb,
   opts?: { now?: Date },
 ): Promise<{ ok: boolean; reason?: 'not_found' | 'same_plan' | 'invalid_plan' }> {
   if (targetPlan !== 'PRO' && targetPlan !== 'PRO_PLUS') {
@@ -171,7 +171,7 @@ export async function schedulePlanChange(
  */
 export async function cancelScheduledPlanChange(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   opts?: { now?: Date },
 ): Promise<{ ok: boolean; reason?: 'not_found' }> {
   const now = opts?.now ?? new Date();

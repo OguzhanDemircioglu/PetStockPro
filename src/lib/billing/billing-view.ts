@@ -3,7 +3,7 @@
  */
 
 import { and, desc, eq, inArray } from 'drizzle-orm';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { subscriptions, invoices } from '@/db/schema';
 
 export interface BillingSubscription {
@@ -25,7 +25,7 @@ export interface BillingSubscription {
  */
 export async function getCurrentSubscription(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<BillingSubscription | null> {
   const rows = await db
     .select({
@@ -65,7 +65,7 @@ export interface BillingInvoice {
 /** Tenant fatura geçmişi (yeni → eski). */
 export async function listInvoices(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   limit = 24,
 ): Promise<BillingInvoice[]> {
   return db

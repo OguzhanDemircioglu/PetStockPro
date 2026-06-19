@@ -3,6 +3,7 @@
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { getCompanyProfile } from '@/lib/company/settings';
 import { startPaytrCheckout, CheckoutError, type PaidPlan } from '@/lib/billing/paytr-checkout';
 import {
@@ -23,6 +24,14 @@ export interface CheckoutActionState {
 /**
  * Checkout başlat — PRO/PRO+ iframe ödeme token'ı döner.
  * Client doğrudan çağırır (form değil); başarılıysa iframeUrl ile iframe açılır.
+ *
+ * ⚠ FAZ 4B retrofit BORCU: Bu akış BİLEREK `withTenant` ile sarılmadı. `startPaytrCheckout`
+ *   DB yazımlarından (subscriptions select/delete/insert) SONRA harici PayTR HTTP çağrısı
+ *   (createPaytrIframeToken) yapar. Naif `withTenant` sarması transaction'ı HTTP boyunca
+ *   açık tutardı (pooled max=1 → Fluid Compute instance reuse'da eşzamanlı istekleri bloklar).
+ *   Phase 2 (app_user RLS) ÖNCESİ doğru çözüm: `startPaytrCheckout`'u (a) tenant-tx içindeki
+ *   DB-rezervasyon + (b) tx DIŞINDA HTTP-token diye ikiye böl. O zamana dek checkout DB yolu
+ *   bütünüyle owner `db` üzerinde tutarlı kalır (getCompanyProfile dahil). Bkz. PLAN-FAZ-4B-RLS.md.
  */
 export async function startCheckoutAction(plan: PaidPlan): Promise<CheckoutActionState> {
   const session = await auth();
@@ -72,7 +81,8 @@ export async function startCheckoutAction(plan: PaidPlan): Promise<CheckoutActio
 export async function cancelSubscriptionAction(): Promise<{ ok: boolean; error?: string }> {
   const session = await auth();
   if (!session?.user?.companyId) return { ok: false, error: 'Oturum bulunamadı.' };
-  const res = await cancelSubscription(session.user.companyId, db);
+  const companyId = session.user.companyId;
+  const res = await withTenant(companyId, (tx) => cancelSubscription(companyId, tx));
   if (!res.ok) return { ok: false, error: 'Aktif abonelik bulunamadı.' };
   revalidatePath('/admin/settings/billing');
   return { ok: true };
@@ -81,7 +91,8 @@ export async function cancelSubscriptionAction(): Promise<{ ok: boolean; error?:
 export async function reactivateSubscriptionAction(): Promise<{ ok: boolean; error?: string }> {
   const session = await auth();
   if (!session?.user?.companyId) return { ok: false, error: 'Oturum bulunamadı.' };
-  const res = await reactivateSubscription(session.user.companyId, db);
+  const companyId = session.user.companyId;
+  const res = await withTenant(companyId, (tx) => reactivateSubscription(companyId, tx));
   if (!res.ok) return { ok: false, error: 'İptal edilmiş abonelik bulunamadı.' };
   revalidatePath('/admin/settings/billing');
   return { ok: true };
@@ -96,7 +107,8 @@ export async function schedulePlanChangeAction(
 ): Promise<{ ok: boolean; error?: string }> {
   const session = await auth();
   if (!session?.user?.companyId) return { ok: false, error: 'Oturum bulunamadı.' };
-  const res = await schedulePlanChange(session.user.companyId, targetPlan, db);
+  const companyId = session.user.companyId;
+  const res = await withTenant(companyId, (tx) => schedulePlanChange(companyId, targetPlan, tx));
   if (!res.ok) {
     const msg =
       res.reason === 'same_plan'
@@ -114,7 +126,8 @@ export async function schedulePlanChangeAction(
 export async function cancelScheduledPlanChangeAction(): Promise<{ ok: boolean; error?: string }> {
   const session = await auth();
   if (!session?.user?.companyId) return { ok: false, error: 'Oturum bulunamadı.' };
-  const res = await cancelScheduledPlanChange(session.user.companyId, db);
+  const companyId = session.user.companyId;
+  const res = await withTenant(companyId, (tx) => cancelScheduledPlanChange(companyId, tx));
   if (!res.ok) return { ok: false, error: 'Bekleyen plan değişikliği yok.' };
   revalidatePath('/admin/settings/billing');
   return { ok: true };

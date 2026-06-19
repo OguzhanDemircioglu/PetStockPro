@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 import { asc, eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { districts } from '@/db/schema';
 import { getCompanyProfile } from '@/lib/company/settings';
 import { getAllCities } from '@/lib/cache/request-scoped';
@@ -11,8 +12,9 @@ import { CompanyForm } from './company-form';
 export default async function CompanySettingsPage() {
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
+  const companyId = session.user.companyId;
 
-  const profile = await getCompanyProfile(session.user.companyId, db);
+  const profile = await withTenant(companyId, (tx) => getCompanyProfile(companyId, tx));
   if (!profile) notFound();
 
   // 2026-05-22 Tur 7 YT7-6: getAllCities (unstable_cache 24h)

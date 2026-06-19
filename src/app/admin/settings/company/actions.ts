@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import {
   updateCompanyProfile,
   type CompanyProfileInput,
@@ -35,6 +36,7 @@ export async function updateCompanyAction(
 ): Promise<CompanyActionState> {
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+  const companyId = session.user.companyId;
 
   const name = asStr(formData.get('name'));
   if (!name) return { ...EMPTY, message: 'Firma adı zorunlu' };
@@ -52,7 +54,9 @@ export async function updateCompanyAction(
     locationLng: asStr(formData.get('locationLng')),
   };
 
-  const result = await updateCompanyProfile(session.user.companyId, input, db);
+  const result = await withTenant(companyId, (tx) =>
+    updateCompanyProfile(companyId, input, tx),
+  );
   if (!result.ok) {
     const msg: Record<string, string> = {
       invalid_input: 'Geçersiz alan',

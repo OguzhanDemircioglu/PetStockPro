@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { listForUser } from '@/lib/notifications/manage';
 import { NotificationsList } from './notifications-list';
 
@@ -50,14 +50,15 @@ export default async function NotificationsPage({
 }) {
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+  const companyId = session.user.companyId;
+  const userId = session.user.id;
 
   const params = await searchParams;
   const unreadOnly = params.filter === 'unread';
 
-  const items = await listForUser(session.user.companyId, session.user.id, db, {
-    limit: 100,
-    unreadOnly,
-  });
+  const items = await withTenant(companyId, (tx) =>
+    listForUser(companyId, userId, tx, { limit: 100, unreadOnly }),
+  );
 
   const unreadCount = items.filter((i) => i.readAt === null).length;
 

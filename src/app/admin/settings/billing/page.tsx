@@ -1,6 +1,6 @@
 import { redirect, notFound } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { getCompanyProfile } from '@/lib/company/settings';
 import { getCurrentSubscription, listInvoices } from '@/lib/billing/billing-view';
 import { PLAN_LABELS, PLAN_LIMITS } from '@/lib/constants/plan-limits';
@@ -21,13 +21,17 @@ export default async function BillingPage({
 }) {
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
+  const companyId = session.user.companyId;
   const sp = await searchParams;
 
-  const profile = await getCompanyProfile(session.user.companyId, db);
+  const [profile, sub, invoiceList] = await withTenant(companyId, (tx) =>
+    Promise.all([
+      getCompanyProfile(companyId, tx),
+      getCurrentSubscription(companyId, tx),
+      listInvoices(companyId, tx),
+    ]),
+  );
   if (!profile) notFound();
-
-  const sub = await getCurrentSubscription(session.user.companyId, db);
-  const invoiceList = await listInvoices(session.user.companyId, db);
   const plan = profile.plan as 'FREE' | 'PRO' | 'PRO_PLUS';
   const showUpgrade = plan === 'FREE' && !sub;
 
