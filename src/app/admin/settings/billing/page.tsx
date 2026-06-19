@@ -33,7 +33,10 @@ export default async function BillingPage({
   );
   if (!profile) notFound();
   const plan = profile.plan as 'FREE' | 'PRO' | 'PRO_PLUS';
-  const showUpgrade = plan === 'FREE' && !sub;
+  // 'incomplete' = yarım kalmış/terk edilmiş checkout — aktif abonelik DEĞİL.
+  // Yükseltme UI'ını bloklamamalı; startPaytrCheckout yeni denemede eski incomplete'i siler.
+  const blockingSub = sub && sub.status !== 'incomplete' ? sub : null;
+  const showUpgrade = plan === 'FREE' && !blockingSub;
 
   return (
     <SettingsShell current="billing" title="Abonelik" description={`Mevcut plan: ${PLAN_LABELS[plan]}`}>
@@ -69,28 +72,32 @@ export default async function BillingPage({
             </div>
           </div>
 
-          {sub && (
+          {blockingSub && (
             <div className="mt-3 flex flex-col gap-1 border-t border-line pt-3 text-sm" data-testid="sub-status">
-              {sub.status === 'active' && (
-                <p className="font-medium text-cart">✓ Aktif · sonraki yenileme {fmtDate(sub.currentPeriodEnd)}</p>
+              {blockingSub.status === 'active' && (
+                <p className="font-medium text-cart">✓ Aktif · sonraki yenileme {fmtDate(blockingSub.currentPeriodEnd)}</p>
               )}
-              {sub.status === 'past_due' && (
+              {blockingSub.status === 'past_due' && (
                 <p className="font-medium text-danger-7">
-                  ⚠ Son ödeme alınamadı ({sub.paymentRetryCount}. deneme). Kartını güncellemen gerekebilir.
+                  ⚠ Son ödeme alınamadı ({blockingSub.paymentRetryCount}. deneme). Kartını güncellemen gerekebilir.
                 </p>
               )}
-              {sub.status === 'incomplete' && <p className="text-ink-3">⏳ Ödeme bekleniyor…</p>}
-              {sub.cancelAtPeriodEnd && (
+              {blockingSub.cancelAtPeriodEnd && (
                 <p className="font-medium text-danger-7" data-testid="cancel-scheduled">
-                  ⚠ İptal edildi · {fmtDate(sub.currentPeriodEnd)} tarihinde sona erecek.
+                  ⚠ İptal edildi · {fmtDate(blockingSub.currentPeriodEnd)} tarihinde sona erecek.
                 </p>
               )}
-              {sub.cardMasked && (
+              {blockingSub.cardMasked && (
                 <p className="text-ink-3">
-                  {(sub.cardBrand ?? 'Kart').toUpperCase()} · {sub.cardMasked}
+                  {(blockingSub.cardBrand ?? 'Kart').toUpperCase()} · {blockingSub.cardMasked}
                 </p>
               )}
             </div>
+          )}
+          {sub?.status === 'incomplete' && !blockingSub && (
+            <p className="mt-3 border-t border-line pt-3 text-sm text-ink-3" data-testid="sub-status">
+              ⏳ Önceki ödeme yarım kaldı — aşağıdan tekrar başlatabilirsin.
+            </p>
           )}
         </section>
 
@@ -102,12 +109,12 @@ export default async function BillingPage({
           </section>
         )}
 
-        {sub && (sub.status === 'active' || sub.status === 'past_due') && sub.plan !== 'FREE' && (
+        {blockingSub && (blockingSub.status === 'active' || blockingSub.status === 'past_due') && blockingSub.plan !== 'FREE' && (
           <SubscriptionActions
-            cancelScheduled={sub.cancelAtPeriodEnd}
-            currentPlan={sub.plan}
-            pendingPlan={sub.pendingPlan === 'PRO' || sub.pendingPlan === 'PRO_PLUS' ? sub.pendingPlan : null}
-            periodEndLabel={fmtDate(sub.currentPeriodEnd)}
+            cancelScheduled={blockingSub.cancelAtPeriodEnd}
+            currentPlan={blockingSub.plan}
+            pendingPlan={blockingSub.pendingPlan === 'PRO' || blockingSub.pendingPlan === 'PRO_PLUS' ? blockingSub.pendingPlan : null}
+            periodEndLabel={fmtDate(blockingSub.currentPeriodEnd)}
           />
         )}
 
