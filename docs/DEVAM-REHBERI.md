@@ -1,8 +1,68 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-06-18 (Mimari Sağlamlaştırma **Faz 1-5 TAMAMLANDI** — 4B kod-hazır/gated)
+**Tarih:** 2026-06-19 (Faz 1-5 TAMAMLANDI · **Faz 4B RLS RETROFIT DEVAM EDİYOR**)
 **Mevcut Branch:** `cray61` — origin ile **SYNC**
-**Son commit:** `refactor(schema): Faz 5 — branch state tek-kaynak + dürüst yorumlar + companies soft-delete` (bu oturum)
+**Son commit:** `2ee1a7d` feat(db): Faz 4B retrofit WIP — notifications/company/dashboard helpers → TenantDb
+
+---
+
+## 🔴 BURADAN DEVAM ET — Faz 4B RLS Retrofit (yarım, mekanik grind)
+
+**Durum:** RLS tasarımı KANITLANDI, pattern oturdu, retrofit ~%15 (call-site sarma sürüyor). Her commit **owner altında güvenli** (owner RLS bypass eder → davranış değişmez). Enforcement (Phase 2) ancak retrofit %100 + kullanıcının Vercel env'i ile açılır.
+
+### ✅ 4B'de BİTEN
+- **RLS uçtan uca KANITLANDI** (Aiven'de gerçek `app_user` + 0035 + 2 test tenant → `rls.test.ts` **8/8**): cross-tenant 0-satır, fail-closed (GUC boş→0), global-read, ardışık izolasyon. → Tasarım kesin çalışıyor.
+- **`with-tenant.ts`** hazır: `withTenant(companyId, fn, client?)` (tx + `set_config` is_local + **redirect-safe**: NEXT_REDIRECT/notFound throw'unda COMMIT+rethrow, veri kaybı footgun kapalı) + `withOwner(fn)` + `TenantDb = DbClient | TenantTx`. 5 unit test.
+- **Migration 0035** (RLS politikaları) + **rls.test.ts** committed. **Aiven** = local dev DB (app_user + 0035 + test tenant'lar kurulu; app owner `avnadmin` ile bağlanıp bypass eder).
+- **Retrofit edilenler:**
+  - **suppliers** (TAM): 5 helper `TenantDb` + 6 call-site (page/edit/export/3 action) `withTenant`. ← **KANONİK ÖRNEK, bunu kopyala.**
+  - **request-scoped.ts cached reads** (TAM): getCompanyById/getProductCountForCompany/getLowStockCountForCompany/getUnreadNotificationCount → withTenant. (Layout/sidebar/bell/pano cached okumaları çözüldü; global cache'ler dokunulmadı.)
+  - **WIP:** notifications/company/dashboard **helper'ları** `TenantDb`'ye genişletildi (backward-compat) + notifications/actions.ts wrapped. **Call-site'ları bekliyor** (aşağıda).
+
+### 📐 KANONİK PATTERN (suppliers'ı referans al)
+1. **Helper** (`lib/*/manage.ts` vb.): `import type { DbClient }` → `import type { TenantDb } from '@/lib/db/with-tenant'`; `db: DbClient` → `db: TenantDb`. **Backward-compat** (db geçen eski çağıran çalışmaya devam eder → güvenle batch widen edilebilir).
+2. **Server action:** auth check'ten sonra `const companyId = session.user.companyId; const userId = session.user.id;` (closure narrowing kaybını önle), sonra DATA helper'ını sar:
+   ```ts
+   const result = await withTenant(companyId, (tx) => addSupplier(companyId, input, tx));
+   // audit (writeAuditLogAsync, db=owner) + revalidatePath + redirect → withTenant DIŞINDA kalır
+   ```
+3. **RSC page:** tüm tenant okumalarını TEK withTenant'ta sar (verimli):
+   ```ts
+   const companyId = session.user.companyId;
+   const [a, b] = await withTenant(companyId, (tx) => Promise.all([
+     listX(companyId, tx),
+     tx.select({...}).from(branchesTable).where(eq(branchesTable.companyId, companyId)),
+   ]));
+   ```
+   Global select'ler (categories/brands/cities) içeride zararsız VEYA dışarıda (global_read).
+4. **Cached helper** (React.cache): gövdeyi `withTenant(companyId, async (tx) => {...})` ile sar (bkz. request-scoped.ts).
+
+### ⚠ GOTCHA'LAR (kanlı öğrenildi)
+- **redirect/notFound = veri kaybı tuzağı:** withTenant tx içinde throw → ROLLBACK. `withTenant` artık redirect-safe (commit+rethrow) ama yine de redirect'i mümkünse withTenant DIŞINDA tut.
+- **Closure narrowing:** `session.user.companyId` closure içinde `string|undefined`'a düşer → her zaman `const companyId =` ile çıkar.
+- **Cross-domain sayfalar** (örn. `/admin` aggregator 9 helper, low-stock): tüm helper'ları önce widen et, sonra sayfayı tek withTenant'ta sar.
+- **Fire-and-forget audit + notification** (`writeAuditLogAsync`, `createNotificationAsync`) singleton `db` kullanır → Phase 2'de app_user'da GUC yok → RLS reddeder. **Phase 2 ÖNCESİ GLOBAL FIX:** bunları owner bağlantısına (`withOwner`/`dbOwner`) yönlendir. Phase 1'de (owner runtime) olduğu gibi çalışır.
+
+### ⏭ KALAN İŞ (sıradaki session)
+**A) Hemen sarılacak call-site'lar** (helper'lar zaten widened):
+- `notifications/page.tsx` (listForUser)
+- `settings/billing/page.tsx` + `settings/billing/actions.ts` + `settings/company/page.tsx` + `settings/company/actions.ts` (getCompanyProfile/updateCompanyProfile)
+
+**B) Kalan domainler** (helper widen + call-site sar): products · branches · stock-movements · stocktake · reports · storefront · users · audit-log · low-stock · `/admin` aggregator · assistant/* (öneri helper'ları) · vitrin feedback. + her domainin export route'u. **Öneri:** önce tüm tenant helper'larını TEK mekanik pass'te `TenantDb`'ye widen et (güvenli), sonra sayfa/action sar. Helper envanteri: `src/lib/db/tenant.ts` `TENANT_GUARDED_TABLE_IDS` + `tenant-guard.test.ts` taradığı modüller. Call-site bulmak: `grep <helperName> src/app`.
+
+**C) Phase 2 ENFORCEMENT** (retrofit %100 olunca + KULLANICI Vercel adımı):
+1. Fire-forget audit/notification → owner (B madde global fix).
+2. `client.ts`: `dbOwner` ekle (`DATABASE_URL_OWNER`); `withOwner` onu kullansın.
+3. **Supabase**: `app_user` (NOBYPASSRLS) rolü + 0035 uygula (MCP execute_sql, project `rjzhnfqrynalklsnnuym`).
+4. **Vercel env**: `DATABASE_URL` → app_user pooler; `DATABASE_URL_OWNER` → owner. (Kullanıcı panelden.)
+5. Staging smoke (app_user altında her sayfa boş-değil) → prod.
+6. Rollback: `DATABASE_URL` → owner (tek env, anında).
+Detay: **[docs/PLAN-FAZ-4B-RLS.md](PLAN-FAZ-4B-RLS.md)**.
+
+### 🧪 Doğrulama / komutlar
+- Her batch sonrası: `npm run typecheck` + `npm run lint` + `npx vitest run` (**baseline 1889 pass + 7 skip**).
+- `rls.test.ts` Aiven'de çalıştırmak (8/8 kanıt): Aiven'de app_user + 0035 + test tenant kurulu; throwaway app_user parolası yeni session'da `_tmp_rls_setup.mjs` pattern'iyle yeniden üretilir (host-guard'lı node, `ssl:'require'`, `dangerouslyDisableSandbox`). Test tenant'lar: A=`943ef4b9-960c-4db8-91ad-731c039fc0b0`, B=`6ac8a8aa-0fd0-4555-a3e3-3edbeba9a4d9`.
+- **DB topolojisi:** local `.env DATABASE_URL` = **Aiven** (`LOCAL_DB_*`, sslmode=require); Supabase prod URL `.env`'de yorumlu (`# DATABASE_URL_SUPABASE_PROD=`). Migration apply: Supabase MCP, Aiven host-guard'lı node. `drizzle-kit push/migrate` **classifier-blocked** → `drizzle-kit export` + node-apply. Bkz. memory `reference_db_migration_access`.
 
 ---
 
