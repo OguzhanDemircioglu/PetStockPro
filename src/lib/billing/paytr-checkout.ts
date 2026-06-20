@@ -60,6 +60,16 @@ export function deriveUtoken(companyId: string): string {
   return 'u' + companyId.replace(/-/g, '');
 }
 
+/**
+ * PayTR user_phone: yalnız rakam + en az 10 hane ister; aksi halde "TELEFON
+ * NUMARASI HATALI" verir (canlı-onay engeli). Şirket telefonu temizlenir;
+ * geçerli değilse nötr placeholder gönderilir (alan zorunlu, ama buyer-spesifik değil).
+ */
+export function toPaytrPhone(raw?: string | null): string {
+  const digits = (raw ?? '').replace(/\D/g, '');
+  return digits.length >= 10 ? digits : '5000000000';
+}
+
 export async function startPaytrCheckout(params: StartCheckoutParams): Promise<StartCheckoutResult> {
   const now = params.now?.() ?? new Date();
 
@@ -107,8 +117,8 @@ export async function startPaytrCheckout(params: StartCheckoutParams): Promise<S
     paymentAmount: amountKurus,
     userIp: params.userIp,
     userName: params.companyName,
-    userAddress: params.userAddress ?? '—',
-    userPhone: params.userPhone ?? '—',
+    userAddress: params.userAddress ?? 'Türkiye',
+    userPhone: toPaytrPhone(params.userPhone),
     basket,
     okUrl: params.okUrl,
     failUrl: params.failUrl,

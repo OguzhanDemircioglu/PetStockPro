@@ -25,7 +25,7 @@ import { resolveAndIssueInvoice } from '@/lib/nilvera/invoice';
 import { chargeSavedCard, listSavedCards } from '@/lib/paytr/client';
 import { PLAN_LIMITS } from '@/lib/constants/plan-limits';
 import { processPaytrCallback, effectivePlanAndAmount } from './orchestrator';
-import { makeMerchantOid } from './paytr-checkout';
+import { makeMerchantOid, toPaytrPhone } from './paytr-checkout';
 import { sendPlanDowngradedEmail } from './emails';
 import { unpublishVitrinOverLimit } from './downgrade-reconcile';
 
@@ -139,8 +139,8 @@ export async function runBillingRenewals(deps: RenewalDeps): Promise<RenewalSumm
         utoken: sub.paytrUtoken,
         ctoken,
         userName: sub.companyName ?? 'PetStockPro',
-        userAddress: '—',
-        userPhone: sub.whatsappPhone ?? '—',
+        userAddress: 'Türkiye',
+        userPhone: toPaytrPhone(sub.whatsappPhone),
         okUrl: `${appUrl}/admin/settings/billing?paytr=ok`,
         failUrl: `${appUrl}/admin/settings/billing?paytr=fail`,
       });

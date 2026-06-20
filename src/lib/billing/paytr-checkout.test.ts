@@ -5,7 +5,7 @@ vi.mock('@/lib/paytr/client', () => ({
   paytrIframeUrl: (t: string) => `https://www.paytr.com/odeme/guvenli/${t}`,
 }));
 
-import { startPaytrCheckout, makeMerchantOid, deriveUtoken } from './paytr-checkout';
+import { startPaytrCheckout, makeMerchantOid, deriveUtoken, toPaytrPhone } from './paytr-checkout';
 import { createPaytrIframeToken } from '@/lib/paytr/client';
 
 interface DbConfig {
@@ -69,6 +69,21 @@ describe('makeMerchantOid / deriveUtoken', () => {
   });
 });
 
+describe('toPaytrPhone', () => {
+  it('geçerli numara → sadece rakam', () => {
+    expect(toPaytrPhone('+90 (532) 111 22 33')).toBe('905321112233');
+    expect(toPaytrPhone('0532 111 22 33')).toBe('05321112233');
+  });
+
+  it('boş / —  / <10 hane → placeholder', () => {
+    expect(toPaytrPhone('—')).toBe('5000000000');
+    expect(toPaytrPhone('')).toBe('5000000000');
+    expect(toPaytrPhone(null)).toBe('5000000000');
+    expect(toPaytrPhone(undefined)).toBe('5000000000');
+    expect(toPaytrPhone('12345')).toBe('5000000000');
+  });
+});
+
 describe('startPaytrCheckout', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -97,6 +112,8 @@ describe('startPaytrCheckout', () => {
 
     expect(res.token).toBe('iframe-token-xyz');
     expect(res.iframeUrl).toContain('/odeme/guvenli/iframe-token-xyz');
+    // user_phone telefon yoksa geçerli placeholder (PayTR ≥10 hane şartı)
+    expect(tokenArgs.userPhone).toBe('5000000000');
   });
 
   it('PRO_PLUS → 2000 kuruş (test fiyatı)', async () => {
