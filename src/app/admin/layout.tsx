@@ -40,14 +40,26 @@ export default async function AdminLayout({
     : null;
   const effectiveCompanyId = impersonation?.companyId ?? session.user.companyId;
 
-  // Tur 2 (P0-2): React.cache wrap'li helper'lar — pano helper'larıyla request-scoped
-  // dedupe, aynı request içinde ikinci çağrı 0 DB roundtrip.
-  const [company, productCount, lowStockCount, unreadCount] = await Promise.all([
-    getCompanyById(effectiveCompanyId),
-    getProductCountForCompany(effectiveCompanyId),
-    getLowStockCountForCompany(effectiveCompanyId),
+  // Faz 4B sağlamlaştırma: 4 ayrı withTenant transaction'ı max:1 pooler'da AYNI ANDA
+  // (Promise.all) çalıştırmak Fluid Compute'ta bağlantı çekişmesi + statement timeout
+  // → TÜM admin panelinin çökmesine yol açıyordu. Çözüm:
+  //   (a) SIRALI — her seferinde tek transaction (çekişme yok),
+  //   (b) DEFANSİF — bir okuma takılır/başarısız olursa varsayılana düş; sidebar rozeti
+  //       eksik kalabilir ama panel ASLA komple çökmez.
+  const safeRead = async <T,>(p: Promise<T>, fallback: T): Promise<T> => {
+    try {
+      return await p;
+    } catch {
+      return fallback;
+    }
+  };
+  const company = await safeRead(getCompanyById(effectiveCompanyId), null);
+  const productCount = await safeRead(getProductCountForCompany(effectiveCompanyId), 0);
+  const lowStockCount = await safeRead(getLowStockCountForCompany(effectiveCompanyId), 0);
+  const unreadCount = await safeRead(
     getUnreadNotificationCount(effectiveCompanyId, session.user.id),
-  ]);
+    0,
+  );
 
   const tenantName = company?.name ?? 'Pet shop';
   const plan = company?.plan ?? 'FREE';
