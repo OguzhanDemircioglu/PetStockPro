@@ -4,7 +4,8 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
-import { startStocktake } from '@/lib/stocktake/sessions';
+import { withTenant } from '@/lib/db/with-tenant';
+import { startStocktake, type StartStocktakeResult } from '@/lib/stocktake/sessions';
 import { writeAuditLogAsync } from '@/lib/audit/log';
 import { assertNotObserver, ObserverReadOnlyError } from '@/lib/auth/role-gate';
 import { hasPermission } from '@/lib/users/permissions';
@@ -24,6 +25,8 @@ export async function startStocktakeAction(
   if (!session?.user?.companyId || !session.user.id) {
     return { error: 'Oturum geçersiz, lütfen tekrar giriş yap' };
   }
+  const companyId = session.user.companyId;
+  const userId = session.user.id;
 
   // Faz 2 — Observer reject + STOCKTAKE_CREATE yetkisi + şube operasyonel mi
   try {
@@ -41,30 +44,37 @@ export async function startStocktakeAction(
     return { error: 'Şube seçimi zorunlu' };
   }
 
-  const allowed = await hasPermission(session.user.id, PERMISSION_KEYS.STOCKTAKE_CREATE, db);
-  if (!allowed) {
-    return { error: 'Sayım başlatma yetkisi yok — Bayi Admin\'den iste' };
-  }
-
-  try {
-    await assertBranchOperational(session.user.companyId, branchId, db);
-  } catch (e) {
-    if (e instanceof BranchNotOperationalError) {
-      return { error: 'Şube pasif — sayım başlatılamaz' };
+  // Faz 4B: yetki + şube-assert + startStocktake (self-tx → savepoint) TEK
+  // withTenant'ta (GUC). audit fire-forget + redirect DIŞINDA (owner).
+  const outcome = await withTenant<
+    { error: string } | { result: StartStocktakeResult }
+  >(companyId, async (tx) => {
+    const allowed = await hasPermission(userId, PERMISSION_KEYS.STOCKTAKE_CREATE, tx);
+    if (!allowed) {
+      return { error: 'Sayım başlatma yetkisi yok — Bayi Admin\'den iste' };
     }
-    throw e;
-  }
-
-  const result = await startStocktake(
-    session.user.companyId,
-    session.user.id,
-    {
-      branchId,
-      mode: 'full',
-      note: typeof note === 'string' && note.length > 0 ? note : undefined,
-    },
-    db,
-  );
+    try {
+      await assertBranchOperational(companyId, branchId, tx);
+    } catch (e) {
+      if (e instanceof BranchNotOperationalError) {
+        return { error: 'Şube pasif — sayım başlatılamaz' };
+      }
+      throw e;
+    }
+    const result = await startStocktake(
+      companyId,
+      userId,
+      {
+        branchId,
+        mode: 'full',
+        note: typeof note === 'string' && note.length > 0 ? note : undefined,
+      },
+      tx,
+    );
+    return { result };
+  });
+  if ('error' in outcome) return { error: outcome.error };
+  const result = outcome.result;
 
   if (!result.ok) {
     const messages: Record<string, string> = {

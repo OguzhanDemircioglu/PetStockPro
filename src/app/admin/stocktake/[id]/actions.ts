@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import {
   updateStocktakeItemCount,
   completeStocktake,
@@ -54,6 +55,7 @@ export async function updateCountAction(
 ): Promise<UpdateCountState> {
   const session = await auth();
   if (!session?.user?.companyId) return { error: 'Oturum geçersiz' };
+  const companyId = session.user.companyId;
   const gate = rejectIfObserver<UpdateCountState>(session, { itemId });
   if (gate) return gate;
 
@@ -72,12 +74,14 @@ export async function updateCountAction(
       : undefined;
   const customReason = typeof customRaw === 'string' && customRaw.length > 0 ? customRaw : undefined;
 
-  const result: UpdateItemCountResult = await updateStocktakeItemCount(
-    session.user.companyId,
-    stocktakeId,
-    itemId,
-    { countedQty: counted, reason, customReason },
-    db,
+  const result: UpdateItemCountResult = await withTenant(companyId, (tx) =>
+    updateStocktakeItemCount(
+      companyId,
+      stocktakeId,
+      itemId,
+      { countedQty: counted, reason, customReason },
+      tx,
+    ),
   );
 
   if (!result.ok) {
@@ -119,14 +123,15 @@ export async function completeStocktakeAction(
   if (!session?.user?.companyId || !session.user.id) {
     return { error: 'Oturum geçersiz' };
   }
+  const companyId = session.user.companyId;
+  const userId = session.user.id;
   const gate = rejectIfObserver<CompleteStocktakeState>(session, {});
   if (gate) return gate;
 
-  const result = await completeStocktake(
-    session.user.companyId,
-    session.user.id,
-    stocktakeId,
-    db,
+  // Faz 4B: completeStocktake reads + loop'taki recordStocktakeAdjustment (self-tx
+  // → savepoint) TEK withTenant'ta (GUC). audit + notif fire-forget DIŞINDA (owner).
+  const result = await withTenant(companyId, (tx) =>
+    completeStocktake(companyId, userId, stocktakeId, tx),
   );
 
   if (!result.ok) {
@@ -195,10 +200,13 @@ export async function cancelStocktakeAction(
   if (!session?.user?.companyId || !session.user.id) {
     return { error: 'Oturum geçersiz' };
   }
+  const companyId = session.user.companyId;
   const gate = rejectIfObserver<CancelStocktakeState>(session, {});
   if (gate) return gate;
 
-  const result = await cancelStocktake(session.user.companyId, stocktakeId, db);
+  const result = await withTenant(companyId, (tx) =>
+    cancelStocktake(companyId, stocktakeId, tx),
+  );
 
   if (!result.ok) {
     const messages: Record<string, string> = {

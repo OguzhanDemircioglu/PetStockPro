@@ -2,19 +2,22 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { and, asc, eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { branches } from '@/db/schema';
 import { StartStocktakeForm } from './form';
 
 export default async function NewStocktakePage() {
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
+  const companyId = session.user.companyId;
 
-  const branchList = await db
-    .select({ id: branches.id, name: branches.name })
-    .from(branches)
-    .where(and(eq(branches.companyId, session.user.companyId), eq(branches.isActive, true)))
-    .orderBy(asc(branches.name));
+  const branchList = await withTenant(companyId, (tx) =>
+    tx
+      .select({ id: branches.id, name: branches.name })
+      .from(branches)
+      .where(and(eq(branches.companyId, companyId), eq(branches.isActive, true)))
+      .orderBy(asc(branches.name)),
+  );
 
   return (
     <main className="mx-auto flex max-w-xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">

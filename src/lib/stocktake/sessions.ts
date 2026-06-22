@@ -16,7 +16,7 @@
 
 import { and, eq, asc, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import {
   stocktakes,
   stocktakeItems,
@@ -85,7 +85,7 @@ export async function startStocktake(
   companyId: string,
   userId: string,
   input: StartStocktakeInput,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<StartStocktakeResult> {
   const parsed = startStocktakeSchema.safeParse(input);
@@ -190,7 +190,7 @@ export interface StocktakeListItem {
 
 export async function listStocktakes(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   opts?: { limit?: number },
 ): Promise<StocktakeListItem[]> {
   const rows = await db
@@ -254,7 +254,7 @@ export interface StocktakeDetail {
 export async function getStocktakeWithItems(
   companyId: string,
   stocktakeId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<StocktakeDetail | null> {
   const headRows = await db
     .select({
@@ -318,7 +318,7 @@ export async function updateStocktakeItemCount(
   stocktakeId: string,
   itemId: string,
   input: UpdateItemCountInput,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<UpdateItemCountResult> {
   const parsed = updateItemCountSchema.safeParse(input);
@@ -443,7 +443,7 @@ export async function completeStocktake(
   companyId: string,
   userId: string,
   stocktakeId: string,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<CompleteStocktakeResult> {
   const headRows = await db
@@ -529,7 +529,7 @@ export type CancelStocktakeResult =
 export async function cancelStocktake(
   companyId: string,
   stocktakeId: string,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<CancelStocktakeResult> {
   const headRows = await db

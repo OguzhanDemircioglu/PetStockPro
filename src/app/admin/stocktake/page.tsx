@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { listStocktakes } from '@/lib/stocktake/sessions';
 
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
@@ -20,8 +20,11 @@ const MODE_LABELS: Record<string, string> = {
 export default async function StocktakeListPage() {
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
+  const companyId = session.user.companyId;
 
-  const items = await listStocktakes(session.user.companyId, db, { limit: 100 });
+  const items = await withTenant(companyId, (tx) =>
+    listStocktakes(companyId, tx, { limit: 100 }),
+  );
   const active = items.filter((i) => i.status === 'in_progress' || i.status === 'waiting');
   const past = items.filter((i) => i.status === 'completed' || i.status === 'cancelled');
 

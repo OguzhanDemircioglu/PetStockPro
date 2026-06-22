@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { getStocktakeWithItems } from '@/lib/stocktake/sessions';
 import { StocktakeWorkflow } from './workflow';
 
@@ -14,7 +14,8 @@ export default async function StocktakeDetailPage({
   if (!session?.user?.companyId) redirect('/login' as never);
 
   const { id } = await params;
-  const detail = await getStocktakeWithItems(session.user.companyId, id, db);
+  const companyId = session.user.companyId;
+  const detail = await withTenant(companyId, (tx) => getStocktakeWithItems(companyId, id, tx));
   if (!detail) notFound();
 
   return (
