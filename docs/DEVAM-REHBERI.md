@@ -1,23 +1,28 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-06-19 (Faz 1-5 TAMAMLANDI · **Faz 4B RLS RETROFIT DEVAM EDİYOR**)
+**Tarih:** 2026-06-22 (Faz 1-5 TAMAMLANDI · **Faz 4B RLS RETROFIT — TÜM TENANT DOMAIN'LERİ TAMAMLANDI**)
 **Mevcut Branch:** `cray61` — origin ile **SYNC**
-**Son commit:** `2ee1a7d` feat(db): Faz 4B retrofit WIP — notifications/company/dashboard helpers → TenantDb
+**Son commit:** `a0eb581` feat(db): Faz 4B retrofit — telegram + onboarding (son tenant domain'ler) → withTenant
 
 ---
 
-## 🔴 BURADAN DEVAM ET — Faz 4B RLS Retrofit (yarım, mekanik grind)
+## 🟢 BURADAN DEVAM ET — Faz 4B (TENANT RETROFIT %100 · KALAN: Phase 2 cutover, KULLANICI-GATED)
 
-**Durum:** RLS tasarımı KANITLANDI, pattern oturdu, retrofit ~%15 (call-site sarma sürüyor). Her commit **owner altında güvenli** (owner RLS bypass eder → davranış değişmez). Enforcement (Phase 2) ancak retrofit %100 + kullanıcının Vercel env'i ile açılır.
+**Durum:** Tüm TENANT domain'leri `withTenant` ile sarıldı (2026-06-22 oturumu, **10 commit** `66fe9ad`..`a0eb581`). Her commit **owner altında güvenli** (owner RLS bypass → davranış değişmez) + her batch **1918 test pass** + typecheck/lint 0. Enforcement (Phase 2 = app_user) artık yalnız **kullanıcının env adımları** + 1 fire-forget global fix ile açılır (↓ KALAN İŞ).
 
 ### ✅ 4B'de BİTEN
-- **RLS uçtan uca KANITLANDI** (Aiven'de gerçek `app_user` + 0035 + 2 test tenant → `rls.test.ts` **8/8**): cross-tenant 0-satır, fail-closed (GUC boş→0), global-read, ardışık izolasyon. → Tasarım kesin çalışıyor.
-- **`with-tenant.ts`** hazır: `withTenant(companyId, fn, client?)` (tx + `set_config` is_local + **redirect-safe**: NEXT_REDIRECT/notFound throw'unda COMMIT+rethrow, veri kaybı footgun kapalı) + `withOwner(fn)` + `TenantDb = DbClient | TenantTx`. 5 unit test.
-- **Migration 0035** (RLS politikaları) + **rls.test.ts** committed. **Aiven** = local dev DB (app_user + 0035 + test tenant'lar kurulu; app owner `avnadmin` ile bağlanıp bypass eder).
-- **Retrofit edilenler:**
-  - **suppliers** (TAM): 5 helper `TenantDb` + 6 call-site (page/edit/export/3 action) `withTenant`. ← **KANONİK ÖRNEK, bunu kopyala.**
-  - **request-scoped.ts cached reads** (TAM): getCompanyById/getProductCountForCompany/getLowStockCountForCompany/getUnreadNotificationCount → withTenant. (Layout/sidebar/bell/pano cached okumaları çözüldü; global cache'ler dokunulmadı.)
-  - **WIP:** notifications/company/dashboard **helper'ları** `TenantDb`'ye genişletildi (backward-compat) + notifications/actions.ts wrapped. **Call-site'ları bekliyor** (aşağıda).
+- **RLS uçtan uca KANITLANDI** (Aiven'de gerçek `app_user` + 0035 + 2 test tenant → `rls.test.ts` **8/8**): cross-tenant 0-satır, fail-closed (GUC boş→0), global-read, ardışık izolasyon.
+- **`with-tenant.ts`** hazır: `withTenant(companyId, fn, client?)` (tx + `set_config` is_local + **redirect-safe**) + `withOwner(fn)` + `TenantDb = DbClient | TenantTx`. **Migration 0035** + **rls.test.ts** committed. Aiven = local dev DB.
+- **TÜM TENANT DOMAIN'LERİ RETROFIT EDİLDİ** (helper'lar `TenantDb` + call-site'lar `withTenant`):
+  - suppliers (kanonik) · request-scoped cached reads · notifications · company · billing(reads+4 mutasyon) · branches · low-stock · audit-log · storefront · reports · **stock-movements** · **stocktake** · **products (catalog, en büyük)** · users · assistant · /admin aggregator (pano) · telegram · onboarding.
+  - Commit dizisi: `66fe9ad`(notif/company/billing) · `d2336d5`(branches) · `b1f9672`(low-stock/audit) · `ed3db4f`(storefront/reports) · `66ecfec`(stock-movements) · `d4938eb`(stocktake) · `61b4584`(products) · `987c272`(users/assistant/aggregator) · `a0eb581`(telegram/onboarding).
+- **🔑 SAVEPOINT PATTERN (kendi `db.transaction`'ını açan helper'lar için):** stock/movements, stocktake/sessions, catalog/products+variants+product-images, products/import-execute KENDİ `db.transaction()`'ını açar. Çözüm: helper'ı `TenantDb`'ye genişlet + call-site'ı `withTenant` ile sar → iç `db.transaction` runtime'da **SAVEPOINT** olur, withTenant'ın GUC'unu devralır (typecheck doğrulandı, 1918 test yeşil).
+- **🔑 GUARD + SELF-TX TEK withTenant'ta:** stock-movements/products action'larında `guardMutation`/`hasPermission`/`assertBranchOperational` (tenant okuma) + record* (self-tx) TEK withTenant'ta, discriminated `{gate}|{result}` outcome + **explicit generic** (withTenant'ın iç `undefined as T` inference fix'i). audit + notif fire-forget + redirect → withTenant DIŞINDA.
+
+### ⚠ BİLİNÇLİ owner/deferred BIRAKILANLAR (Phase 2 öncesi ele alınacak, hepsi kod içi TODO'lu)
+- **Cross-tenant uniqueness → `withOwner`:** `inviteUser` (email global unique) + `saveStorefront` (slug global unique). GUC ile sadece kendi tenant'ı görünür → yanlış. withOwner ile RLS bypass. (Zaten withOwner'a alındı.)
+- **HTTP-in-tx → DB/HTTP split GEREKLİ:** `startPaytrCheckout` (PayTR token HTTP) · `uploadProductImage`+`deleteProductImage` (R2 HTTP). Naif withTenant tx'i HTTP boyunca açık tutar (pooled max=1 blok). Phase 2 öncesi DB-op'ları kısa withTenant'lara böl, HTTP dışarı. **Hâlâ owner `db`'de.**
+- **Fire-and-forget → owner (Phase 2 global fix, ↓ KALAN İŞ #1):** `writeAuditLogAsync` · `createNotificationAsync` · `logModerationFlag` · `checkAndNotifyStockChange`. withTenant DIŞINDA singleton `db` ile çağrılır → Phase 2'de app_user'da GUC yok → RLS reddeder, sessiz kayıp. `dbOwner`'a yönlendirilmeli. ⚠ Naif `withOwner`-internal yapma: testler mock `db` enjekte ediyor → kırar. `dbOwner` (cutover #2) hazır olunca yap.
 
 ### 📐 KANONİK PATTERN (suppliers'ı referans al)
 1. **Helper** (`lib/*/manage.ts` vb.): `import type { DbClient }` → `import type { TenantDb } from '@/lib/db/with-tenant'`; `db: DbClient` → `db: TenantDb`. **Backward-compat** (db geçen eski çağıran çalışmaya devam eder → güvenle batch widen edilebilir).
@@ -43,24 +48,24 @@
 - **Cross-domain sayfalar** (örn. `/admin` aggregator 9 helper, low-stock): tüm helper'ları önce widen et, sonra sayfayı tek withTenant'ta sar.
 - **Fire-and-forget audit + notification** (`writeAuditLogAsync`, `createNotificationAsync`) singleton `db` kullanır → Phase 2'de app_user'da GUC yok → RLS reddeder. **Phase 2 ÖNCESİ GLOBAL FIX:** bunları owner bağlantısına (`withOwner`/`dbOwner`) yönlendir. Phase 1'de (owner runtime) olduğu gibi çalışır.
 
-### ⏭ KALAN İŞ (sıradaki session)
-**A) Hemen sarılacak call-site'lar** (helper'lar zaten widened):
-- `notifications/page.tsx` (listForUser)
-- `settings/billing/page.tsx` + `settings/billing/actions.ts` + `settings/company/page.tsx` + `settings/company/actions.ts` (getCompanyProfile/updateCompanyProfile)
+### ⏭ KALAN İŞ — yalnız Phase 2 CUTOVER (KULLANICI-GATED, sıralı)
 
-**B) Kalan domainler** (helper widen + call-site sar): products · branches · stock-movements · stocktake · reports · storefront · users · audit-log · low-stock · `/admin` aggregator · assistant/* (öneri helper'ları) · vitrin feedback. + her domainin export route'u. **Öneri:** önce tüm tenant helper'larını TEK mekanik pass'te `TenantDb`'ye widen et (güvenli), sonra sayfa/action sar. Helper envanteri: `src/lib/db/tenant.ts` `TENANT_GUARDED_TABLE_IDS` + `tenant-guard.test.ts` taradığı modüller. Call-site bulmak: `grep <helperName> src/app`.
+**A) + B) (tenant retrofit) ✅ TAMAMLANDI** (yukarı liste, 10 commit). Geriye sadece enforcement:
 
-**C) Phase 2 ENFORCEMENT** (retrofit %100 olunca + KULLANICI Vercel adımı):
-1. Fire-forget audit/notification → owner (B madde global fix).
-2. `client.ts`: `dbOwner` ekle (`DATABASE_URL_OWNER`); `withOwner` onu kullansın.
-3. **Supabase**: `app_user` (NOBYPASSRLS) rolü + 0035 uygula (MCP execute_sql, project `rjzhnfqrynalklsnnuym`).
+**Phase 2 ENFORCEMENT** (app_user'ı CANLI'ya alma — bu sıralamayla):
+1. **Fire-forget global fix** (önce `dbOwner` lazım → #2 sonra yap): `writeAuditLogAsync`/`createNotificationAsync`/`logModerationFlag`/`checkAndNotifyStockChange` → `dbOwner` kullansın. ⚠ Testler mock `db` enjekte ettiği için: ya `dbOwner`'ı opsiyonel inject-edilebilir yap, ya helper'lar `dbOwner ?? injectedDb` desenini kullansın (test owner-mock geçer, prod dbOwner). Naif `withOwner`-internal = test kırar.
+2. **`client.ts`: `dbOwner` ekle** (`DATABASE_URL_OWNER`); `withOwner` artık onu kullansın (şu an default `db`). Ayrıca **HTTP-in-tx 3 helper'ı böl** (startPaytrCheckout / uploadProductImage / deleteProductImage — DB-op kısa withTenant, HTTP dışarı).
+3. **Supabase**: `app_user` (NOBYPASSRLS) rolü oluştur + migration 0035 uygula (MCP `execute_sql`, project `rjzhnfqrynalklsnnuym`). Aiven'da zaten kurulu (local dev).
 4. **Vercel env**: `DATABASE_URL` → app_user pooler; `DATABASE_URL_OWNER` → owner. (Kullanıcı panelden.)
-5. Staging smoke (app_user altında her sayfa boş-değil) → prod.
-6. Rollback: `DATABASE_URL` → owner (tek env, anında).
+5. **Staging smoke**: app_user altında HER admin sayfası boş-değil + her mutation çalışıyor (retrofit'i atlanan call-site app_user'da fail-closed → burada yakalanır). Sonra prod.
+6. **Rollback**: `DATABASE_URL` → owner (tek env, anında geri).
+
 Detay: **[docs/PLAN-FAZ-4B-RLS.md](PLAN-FAZ-4B-RLS.md)**.
 
+> **Yeni session'a not:** Retrofit'in kendisi bitti — yeni `db: DbClient` helper EKLENİRSE (yeni tenant domain) kanonik pattern (↓) ile sar. Aksi halde sıradaki iş **Phase 2 cutover** (kullanıcı env'i hazır olunca).
+
 ### 🧪 Doğrulama / komutlar
-- Her batch sonrası: `npm run typecheck` + `npm run lint` + `npx vitest run` (**baseline 1889 pass + 7 skip**).
+- Her batch sonrası: `npm run typecheck` + `npm run lint` + `npx vitest run` (**baseline 1918 pass + 7 skip**, 2026-06-22).
 - `rls.test.ts` Aiven'de çalıştırmak (8/8 kanıt): Aiven'de app_user + 0035 + test tenant kurulu; throwaway app_user parolası yeni session'da `_tmp_rls_setup.mjs` pattern'iyle yeniden üretilir (host-guard'lı node, `ssl:'require'`, `dangerouslyDisableSandbox`). Test tenant'lar: A=`943ef4b9-960c-4db8-91ad-731c039fc0b0`, B=`6ac8a8aa-0fd0-4555-a3e3-3edbeba9a4d9`.
 - **DB topolojisi:** local `.env DATABASE_URL` = **Aiven** (`LOCAL_DB_*`, sslmode=require); Supabase prod URL `.env`'de yorumlu (`# DATABASE_URL_SUPABASE_PROD=`). Migration apply: Supabase MCP, Aiven host-guard'lı node. `drizzle-kit push/migrate` **classifier-blocked** → `drizzle-kit export` + node-apply. Bkz. memory `reference_db_migration_access`.
 
