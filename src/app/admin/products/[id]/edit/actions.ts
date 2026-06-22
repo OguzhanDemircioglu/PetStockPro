@@ -3,7 +3,12 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
-import { softDeleteProduct, updateProduct } from '@/lib/catalog/products';
+import { withTenant } from '@/lib/db/with-tenant';
+import {
+  softDeleteProduct,
+  updateProduct,
+  type UpdateProductResult,
+} from '@/lib/catalog/products';
 import { writeAuditLogAsync } from '@/lib/audit/log';
 import { assertNotObserver, ObserverReadOnlyError } from '@/lib/auth/role-gate';
 import { hasAnyPermission } from '@/lib/users/permissions';
@@ -55,18 +60,8 @@ async function updateProductInner(
     }
     throw e;
   }
-  const canEdit = await hasAnyPermission(
-    session.user!.id!,
-    [PERMISSION_KEYS.PRICE_EDIT],
-    db,
-  );
-  if (!canEdit) {
-    return {
-      ok: false,
-      error: 'Ürün düzenleme yetkisi yok — Bayi Admin\'den iste',
-      issues: [],
-    };
-  }
+  const companyId = session.user!.companyId!;
+  const userId = session.user!.id!;
 
   const name = formData.get('name');
   const description = formData.get('description');
@@ -96,27 +91,45 @@ async function updateProductInner(
       ? parseInt(thresholdRaw, 10)
       : 5;
 
-  const result = await updateProduct(
-    session.user!.companyId!,
-    productId,
-    variantId,
-    {
-      name,
-      description: typeof description === 'string' && description.length > 0 ? description : null,
-      categoryId: typeof categoryId === 'string' && categoryId.length > 0 ? categoryId : null,
-      brandId: typeof brandId === 'string' && brandId.length > 0 ? brandId : null,
-      isActive,
-      variant: {
-        valueLabel,
-        sku,
-        barcode: typeof barcode === 'string' && barcode.length > 0 ? barcode : null,
-        costPrice,
-        salePrice,
-        threshold: Number.isFinite(threshold) ? threshold : 5,
+  // Faz 4B: yetki (tenant) + updateProduct (self-tx → savepoint) TEK withTenant'ta.
+  const outcome = await withTenant<
+    { gate: EditProductState } | { result: UpdateProductResult }
+  >(companyId, async (tx) => {
+    const canEdit = await hasAnyPermission(userId, [PERMISSION_KEYS.PRICE_EDIT], tx);
+    if (!canEdit) {
+      return {
+        gate: {
+          ok: false,
+          error: 'Ürün düzenleme yetkisi yok — Bayi Admin\'den iste',
+          issues: [],
+        },
+      };
+    }
+    const result = await updateProduct(
+      companyId,
+      productId,
+      variantId,
+      {
+        name,
+        description: typeof description === 'string' && description.length > 0 ? description : null,
+        categoryId: typeof categoryId === 'string' && categoryId.length > 0 ? categoryId : null,
+        brandId: typeof brandId === 'string' && brandId.length > 0 ? brandId : null,
+        isActive,
+        variant: {
+          valueLabel,
+          sku,
+          barcode: typeof barcode === 'string' && barcode.length > 0 ? barcode : null,
+          costPrice,
+          salePrice,
+          threshold: Number.isFinite(threshold) ? threshold : 5,
+        },
       },
-    },
-    db,
-  );
+      tx,
+    );
+    return { result };
+  });
+  if ('gate' in outcome) return outcome.gate;
+  const result = outcome.result;
 
   if (!result.ok) {
     const msg = {
@@ -130,8 +143,8 @@ async function updateProductInner(
 
   writeAuditLogAsync(
     {
-      companyId: session.user!.companyId!,
-      userId: session.user!.id!,
+      companyId,
+      userId,
       action: 'product.updated',
       entityType: 'product',
       entityId: productId,
@@ -153,10 +166,11 @@ export async function deleteProductAction(productId: string): Promise<void> {
   if (session.user.role === 'OBSERVER' || session.user.role === 'STAFF') {
     redirect('/admin/products?deleted=denied' as never);
   }
-  await softDeleteProduct(session.user.companyId, productId, db);
+  const companyId = session.user.companyId;
+  await withTenant(companyId, (tx) => softDeleteProduct(companyId, productId, tx));
   writeAuditLogAsync(
     {
-      companyId: session.user.companyId,
+      companyId,
       userId: session.user.id,
       action: 'product.deleted',
       entityType: 'product',

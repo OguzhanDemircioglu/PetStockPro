@@ -11,7 +11,7 @@ import { and, desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { makeSlug } from '@/lib/utils/slug';
 import { moderateFields, type ModerationReason } from '@/lib/moderation/check';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { getProductLimitContext } from '@/lib/catalog/product-limit';
 import {
   products,
@@ -71,7 +71,7 @@ export type CreateProductResult =
 export async function createProduct(
   companyId: string,
   input: CreateProductInput,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<CreateProductResult> {
   const parsed = createProductSchema.safeParse(input);
@@ -219,7 +219,7 @@ export interface ListProductsOptions {
 
 export async function listProducts(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   opts: ListProductsOptions = {},
 ): Promise<ProductListItem[]> {
   const conditions = [
@@ -299,7 +299,7 @@ export async function listProducts(
  */
 export async function countProducts(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   opts: ListProductsOptions = {},
 ): Promise<number> {
   const conditions = [
@@ -377,7 +377,7 @@ export interface ProductDetail {
 export async function getProductDetail(
   companyId: string,
   productId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<ProductDetail | null> {
   const productRows = await db
     .select({
@@ -457,7 +457,7 @@ export async function updateProduct(
   productId: string,
   variantId: string,
   input: UpdateProductInput,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<UpdateProductResult> {
   const parsed = updateProductSchema.safeParse(input);
@@ -553,7 +553,7 @@ export async function updateProduct(
 export async function softDeleteProduct(
   companyId: string,
   productId: string,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<{ ok: boolean }> {
   await db

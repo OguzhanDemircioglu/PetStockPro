@@ -23,6 +23,7 @@
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { productImages, products } from '@/db/schema';
 import {
   uploadToR2,
@@ -122,6 +123,12 @@ export type UploadResult =
  *
  * @param fileBuffer - Görselin binary'si (Buffer veya Uint8Array). MIME ve boyut
  *                     ayrıca opts'tan da gelir.
+ *
+ * ⚠ FAZ 4B retrofit BORCU: `db: DbClient` (owner) BİLEREK korundu. Ownership-check
+ *   (DB) → R2 upload (harici HTTP) → DB insert akışı, naif withTenant ile sarılırsa
+ *   transaction'ı R2 yüklemesi boyunca açık tutar (pooled bağlantı kilidi). Phase 2
+ *   öncesi doğru çözüm: DB op'larını kısa withTenant'lara böl, R2 tx DIŞINDA kalsın.
+ *   Bkz. PLAN-FAZ-4B-RLS.md (checkout split ile aynı desen).
  */
 export async function uploadProductImage(
   companyId: string,
@@ -256,7 +263,7 @@ function extensionFromContentType(ct: string): string {
 export async function listProductImages(
   companyId: string,
   productId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<ProductImageRow[]> {
   const rows = await db
     .select({
@@ -290,6 +297,10 @@ export type DeleteResult =
 
 /**
  * Görseli sil — DB + R2 cleanup. Primary silinince ikinci görsel auto-promote.
+ *
+ * ⚠ FAZ 4B retrofit BORCU: `db: DbClient` (owner) korundu — DB delete ile R2 delete
+ *   (harici HTTP) iç içe; tx-during-HTTP riskinden kaçınmak için Phase 2 öncesi
+ *   DB/HTTP split gerekir (uploadProductImage ile aynı). Bkz. PLAN-FAZ-4B-RLS.md.
  */
 export async function deleteProductImage(
   companyId: string,
@@ -364,7 +375,7 @@ export type SetPrimaryResult =
 export async function setPrimaryProductImage(
   companyId: string,
   imageId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<SetPrimaryResult> {
   const found = await db
     .select({

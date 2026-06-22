@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import {
   uploadProductImage,
   deleteProductImage,
@@ -227,10 +228,9 @@ export async function setPrimaryImageAction(
     };
   }
 
-  const result = await setPrimaryProductImage(
-    session.user.companyId,
-    imageId,
-    db,
+  const companyId = session.user.companyId;
+  const result = await withTenant(companyId, (tx) =>
+    setPrimaryProductImage(companyId, imageId, tx),
   );
 
   if (!result.ok) {

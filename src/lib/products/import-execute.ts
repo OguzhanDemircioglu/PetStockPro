@@ -14,7 +14,7 @@
 
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import {
   products,
   productVariants,
@@ -25,7 +25,6 @@ import {
   branches,
 } from '@/db/schema';
 import { makeSlug } from '@/lib/utils/slug';
-import { writeAuditLogAsync } from '@/lib/audit/log';
 
 // Client-side ile aynı shape — server'da re-validate için Zod
 export const importRowSchema = z.object({
@@ -54,7 +53,7 @@ export async function executeImport(opts: {
   companyId: string;
   userId: string;
   rows: ImportRowInput[];
-  db: DbClient;
+  db: TenantDb;
 }): Promise<ImportExecResult> {
   const { companyId, userId, rows, db } = opts;
 
@@ -219,17 +218,8 @@ export async function executeImport(opts: {
     };
   }
 
-  writeAuditLogAsync(
-    {
-      companyId,
-      userId,
-      action: 'products.imported',
-      entityType: 'product',
-      entityId: null,
-      afterState: { inserted },
-    },
-    db,
-  );
-
+  // Audit (fire-and-forget) BİLEREK burada DEĞİL: executeImport withTenant tx'i
+  // içinde çağrılır; tx-kapanırken fire-forget audit sessizce düşer. Çağıran
+  // (api/products/import/route) withTenant DIŞINDA owner db ile audit yazar.
   return { ok: true, inserted, errors: [] };
 }

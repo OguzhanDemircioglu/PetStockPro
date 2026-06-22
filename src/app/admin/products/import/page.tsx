@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { eq, sql } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { categories, brands, products, productVariants } from '@/db/schema';
 import { planProductLimit } from '@/lib/constants/plan-limits';
 import { hasExcelImport } from '@/lib/billing/plan-features';
@@ -16,11 +16,13 @@ export default async function ProductImportPage() {
 
   // 2026-05-22 Karar A revize — Excel import sadece PRO + PRO+
   // FREE plan'da manuel ürün ekleme yeterli (50 ürün elle ekleme makul).
-  const [companyPlan] = await db
-    .select({ plan: companies.plan })
-    .from(companies)
-    .where(eq(companies.id, companyId))
-    .limit(1);
+  const [companyPlan] = await withTenant(companyId, (tx) =>
+    tx
+      .select({ plan: companies.plan })
+      .from(companies)
+      .where(eq(companies.id, companyId))
+      .limit(1),
+  );
   if (!hasExcelImport(companyPlan?.plan ?? 'FREE')) {
     return (
       <main className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">
@@ -67,32 +69,35 @@ export default async function ProductImportPage() {
     );
   }
 
-  const [cats, brs, existingNames, existingSkus, existingBarcodes, [comp]] = await Promise.all([
-    db
-      .select({ name: categories.name, sktRequired: categories.sktRequired })
-      .from(categories)
-      ,
-    db.select({ name: brands.name }).from(brands),
-    db
-      .select({ name: products.name })
-      .from(products)
-      .where(eq(products.companyId, companyId)),
-    db
-      .select({ sku: productVariants.sku })
-      .from(productVariants)
-      .innerJoin(products, eq(products.id, productVariants.productId))
-      .where(eq(products.companyId, companyId)),
-    db
-      .select({ barcode: productVariants.barcode })
-      .from(productVariants)
-      .innerJoin(products, eq(products.id, productVariants.productId))
-      .where(eq(products.companyId, companyId)),
-    db
-      .select({ plan: companies.plan, productCount: sql<number>`(SELECT COUNT(*)::int FROM petstockpro.products WHERE company_id = ${companyId} AND deleted_at IS NULL)` })
-      .from(companies)
-      .where(eq(companies.id, companyId))
-      .limit(1),
-  ]);
+  const [cats, brs, existingNames, existingSkus, existingBarcodes, [comp]] = await withTenant(
+    companyId,
+    (tx) =>
+      Promise.all([
+        tx
+          .select({ name: categories.name, sktRequired: categories.sktRequired })
+          .from(categories),
+        tx.select({ name: brands.name }).from(brands),
+        tx
+          .select({ name: products.name })
+          .from(products)
+          .where(eq(products.companyId, companyId)),
+        tx
+          .select({ sku: productVariants.sku })
+          .from(productVariants)
+          .innerJoin(products, eq(products.id, productVariants.productId))
+          .where(eq(products.companyId, companyId)),
+        tx
+          .select({ barcode: productVariants.barcode })
+          .from(productVariants)
+          .innerJoin(products, eq(products.id, productVariants.productId))
+          .where(eq(products.companyId, companyId)),
+        tx
+          .select({ plan: companies.plan, productCount: sql<number>`(SELECT COUNT(*)::int FROM petstockpro.products WHERE company_id = ${companyId} AND deleted_at IS NULL)` })
+          .from(companies)
+          .where(eq(companies.id, companyId))
+          .limit(1),
+      ]),
+  );
 
   const planLimit = planProductLimit(comp?.plan ?? 'FREE');
 

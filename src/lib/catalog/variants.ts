@@ -15,7 +15,7 @@
 
 import { and, asc, eq, sql, inArray } from 'drizzle-orm';
 import { z } from 'zod';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { productVariants, products, branches } from '@/db/schema';
 
 // ─────────────────────────────────────────────────────────────────
@@ -44,7 +44,7 @@ export interface VariantListItem {
 export async function listVariants(
   companyId: string,
   productId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<VariantListItem[]> {
   const rows = await db
     .select({
@@ -109,7 +109,7 @@ export async function createVariant(
   companyId: string,
   productId: string,
   input: CreateVariantInput,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<CreateVariantResult> {
   const parsed = createVariantSchema.safeParse(input);
@@ -218,7 +218,7 @@ export async function updateVariant(
   companyId: string,
   variantId: string,
   input: UpdateVariantInput,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<UpdateVariantResult> {
   const parsed = updateVariantSchema.safeParse(input);
@@ -328,7 +328,7 @@ export type DeleteVariantResult =
 export async function deleteVariant(
   companyId: string,
   variantId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<DeleteVariantResult> {
   const existing = await db
     .select({
@@ -394,7 +394,7 @@ export type SetDefaultResult =
 export async function setDefaultVariant(
   companyId: string,
   variantId: string,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<SetDefaultResult> {
   const target = await db
@@ -452,7 +452,7 @@ export async function reorderVariants(
   companyId: string,
   productId: string,
   orderedVariantIds: string[],
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<ReorderResult> {
   if (orderedVariantIds.length === 0) {
@@ -500,7 +500,7 @@ export interface BranchOption {
 
 export async function listBranchOptions(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<BranchOption[]> {
   return db
     .select({ id: branches.id, name: branches.name })

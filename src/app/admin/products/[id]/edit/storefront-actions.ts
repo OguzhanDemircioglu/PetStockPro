@@ -4,10 +4,13 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
+import { withTenant, type TenantDb } from '@/lib/db/with-tenant';
 import {
   publishProduct,
   unpublishProduct,
   type StorefrontIssue,
+  type PublishResult,
+  type UnpublishResult,
 } from '@/lib/catalog/storefront';
 import { writeAuditLogAsync } from '@/lib/audit/log';
 import { assertNotObserver, ObserverReadOnlyError } from '@/lib/auth/role-gate';
@@ -24,6 +27,7 @@ export interface StorefrontActionState {
 async function guardVitrinManage(
   session: { user?: { id?: string; role?: string } | null } | null,
   scope: 'publish' | 'unpublish',
+  db: TenantDb,
 ): Promise<StorefrontActionState | null> {
   try {
     assertNotObserver(session);
@@ -59,15 +63,18 @@ export async function publishProductAction(
     redirect('/login' as never);
   }
 
-  const gate = await guardVitrinManage(session, 'publish');
-  if (gate) return gate;
-
-  const result = await publishProduct(
-    session.user.companyId,
-    productId,
-    session.user.id,
-    db,
-  );
+  const companyId = session.user.companyId;
+  const userId = session.user.id;
+  const outcome = await withTenant<
+    { gate: StorefrontActionState } | { result: PublishResult }
+  >(companyId, async (tx) => {
+    const gate = await guardVitrinManage(session, 'publish', tx);
+    if (gate) return { gate };
+    const result = await publishProduct(companyId, productId, userId, tx);
+    return { result };
+  });
+  if ('gate' in outcome) return outcome.gate;
+  const result = outcome.result;
 
   if (!result.ok) {
     if (result.reason === 'validation_failed') {
@@ -133,10 +140,17 @@ export async function unpublishProductAction(
     redirect('/login' as never);
   }
 
-  const gate = await guardVitrinManage(session, 'unpublish');
-  if (gate) return gate;
-
-  const result = await unpublishProduct(session.user.companyId, productId, db);
+  const companyId = session.user.companyId;
+  const outcome = await withTenant<
+    { gate: StorefrontActionState } | { result: UnpublishResult }
+  >(companyId, async (tx) => {
+    const gate = await guardVitrinManage(session, 'unpublish', tx);
+    if (gate) return { gate };
+    const result = await unpublishProduct(companyId, productId, tx);
+    return { result };
+  });
+  if ('gate' in outcome) return outcome.gate;
+  const result = outcome.result;
   if (!result.ok) {
     return {
       ok: false,

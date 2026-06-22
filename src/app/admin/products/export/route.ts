@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { listProducts } from '@/lib/catalog/products';
 import { xlsxResponse } from '@/lib/utils/xlsx';
 import { companies } from '@/db/schema';
@@ -24,21 +24,24 @@ export async function GET(req: Request) {
   const vitrinPublished =
     vitrinRaw === 'on' ? true : vitrinRaw === 'off' ? false : undefined;
 
-  const [items, [tenant]] = await Promise.all([
-    listProducts(session.user.companyId, db, {
-      query: query || undefined,
-      categoryId: categoryId || undefined,
-      brandId: brandId || undefined,
-      status,
-      vitrinPublished,
-      limit: 5000,
-    }),
-    db
-      .select({ name: companies.name })
-      .from(companies)
-      .where(eq(companies.id, session.user.companyId))
-      .limit(1),
-  ]);
+  const companyId = session.user.companyId;
+  const [items, [tenant]] = await withTenant(companyId, (tx) =>
+    Promise.all([
+      listProducts(companyId, tx, {
+        query: query || undefined,
+        categoryId: categoryId || undefined,
+        brandId: brandId || undefined,
+        status,
+        vitrinPublished,
+        limit: 5000,
+      }),
+      tx
+        .select({ name: companies.name })
+        .from(companies)
+        .where(eq(companies.id, companyId))
+        .limit(1),
+    ]),
+  );
 
   const filterParts: string[] = [];
   if (query) filterParts.push(`Arama: "${query}"`);

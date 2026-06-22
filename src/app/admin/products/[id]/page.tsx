@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import {
   getProductDetailFull,
   getProductVariantMatrix,
@@ -30,11 +30,14 @@ export default async function ProductDetailPage({
   if (!session?.user?.companyId) redirect('/login' as never);
 
   const { id } = await params;
-  const [product, matrix, movements] = await Promise.all([
-    getProductDetailFull(session.user.companyId, id, db),
-    getProductVariantMatrix(session.user.companyId, id, db),
-    listProductRecentMovements(session.user.companyId, id, db, 12),
-  ]);
+  const companyId = session.user.companyId;
+  const [product, matrix, movements] = await withTenant(companyId, (tx) =>
+    Promise.all([
+      getProductDetailFull(companyId, id, tx),
+      getProductVariantMatrix(companyId, id, tx),
+      listProductRecentMovements(companyId, id, tx, 12),
+    ]),
+  );
 
   if (!product) notFound();
 

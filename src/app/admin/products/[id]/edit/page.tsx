@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { getCachedCategories, getCachedBrands } from '@/lib/cache/request-scoped';
 import { getProductDetail } from '@/lib/catalog/products';
 import { listVariants, listBranchOptions } from '@/lib/catalog/variants';
@@ -22,23 +22,27 @@ export default async function EditProductPage({
     redirect('/login' as never);
   }
 
-  const product = await getProductDetail(session.user.companyId, id, db);
+  const companyId = session.user.companyId;
+  const product = await withTenant(companyId, (tx) => getProductDetail(companyId, id, tx));
   if (!product || !product.defaultVariant) {
     notFound();
   }
 
-  const [categoryList, brandList, variants, branchOptions, validation, images] =
-    await Promise.all([
-      getCachedCategories(),
-      getCachedBrands(),
-      listVariants(session.user.companyId, id, db),
-      listBranchOptions(session.user.companyId, db),
+  // Global cached (unstable_cache, db kullanmaz) — withTenant dışında.
+  const [categoryList, brandList] = await Promise.all([
+    getCachedCategories(),
+    getCachedBrands(),
+  ]);
+  // Tenant okumalar tek withTenant'ta (GUC).
+  const [variants, branchOptions, validation, images] = await withTenant(companyId, (tx) =>
+    Promise.all([
+      listVariants(companyId, id, tx),
+      listBranchOptions(companyId, tx),
       // Sprint 3.3 aktif — requireImage=true ile vitrin'e açmak için en az 1 görsel zorunlu
-      validateForStorefront(session.user.companyId, id, db, {
-        requireImage: true,
-      }),
-      listProductImages(session.user.companyId, id, db),
-    ]);
+      validateForStorefront(companyId, id, tx, { requireImage: true }),
+      listProductImages(companyId, id, tx),
+    ]),
+  );
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">

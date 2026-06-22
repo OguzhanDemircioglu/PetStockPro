@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { eq, asc } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { listProducts, countProducts } from '@/lib/catalog/products';
 import { categories, brands, companies } from '@/db/schema';
 import { hasExcelImport } from '@/lib/billing/plan-features';
@@ -42,6 +42,7 @@ export default async function ProductsPage({
   if (!session?.user?.companyId) {
     redirect('/login' as never);
   }
+  const companyId = session.user.companyId;
 
   const params = await searchParams;
   const justCreated = params.created === 'success';
@@ -57,27 +58,31 @@ export default async function ProductsPage({
   };
 
   // Parallel: list (paginated) + total count + filter options + plan
-  const [items, totalRows, categoryOptions, brandOptions, [companyRow]] = await Promise.all([
-    listProducts(session.user.companyId, db, {
-      ...listOpts,
-      limit: pagination.limit,
-      offset: pagination.offset,
-    }),
-    countProducts(session.user.companyId, db, listOpts),
-    db
-      .select({ id: categories.id, name: categories.name, emoji: categories.emoji })
-      .from(categories)
-      .orderBy(asc(categories.displayOrder)),
-    db
-      .select({ id: brands.id, name: brands.name })
-      .from(brands)
-      .orderBy(asc(brands.name)),
-    db
-      .select({ plan: companies.plan })
-      .from(companies)
-      .where(eq(companies.id, session.user.companyId))
-      .limit(1),
-  ]);
+  const [items, totalRows, categoryOptions, brandOptions, [companyRow]] = await withTenant(
+    companyId,
+    (tx) =>
+      Promise.all([
+        listProducts(companyId, tx, {
+          ...listOpts,
+          limit: pagination.limit,
+          offset: pagination.offset,
+        }),
+        countProducts(companyId, tx, listOpts),
+        tx
+          .select({ id: categories.id, name: categories.name, emoji: categories.emoji })
+          .from(categories)
+          .orderBy(asc(categories.displayOrder)),
+        tx
+          .select({ id: brands.id, name: brands.name })
+          .from(brands)
+          .orderBy(asc(brands.name)),
+        tx
+          .select({ plan: companies.plan })
+          .from(companies)
+          .where(eq(companies.id, companyId))
+          .limit(1),
+      ]),
+  );
 
   const pageMeta = buildPageMeta(pagination, totalRows);
   // Paginator search params (mevcut filter'lar korunsun)

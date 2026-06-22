@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { createProduct } from '@/lib/catalog/products';
 import {
   uploadProductImage,
@@ -35,6 +36,7 @@ export async function createProductAction(
   if (!session?.user?.companyId || !session.user.id) {
     redirect('/login' as never);
   }
+  const companyId = session.user.companyId;
 
   // Faz 2 — Yeni ürün oluşturma yalnızca BAYI_SAHIBI/SUPERADMIN'e.
   // OBSERVER + STAFF reject (STAFF için bu yetki Plan §C'de tanımlı değil).
@@ -124,23 +126,27 @@ export async function createProductAction(
     }
   }
 
-  const result = await createProduct(
-    session.user.companyId,
-    {
-      name,
-      description: typeof description === 'string' && description.length > 0 ? description : undefined,
-      categoryId: typeof categoryId === 'string' && categoryId.length > 0 ? categoryId : undefined,
-      brandId: resolvedBrandId,
-      variant: {
-        valueLabel: typeof valueLabel === 'string' && valueLabel.length > 0 ? valueLabel : 'Standart',
-        sku,
-        barcode: typeof barcode === 'string' && barcode.length > 0 ? barcode : undefined,
-        costPrice: typeof costPrice === 'string' && costPrice.length > 0 ? costPrice : undefined,
-        salePrice,
-        threshold: Number.isFinite(threshold) ? threshold : 5,
+  // Faz 4B: createProduct (self-tx → savepoint) withTenant'ta (GUC). Marka resolve
+  // (global) + görsel upload (R2 deferred) + audit fire-forget DIŞINDA (owner).
+  const result = await withTenant(companyId, (tx) =>
+    createProduct(
+      companyId,
+      {
+        name,
+        description: typeof description === 'string' && description.length > 0 ? description : undefined,
+        categoryId: typeof categoryId === 'string' && categoryId.length > 0 ? categoryId : undefined,
+        brandId: resolvedBrandId,
+        variant: {
+          valueLabel: typeof valueLabel === 'string' && valueLabel.length > 0 ? valueLabel : 'Standart',
+          sku,
+          barcode: typeof barcode === 'string' && barcode.length > 0 ? barcode : undefined,
+          costPrice: typeof costPrice === 'string' && costPrice.length > 0 ? costPrice : undefined,
+          salePrice,
+          threshold: Number.isFinite(threshold) ? threshold : 5,
+        },
       },
-    },
-    db,
+      tx,
+    ),
   );
 
   if (!result.ok) {

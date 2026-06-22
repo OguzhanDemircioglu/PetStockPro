@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import {
   createVariant,
   updateVariant,
@@ -89,7 +89,10 @@ export async function createVariantAction(
     branchThresholds: parseBranchThresholds(formData),
   };
 
-  const result = await createVariant(session.user.companyId, productId, input, db);
+  const companyId = session.user.companyId;
+  const result = await withTenant(companyId, (tx) =>
+    createVariant(companyId, productId, input, tx),
+  );
   if (!result.ok) {
     const msg = {
       invalid_input: result.issues?.[0] ?? 'Geçersiz alan',
@@ -155,7 +158,10 @@ export async function updateVariantAction(
     isActive,
   };
 
-  const result = await updateVariant(session.user.companyId, variantId, input, db);
+  const companyId = session.user.companyId;
+  const result = await withTenant(companyId, (tx) =>
+    updateVariant(companyId, variantId, input, tx),
+  );
   if (!result.ok) {
     const msg = {
       invalid_input: result.issues?.[0] ?? 'Geçersiz alan',
@@ -182,7 +188,10 @@ export async function deleteVariantAction(
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
 
-  const result = await deleteVariant(session.user.companyId, variantId, db);
+  const companyId = session.user.companyId;
+  const result = await withTenant(companyId, (tx) =>
+    deleteVariant(companyId, variantId, tx),
+  );
   if (!result.ok) {
     const msg = {
       not_found: 'Variant bulunamadı',
@@ -208,7 +217,10 @@ export async function setDefaultVariantAction(
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
 
-  const result = await setDefaultVariant(session.user.companyId, variantId, db);
+  const companyId = session.user.companyId;
+  const result = await withTenant(companyId, (tx) =>
+    setDefaultVariant(companyId, variantId, tx),
+  );
   if (!result.ok) {
     const msg = {
       not_found: 'Variant bulunamadı',

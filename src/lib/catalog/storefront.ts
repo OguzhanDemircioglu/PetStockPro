@@ -14,7 +14,7 @@
  */
 
 import { and, eq, sql } from 'drizzle-orm';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import {
   products,
   productVariants,
@@ -76,7 +76,7 @@ const DEFAULT_OPTS: Required<ValidateOptions> = {
 export async function validateForStorefront(
   companyId: string,
   productId: string,
-  db: DbClient,
+  db: TenantDb,
   opts: ValidateOptions = {},
 ): Promise<StorefrontValidationResult> {
   const config = { ...DEFAULT_OPTS, ...opts };
@@ -230,7 +230,7 @@ export async function publishProduct(
   companyId: string,
   productId: string,
   userId: string,
-  db: DbClient,
+  db: TenantDb,
   opts: ValidateOptions = {},
   now: Date = new Date(),
 ): Promise<PublishResult> {
@@ -334,7 +334,7 @@ export type UnpublishResult =
 export async function unpublishProduct(
   companyId: string,
   productId: string,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<UnpublishResult> {
   const current = await db

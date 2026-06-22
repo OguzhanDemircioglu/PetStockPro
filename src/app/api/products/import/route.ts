@@ -1,6 +1,8 @@
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { executeImport, type ImportRowInput } from '@/lib/products/import-execute';
+import { writeAuditLogAsync } from '@/lib/audit/log';
 
 export const runtime = 'nodejs';
 
@@ -24,12 +26,27 @@ export async function POST(req: Request) {
     return Response.json({ ok: false, error: 'rows must be array' }, { status: 400 });
   }
 
-  const result = await executeImport({
-    companyId: session.user.companyId,
-    userId: session.user.id,
-    rows: body.rows,
-    db,
-  });
+  const companyId = session.user.companyId;
+  const userId = session.user.id;
+  // Faz 4B: executeImport (self-tx → savepoint) withTenant'ta (GUC).
+  const result = await withTenant(companyId, (tx) =>
+    executeImport({ companyId, userId, rows: body.rows!, db: tx }),
+  );
+
+  // Audit fire-and-forget DIŞINDA (owner db) — withTenant tx kapandıktan sonra.
+  if (result.ok && result.inserted > 0) {
+    writeAuditLogAsync(
+      {
+        companyId,
+        userId,
+        action: 'products.imported',
+        entityType: 'product',
+        entityId: null,
+        afterState: { inserted: result.inserted },
+      },
+      db,
+    );
+  }
 
   return Response.json(result, { status: result.ok ? 200 : 400 });
 }
