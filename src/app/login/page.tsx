@@ -86,9 +86,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="grid h-screen w-screen grid-cols-1 overflow-hidden md:grid-cols-2">
-      {/* ============ SOL HERO PANEL ============ */}
-      <aside className="relative flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#d44a14] via-[#ed6a2c] to-[#c25510] px-14 py-10 text-white">
+    <div className="grid min-h-screen w-full grid-cols-1 md:grid-cols-2">
+      {/* ============ SOL HERO PANEL (mobilde gizli — pazarlama içeriği) ============ */}
+      <aside className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-[#d44a14] via-[#ed6a2c] to-[#c25510] px-14 py-10 text-white md:flex">
         {/* Logo watermark — sağ-alt (eski paw pattern + mascot SVG yerine) */}
         <div className="pointer-events-none absolute -bottom-12 -right-12 z-0 h-72 w-72 rotate-[-8deg] opacity-[0.08]">
           <Image
@@ -173,8 +173,20 @@ export default function LoginPage() {
       </aside>
 
       {/* ============ SAĞ FORM PANELİ ============ */}
-      <section className="relative flex items-center justify-center overflow-hidden bg-[#fafaf7] p-10">
+      <section className="relative flex min-h-screen items-center justify-center overflow-y-auto bg-[#fafaf7] px-6 py-10 md:p-10">
         <div className="relative z-10 w-full max-w-[440px]">
+          {/* Mobil marka başlığı — hero gizli olduğunda görünür */}
+          <div className="mb-7 flex items-center gap-3 md:hidden">
+            <Image
+              src="/logo.webp"
+              alt="PetStockPro"
+              width={44}
+              height={44}
+              className="h-11 w-11 flex-shrink-0 rounded-xl object-contain"
+              priority
+            />
+            <span className="text-xl font-bold tracking-tight text-ink">PetStockPro</span>
+          </div>
           <div className="mb-2 text-[12.5px] font-bold uppercase tracking-wider text-cat">Giriş</div>
           <h2 className="text-3xl font-bold leading-tight tracking-tight text-ink">
             Hesabına giriş yap
