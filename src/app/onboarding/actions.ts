@@ -10,7 +10,7 @@
 
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant, withOwner } from '@/lib/db/with-tenant';
 import {
   createFirstBranch,
   saveStorefront,
@@ -51,17 +51,20 @@ export async function branchAction(
     return { ok: false, error: 'Şube adı, il ve ilçe zorunlu', issues: [], branchId: null };
   }
 
-  const result = await createFirstBranch(
-    session.user.companyId,
-    {
-      name,
-      cityId,
-      districtId,
-      address: typeof address === 'string' && address.length > 0 ? address : undefined,
-      whatsappPhone:
-        typeof whatsappPhone === 'string' && whatsappPhone.length > 0 ? whatsappPhone : undefined,
-    },
-    db,
+  const companyId = session.user.companyId;
+  const result = await withTenant(companyId, (tx) =>
+    createFirstBranch(
+      companyId,
+      {
+        name,
+        cityId,
+        districtId,
+        address: typeof address === 'string' && address.length > 0 ? address : undefined,
+        whatsappPhone:
+          typeof whatsappPhone === 'string' && whatsappPhone.length > 0 ? whatsappPhone : undefined,
+      },
+      tx,
+    ),
   );
 
   if (!result.ok) {
@@ -101,10 +104,13 @@ export async function storefrontAction(
     redirect('/login' as never);
   }
 
+  const companyId = session.user.companyId;
+  const userId = session.user.id;
+
   const skip = formData.get('skip') === 'true';
   if (skip) {
-    // Vitrin atlandı — completeOnboarding + redirect
-    await completeOnboarding(session.user.id, db);
+    // Vitrin atlandı — completeOnboarding (tenant) + redirect
+    await withTenant(companyId, (tx) => completeOnboarding(userId, tx));
     redirect('/?onboarding=skipped-storefront' as never);
   }
 
@@ -113,7 +119,8 @@ export async function storefrontAction(
     return { ok: false, error: 'Slug zorunlu', slug: null, skipped: false };
   }
 
-  const result = await saveStorefront(session.user.companyId, { slug }, db);
+  // saveStorefront cross-tenant slug-uniqueness kontrolü → withOwner (RLS bypass).
+  const result = await withOwner((owner) => saveStorefront(companyId, { slug }, owner));
   if (!result.ok) {
     return {
       ok: false,
@@ -123,6 +130,6 @@ export async function storefrontAction(
     };
   }
 
-  await completeOnboarding(session.user.id, db);
+  await withTenant(companyId, (tx) => completeOnboarding(userId, tx));
   redirect('/?onboarding=complete' as never);
 }

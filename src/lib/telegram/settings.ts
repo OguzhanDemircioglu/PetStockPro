@@ -12,7 +12,7 @@
 
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { companies } from '@/db/schema';
 import {
   sendTenantTelegramAlert,
@@ -50,7 +50,7 @@ export interface TelegramSettings {
 
 export async function getTelegramSettings(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<TelegramSettings | null> {
   const rows = await db
     .select({
@@ -75,7 +75,7 @@ export type SaveTelegramConfigResult =
 export async function saveTelegramConfig(
   companyId: string,
   input: TelegramConfigInput,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<SaveTelegramConfigResult> {
   const parsed = telegramConfigSchema.safeParse(input);
@@ -113,7 +113,7 @@ export type SetEnabledResult =
 export async function setTelegramEnabled(
   companyId: string,
   enabled: boolean,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<SetEnabledResult> {
   // Açmak isteniyorsa önce config olmalı
@@ -145,7 +145,7 @@ export interface TestSendOptions {
  */
 export async function sendTelegramTestMessage(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   opts: TestSendOptions = {},
 ): Promise<TelegramSendResult> {
   let botToken: string | null = null;

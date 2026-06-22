@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import {
   saveTelegramConfig,
   sendTelegramTestMessage,
@@ -39,10 +39,9 @@ export async function saveTelegramConfigAction(
     botToken: asString(formData, 'botToken'),
     chatId: asString(formData, 'chatId'),
   };
-  const result: SaveTelegramConfigResult = await saveTelegramConfig(
-    session.user.companyId,
-    input,
-    db,
+  const companyId = session.user.companyId;
+  const result: SaveTelegramConfigResult = await withTenant(companyId, (tx) =>
+    saveTelegramConfig(companyId, input, tx),
   );
   if (!result.ok) {
     if (result.reason === 'invalid_input') {
@@ -75,10 +74,10 @@ export async function sendTestMessageAction(
       ? { configOverride: { botToken: inlineBot.trim(), chatId: inlineChat.trim() } }
       : {};
 
-  const result: TelegramSendResult = await sendTelegramTestMessage(
-    session.user.companyId,
-    db,
-    opts,
+  // Test mesajı (rare setup) — config okuma + Telegram HTTP. withTenant kabul edilir.
+  const companyId = session.user.companyId;
+  const result: TelegramSendResult = await withTenant(companyId, (tx) =>
+    sendTelegramTestMessage(companyId, tx, opts),
   );
 
   if (result.ok) {
@@ -115,10 +114,9 @@ export async function toggleTelegramEnabledAction(
   const enabledRaw = asString(formData, 'enabled');
   const enabled = enabledRaw === 'true';
 
-  const result: SetEnabledResult = await setTelegramEnabled(
-    session.user.companyId,
-    enabled,
-    db,
+  const companyId = session.user.companyId;
+  const result: SetEnabledResult = await withTenant(companyId, (tx) =>
+    setTelegramEnabled(companyId, enabled, tx),
   );
   if (!result.ok && result.reason === 'not_configured') {
     redirect('/admin/settings/notifications?error=not_configured' as never);

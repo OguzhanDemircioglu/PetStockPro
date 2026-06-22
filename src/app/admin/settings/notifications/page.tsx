@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { getTelegramSettings } from '@/lib/telegram/settings';
 import { SettingsShell } from '@/components/settings-shell';
 import { TelegramForm } from './telegram-form';
@@ -17,7 +17,8 @@ export default async function NotificationsPage({
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
 
-  const settings = await getTelegramSettings(session.user.companyId, db);
+  const companyId = session.user.companyId;
+  const settings = await withTenant(companyId, (tx) => getTelegramSettings(companyId, tx));
   const params = await searchParams;
   const configured = Boolean(settings?.botToken && settings?.chatId);
 

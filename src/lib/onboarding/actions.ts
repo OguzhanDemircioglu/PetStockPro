@@ -16,6 +16,7 @@ import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 import { makeSlug } from '@/lib/utils/slug';
 import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { branches, cities, companies, districts, users } from '@/db/schema';
 
 // ─────────────────────────────────────────────────────────────────
@@ -39,7 +40,7 @@ export type CreateFirstBranchResult =
 export async function createFirstBranch(
   companyId: string,
   input: FirstBranchInput,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<CreateFirstBranchResult> {
   const parsed = firstBranchSchema.safeParse(input);
   if (!parsed.success) {
@@ -99,6 +100,10 @@ export type SaveStorefrontResult =
   | { ok: true; slug: string }
   | { ok: false; issues: string[] };
 
+// ⚠ FAZ 4B: saveStorefront `db: DbClient` (owner) KALDI — slug uniqueness kontrolü
+// cross-tenant'tır (companies.slug global unique, company filter YOK). withTenant
+// GUC ile bu kontrol sadece kendi tenant'ını görür → başka tenant'ın slug'ı kaçar.
+// Çağıran withOwner ile sarar (inviteUser email-check ile aynı desen).
 export async function saveStorefront(
   companyId: string,
   input: StorefrontInput,
@@ -152,7 +157,7 @@ export interface CompleteOnboardingResult {
 
 export async function completeOnboarding(
   userId: string,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<CompleteOnboardingResult> {
   await db
