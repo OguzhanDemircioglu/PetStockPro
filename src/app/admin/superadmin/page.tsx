@@ -52,23 +52,25 @@ export default async function SuperadminTenantsPage() {
             'radial-gradient(circle at 92% 25%, rgba(196,69,58,.35), transparent 60%), linear-gradient(135deg, #0e3c66 0%, #1a2530 60%, #0e3c66 100%)',
         }}
       >
-        <div className="grid items-center gap-4 md:grid-cols-[auto_1fr_auto]">
-          <div
-            aria-hidden
-            className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-danger to-cat text-2xl shadow-[0_8px_22px_rgba(196,69,58,.45)]"
-          >
-            🛡
-          </div>
-          <div className="min-w-0">
-            <div className="text-[12.5px] font-bold uppercase tracking-wider opacity-75">
-              SÜPERADMİN MODU
+        <div className="flex flex-col gap-5">
+          <div className="flex min-w-0 items-center gap-4">
+            <div
+              aria-hidden
+              className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-danger to-cat text-2xl shadow-[0_8px_22px_rgba(196,69,58,.45)]"
+            >
+              🛡
             </div>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight md:text-3xl">
-              Sistem geneli görünüm
-            </h1>
-            <p className="mt-1 text-[14.5px] opacity-85">
-              {stats.tenantCount} tenant · {stats.totalUsers} kullanıcı · son 7 günde {vitrinStats.profileView + vitrinStats.productView} vitrin görüntüleme.
-            </p>
+            <div className="min-w-0">
+              <div className="text-[12.5px] font-bold uppercase tracking-wider opacity-75">
+                SÜPERADMİN MODU
+              </div>
+              <h1 className="mt-1 text-2xl font-bold tracking-tight md:text-3xl">
+                Sistem geneli görünüm
+              </h1>
+              <p className="mt-1 text-[14.5px] opacity-85">
+                {stats.tenantCount} tenant · {stats.totalUsers} kullanıcı · son 7 günde {vitrinStats.profileView + vitrinStats.productView} vitrin görüntüleme.
+              </p>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <SupChip href="/admin/superadmin/vitrin-moderation" emoji="📋">
