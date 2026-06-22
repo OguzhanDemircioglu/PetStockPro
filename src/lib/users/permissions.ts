@@ -18,7 +18,7 @@
  */
 
 import { and, eq, inArray, sql } from 'drizzle-orm';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { userPermissions, users } from '@/db/schema';
 import {
   ALL_PERMISSION_KEYS,
@@ -38,7 +38,7 @@ interface UserRoleRow {
  * Bir kullanıcının rolünü tek satır seçer. Mutation gate path'lerinde sık
  * çağrılır — minimum projection.
  */
-async function fetchUserRole(userId: string, db: DbClient): Promise<string | null> {
+async function fetchUserRole(userId: string, db: TenantDb): Promise<string | null> {
   const rows = (await db
     .select({ role: users.role })
     .from(users)
@@ -58,7 +58,7 @@ async function fetchUserRole(userId: string, db: DbClient): Promise<string | nul
  */
 export async function getUserPermissions(
   userId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<readonly PermissionKey[]> {
   const role = await fetchUserRole(userId, db);
   if (!role) return [];
@@ -85,7 +85,7 @@ export async function getUserPermissions(
 export async function hasPermission(
   userId: string,
   key: PermissionKey,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<boolean> {
   const role = await fetchUserRole(userId, db);
   if (!role) return false;
@@ -116,7 +116,7 @@ export async function setPermission(
   key: PermissionKey,
   enabled: boolean,
   grantedById: string,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<SetPermissionResult> {
   if (!isValidPermissionKey(key)) {
@@ -158,7 +158,7 @@ export async function setBulkPermissions(
   userId: string,
   updates: Readonly<Record<string, boolean>>,
   grantedById: string,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<SetBulkResult> {
   const validEntries: Array<{ key: PermissionKey; enabled: boolean }> = [];
@@ -214,7 +214,7 @@ export async function setBulkPermissions(
 export async function applyStaffDefaults(
   userId: string,
   grantedById: string,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<{ ok: true; inserted: number } | { ok: false; reason: 'unknown' }> {
   try {
@@ -245,7 +245,7 @@ export async function applyStaffDefaults(
  */
 export async function clearAllPermissions(
   userId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<{ ok: true; deletedCount: number } | { ok: false; reason: 'unknown' }> {
   try {
     const result = await db
@@ -265,7 +265,7 @@ export async function clearAllPermissions(
 export async function hasAnyPermission(
   userId: string,
   keys: readonly PermissionKey[],
-  db: DbClient,
+  db: TenantDb,
 ): Promise<boolean> {
   const role = await fetchUserRole(userId, db);
   if (!role) return false;

@@ -8,10 +8,8 @@
  * 2026-06-16 promo kaldırılınca promo'dan arındırılıp buraya taşındı.)
  */
 import { sql } from 'drizzle-orm';
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { planProductLimit } from '@/lib/constants/plan-limits';
-
-type Db = PostgresJsDatabase<Record<string, unknown>>;
 
 export interface ProductLimitContext {
   /** Plan ürün limitini aştı mı? */
@@ -28,7 +26,7 @@ export interface ProductLimitContext {
  * Ürün ekleme öncesi plan limit check.
  */
 export async function getProductLimitContext(
-  db: Db,
+  db: TenantDb,
   companyId: string,
 ): Promise<ProductLimitContext> {
   const result = await db.execute<{ plan: string; product_count: number }>(sql`

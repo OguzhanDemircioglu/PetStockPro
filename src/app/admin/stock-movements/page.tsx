@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { listStockMovements, countStockMovements } from '@/lib/stock/list';
 import {
   listBranchOptions,
@@ -40,6 +40,7 @@ export default async function StockMovementsPage({
 }) {
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
+  const companyId = session.user.companyId;
 
   const params = await searchParams;
   const typeFilter =
@@ -65,17 +66,21 @@ export default async function StockMovementsPage({
     type: typeFilter,
   };
 
-  const [movements, totalRows, branches, variants, suppliers] = await Promise.all([
-    listStockMovements(session.user.companyId, db, {
-      ...filterOpts,
-      limit: pagination.limit,
-      offset: pagination.offset,
-    }),
-    countStockMovements(session.user.companyId, db, filterOpts),
-    listBranchOptions(session.user.companyId, db),
-    listVariantOptions(session.user.companyId, db),
-    listSupplierOptions(session.user.companyId, db),
-  ]);
+  const [movements, totalRows, branches, variants, suppliers] = await withTenant(
+    companyId,
+    (tx) =>
+      Promise.all([
+        listStockMovements(companyId, tx, {
+          ...filterOpts,
+          limit: pagination.limit,
+          offset: pagination.offset,
+        }),
+        countStockMovements(companyId, tx, filterOpts),
+        listBranchOptions(companyId, tx),
+        listVariantOptions(companyId, tx),
+        listSupplierOptions(companyId, tx),
+      ]),
+  );
 
   const pageMeta = buildPageMeta(pagination, totalRows);
   const paginatorSearchParams = new URLSearchParams();

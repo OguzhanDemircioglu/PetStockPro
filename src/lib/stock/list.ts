@@ -6,7 +6,7 @@
  */
 
 import { and, desc, eq, sql } from 'drizzle-orm';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import {
   stockMovements,
   productVariants,
@@ -51,7 +51,7 @@ export interface ListMovementsOptions {
 
 export async function listStockMovements(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   opts: ListMovementsOptions = {},
 ): Promise<StockMovementListItem[]> {
   const conditions = [eq(stockMovements.companyId, companyId)];
@@ -109,7 +109,7 @@ export async function listStockMovements(
  */
 export async function countStockMovements(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   opts: ListMovementsOptions = {},
 ): Promise<number> {
   const conditions = [eq(stockMovements.companyId, companyId)];
@@ -131,7 +131,7 @@ export async function countStockMovements(
 export async function listVariantHistory(
   companyId: string,
   variantId: string,
-  db: DbClient,
+  db: TenantDb,
   limit: number = 50,
 ): Promise<StockMovementListItem[]> {
   return listStockMovements(companyId, db, { variantId, limit });

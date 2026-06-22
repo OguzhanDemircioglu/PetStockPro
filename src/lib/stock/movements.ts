@@ -22,6 +22,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { getProductLimitContext } from '@/lib/catalog/product-limit';
 import {
   stockMovements,
@@ -72,7 +73,7 @@ async function fetchVariantStockInfo(
   companyId: string,
   branchId: string,
   variantId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<VariantStockInfo | null> {
   const rows = await db
     .select({
@@ -293,7 +294,7 @@ export async function recordStockIn(
   companyId: string,
   userId: string,
   input: StockInInput,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<StockMovementResult> {
   const parsed = stockInSchema.safeParse(input);
@@ -438,7 +439,7 @@ export async function recordStockOut(
   companyId: string,
   userId: string,
   input: StockOutInput,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<StockMovementResult> {
   const parsed = stockOutSchema.safeParse(input);
@@ -588,7 +589,7 @@ export async function reverseStockMovement(
   companyId: string,
   movementId: string,
   userId: string,
-  db: DbClient,
+  db: TenantDb,
   opts: { isSuperadmin?: boolean; reason?: string | null } = {},
   now: Date = new Date(),
 ): Promise<ReverseResult> {
@@ -743,7 +744,7 @@ async function reverseTransferPair(
     transferGroupId: string | null;
   },
   userId: string,
-  db: DbClient,
+  db: TenantDb,
   opts: { isSuperadmin?: boolean; reason?: string | null },
   now: Date,
 ): Promise<ReverseResult> {
@@ -959,7 +960,7 @@ export async function recordStocktakeAdjustment(
   companyId: string,
   userId: string,
   input: StocktakeAdjustmentInput,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<StocktakeResult> {
   const parsed = stocktakeAdjustmentSchema.safeParse(input);
@@ -1095,7 +1096,7 @@ export async function recordTransfer(
   companyId: string,
   userId: string,
   input: TransferInput,
-  db: DbClient,
+  db: TenantDb,
   now: Date = new Date(),
 ): Promise<TransferResult> {
   const parsed = transferSchema.safeParse(input);

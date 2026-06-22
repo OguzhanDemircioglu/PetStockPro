@@ -6,7 +6,7 @@
  */
 
 import { and, asc, eq, sql } from 'drizzle-orm';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import {
   branches,
   productVariants,
@@ -35,7 +35,7 @@ export interface SupplierOption {
 
 export async function listBranchOptions(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<BranchOption[]> {
   return db
     .select({ id: branches.id, name: branches.name })
@@ -46,7 +46,7 @@ export async function listBranchOptions(
 
 export async function listVariantOptions(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   limit: number = 500,
 ): Promise<VariantOption[]> {
   return db
@@ -74,7 +74,7 @@ export async function listVariantOptions(
 
 export async function listSupplierOptions(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<SupplierOption[]> {
   return db
     .select({ id: suppliers.id, name: suppliers.name })

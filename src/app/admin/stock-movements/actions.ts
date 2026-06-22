@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
+import { withTenant, type TenantDb } from '@/lib/db/with-tenant';
 import {
   recordStockIn,
   recordStockOut,
@@ -93,6 +94,7 @@ async function guardMutation(
   session: { user?: { role?: string } | null } | null,
   requiredKey: PermissionKey | null,
   branchId: string | null,
+  db: TenantDb,
   requireActiveBranch = false,
 ): Promise<MovementActionState | null> {
   try {
@@ -179,11 +181,13 @@ export async function stockInAction(
 ): Promise<MovementActionState> {
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+  const companyId = session.user.companyId;
+  const userId = session.user.id;
 
   return trackUnexpected(
     {
-      companyId: session.user.companyId,
-      userId: session.user.id,
+      companyId,
+      userId,
       route: '/admin/stock-movements',
       action: 'stock.in',
     },
@@ -206,38 +210,47 @@ export async function stockInAction(
         };
       }
 
-      const gate = await guardMutation(
-        'stock_in',
-        session.user!.id!,
-        session.user!.companyId!,
-        session,
-        PERMISSION_KEYS.STOCK_IN_CREATE,
-        branchId,
-      );
-      if (gate) return gate;
-
-      const result = await recordStockIn(
-        session.user!.companyId!,
-        session.user!.id!,
-        {
+      // Faz 4B: guard (tenant okumalar) + record (self-tx → savepoint) TEK
+      // withTenant'ta (GUC). audit fire-and-forget DIŞINDA (owner).
+      const outcome = await withTenant<
+        { gate: MovementActionState } | { result: StockMovementResult }
+      >(companyId, async (tx) => {
+        const gate = await guardMutation(
+          'stock_in',
+          userId,
+          companyId,
+          session,
+          PERMISSION_KEYS.STOCK_IN_CREATE,
           branchId,
-          variantId,
-          quantity,
-          unitCost: unitCost ?? undefined,
-          supplierId,
-          documentNo,
-          lotNumber,
-          expiryDate,
-          note,
-        },
-        db,
-      );
+          tx,
+        );
+        if (gate) return { gate } as const;
+        const result = await recordStockIn(
+          companyId,
+          userId,
+          {
+            branchId,
+            variantId,
+            quantity,
+            unitCost: unitCost ?? undefined,
+            supplierId,
+            documentNo,
+            lotNumber,
+            expiryDate,
+            note,
+          },
+          tx,
+        );
+        return { result } as const;
+      });
+      if ('gate' in outcome) return outcome.gate;
+      const result = outcome.result;
 
       if (result.ok) {
         writeAuditLogAsync(
           {
-            companyId: session.user!.companyId!,
-            userId: session.user!.id!,
+            companyId,
+            userId,
             action: 'stock.in',
             entityType: 'stock_movement',
             entityId: result.movementId,
@@ -279,6 +292,8 @@ export async function stockOutAction(
 ): Promise<MovementActionState> {
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+  const companyId = session.user.companyId;
+  const userId = session.user.id;
 
   const branchId = asStr(formData.get('branchId'));
   const variantId = asStr(formData.get('variantId'));
@@ -320,54 +335,65 @@ export async function stockOutAction(
     return: PERMISSION_KEYS.STOCK_OUT_RETURN,
     other: PERMISSION_KEYS.SALE_CREATE,
   };
-  const gate = await guardMutation(
-    'stock_out',
-    session.user.id,
-    session.user.companyId,
-    session,
-    subtypeToKey[subtype],
-    branchId,
-  );
-  if (gate) return gate;
-
-  // Veresiye satış için ek yetki kontrolü
-  if (subtype === 'sale' && paymentMethod === 'credit') {
-    const creditAllowed = await hasPermission(
-      session.user.id,
-      PERMISSION_KEYS.CREDIT_SALE_CREATE,
-      db,
-    );
-    if (!creditAllowed) {
-      return {
-        ...EMPTY,
-        scope: 'stock_out',
-        message: reasonToMessage('permission_required', 'Veresiye yetkisi yok'),
-      };
-    }
-  }
-
-  const result = await recordStockOut(
-    session.user.companyId,
-    session.user.id,
-    {
+  // Faz 4B: guard + veresiye yetki + record (self-tx → savepoint) TEK withTenant'ta.
+  const outcome = await withTenant<
+    { gate: MovementActionState } | { result: StockMovementResult }
+  >(companyId, async (tx) => {
+    const gate = await guardMutation(
+      'stock_out',
+      userId,
+      companyId,
+      session,
+      subtypeToKey[subtype],
       branchId,
-      variantId,
-      quantity,
-      subtype,
-      unitPrice: unitPrice ?? undefined,
-      customerRef,
-      paymentMethod,
-      reason,
-      note,
-    },
-    db,
-  );
+      tx,
+    );
+    if (gate) return { gate } as const;
+
+    // Veresiye satış için ek yetki kontrolü (tenant okuma → tx içinde)
+    if (subtype === 'sale' && paymentMethod === 'credit') {
+      const creditAllowed = await hasPermission(
+        userId,
+        PERMISSION_KEYS.CREDIT_SALE_CREATE,
+        tx,
+      );
+      if (!creditAllowed) {
+        return {
+          gate: {
+            ...EMPTY,
+            scope: 'stock_out' as const,
+            message: reasonToMessage('permission_required', 'Veresiye yetkisi yok'),
+          },
+        } as const;
+      }
+    }
+
+    const result = await recordStockOut(
+      companyId,
+      userId,
+      {
+        branchId,
+        variantId,
+        quantity,
+        subtype,
+        unitPrice: unitPrice ?? undefined,
+        customerRef,
+        paymentMethod,
+        reason,
+        note,
+      },
+      tx,
+    );
+    return { result } as const;
+  });
+  if ('gate' in outcome) return outcome.gate;
+  const result = outcome.result;
 
   if (result.ok) {
     writeAuditLogAsync(
       {
-        companyId: session.user.companyId,
-        userId: session.user.id,
+        companyId,
+        userId,
         action: 'stock.out',
         entityType: 'stock_movement',
         entityId: result.movementId,
@@ -386,7 +412,7 @@ export async function stockOutAction(
     // Eşik geçişi varsa auto-notif (low_stock + out_of_stock + vitrin_auto_unpublished)
     if (result.beforeQty !== undefined) {
       void checkAndNotifyStockChange({
-        companyId: session.user.companyId,
+        companyId,
         branchId,
         variantId,
         beforeQty: result.beforeQty,
@@ -414,6 +440,8 @@ export async function transferAction(
 ): Promise<MovementActionState> {
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+  const companyId = session.user.companyId;
+  const userId = session.user.id;
 
   const sourceBranchId = asStr(formData.get('sourceBranchId'));
   const targetBranchId = asStr(formData.get('targetBranchId'));
@@ -430,41 +458,52 @@ export async function transferAction(
   }
 
   // Transfer için hem kaynak hem hedef şube operasyonel olmalı.
-  const gateSource = await guardMutation(
-    'transfer',
-    session.user.id,
-    session.user.companyId,
-    session,
-    PERMISSION_KEYS.TRANSFER_CREATE,
-    sourceBranchId,
-  );
-  if (gateSource) return gateSource;
+  // Faz 4B: guard + hedef-assert + record TEK withTenant'ta (GUC).
+  const outcome = await withTenant<
+    { gate: MovementActionState } | { result: TransferResult }
+  >(companyId, async (tx) => {
+    const gateSource = await guardMutation(
+      'transfer',
+      userId,
+      companyId,
+      session,
+      PERMISSION_KEYS.TRANSFER_CREATE,
+      sourceBranchId,
+      tx,
+    );
+    if (gateSource) return { gate: gateSource } as const;
 
-  try {
-    await assertBranchOperational(session.user.companyId, targetBranchId, db);
-  } catch (e) {
-    if (e instanceof BranchNotOperationalError) {
-      return {
-        ...EMPTY,
-        scope: 'transfer',
-        message: reasonToMessage('branch_not_operational', 'Hedef şube uygun değil'),
-      };
+    try {
+      await assertBranchOperational(companyId, targetBranchId, tx);
+    } catch (e) {
+      if (e instanceof BranchNotOperationalError) {
+        return {
+          gate: {
+            ...EMPTY,
+            scope: 'transfer' as const,
+            message: reasonToMessage('branch_not_operational', 'Hedef şube uygun değil'),
+          },
+        } as const;
+      }
+      throw e;
     }
-    throw e;
-  }
 
-  const result = await recordTransfer(
-    session.user.companyId,
-    session.user.id,
-    { sourceBranchId, targetBranchId, variantId, quantity, note },
-    db,
-  );
+    const result = await recordTransfer(
+      companyId,
+      userId,
+      { sourceBranchId, targetBranchId, variantId, quantity, note },
+      tx,
+    );
+    return { result } as const;
+  });
+  if ('gate' in outcome) return outcome.gate;
+  const result = outcome.result;
 
   if (result.ok) {
     writeAuditLogAsync(
       {
-        companyId: session.user.companyId,
-        userId: session.user.id,
+        companyId,
+        userId,
         action: 'stock.transfer',
         entityType: 'transfer_group',
         entityId: result.transferGroupId,
@@ -495,6 +534,8 @@ export async function stocktakeAction(
 ): Promise<MovementActionState> {
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+  const companyId = session.user.companyId;
+  const userId = session.user.id;
 
   const branchId = asStr(formData.get('branchId'));
   const variantId = asStr(formData.get('variantId'));
@@ -510,28 +551,36 @@ export async function stocktakeAction(
     };
   }
 
-  const gate = await guardMutation(
-    'stocktake',
-    session.user.id,
-    session.user.companyId,
-    session,
-    PERMISSION_KEYS.STOCKTAKE_CREATE,
-    branchId,
-  );
-  if (gate) return gate;
-
-  const result = await recordStocktakeAdjustment(
-    session.user.companyId,
-    session.user.id,
-    { branchId, variantId, countedQty, reason, note },
-    db,
-  );
+  // Faz 4B: guard + record (self-tx → savepoint) TEK withTenant'ta (GUC).
+  const outcome = await withTenant<
+    { gate: MovementActionState } | { result: StocktakeResult }
+  >(companyId, async (tx) => {
+    const gate = await guardMutation(
+      'stocktake',
+      userId,
+      companyId,
+      session,
+      PERMISSION_KEYS.STOCKTAKE_CREATE,
+      branchId,
+      tx,
+    );
+    if (gate) return { gate } as const;
+    const result = await recordStocktakeAdjustment(
+      companyId,
+      userId,
+      { branchId, variantId, countedQty, reason, note },
+      tx,
+    );
+    return { result } as const;
+  });
+  if ('gate' in outcome) return outcome.gate;
+  const result = outcome.result;
 
   if (result.ok) {
     writeAuditLogAsync(
       {
-        companyId: session.user.companyId,
-        userId: session.user.id,
+        companyId,
+        userId,
         action: 'stock.stocktake',
         entityType: 'stock_movement',
         entityId: result.movementId,
@@ -547,7 +596,7 @@ export async function stocktakeAction(
     );
 
     void checkAndNotifyStockChange({
-      companyId: session.user.companyId,
+      companyId,
       branchId,
       variantId,
       beforeQty: result.beforeQty,
@@ -579,6 +628,8 @@ export async function reverseMovementAction(
 ): Promise<ReversalActionState> {
   const session = await auth();
   if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+  const companyId = session.user.companyId;
+  const userId = session.user.id;
 
   // OBSERVER reversal yapamaz. STAFF için Plan'da reversal yetkisi tanımlı değil
   // (24h pencere zaten kullanıcı koruması, Bayi Admin'in iznine bağlı). Mevcut
@@ -596,18 +647,16 @@ export async function reverseMovementAction(
     throw e;
   }
 
-  const result = await reverseStockMovement(
-    session.user.companyId,
-    movementId,
-    session.user.id,
-    db,
+  // Faz 4B: reverse (self-tx → savepoint) withTenant'ta (GUC). audit dışında (owner).
+  const result = await withTenant(companyId, (tx) =>
+    reverseStockMovement(companyId, movementId, userId, tx),
   );
 
   if (result.ok) {
     writeAuditLogAsync(
       {
-        companyId: session.user.companyId,
-        userId: session.user.id,
+        companyId,
+        userId,
         action: 'stock.reversed',
         entityType: 'stock_movement',
         entityId: movementId,
