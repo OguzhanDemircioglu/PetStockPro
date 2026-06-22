@@ -28,9 +28,15 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
-  if (!session?.user?.companyId || !session.user.id) redirect('/login' as never);
+  if (!session?.user?.id) redirect('/login' as never);
 
   const showToolbox = isSuperadmin(session);
+  // SUPERADMIN sistem geneline aittir → companyId NULL olabilir (tenant scope'unu
+  // impersonation ile alır). Normal kullanıcı companyId olmadan admin paneline
+  // giremez; SUPERADMIN bu kontrolü atlar. Aksi halde companyId'siz süperadmin
+  // /login'e atılır → middleware /login→/→/admin/superadmin → SONSUZ redirect loop
+  // (ERR_TOO_MANY_REDIRECTS) → süperadmin ekranına hiç girilemez.
+  if (!session.user.companyId && !showToolbox) redirect('/login' as never);
   // Faz 8 (2026-05-21) — OBSERVER (İzleyici) read-only sticky banner + topbar rozet.
   const isObserverRole = session.user.role === 'OBSERVER';
 
@@ -53,13 +59,23 @@ export default async function AdminLayout({
       return fallback;
     }
   };
-  const company = await safeRead(getCompanyById(effectiveCompanyId), null);
-  const productCount = await safeRead(getProductCountForCompany(effectiveCompanyId), 0);
-  const lowStockCount = await safeRead(getLowStockCountForCompany(effectiveCompanyId), 0);
-  const unreadCount = await safeRead(
-    getUnreadNotificationCount(effectiveCompanyId, session.user.id),
-    0,
-  );
+  // companyId'siz SUPERADMIN (impersonation yok) — kendi tenant'ı olmadığı için
+  // sidebar rozet okumaları atlanır, doğrudan varsayılanlara düşülür.
+  const company = effectiveCompanyId
+    ? await safeRead(getCompanyById(effectiveCompanyId), null)
+    : null;
+  const productCount = effectiveCompanyId
+    ? await safeRead(getProductCountForCompany(effectiveCompanyId), 0)
+    : 0;
+  const lowStockCount = effectiveCompanyId
+    ? await safeRead(getLowStockCountForCompany(effectiveCompanyId), 0)
+    : 0;
+  const unreadCount = effectiveCompanyId
+    ? await safeRead(
+        getUnreadNotificationCount(effectiveCompanyId, session.user.id),
+        0,
+      )
+    : 0;
 
   const tenantName = company?.name ?? 'Pet shop';
   const plan = company?.plan ?? 'FREE';
