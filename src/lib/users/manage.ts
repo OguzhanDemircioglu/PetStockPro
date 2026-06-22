@@ -21,6 +21,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { users, branches } from '@/db/schema';
 import { createResetToken } from '@/lib/auth/password-reset';
 
@@ -202,7 +203,7 @@ export interface TenantUserListItem {
 
 export async function listCompanyUsers(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
 ): Promise<TenantUserListItem[]> {
   return db
     .select({

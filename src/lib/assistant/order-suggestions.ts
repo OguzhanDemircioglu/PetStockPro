@@ -16,7 +16,7 @@
  */
 
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import {
   branchInventory,
   productVariants,
@@ -45,7 +45,7 @@ export interface OrderSuggestion {
 
 export async function listOrderSuggestions(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   limit: number = 10,
 ): Promise<OrderSuggestion[]> {
   // Düşük stok satırlarını çek + variant + ürün + şube join

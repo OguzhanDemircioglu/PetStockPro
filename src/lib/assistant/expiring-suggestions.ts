@@ -19,7 +19,7 @@
  */
 
 import { and, asc, eq, gt, isNotNull, sql } from 'drizzle-orm';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import {
   branchInventory,
   branches,
@@ -54,7 +54,7 @@ export function computeSeverity(daysUntilExpiry: number): ExpirySeverity {
 
 export async function listExpiringSuggestions(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   limit: number = 5,
   now: Date = new Date(),
 ): Promise<ExpiringSuggestion[]> {

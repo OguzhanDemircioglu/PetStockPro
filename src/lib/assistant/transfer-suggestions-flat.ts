@@ -9,7 +9,7 @@
  */
 
 import { and, asc, eq, sql } from 'drizzle-orm';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import { branchInventory, productVariants, products, branches } from '@/db/schema';
 import {
   getTransferSuggestionsBulk,
@@ -25,7 +25,7 @@ export interface TransferSuggestionFlat extends TransferSuggestion {
 
 export async function listTopTransferSuggestions(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   limit: number = 5,
 ): Promise<TransferSuggestionFlat[]> {
   // Düşük stoklu variant ID'leri (her şubedeki düşüklükler) toplu olarak çek

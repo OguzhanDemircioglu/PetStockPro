@@ -26,7 +26,7 @@
  */
 
 import { and, eq, gte, inArray, sql } from 'drizzle-orm';
-import type { DbClient } from '@/lib/db/client';
+import type { TenantDb } from '@/lib/db/with-tenant';
 import {
   branchInventory,
   productVariants,
@@ -98,7 +98,7 @@ export function computeMonthsOfInventory(
 
 export async function listDiscountSuggestions(
   companyId: string,
-  db: DbClient,
+  db: TenantDb,
   limit: number = 5,
 ): Promise<DiscountSuggestion[]> {
   // Variant başına toplam stok — aktif variant + aktif olmayan silinmemiş ürün

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { eq, and } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { listCompanyUsers } from '@/lib/users/manage';
 import { branches, users as usersTable } from '@/db/schema';
 import { SettingsShell } from '@/components/settings-shell';
@@ -30,24 +30,47 @@ const METHOD_BADGE: Record<string, string> = {
 export default async function UsersSettingsPage() {
   const session = await auth();
   if (!session?.user?.companyId) redirect('/login' as never);
+  const companyId = session.user.companyId;
 
-  const users = await listCompanyUsers(session.user.companyId, db);
+  const canInvite =
+    session.user.role === 'BAYI_SAHIBI' || session.user.role === 'SUPERADMIN';
+  const canManagePermissions = canInvite;
+  const now = new Date();
 
-  // Şubeler — her şube için mevcut OBSERVER (legacy "İzleyici") var mı bilgisi
-  const branchRows = await db
-    .select({
-      id: branches.id,
-      name: branches.name,
-      isActive: branches.isActive,
-    })
-    .from(branches)
-    .where(eq(branches.companyId, session.user.companyId))
-    .orderBy(branches.name);
+  // Faz 4B: tüm tenant okumalar TEK withTenant'ta (GUC). staffPermissions
+  // listCompanyUsers sonucuna bağlı → aynı tx içinde sıralı.
+  const { users, branchRows, existingManagers, staffPermissions } = await withTenant(
+    companyId,
+    async (tx) => {
+      const users = await listCompanyUsers(companyId, tx);
+      const branchRows = await tx
+        .select({
+          id: branches.id,
+          name: branches.name,
+          isActive: branches.isActive,
+        })
+        .from(branches)
+        .where(eq(branches.companyId, companyId))
+        .orderBy(branches.name);
+      const existingManagers = await tx
+        .select({ branchId: usersTable.branchId, name: usersTable.name, email: usersTable.email })
+        .from(usersTable)
+        .where(and(eq(usersTable.companyId, companyId), eq(usersTable.role, 'OBSERVER')));
+      // Faz 6 — STAFF yetkilerini server-side preload (modal initialEnabled için).
+      const staffPermissions = new Map<string, readonly string[]>();
+      if (canManagePermissions) {
+        const staffUsers = users.filter((u) => u.role === 'STAFF');
+        await Promise.all(
+          staffUsers.map(async (u) => {
+            staffPermissions.set(u.id, await getUserPermissions(u.id, tx));
+          }),
+        );
+      }
+      return { users, branchRows, existingManagers, staffPermissions };
+    },
+  );
+
   const managerByBranchId = new Map<string, string>();
-  const existingManagers = await db
-    .select({ branchId: usersTable.branchId, name: usersTable.name, email: usersTable.email })
-    .from(usersTable)
-    .where(and(eq(usersTable.companyId, session.user.companyId), eq(usersTable.role, 'OBSERVER')));
   for (const m of existingManagers) {
     if (m.branchId) managerByBranchId.set(m.branchId, m.name ?? m.email);
   }
@@ -58,23 +81,6 @@ export default async function UsersSettingsPage() {
       name: b.name,
       managerName: managerByBranchId.get(b.id) ?? null,
     }));
-
-  const canInvite =
-    session.user.role === 'BAYI_SAHIBI' || session.user.role === 'SUPERADMIN';
-  const canManagePermissions = canInvite;
-  const now = new Date();
-
-  // Faz 6 — STAFF kullanıcıların yetki listelerini server-side preload (modal
-  // initialEnabled için). Modal sadece STAFF rolüne gösterildiği için filter.
-  const staffPermissions = new Map<string, readonly string[]>();
-  if (canManagePermissions) {
-    const staffUsers = users.filter((u) => u.role === 'STAFF');
-    await Promise.all(
-      staffUsers.map(async (u) => {
-        staffPermissions.set(u.id, await getUserPermissions(u.id, db));
-      }),
-    );
-  }
 
   return (
     <SettingsShell

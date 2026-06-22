@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { auth } from '@/lib/auth/auth';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import { getCompanyById } from '@/lib/cache/request-scoped';
 import { PetSpinner } from '@/components/ui/pet-spinner';
 import { PanoExpiringSection } from './_pano-expiring-section';
@@ -51,8 +51,13 @@ export default async function AdminDashboardPage() {
   // Tur 2 (P0-2) + Tur 12 (P2-3): companyRow request-scoped cache + Suspense
   // streaming. listExpiringSuggestions (JSONB-heavy) ayrı async component'ta
   // <Suspense> altında stream → pano hero/KPI/alert anında render.
+  const companyId = session.user.companyId;
+  const userId = session.user.id;
+  // getCompanyById request-scoped cached (kendi withTenant'ı) — outer withTenant
+  // DIŞINDA, ayrı/sıralı çağrılır (max:1 pooler'da nested-tx deadlock'tan kaçın;
+  // ayrıca layout zaten çağırdığı için cache hit, ek DB yok).
+  const company = await getCompanyById(companyId);
   const [
-    company,
     stats,
     lowStock,
     activity,
@@ -61,17 +66,18 @@ export default async function AdminDashboardPage() {
     transferSuggestions,
     discountSuggestions,
     feedback,
-  ] = await Promise.all([
-    getCompanyById(session.user.companyId),
-    getDashboardStats(session.user.companyId, db),
-    listLowStock(session.user.companyId, db, 6),
-    listRecentActivity(session.user.companyId, db, 8),
-    listForUser(session.user.companyId, session.user.id, db, { limit: 4 }),
-    listOrderSuggestions(session.user.companyId, db, 5),
-    listTopTransferSuggestions(session.user.companyId, db, 5),
-    listDiscountSuggestions(session.user.companyId, db, 5),
-    getFeedbackSummary(session.user.companyId, db, 30),
-  ]);
+  ] = await withTenant(companyId, (tx) =>
+    Promise.all([
+      getDashboardStats(companyId, tx),
+      listLowStock(companyId, tx, 6),
+      listRecentActivity(companyId, tx, 8),
+      listForUser(companyId, userId, tx, { limit: 4 }),
+      listOrderSuggestions(companyId, tx, 5),
+      listTopTransferSuggestions(companyId, tx, 5),
+      listDiscountSuggestions(companyId, tx, 5),
+      getFeedbackSummary(companyId, tx, 30),
+    ]),
+  );
 
   const feedbackActivity =
     feedback.totalSubmitted + feedback.totalClosedManually + feedback.totalDismissed;
@@ -642,7 +648,7 @@ export default async function AdminDashboardPage() {
           </div>
         }
       >
-        <PanoExpiringSection companyId={session.user.companyId} />
+        <PanoExpiringSection companyId={companyId} />
       </Suspense>
 
       {orderSuggestions.length > 0 && (

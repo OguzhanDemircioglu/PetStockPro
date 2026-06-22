@@ -7,7 +7,7 @@
  * görünür, SKT öneri arka planda yüklenir.
  */
 import Link from 'next/link';
-import { db } from '@/lib/db/client';
+import { withTenant } from '@/lib/db/with-tenant';
 import {
   listExpiringSuggestions,
   formatExpiryLabel,
@@ -19,7 +19,9 @@ interface Props {
 }
 
 export async function PanoExpiringSection({ companyId }: Props) {
-  const expiringSuggestions = await listExpiringSuggestions(companyId, db, 6);
+  const expiringSuggestions = await withTenant(companyId, (tx) =>
+    listExpiringSuggestions(companyId, tx, 6),
+  );
   if (expiringSuggestions.length === 0) return null;
 
   const toneClass: Record<ExpirySeverity, string> = {

@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { eq, and } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
+import { withTenant, withOwner } from '@/lib/db/with-tenant';
 import { users as usersTable } from '@/db/schema';
 import { writeAuditLogAsync } from '@/lib/audit/log';
 import { inviteUser, ROLE_VALUES, type InviteRole } from '@/lib/users/manage';
@@ -41,6 +42,8 @@ export async function inviteUserAction(
 ): Promise<InviteUserState> {
   const session = await auth();
   if (!session?.user?.id || !session.user.companyId) redirect('/login' as never);
+  const companyId = session.user.companyId;
+  const userId = session.user.id;
 
   // Sadece BAYI_SAHIBI veya SUPERADMIN davet edebilir
   if (session.user.role !== 'BAYI_SAHIBI' && session.user.role !== 'SUPERADMIN') {
@@ -60,16 +63,21 @@ export async function inviteUserAction(
   }
   const data = parsed.data;
 
-  const result = await inviteUser(
-    session.user.companyId,
-    session.user.id,
-    {
-      email: data.email,
-      role: data.role as InviteRole,
-      name: data.name,
-      branchId: data.branchId ?? null,
-    },
-    db,
+  // Faz 4B: inviteUser cross-tenant email çakışma kontrolü yapar (global email
+  // unique) → withOwner (owner conn, RLS bypass). withTenant'ta GUC kontrolü
+  // sadece kendi tenant'ını görür, yanlış olurdu.
+  const result = await withOwner((owner) =>
+    inviteUser(
+      companyId,
+      userId,
+      {
+        email: data.email,
+        role: data.role as InviteRole,
+        name: data.name,
+        branchId: data.branchId ?? null,
+      },
+      owner,
+    ),
   );
 
   if (!result.ok) {
@@ -108,7 +116,7 @@ export async function inviteUserAction(
   // customer_ref.write). OBSERVER için yetki tablosuna kayıt YOK (read-only,
   // helper bypass eder).
   if (data.role === 'STAFF') {
-    await applyStaffDefaults(result.userId, session.user.id, db);
+    await withTenant(companyId, (tx) => applyStaffDefaults(result.userId, userId, tx));
   }
 
   revalidatePath('/admin/settings/users');
@@ -164,59 +172,60 @@ export async function updateUserPermissionsAction(
     return { error: 'Form geçersiz' };
   }
 
-  // Target user gerçekten bizim tenant'a mı ait? + STAFF mi?
-  const target = await db
-    .select({
-      id: usersTable.id,
-      role: usersTable.role,
-      email: usersTable.email,
-      companyId: usersTable.companyId,
-    })
-    .from(usersTable)
-    .where(and(eq(usersTable.id, userId), eq(usersTable.companyId, session.user.companyId)))
-    .limit(1);
-  if (target.length === 0) {
-    return { error: 'Kullanıcı bulunamadı veya farklı tenant\'a ait' };
-  }
-  if (target[0].role !== 'STAFF') {
-    return { error: 'Yetki yönetimi sadece Çalışan rolü için' };
-  }
-
-  // Geçersiz key gönderildiyse sessiz filtrele (defensive — UI'da hep doğru).
+  // Geçersiz key gönderildiyse sessiz filtrele (defensive — db'siz).
   const cleanPermissions: Record<string, boolean> = {};
   for (const [k, v] of Object.entries(permissions)) {
     if (isValidPermissionKey(k)) cleanPermissions[k] = v;
   }
 
-  const result = await setBulkPermissions(
-    userId,
-    cleanPermissions,
-    session.user.id,
-    db,
-  );
-
-  if (!result.ok) {
-    return { error: 'Yetkiler güncellenemedi' };
-  }
+  const companyId = session.user.companyId;
+  const actorId = session.user.id;
+  // Faz 4B: target ownership + setBulkPermissions (tenant) TEK withTenant'ta (GUC).
+  const outcome = await withTenant<
+    { error: string } | { updatedCount: number; targetEmail: string }
+  >(companyId, async (tx) => {
+    const target = await tx
+      .select({
+        id: usersTable.id,
+        role: usersTable.role,
+        email: usersTable.email,
+        companyId: usersTable.companyId,
+      })
+      .from(usersTable)
+      .where(and(eq(usersTable.id, userId), eq(usersTable.companyId, companyId)))
+      .limit(1);
+    if (target.length === 0) {
+      return { error: 'Kullanıcı bulunamadı veya farklı tenant\'a ait' };
+    }
+    if (target[0].role !== 'STAFF') {
+      return { error: 'Yetki yönetimi sadece Çalışan rolü için' };
+    }
+    const result = await setBulkPermissions(userId, cleanPermissions, actorId, tx);
+    if (!result.ok) {
+      return { error: 'Yetkiler güncellenemedi' };
+    }
+    return { updatedCount: result.updatedCount, targetEmail: target[0].email };
+  });
+  if ('error' in outcome) return { error: outcome.error };
 
   writeAuditLogAsync(
     {
-      companyId: session.user.companyId,
-      userId: session.user.id,
+      companyId,
+      userId: actorId,
       action: 'user.permissions_updated',
       entityType: 'user',
       entityId: userId,
       afterState: {
-        targetEmail: target[0].email,
+        targetEmail: outcome.targetEmail,
         permissions: cleanPermissions,
-        updatedCount: result.updatedCount,
+        updatedCount: outcome.updatedCount,
       },
     },
     db,
   );
 
   revalidatePath('/admin/settings/users');
-  return { ok: true, updatedCount: result.updatedCount };
+  return { ok: true, updatedCount: outcome.updatedCount };
 }
 
 /**
@@ -231,14 +240,17 @@ export async function fetchUserPermissionsForModal(
   if (session.user.role !== 'BAYI_SAHIBI' && session.user.role !== 'SUPERADMIN') {
     return [];
   }
-  // Tenant ownership check
-  const target = await db
-    .select({ id: usersTable.id })
-    .from(usersTable)
-    .where(
-      and(eq(usersTable.id, targetUserId), eq(usersTable.companyId, session.user.companyId)),
-    )
-    .limit(1);
-  if (target.length === 0) return [];
-  return await getUserPermissions(targetUserId, db);
+  // Tenant ownership check + permission fetch TEK withTenant'ta (GUC).
+  const companyId = session.user.companyId;
+  return withTenant(companyId, async (tx) => {
+    const target = await tx
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(
+        and(eq(usersTable.id, targetUserId), eq(usersTable.companyId, companyId)),
+      )
+      .limit(1);
+    if (target.length === 0) return [];
+    return getUserPermissions(targetUserId, tx);
+  });
 }
