@@ -3,7 +3,6 @@ import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { companies } from '@/db/schema';
-import { countCatalogBrands } from '@/lib/brands/seed-catalog';
 import { getAllCities } from '@/lib/cache/request-scoped';
 import { OnboardingWizard } from './wizard';
 
@@ -27,18 +26,21 @@ export default async function OnboardingPage() {
   // Onboarding zaten tamamlandıysa /'a redirect — middleware yedek, burada da kontrol
   // (middleware Sprint 2.6'da pratik olarak gerek olmayabilir, ama defansif)
 
-  // 2026-05-22 Tur 7 YT7-6: getAllCities (unstable_cache 24h, name alfabetik)
-  // Önceki cities.id sıralaması (TR resmi il kodu) alfabetiğe geçirildi —
-  // diğer 3 sayfayla tutarlı + UX standart.
-  const [cityRows, companyRows, catalogBrandCount] = await Promise.all([
-    getAllCities(),
-    db
-      .select({ name: companies.name, slug: companies.slug })
-      .from(companies)
-      .where(eq(companies.id, session.user.companyId))
-      .limit(1),
-    countCatalogBrands(db).catch(() => 0),
-  ]);
+  // ⚠ max:1 Supabase pooler (Fluid Compute): eşzamanlı (Promise.all) DB okuması
+  // bağlantı çekişmesi + statement timeout → istek "-" statüde takılıp ekran
+  // kararıyordu (admin layout ile aynı ders, commit a5ef400). Çözüm: SIRALI okuma.
+  // Ayrıca countCatalogBrands kaldırıldı — Migration 0026'dan beri brands GLOBAL,
+  // catalogBrandCount wizard'da kullanılmıyor (gereksiz COUNT DISTINCT query'di).
+  // getAllCities defansif: takılırsa boş listeye düş, sayfa yine de render olsun.
+  const cityRows = await getAllCities().catch(
+    () => [] as Awaited<ReturnType<typeof getAllCities>>,
+  );
+
+  const companyRows = await db
+    .select({ name: companies.name, slug: companies.slug })
+    .from(companies)
+    .where(eq(companies.id, session.user.companyId))
+    .limit(1);
 
   const company = companyRows[0];
 
@@ -52,7 +54,7 @@ export default async function OnboardingPage() {
       companyName={company.name}
       currentSlug={company.slug}
       citiesList={cityRows}
-      catalogBrandCount={catalogBrandCount}
+      catalogBrandCount={0}
     />
   );
 }
