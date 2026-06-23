@@ -2,7 +2,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { StagingDemoButton } from '../staging-demo-button';
 
 export const metadata: Metadata = {
   title: 'Yapım Aşamasında — PetStockPro',
@@ -48,13 +47,13 @@ export default function YapimAsamasindaPage() {
         </p>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <StagingDemoButton
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-cat to-cat-2 px-6 py-3 text-[15px] font-bold text-white shadow-[var(--shadow-cat)] hover:-translate-y-0.5 transition-transform disabled:opacity-70 disabled:cursor-progress"
-            pendingText="Bayi paneline yönlendiriliyorsun…"
+          <Link
+            href={'/panel-onizleme' as never}
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-cat to-cat-2 px-6 py-3 text-[15px] font-bold text-white shadow-[var(--shadow-cat)] hover:-translate-y-0.5 transition-transform"
           >
             <span aria-hidden>🛡</span>
             Bayi panelini önizle
-          </StagingDemoButton>
+          </Link>
           <Link
             href={'/vitrin' as never}
             className="inline-flex items-center gap-2 rounded-xl border border-line bg-paper px-6 py-3 text-[15px] font-bold text-cart hover:bg-cat-soft"

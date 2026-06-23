@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { LayoutDashboard, Store } from 'lucide-react';
-import { StagingDemoButton } from '@/app/staging-demo-button';
 
 /**
  * Login + register hero — "kayıt olmadan dene" demo önizleme.
@@ -16,14 +15,14 @@ import { StagingDemoButton } from '@/app/staging-demo-button';
 export function HeroDemoButtons() {
   return (
     <div className="relative z-10 mt-6 grid grid-cols-2 gap-3">
-      <StagingDemoButton
-        testId="hero-demo-admin"
-        className="group flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-[#4a4a4a] to-[#222222] px-4 py-3.5 text-[13px] font-bold text-white shadow-[0_10px_24px_rgba(0,0,0,0.32)] ring-1 ring-white/15 transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(0,0,0,0.40)] disabled:cursor-progress disabled:opacity-70"
-        pendingText="Açılıyor…"
+      <Link
+        href={'/panel-onizleme' as never}
+        data-testid="hero-demo-admin"
+        className="group flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-[#4a4a4a] to-[#222222] px-4 py-3.5 text-[13px] font-bold text-white shadow-[0_10px_24px_rgba(0,0,0,0.32)] ring-1 ring-white/15 transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(0,0,0,0.40)]"
       >
         <LayoutDashboard className="h-[18px] w-[18px] shrink-0 drop-shadow" strokeWidth={2.2} />
         Paneli önizle
-      </StagingDemoButton>
+      </Link>
       <Link
         href={'/vitrin' as never}
         data-testid="hero-demo-vitrin"
