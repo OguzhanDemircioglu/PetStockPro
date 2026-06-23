@@ -243,19 +243,23 @@ export function OnboardingWizard({
                   className="mb-1.5 block text-[13px] font-bold uppercase tracking-wider text-ink-3"
                   htmlFor="whatsapp"
                 >
-                  WhatsApp telefonu (opsiyonel)
+                  WhatsApp telefonu *
                 </label>
                 <input
                   id="whatsapp"
                   name="whatsappPhone"
                   type="tel"
+                  inputMode="tel"
                   placeholder="0532 555 1234"
                   autoComplete="tel"
+                  required
                   disabled={branchPending}
+                  aria-invalid={hasBranchError || undefined}
                   className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
                 <p className="mt-1.5 text-[12.5px] text-ink-4">
-                  Müşteriler vitrin&apos;den buraya yazar (Sprint 12).
+                  Müşteriler vitrin&apos;den buraya WhatsApp yazar; aboneliğinde de
+                  kullanılır. En az 10 hane (ör. 0532 555 1234).
                 </p>
               </div>
 

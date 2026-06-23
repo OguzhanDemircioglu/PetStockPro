@@ -60,8 +60,8 @@ export async function branchAction(
         cityId,
         districtId,
         address: typeof address === 'string' && address.length > 0 ? address : undefined,
-        whatsappPhone:
-          typeof whatsappPhone === 'string' && whatsappPhone.length > 0 ? whatsappPhone : undefined,
+        // Zorunlu — boş/geçersizse firstBranchSchema reject eder (issue UI'da gösterilir).
+        whatsappPhone: typeof whatsappPhone === 'string' ? whatsappPhone : '',
       },
       tx,
     ),

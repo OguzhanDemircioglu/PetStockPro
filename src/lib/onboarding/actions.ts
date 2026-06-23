@@ -12,7 +12,7 @@
  * Dependency injection: db parametre olarak.
  */
 
-import { eq, and } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import { makeSlug } from '@/lib/utils/slug';
 import type { DbClient } from '@/lib/db/client';
@@ -28,7 +28,18 @@ export const firstBranchSchema = z.object({
   cityId: z.number().int().min(1).max(81, 'Geçerli bir il seç'),
   districtId: z.string().uuid('Geçerli bir ilçe seç'),
   address: z.string().max(500).optional(),
-  whatsappPhone: z.string().max(20).optional(),
+  // WhatsApp telefonu ZORUNLU + format. İki yerde kritik: (1) vitrin wa.me deep-link ile
+  // müşteri iletişimi, (2) PayTR checkout `user_phone` (≥10 hane şartı — boşsa eskiden
+  // herkes aynı placeholder '5000000000'a düşüyordu). Boşluk/tire/parantez/nokta temizlenir,
+  // sonra companyProfileSchema ile aynı regex doğrular. Temizlenmiş değer saklanır.
+  whatsappPhone: z
+    .string()
+    .trim()
+    .transform((v) => v.replace(/[\s().-]/g, ''))
+    .refine(
+      (v) => /^\+?\d{10,15}$/.test(v),
+      'Geçerli WhatsApp telefonu gir (en az 10 hane, ör. 0532 555 1234)',
+    ),
 });
 
 export type FirstBranchInput = z.input<typeof firstBranchSchema>;
@@ -72,10 +83,18 @@ export async function createFirstBranch(
         cityId: data.cityId,
         districtId: data.districtId,
         address: data.address ?? null,
-        whatsappPhone: data.whatsappPhone ?? null,
+        whatsappPhone: data.whatsappPhone,
         // status default 'active' → is_active (generated) = true
       })
       .returning({ id: branches.id });
+
+    // İlk şube telefonu firmanın birincil iletişim no'su olur (checkout/PayTR user_phone
+    // + vitrin). Yalnız firma telefonu henüz boşsa doldur — Ayarlar'dan değiştirilmişse
+    // ezme. Aynı withTenant tx'i içinde → branch + company atomik.
+    await db
+      .update(companies)
+      .set({ whatsappPhone: data.whatsappPhone, updatedAt: new Date() })
+      .where(and(eq(companies.id, companyId), isNull(companies.whatsappPhone)));
 
     return { ok: true, branchId: row.id };
   } catch {

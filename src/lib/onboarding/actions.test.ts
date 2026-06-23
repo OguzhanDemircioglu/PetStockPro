@@ -41,15 +41,17 @@ function makeMockDb(opts: MockOpts = {}): DbClient {
   });
 
   const updateWhere = vi.fn().mockResolvedValue(undefined);
-  const updateFn = vi.fn().mockReturnValue({
-    set: vi.fn().mockReturnValue({ where: updateWhere }),
-  });
+  const updateSet = vi.fn().mockReturnValue({ where: updateWhere });
+  const updateFn = vi.fn().mockReturnValue({ set: updateSet });
 
-  return {
+  const db = {
     select: selectFn,
     insert: insertFn,
     update: updateFn,
   } as unknown as DbClient;
+  // createFirstBranch'in companies.whatsappPhone update'ini doğrulamak için set spy'ı sız.
+  (db as unknown as { _updateSet: typeof updateSet })._updateSet = updateSet;
+  return db;
 }
 
 beforeEach(() => vi.clearAllMocks());
@@ -103,6 +105,35 @@ describe('createFirstBranch', () => {
     const db = makeMockDb({ insertThrows: true });
     const result = await createFirstBranch('comp-1', validInput, db);
     expect(result.ok).toBe(false);
+  });
+
+  it('WhatsApp telefonu boş → issues (artık zorunlu)', async () => {
+    const db = makeMockDb();
+    const result = await createFirstBranch('comp-1', { ...validInput, whatsappPhone: '' }, db);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.issues.some((i) => i.includes('WhatsApp'))).toBe(true);
+  });
+
+  it('WhatsApp telefonu geçersiz (kısa / harf) → issues', async () => {
+    const db = makeMockDb();
+    const tooShort = await createFirstBranch('comp-1', { ...validInput, whatsappPhone: '12345' }, db);
+    expect(tooShort.ok).toBe(false);
+    const letters = await createFirstBranch('comp-1', { ...validInput, whatsappPhone: 'telefonum' }, db);
+    expect(letters.ok).toBe(false);
+  });
+
+  it('Telefon temizlenip companies.whatsappPhone\'a yazılır (boşluk/tire strip)', async () => {
+    const db = makeMockDb();
+    const result = await createFirstBranch(
+      'comp-1',
+      { ...validInput, whatsappPhone: '0532-555 00 42' },
+      db,
+    );
+    expect(result.ok).toBe(true);
+    const setSpy = (db as unknown as { _updateSet: ReturnType<typeof vi.fn> })._updateSet;
+    expect(setSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ whatsappPhone: '05325550042' }),
+    );
   });
 });
 
