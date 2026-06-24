@@ -17,7 +17,7 @@ import { and, eq, lt } from 'drizzle-orm';
 import type { DbClient } from '@/lib/db/client';
 import { invoices, companies, subscriptions, cities, districts } from '@/db/schema';
 import { resolveAndIssueInvoice } from '@/lib/nilvera/invoice';
-import { buildInvoiceCustomer } from './invoice-customer';
+import { buildInvoiceCustomer, billingOwnerEmailSql } from './invoice-customer';
 import { SUBSCRIPTION_VAT_RATE } from './totals';
 import { alertInvoiceFailed } from './alerts';
 
@@ -68,6 +68,7 @@ export async function runInvoiceReconcile(
       billingAddress: companies.billingAddress,
       cityName: cities.name,
       districtName: districts.name,
+      email: billingOwnerEmailSql,
     })
     .from(invoices)
     .innerJoin(companies, eq(companies.id, invoices.companyId))
@@ -100,6 +101,7 @@ export async function runInvoiceReconcile(
           billingAddress: inv.billingAddress,
           cityName: inv.cityName,
           districtName: inv.districtName,
+          email: inv.email,
         }),
         lines: [
           {

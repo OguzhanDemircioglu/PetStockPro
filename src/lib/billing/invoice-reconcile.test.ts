@@ -16,6 +16,7 @@ interface InvRow {
   billingAddress: string | null;
   cityName: string | null;
   districtName: string | null;
+  email: string | null;
 }
 
 function invRow(over: Partial<InvRow> = {}): InvRow {
@@ -30,6 +31,7 @@ function invRow(over: Partial<InvRow> = {}): InvRow {
     billingAddress: 'Üsküdar Mah. No 1',
     cityName: 'İstanbul',
     districtName: 'Üsküdar',
+    email: 'sahip@peta.com',
     ...over,
   };
 }
@@ -79,6 +81,10 @@ describe('runInvoiceReconcile', () => {
 
     expect(s.issued).toBe(1);
     expect(nilvera.issueInvoice).toHaveBeenCalledWith(expect.objectContaining({ externalRef: 'inv-1' }));
+    // owner e-postası faturaya geçer (Nilvera alıcıya teslim eder)
+    expect(
+      (nilvera.issueInvoice.mock.calls[0][0] as { customer: { email?: string } }).customer.email,
+    ).toBe('sahip@peta.com');
     expect(calls.updates[0].status).toBe('issued');
     expect(calls.updates[0].nilveraInvoiceId).toBe('nv-1');
     expect(calls.updates[0].invoiceKind).toBe('earsiv');

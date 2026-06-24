@@ -5,12 +5,28 @@
  * cityId/districtId FK'leri il/ilçe ADINA join'lenir (eski '—' placeholder yerine
  * gerçek adres). billingAddress açık adres satırıdır; boşsa invoice.ts orPlaceholder
  * "Belirtilmemiş" kullanır. vatNo null → nihai tüketici (router halleder).
+ *
+ * email: tenant sahibinin (BAYI_SAHIBI) e-postası — Nilvera CustomerInfo.Mail'e konur,
+ * e-Arşiv faturayı alıcıya OTOMATİK e-postalar. Yoksa null → Mail alanı eklenmez.
  */
 
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type { DbClient } from '@/lib/db/client';
-import { companies, cities, districts } from '@/db/schema';
+import { companies, cities, districts, users } from '@/db/schema';
 import type { IssueInvoiceInput } from '@/lib/nilvera/invoice';
+
+/**
+ * Fatura alıcısı (BAYI_SAHIBI) e-postası — korelasyonlu subquery.
+ * leftJoin YERİNE subquery: dış sorguda satır ÇOĞALTMAZ (reconcile tüm pending faturayı
+ * tek select'te çeker; join birden çok sahipte faturayı 2× işlerdi). Sahip yoksa null.
+ */
+export const billingOwnerEmailSql = sql<string | null>`(
+  select ${users.email} from ${users}
+  where ${users.companyId} = ${companies.id}
+    and ${users.role} = 'BAYI_SAHIBI'
+  order by ${users.createdAt}
+  limit 1
+)`;
 
 export interface CompanyInvoiceRow {
   name: string;
@@ -18,6 +34,8 @@ export interface CompanyInvoiceRow {
   billingAddress: string | null;
   cityName: string | null;
   districtName: string | null;
+  /** Tenant sahibinin e-postası → Nilvera CustomerInfo.Mail (alıcıya otomatik teslim). */
+  email: string | null;
 }
 
 /** Şirket satırından Nilvera fatura müşteri (CustomerInfo) bilgisi kur. */
@@ -28,6 +46,7 @@ export function buildInvoiceCustomer(row: CompanyInvoiceRow): IssueInvoiceInput[
     address: row.billingAddress ?? undefined,
     city: row.cityName ?? undefined,
     district: row.districtName ?? undefined,
+    email: row.email ?? undefined, // varsa Nilvera faturayı bu adrese e-postalar
   };
 }
 
@@ -43,6 +62,7 @@ export async function loadInvoiceCustomer(
       billingAddress: companies.billingAddress,
       cityName: cities.name,
       districtName: districts.name,
+      email: billingOwnerEmailSql,
     })
     .from(companies)
     .leftJoin(cities, eq(cities.id, companies.cityId))

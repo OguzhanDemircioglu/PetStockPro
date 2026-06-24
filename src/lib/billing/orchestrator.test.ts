@@ -52,7 +52,7 @@ function subRow(over: Partial<SubRow> = {}): SubRow {
 interface DbConfig {
   subRow?: SubRow | null;
   ownerId?: string | null;
-  company?: { name: string; vatNo: string | null } | null;
+  company?: { name: string; vatNo: string | null; email?: string | null } | null;
   duplicateWebhook?: boolean;
   invoiceId?: string;
 }
@@ -144,12 +144,16 @@ describe('processPaytrCallback', () => {
   });
 
   it('ilk ödeme success → active + kart sakla + company.plan + invoice + Nilvera + audit', async () => {
-    const { db, calls } = makeDb({ subRow: subRow(), company: { name: 'Pet A', vatNo: '1234567890' } });
+    const { db, calls } = makeDb({ subRow: subRow(), company: { name: 'Pet A', vatNo: '1234567890', email: 'owner@peta.com' } });
     const nilvera = { issueInvoice: vi.fn().mockResolvedValue({ invoiceId: 'nv-1', invoiceNumber: 'N1', kind: 'earsiv', pdfUrl: 'u' }) };
 
     const res = await processPaytrCallback(baseInput, { db, nilvera, now });
 
     expect(res.outcome).toBe('payment_succeeded');
+    // owner e-postası loadInvoiceCustomer üzerinden faturaya geçer (alıcıya teslim)
+    expect(
+      (nilvera.issueInvoice.mock.calls[0][0] as { customer: { email?: string } }).customer.email,
+    ).toBe('owner@peta.com');
     const subUpd = calls.updates.find((u) => u.table === 'subscriptions')!;
     expect(subUpd.vals.status).toBe('active');
     expect(subUpd.vals.pendingMerchantOid).toBeNull();

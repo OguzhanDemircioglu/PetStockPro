@@ -7,7 +7,7 @@ import { requireSuperadmin } from '@/lib/superadmin/access';
 import { getNilveraConfig } from '@/lib/nilvera/config';
 import { getNilveraSellerCompany } from '@/lib/nilvera/lookup';
 import { resolveAndIssueInvoice } from '@/lib/nilvera/invoice';
-import { buildInvoiceCustomer } from '@/lib/billing/invoice-customer';
+import { buildInvoiceCustomer, billingOwnerEmailSql } from '@/lib/billing/invoice-customer';
 import { SUBSCRIPTION_VAT_RATE } from '@/lib/billing/totals';
 
 export interface NilveraTestResult {
@@ -111,6 +111,7 @@ export async function retryPendingInvoiceAction(): Promise<InvoiceRetryResult> {
       billingAddress: companies.billingAddress,
       cityName: cities.name,
       districtName: districts.name,
+      email: billingOwnerEmailSql,
     })
     .from(invoices)
     .innerJoin(companies, eq(companies.id, invoices.companyId))
@@ -135,6 +136,7 @@ export async function retryPendingInvoiceAction(): Promise<InvoiceRetryResult> {
         billingAddress: inv.billingAddress,
         cityName: inv.cityName,
         districtName: inv.districtName,
+        email: inv.email,
       }),
       lines: [
         {
