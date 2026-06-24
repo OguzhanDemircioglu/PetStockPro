@@ -290,7 +290,10 @@ export interface IssueInvoiceDeps {
  *   - taxNumber dolu → checkTaxpayer:
  *       efatura → createEInvoice (etikete)
  *       earsiv  → createNilveraInvoice (e-Arşiv, gerçek VKN/TCKN)
- *       invalid → throw (fatura kesilmez, caller pending bırakır)
+ *       invalid → e-Arşiv nihai tüketici (11111111111) — fatura takılmasın diye fallback
+ *                 (kullanıcı kararı 2026-06-24: ödeme alındıysa yasal fatura mutlaka kesilsin).
+ *                 NOT: ağ/5xx hatası 'invalid' DÖNDÜRMEZ (checkTaxpayer throw eder) → o durum
+ *                 hâlâ yukarı propage olur; gerçek mükellefe yanlışlıkla nihai tüketici kesmeyiz.
  *
  * Orchestrator + invoice-reconcile bunu çağırır.
  */
@@ -309,8 +312,13 @@ export async function resolveAndIssueInvoice(
 
   const result = await check(tax);
 
+  // Geçersiz VKN/TCKN (yanlış/uydurma giriş) → fatura takılmasın diye nihai tüketici
+  // e-Arşiv'e düş (TaxNumber=11111111111, müşteri ünvanı korunur). Trendyol modeli.
+  // checkTaxpayer ağ/5xx hatasında 'invalid' DÖNMEZ, throw eder → o durum bu daldan
+  // geçmez, yukarı propage olur (caller pending bırakır + reconcile retry).
   if (result.kind === 'invalid') {
-    throw new Error(`Geçersiz müşteri VKN/TCKN (${tax}) — fatura kesilemedi`);
+    const res = await createNilveraInvoice(toCreateRequest(input, NIHAI_TUKETICI_TAX_NUMBER));
+    return { ...res, kind: 'earsiv' };
   }
 
   if (result.kind === 'efatura') {

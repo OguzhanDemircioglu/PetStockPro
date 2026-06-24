@@ -89,7 +89,8 @@ export async function runInvoiceReconcile(
 
     try {
       // vatNo null → nihai tüketici; resolveAndIssueInvoice e-Fatura/e-Arşiv/nihai yönlendirir.
-      // Geçersiz VKN router'da throw eder → aşağıdaki catch (retry++ + max'ta alert).
+      // Geçersiz VKN router'da nihai tüketiciye düşer (fatura yine kesilir). Yalnız Nilvera
+      // ağ/5xx hatası throw eder → aşağıdaki catch (retry++ + max'ta alert).
       const resp = await deps.nilvera.issueInvoice({
         externalRef: inv.id, // idempotent — aynı invoice.id ile çift fatura olmaz
         invoiceDate: now.toISOString(),

@@ -329,14 +329,21 @@ describe('nilvera invoice operations', () => {
       expect(url).toContain('/earchive/Send/Model');
     });
 
-    it('checkTaxpayer invalid → throw (fatura kesilmez)', async () => {
-      const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    it('checkTaxpayer invalid → nihai tüketici e-Arşiv fallback (11111111111), fatura yine kesilir', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        makeMockResponse(200, validSendResponse),
+      );
       const check = vi.fn().mockResolvedValue({ kind: 'invalid', title: null, alias: null });
 
-      await expect(
-        resolveAndIssueInvoice(baseIssueInput, { checkTaxpayer: check }),
-      ).rejects.toThrow(/geçersiz/i);
-      expect(fetchSpy).not.toHaveBeenCalled();
+      const res = await resolveAndIssueInvoice(baseIssueInput, { checkTaxpayer: check });
+
+      expect(res.kind).toBe('earsiv');
+      const url = (fetchSpy.mock.calls[0][0] as string).toString();
+      expect(url).toContain('/earchive/Send/Model');
+      const body = JSON.parse((fetchSpy.mock.calls[0][1] as RequestInit).body as string);
+      // VKN placeholder'a düşer ama müşteri ünvanı korunur
+      expect(body.ArchiveInvoice.CustomerInfo.TaxNumber).toBe(NIHAI_TUKETICI_TAX_NUMBER);
+      expect(body.ArchiveInvoice.CustomerInfo.Name).toBe('Mavi Pet Shop');
     });
 
     it('efatura ama alias yok → throw', async () => {
