@@ -28,15 +28,66 @@ const STOREFRONT_LABELS: Record<string, { label: string; cls: string }> = {
 export default async function SuperadminTenantsPage() {
   await requireSuperadmin();
 
-  const [tenants, stats, dbStats, vitrinStats, activityStats, aiStats] =
-    await Promise.all([
-      listAllTenants(db, 50),
-      getSystemStats(db),
-      getDatabaseStats(db),
-      getVitrinEventStats(db, 7),
-      getTenantActivityStats(db),
-      getAiSystemStats(db, 7),
-    ]);
+  // ⚠ max:1 Supabase pooler (Vercel Fluid Compute): 6 ağır okumayı Promise.all
+  // ile EŞZAMANLI çalıştırmak bağlantı çekişmesi + statement timeout → SSR çöküp
+  // ekran kararıyordu (admin layout + onboarding ile aynı ders, commit 325353f;
+  // prod postgres log "canceling statement due to statement timeout"). Çözüm:
+  // SIRALI + DEFANSİF okuma — bir okuma takılır/başarısız olursa varsayılana düşer,
+  // ilgili kart eksik kalsa bile panel ASLA komple çökmez (süperadmin girişi bloke olmaz).
+  const safeRead = async <T,>(p: Promise<T>, fallback: T): Promise<T> => {
+    try {
+      return await p;
+    } catch {
+      return fallback;
+    }
+  };
+
+  const tenants = await safeRead(
+    listAllTenants(db, 50),
+    [] as Awaited<ReturnType<typeof listAllTenants>>,
+  );
+  const stats = await safeRead(getSystemStats(db), {
+    tenantCount: 0,
+    activeTenantCount: 0,
+    totalUsers: 0,
+    totalProducts: 0,
+    totalMovementsLast24h: 0,
+    unreadNotificationsAll: 0,
+    proSubscriptions: 0,
+    proPlusSubscriptions: 0,
+  });
+  const dbStats = await safeRead(getDatabaseStats(db), {
+    totalSizeBytes: 0,
+    totalSizePretty: '—',
+    planLimitMb: 500,
+    usagePct: 0,
+    topTables: [],
+    connectionCount: 0,
+  });
+  const vitrinStats = await safeRead(getVitrinEventStats(db, 7), {
+    windowDays: 7,
+    profileView: 0,
+    productView: 0,
+    listingImpression: 0,
+    whatsappClick: 0,
+    conversionRate: 0,
+    topTenants: [],
+  });
+  const activityStats = await safeRead(getTenantActivityStats(db), {
+    activeLast24h: 0,
+    activeLast7d: 0,
+    activeLast30d: 0,
+    distribution: { today: 0, week: 0, month: 0, older: 0, never: 0 },
+    inactiveTenants: [],
+  });
+  const aiStats = await safeRead(getAiSystemStats(db, 7), {
+    todayMessageCount: 0,
+    totalMessagesNDays: 0,
+    avgResponseTimeMs: 0,
+    totalTokensNDays: 0,
+    activeUsersToday: 0,
+    windowDays: 7,
+  });
 
   const usageDanger = dbStats.usagePct > 80;
   const usageWarning = dbStats.usagePct > 50 && !usageDanger;
