@@ -43,7 +43,7 @@ export default function RegisterPage() {
   return (
     <div className="grid min-h-screen w-full grid-cols-1 md:grid-cols-2">
       {/* ============ SOL HERO PANEL (mobilde gizli — pazarlama içeriği) ============ */}
-      <aside className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-[#d44a14] via-[#ed6a2c] to-[#c25510] px-14 py-10 text-white md:flex">
+      <aside className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-[#ef7334] via-[#f68f54] to-[#e96c2c] px-14 py-10 text-white md:flex">
         {/* Logo watermark — sağ-alt (eski paw pattern + mascot SVG yerine) */}
         <div className="pointer-events-none absolute -bottom-12 -right-12 z-0 h-72 w-72 rotate-[-8deg] opacity-[0.08]">
           <Image
