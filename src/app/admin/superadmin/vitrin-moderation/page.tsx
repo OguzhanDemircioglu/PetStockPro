@@ -70,18 +70,44 @@ export default async function VitrinModerationPage({
   const validTargetType =
     targetType === 'product' || targetType === 'storefront' ? targetType : null;
 
-  const [stats, allRows, flaggedRows, reportStats, reports] = await Promise.all(
-    [
-      getModerationStats(db),
-      listAllFeedback(db, { limit: 100 }),
-      listAllFeedback(db, { status: 'flagged', limit: 100 }),
-      getReportStats(db),
-      listReports(db, {
-        limit: 100,
-        status: validReportStatus,
-        targetType: validTargetType ?? undefined,
-      }),
-    ],
+  // max:1 Supabase pooler (prod): 5 ağır okumayı Promise.all ile paralel çalıştırmak
+  // bağlantı çekişmesi + statement timeout → kararan ekran (bkz. superadmin/page.tsx).
+  // SIRALI + DEFANSİF: bir okuma takılsa bile o bölüm boş/sıfıra düşer, panel render olur.
+  const safeRead = async <T,>(p: Promise<T>, fallback: T): Promise<T> => {
+    try {
+      return await p;
+    } catch {
+      return fallback;
+    }
+  };
+
+  const stats = await safeRead(getModerationStats(db), {
+    totalCount: 0,
+    byStatus: { submitted: 0, closed_manually: 0, dismissed: 0, flagged: 0 },
+    flaggedTodayCount: 0,
+  });
+  const allRows = await safeRead(
+    listAllFeedback(db, { limit: 100 }),
+    [] as Awaited<ReturnType<typeof listAllFeedback>>,
+  );
+  const flaggedRows = await safeRead(
+    listAllFeedback(db, { status: 'flagged', limit: 100 }),
+    [] as Awaited<ReturnType<typeof listAllFeedback>>,
+  );
+  const reportStats = await safeRead(getReportStats(db), {
+    pending: 0,
+    resolved: 0,
+    dismissed: 0,
+    totalCount: 0,
+    pendingTodayCount: 0,
+  });
+  const reports = await safeRead(
+    listReports(db, {
+      limit: 100,
+      status: validReportStatus,
+      targetType: validTargetType ?? undefined,
+    }),
+    [] as Awaited<ReturnType<typeof listReports>>,
   );
 
   const rows = activeTab === 'flagged' ? flaggedRows : allRows;

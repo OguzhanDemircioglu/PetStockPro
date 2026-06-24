@@ -35,16 +35,23 @@ export default async function SuperadminErrorsPage(props: PageProps) {
   const resolved =
     sp.resolved === '1' ? true : sp.resolved === '0' ? false : undefined;
 
-  const [rows, stats] = await Promise.all([
-    listErrors(db, {
-      severity,
-      errorType: sp.errorType,
-      resolved,
-      fromDate,
-      limit: 200,
+  // max:1 Supabase pooler (prod): paralel okuma statement timeout → kararan ekran
+  // (bkz. superadmin/page.tsx). SIRALI + defansif: takılırsa boş/sıfıra düşer.
+  const rows = await listErrors(db, {
+    severity,
+    errorType: sp.errorType,
+    resolved,
+    fromDate,
+    limit: 200,
+  }).catch(() => [] as Awaited<ReturnType<typeof listErrors>>);
+  const stats = await getErrorStats(db).catch(
+    () => ({
+      total24h: 0,
+      unresolved24h: 0,
+      critical24h: 0,
+      topTypes: [] as Array<{ errorType: string; count: number }>,
     }),
-    getErrorStats(db),
-  ]);
+  );
 
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">

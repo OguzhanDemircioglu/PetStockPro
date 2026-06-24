@@ -34,14 +34,20 @@ export default async function TenantDetailSuperadminPage({
   await requireSuperadmin();
 
   const { id } = await params;
-  const [tenant, tenantUsers, movements, audit] = await Promise.all([
-    getTenantDetail(id, db),
-    listTenantUsers(id, db),
-    listTenantMovements(id, db, 15),
-    listTenantAudit(id, db, 15),
-  ]);
-
+  // max:1 Supabase pooler (prod): paralel okuma statement timeout → kararan ekran
+  // (bkz. superadmin/page.tsx). SIRALI oku: önce ana kayıt (yoksa notFound), sonra
+  // yardımcı listeler — her biri takılırsa boş listeye düşer, sayfa yine render olur.
+  const tenant = await getTenantDetail(id, db);
   if (!tenant) notFound();
+  const tenantUsers = await listTenantUsers(id, db).catch(
+    () => [] as Awaited<ReturnType<typeof listTenantUsers>>,
+  );
+  const movements = await listTenantMovements(id, db, 15).catch(
+    () => [] as Awaited<ReturnType<typeof listTenantMovements>>,
+  );
+  const audit = await listTenantAudit(id, db, 15).catch(
+    () => [] as Awaited<ReturnType<typeof listTenantAudit>>,
+  );
 
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">

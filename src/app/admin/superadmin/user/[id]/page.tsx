@@ -27,11 +27,14 @@ export default async function SuperadminUserDetailPage({
   await requireSuperadmin();
   const { id } = await params;
 
-  const [user, audit] = await Promise.all([
-    getUserForSuperadmin(id, db),
-    listUserAudit(id, db, 15),
-  ]);
+  // max:1 Supabase pooler (prod): paralel okuma statement timeout → kararan ekran
+  // (bkz. superadmin/page.tsx). SIRALI: önce kullanıcı (yoksa notFound), sonra audit
+  // (takılırsa boş listeye düşer, sayfa yine render olur).
+  const user = await getUserForSuperadmin(id, db);
   if (!user) notFound();
+  const audit = await listUserAudit(id, db, 15).catch(
+    () => [] as Awaited<ReturnType<typeof listUserAudit>>,
+  );
 
   const now = new Date();
   const isLocked = !!user.lockedUntil && new Date(user.lockedUntil).getTime() > now.getTime();

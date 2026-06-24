@@ -57,12 +57,13 @@ async function getTableCount() {
 export default async function SystemSettingsPage() {
   await requireSuperadmin();
 
-  const [extensions, tableCount, sitemapStatus, retentionStats] = await Promise.all([
-    getDbExtensions(),
-    getTableCount(),
-    getSitemapStatus(),
-    getRetentionStats(db),
-  ]);
+  // max:1 Supabase pooler (prod): paralel DB okuması statement timeout → kararan
+  // ekran (bkz. superadmin/page.tsx). SIRALI oku. Bu 4 helper zaten iç try/catch'li
+  // (getSitemapStatus DB havuzunu hiç kullanmaz) → ek fallback gerekmez.
+  const extensions = await getDbExtensions();
+  const tableCount = await getTableCount();
+  const sitemapStatus = await getSitemapStatus();
+  const retentionStats = await getRetentionStats(db);
 
   const envChecks: EnvCheck[] = [
     { key: 'DATABASE_URL', desc: 'Supabase Postgres bağlantısı', present: !!process.env.DATABASE_URL },
