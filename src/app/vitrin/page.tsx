@@ -159,16 +159,16 @@ export default async function VitrinHomePage({
               </>
             )}
           </div>
-          {/* H1 SEO-kritik (en önemli sinyal): server-render edilen konumsuz hâl
-              "en yakınındaki pet shop" yerel arama sorgusunu hedefler. Konum
-              verilince zaten mesafeye göre sıralanır → iddia canlı veriyle
-              desteklenir, "yakınındaki"ye iner. */}
+          {/* H1 SABİT "en yakınındaki": önceden konuma göre değişiyordu (location
+              ? 'yakınındaki' : 'en yakınındaki'). URL'de lat/lng gelip gidince
+              (özellikle geri/ileri gezinmede) başlık "en yakınındaki" ↔ "yakınındaki"
+              diye titriyordu (kullanıcı raporu). Başlık hem SEO hem tutarlılık için
+              sabit; canlı konum uyarlaması yukarıdaki eye-rozette (yakındaki sayısı)
+              yapılır. Sayfa title + metadata da "en yakın(ındaki)" kullanır. */}
           <h1 className="text-4xl font-bold leading-tight tracking-tight text-cart lg:text-5xl">
             Fiyatı ve stoğu gör,
             <br />
-            <span className="text-cat">
-              {location ? 'yakınındaki' : 'en yakınındaki'}
-            </span>{' '}
+            <span className="text-cat">en yakınındaki</span>{' '}
             pet shop&apos;tan al<span className="text-arrow">.</span>
           </h1>
           <p className="mt-4 max-w-xl text-[15px] text-ink-2">
