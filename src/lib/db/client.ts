@@ -40,10 +40,16 @@ function isTransactionPooler(url: string): boolean {
 const pooled = isTransactionPooler(process.env.DATABASE_URL);
 
 const queryClient = postgres(process.env.DATABASE_URL, {
-  // Serverless: instance başına küçük havuz. Pooler arkasında multiplex edildiği
-  // için 1 yeter; direct'te 3 (önceki max:10 serverless'ta bağlantı fırtınası riski).
-  max: pooled ? 1 : 3,
+  // Serverless: instance başına küçük havuz. ÖNCEDEN max:1 idi — ama max:1'de tek
+  // bağlantı bir aborted/suspended/timeout isteğinde "checked-out" takılı kalırsa
+  // (Fluid Compute instance'ı yeniden kullanır) o instance'taki SONRAKİ tüm istekler
+  // boşalmayan bağlantıyı sonsuza kadar bekleyip donuyordu (login + /admin/superadmin
+  // 300s hang → 504). max:3 → bir bağlantı wedge olsa bile diğer 2'si çalışır, instance
+  // komple kilitlenmez. Supavisor multiplex ettiği için 3 güvenli (storm riski max:10'daydı).
+  max: 3,
   idle_timeout: 20,
+  // Wedge olan bir bağlantı en geç bu sürede geri dönüştürülür (sonsuza dek takılı kalmaz).
+  max_lifetime: 60 * 10,
   connect_timeout: 10,
   prepare: !pooled,
   connection: {
