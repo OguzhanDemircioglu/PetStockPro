@@ -105,7 +105,6 @@ export function buildSidebarGroups({
         { icon: '⚙', label: 'Ayarlar', href: '/admin/settings' },
         { icon: '🌐', label: 'Vitrin Profili', href: '/admin/settings/storefront' },
         { icon: '👤', label: 'Hesabım', href: '/admin/account' },
-        { icon: '🛡', label: 'Güvenlik', href: '/admin/security' },
       ],
     },
   ];
@@ -150,7 +149,6 @@ function buildSuperadminSidebar(): SidebarGroup[] {
       label: 'Kendi Hesabım',
       links: [
         { icon: '👤', label: 'Hesabım', href: '/admin/account' },
-        { icon: '🛡', label: 'Güvenlik', href: '/admin/security' },
       ],
     },
   ];

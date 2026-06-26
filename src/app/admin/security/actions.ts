@@ -43,7 +43,7 @@ export async function disable2faAction(
     return { ok: false, error: msg };
   }
 
-  redirect('/admin/security?2fa=disabled' as never);
+  redirect('/admin/account?2fa=disabled' as never);
 }
 
 export interface RegenerateState {

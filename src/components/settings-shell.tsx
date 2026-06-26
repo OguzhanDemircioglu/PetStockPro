@@ -36,8 +36,7 @@ const NAV: SettingsNavItem[] = [
   { key: 'storefront', href: '/admin/settings/storefront', emoji: '🌐', label: 'Vitrin Profili' },
   { key: 'users', href: '/admin/settings/users', emoji: '👥', label: 'Kullanıcılar' },
   { key: 'notifications', href: '/admin/settings/notifications', emoji: '🔔', label: 'Bildirimler' },
-  { key: 'account', href: '/admin/account', emoji: '👤', label: 'Hesap' },
-  { key: 'security', href: '/admin/security', emoji: '🛡', label: 'Güvenlik' },
+  { key: 'account', href: '/admin/account', emoji: '👤', label: 'Hesap & Güvenlik' },
   { key: 'audit', href: '/admin/audit-log', emoji: '📜', label: 'Audit Log' },
   { key: 'export', href: '/admin/settings/export', emoji: '⬇', label: 'Verilerimi İndir' },
 ];

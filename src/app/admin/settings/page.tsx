@@ -83,7 +83,7 @@ export default async function SettingsHubPage() {
       kind: emailChangePending ? 'pending' : 'ok',
     },
     {
-      href: '/admin/security',
+      href: '/admin/account',
       label: 'Güvenlik',
       value: '2FA',
       hint: twoFaActive ? '✓ Aktif' : '⚠ Kapalı',
