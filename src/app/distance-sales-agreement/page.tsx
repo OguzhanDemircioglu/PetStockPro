@@ -54,6 +54,12 @@ export default function MesafeliSatisSozlesmesiPage() {
                       VKN: {company.vatNo}
                       <br />
                       Adres: {company.address}
+                      {company.phone && (
+                        <>
+                          <br />
+                          Telefon: {company.phone}
+                        </>
+                      )}
                       <br />
                       E-posta: {company.supportEmail}
                     </p>
@@ -173,8 +179,14 @@ export default function MesafeliSatisSozlesmesiPage() {
                 Hatalı tahsilat (örn. iki kere çekim), teknik arıza veya
                 Şirket kusurundan kaynaklanan hatalı abonelik durumunda iade
                 talep edilebilir. Talep, hatalı tahsilatı izleyen 14 gün içinde
-                <strong> destek@petstockpro.com</strong> adresine yazılı olarak
-                yapılır; haklı bulunması halinde 14 gün içinde iade edilir.
+                <a
+                  href={`mailto:${company.supportEmail}`}
+                  className="font-bold text-cat-7 hover:underline"
+                >
+                  {company.supportEmail}
+                </a>{' '}
+                adresine yazılı olarak yapılır; haklı bulunması halinde 14 gün
+                içinde iade edilir.
               </p>
             </section>
 

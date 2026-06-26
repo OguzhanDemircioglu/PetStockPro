@@ -102,6 +102,22 @@ const nextConfig: NextConfig = {
     formats: ['image/avif', 'image/webp'],
   },
 
+  // Eski Türkçe yasal URL'ler → yeni İngilizce URL'ler (kalıcı redirect).
+  // PayTR/Google'a verilmiş eski linkler kırılmasın diye 301/308 yönlendirilir.
+  async redirects() {
+    return [
+      { source: '/kvkk', destination: '/privacy-policy', permanent: true },
+      { source: '/cerez-politikasi', destination: '/cookie-policy', permanent: true },
+      { source: '/uyelik-sozlesmesi', destination: '/terms-of-service', permanent: true },
+      {
+        source: '/mesafeli-satis-sozlesmesi',
+        destination: '/distance-sales-agreement',
+        permanent: true,
+      },
+      { source: '/iletisim', destination: '/contact', permanent: true },
+    ];
+  },
+
   // Güvenlik header'ları — CSP 2026-05-17 tightened
   async headers() {
     return [

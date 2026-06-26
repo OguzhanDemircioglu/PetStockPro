@@ -22,7 +22,7 @@ export default function KvkkPage() {
               ℹ Bu sayfa lansman öncesi taslak metindir. Şirket kuruluşu
               tamamlandıktan sonra avukat onayıyla finalize edilecek ve veri
               sorumlusu bilgileri yayınlanacak. Sorularınız için:{' '}
-              <a href="mailto:kvkk@petstockpro.com" className="underline">
+              <a href={`mailto:${company.kvkkEmail}`} className="underline">
                 {company.kvkkEmail}
               </a>
             </div>
@@ -63,7 +63,7 @@ export default function KvkkPage() {
                   <strong>{company.brandName}</strong> markası altında
                   işlenecektir. Şirket kuruluşu tamamlandıktan sonra ticari
                   unvan, VKN ve resmi adres burada yayınlanacaktır. İletişim:{' '}
-                  <a href="mailto:kvkk@petstockpro.com" className="text-cat-7 hover:underline">
+                  <a href={`mailto:${company.kvkkEmail}`} className="text-cat-7 hover:underline">
                     {company.kvkkEmail}
                   </a>
                 </p>
@@ -177,7 +177,13 @@ export default function KvkkPage() {
                 <li>Zararın giderilmesini talep etme</li>
               </ul>
               <p className="mt-2">
-                Bu hakları kullanmak için <strong>destek@petstockpro.com</strong>{' '}
+                Bu hakları kullanmak için{' '}
+                <a
+                  href={`mailto:${company.supportEmail}`}
+                  className="font-bold text-cat-7 hover:underline"
+                >
+                  {company.supportEmail}
+                </a>{' '}
                 adresine yazılı talep iletebilirsiniz; talepleriniz 30 gün
                 içinde ücretsiz yanıtlanır (talep konusu özel teknik işlem
                 gerektiriyorsa ücret talep edilebilir, KVKK Tarifesi).
@@ -196,6 +202,18 @@ export default function KvkkPage() {
                 <a href={`mailto:${company.kvkkEmail}`} className="text-cat-7 hover:underline">
                   {company.kvkkEmail}
                 </a>
+                {company.phone && (
+                  <>
+                    <br />
+                    Telefon:{' '}
+                    <a
+                      href={`tel:${company.phone.replace(/\s/g, '')}`}
+                      className="text-cat-7 hover:underline"
+                    >
+                      {company.phone}
+                    </a>
+                  </>
+                )}
                 {company.hasRealInfo && company.address && (
                   <>
                     <br />

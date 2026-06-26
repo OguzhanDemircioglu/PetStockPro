@@ -282,7 +282,7 @@ export default function RegisterPage() {
               />
               <span>
                 <a
-                  href="/uyelik-sozlesmesi"
+                  href="/terms-of-service"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-bold text-cat hover:underline"
@@ -291,7 +291,7 @@ export default function RegisterPage() {
                 </a>
                 &apos;ni ve{' '}
                 <a
-                  href="/kvkk"
+                  href="/privacy-policy"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-bold text-cat hover:underline"

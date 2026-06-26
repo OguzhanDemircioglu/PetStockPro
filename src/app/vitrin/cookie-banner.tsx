@@ -94,7 +94,7 @@ export function CookieBanner() {
         >
           Sitenin temel işlevleri için çerez kullanıyoruz.{' '}
           <Link
-            href={'/kvkk' as never}
+            href="/privacy-policy"
             className="font-bold text-cat hover:underline"
           >
             Detay

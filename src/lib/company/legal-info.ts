@@ -1,7 +1,7 @@
 /**
  * Legal company info reader (lansman öncesi/sonrası conditional)
  *
- * 2026-05-22: /iletisim, /kvkk, /mesafeli-satis-sozlesmesi, /uyelik-sozlesmesi
+ * 2026-05-22: /contact, /privacy-policy, /distance-sales-agreement, /terms-of-service
  * sayfalarında "Şirket bilgileri" section'ı placeholder yerine gizlemek için.
  *
  * Kullanım:
@@ -76,8 +76,8 @@ export function getLegalCompanyInfo(): LegalCompanyInfo {
     tradeRegistryOffice: readEnv('COMPANY_TRADE_REGISTRY_OFFICE'),
     address,
     phone: readEnv('COMPANY_PHONE'),
-    supportEmail: readEnv('COMPANY_SUPPORT_EMAIL') ?? 'destek@petstockpro.com',
-    kvkkEmail: readEnv('COMPANY_KVKK_EMAIL') ?? 'kvkk@petstockpro.com',
+    supportEmail: readEnv('COMPANY_SUPPORT_EMAIL') ?? 'info@petstockpro.com',
+    kvkkEmail: readEnv('COMPANY_KVKK_EMAIL') ?? 'info@petstockpro.com',
     kepAddress: readEnv('COMPANY_KEP_ADDRESS'),
     legalJurisdiction: readEnv('COMPANY_LEGAL_JURISDICTION') ?? 'İstanbul',
   };

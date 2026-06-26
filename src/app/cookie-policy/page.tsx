@@ -124,10 +124,10 @@ export default function CerezPage() {
               <p className="mt-2">
                 Çerez politikası hakkında sorularını
                 <a
-                  href="mailto:destek@petstockpro.com"
+                  href="mailto:info@petstockpro.com"
                   className="ml-1 text-cat-7 hover:underline"
                 >
-                  destek@petstockpro.com
+                  info@petstockpro.com
                 </a>
                 {' '}adresine iletebilirsin.
               </p>

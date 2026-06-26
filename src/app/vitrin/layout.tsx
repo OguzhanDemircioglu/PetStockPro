@@ -176,18 +176,17 @@ export default function VitrinLayout({
                 <span className="text-ink-4">Biz Kimiz (yakında)</span>
               </li>
               <li>
-                <span className="text-ink-4">İletişim (yakında)</span>
+                <Link href="/contact" className="hover:text-cat">
+                  İletişim
+                </Link>
               </li>
               <li>
-                <Link href={'/kvkk' as never} className="hover:text-cat">
+                <Link href="/privacy-policy" className="hover:text-cat">
                   KVKK
                 </Link>
               </li>
               <li>
-                <Link
-                  href={'/kullanim-kosullari' as never}
-                  className="hover:text-cat"
-                >
+                <Link href="/terms-of-service" className="hover:text-cat">
                   Kullanım Koşulları
                 </Link>
               </li>
@@ -202,17 +201,19 @@ export default function VitrinLayout({
               © {new Date().getFullYear()} PetStockPro · Tüm hakları saklıdır
             </span>
             <nav className="flex gap-3">
-              <Link href={'/kvkk' as never} className="hover:text-cart">
+              <Link href="/privacy-policy" className="hover:text-cart">
                 KVKK
               </Link>
               <span aria-hidden className="text-ink-4">
                 ·
               </span>
-              <span className="text-ink-4">Çerezler</span>
+              <Link href="/cookie-policy" className="hover:text-cart">
+                Çerezler
+              </Link>
               <span aria-hidden className="text-ink-4">
                 ·
               </span>
-              <Link href={'/kvkk' as never} className="hover:text-cart">
+              <Link href="/privacy-policy" className="hover:text-cart">
                 Gizlilik
               </Link>
             </nav>

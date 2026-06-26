@@ -60,23 +60,33 @@ export function MarketingFooter() {
           </h3>
           <ul className="mt-3 flex flex-col gap-2 text-[13px] text-ink-2">
             <li>
-              <Link href="/kvkk" className="hover:text-cart">
+              <Link href="/privacy-policy" className="hover:text-cart">
                 KVKK Aydınlatma Metni
               </Link>
             </li>
             <li>
-              <Link href="/cerez-politikasi" className="hover:text-cart">
+              <Link href="/cookie-policy" className="hover:text-cart">
                 Çerez Politikası
               </Link>
             </li>
             <li>
-              <Link href="/uyelik-sozlesmesi" className="hover:text-cart">
+              <Link href="/terms-of-service" className="hover:text-cart">
                 Üyelik Sözleşmesi
               </Link>
             </li>
             <li>
-              <Link href="/mesafeli-satis-sozlesmesi" className="hover:text-cart">
+              <Link href="/distance-sales-agreement" className="hover:text-cart">
                 Mesafeli Satış Sözleşmesi
+              </Link>
+            </li>
+            <li>
+              <Link href="/return-policy" className="hover:text-cart">
+                İade Politikası
+              </Link>
+            </li>
+            <li>
+              <Link href="/delivery-terms" className="hover:text-cart">
+                Teslimat Koşulları
               </Link>
             </li>
           </ul>
@@ -88,16 +98,16 @@ export function MarketingFooter() {
           </h3>
           <ul className="mt-3 flex flex-col gap-2 text-[13px] text-ink-2">
             <li>
-              <Link href="/iletisim" className="hover:text-cart">
+              <Link href="/contact" className="hover:text-cart">
                 İletişim formu
               </Link>
             </li>
             <li>
               <a
-                href="mailto:destek@petstockpro.com"
+                href="mailto:info@petstockpro.com"
                 className="hover:text-cart"
               >
-                destek@petstockpro.com
+                info@petstockpro.com
               </a>
             </li>
           </ul>
@@ -110,8 +120,8 @@ export function MarketingFooter() {
             © {new Date().getFullYear()} PetStockPro. Tüm hakları saklıdır.
           </span>
           <span className="flex items-center gap-3">
-            <span>⚡ Cloudflare Workers</span>
             <span>🔒 KVKK uyumlu</span>
+            <span>🔒 SSL korumalı</span>
           </span>
         </div>
       </div>

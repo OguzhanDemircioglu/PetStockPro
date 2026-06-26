@@ -34,7 +34,7 @@ export function MarketingHeader() {
             Fiyatlar
           </Link>
           <Link
-            href="/iletisim"
+            href="/contact"
             className="hidden rounded-lg px-2 py-1.5 hover:bg-line-soft hover:text-cart sm:inline-block"
           >
             İletişim
