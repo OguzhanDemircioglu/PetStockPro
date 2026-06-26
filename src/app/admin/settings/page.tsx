@@ -12,6 +12,7 @@ import {
   users,
 } from '@/db/schema';
 import { SettingsShell } from '@/components/settings-shell';
+import { getLegalCompanyInfo } from '@/lib/company/legal-info';
 
 export default async function SettingsHubPage() {
   const session = await auth();
@@ -64,6 +65,7 @@ export default async function SettingsHubPage() {
   const emailChangePending = !!user?.pendingEmail;
   const telegramEnabled = !!company?.telegramEnabled;
   const telegramConfigured = !!company?.telegramBotToken;
+  const legal = getLegalCompanyInfo();
 
   const statusItems: StatusItem[] = [
     {
@@ -158,6 +160,67 @@ export default async function SettingsHubPage() {
             />
           </div>
         </section>
+
+        <section>
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
+            📄 Yasal belgeler &amp; İletişim
+          </h2>
+          <div className="rounded-2xl border border-line bg-paper p-4">
+            {legal.hasRealInfo ? (
+              <dl className="grid gap-x-6 gap-y-2 text-[13px] sm:grid-cols-2">
+                <div>
+                  <dt className="text-[11px] font-bold uppercase tracking-wider text-ink-3">
+                    Ünvan
+                  </dt>
+                  <dd className="text-ink-2">{legal.legalName}</dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] font-bold uppercase tracking-wider text-ink-3">
+                    VKN
+                  </dt>
+                  <dd className="text-ink-2">{legal.vatNo}</dd>
+                </div>
+                <div className="sm:col-span-2">
+                  <dt className="text-[11px] font-bold uppercase tracking-wider text-ink-3">
+                    Adres
+                  </dt>
+                  <dd className="text-ink-2">{legal.address}</dd>
+                </div>
+                {legal.phone && (
+                  <div>
+                    <dt className="text-[11px] font-bold uppercase tracking-wider text-ink-3">
+                      Telefon
+                    </dt>
+                    <dd className="text-ink-2">{legal.phone}</dd>
+                  </div>
+                )}
+                <div>
+                  <dt className="text-[11px] font-bold uppercase tracking-wider text-ink-3">
+                    E-posta
+                  </dt>
+                  <dd className="text-ink-2">{legal.supportEmail}</dd>
+                </div>
+              </dl>
+            ) : (
+              <p className="text-[13px] text-ink-3">
+                Firma yasal bilgileri henüz tanımlanmadı (sunucu env:{' '}
+                <code className="rounded bg-line-soft px-1">COMPANY_*</code>).
+              </p>
+            )}
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
+              <LegalDocLink href="/privacy-policy" label="KVKK Aydınlatma" />
+              <LegalDocLink href="/cookie-policy" label="Çerez Politikası" />
+              <LegalDocLink href="/terms-of-service" label="Üyelik Sözleşmesi" />
+              <LegalDocLink
+                href="/distance-sales-agreement"
+                label="Mesafeli Satış"
+              />
+              <LegalDocLink href="/return-policy" label="İade Politikası" />
+              <LegalDocLink href="/delivery-terms" label="Teslimat Koşulları" />
+              <LegalDocLink href="/contact" label="İletişim" />
+            </div>
+          </div>
+        </section>
       </div>
     </SettingsShell>
   );
@@ -227,6 +290,19 @@ function DataLink({
         </p>
       </div>
     </Link>
+  );
+}
+
+function LegalDocLink({ href, label }: { href: string; label: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1 rounded-lg border border-line bg-line-soft/40 px-3 py-1.5 text-[12.5px] font-semibold text-ink-2 hover:border-cat hover:text-cat"
+    >
+      {label} ↗
+    </a>
   );
 }
 

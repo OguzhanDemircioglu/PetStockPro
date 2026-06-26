@@ -22,6 +22,7 @@ interface Props {
   isNearLimit: boolean;
   lowStockCount: number;
   children: React.ReactNode;
+  footer?: React.ReactNode;
 }
 
 /**
@@ -51,6 +52,7 @@ export function AdminShell({
   isNearLimit,
   lowStockCount,
   children,
+  footer,
 }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -63,7 +65,10 @@ export function AdminShell({
         isObserver={isObserver}
         onMenuClick={() => setDrawerOpen(true)}
       />
-      <div className="flex-1 pb-16 md:pb-0">{children}</div>
+      <div className="flex flex-1 flex-col pb-16 md:pb-0">
+        <div className="flex-1">{children}</div>
+        {footer}
+      </div>
 
       <AdminMobileDrawer
         open={drawerOpen}

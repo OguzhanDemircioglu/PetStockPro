@@ -4,6 +4,7 @@ import { isSuperadmin } from '@/lib/superadmin/access';
 import { readImpersonation } from '@/lib/superadmin/impersonate';
 import { AdminSidebar } from '@/components/admin-sidebar';
 import { AdminShell } from '@/components/admin-shell';
+import { LegalFooter } from '@/components/legal/legal-footer';
 import { ImpersonationBanner } from '@/components/impersonation-banner';
 import { SuperadminToolbox } from '@/components/superadmin-toolbox';
 import { planProductLimit } from '@/lib/constants/plan-limits';
@@ -136,6 +137,7 @@ export default async function AdminLayout({
           usagePct={usagePct}
           isNearLimit={isNearLimit}
           lowStockCount={lowStockCount}
+          footer={<LegalFooter />}
         >
           {children}
         </AdminShell>

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { MarketingHeader } from '@/components/marketing/header';
-import { MarketingFooter } from '@/components/marketing/footer';
+import { LegalHeader } from '@/components/legal/legal-header';
+import { LegalFooter } from '@/components/legal/legal-footer';
 import { getLegalCompanyInfo } from '@/lib/company/legal-info';
 
 export const metadata: Metadata = {
@@ -14,7 +14,7 @@ export default function DeliveryTermsPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <MarketingHeader />
+      <LegalHeader />
       <main className="flex-1 px-4 py-8 sm:px-6 sm:py-12">
         <article className="mx-auto max-w-3xl">
           {!company.hasRealInfo && (
@@ -165,7 +165,7 @@ export default function DeliveryTermsPage() {
           </div>
         </article>
       </main>
-      <MarketingFooter />
+      <LegalFooter />
     </div>
   );
 }
