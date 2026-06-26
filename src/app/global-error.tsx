@@ -123,10 +123,10 @@ export default function GlobalError({ error, reset }: Props) {
           >
             Destek:{' '}
             <a
-              href="mailto:destek@petstockpro.com"
+              href="mailto:info@petstockpro.com"
               style={{ color: '#f97316', textDecoration: 'underline' }}
             >
-              destek@petstockpro.com
+              info@petstockpro.com
             </a>
           </p>
         </div>

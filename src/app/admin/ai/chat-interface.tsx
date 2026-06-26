@@ -118,7 +118,7 @@ export function ChatInterface({ userName, plan: _plan, initialUsage, dailyLimit 
         } else if (errAny.message === 'ai_unavailable') {
           content = 'AI servisine ulaşılamıyor. Lütfen birazdan tekrar dene.';
         } else {
-          content = 'Üzgünüm, bir sorun oluştu. Lütfen tekrar dene veya destek@petstockpro.com\'a yaz.';
+          content = 'Üzgünüm, bir sorun oluştu. Lütfen tekrar dene veya info@petstockpro.com\'a yaz.';
         }
         setMessages((prev) => [
           ...prev,

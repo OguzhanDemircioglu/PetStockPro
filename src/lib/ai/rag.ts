@@ -9,7 +9,7 @@
  *
  * Felsefe:
  *   - SADECE USER-MANUAL.md içeriğinden cevap (RAG, hallucination kontrolü)
- *   - Kapsam dışı soru → "destek@petstockpro.com'a yazabilirsin" yumuşak red
+ *   - Kapsam dışı soru → "info@petstockpro.com'a yazabilirsin" yumuşak red
  *   - TR-strict (system prompt explicit Türkçe instruction)
  *   - Score eşiği: top-1 < 0.4 ise düşük güven → "yeterli kaynak yok" davranışı
  */
@@ -93,8 +93,8 @@ export function buildSystemPrompt(chunks: RetrievedChunk[]): string {
 1. CEVAP TÜRKÇE olmalı. Hiçbir cümle başka dilde olmasın.
 2. SADECE aşağıdaki "Kaynaklar" bölümündeki bilgilerden cevap ver. Asla uydurma yapma.
 3. **Halüsinasyon koruma:** Kaynaklarda olmayan bilgi UYDURMA. Kaynaktaki bilgileri kendi cümlelerinle özetleyebilirsin (birebir kopyalama şart değil), ama "override yapılır" gibi kaynakta hiç bahsedilmeyen bir özellik UYDURMA. Şüphedeysen "yeterli bilgi yok" de.
-4. Eğer soru "Kaynaklar"daki bilgiyle yeterince örtüşmüyorsa şu cevabı ver: "Bu konuyla ilgili PetStockPro kullanım kılavuzunda yeterli bilgi bulamadım. Detaylı yardım için destek@petstockpro.com'a yazabilirsin."
-5. **Yetki ve süperadmin:** Eğer soru süperadmin yetkileri, bypass aksiyonları, hard delete, plan override, sayım rollback gibi yönetici özellikleri ile ilgiliyse şu cevabı ver: "Bu konu PetStockPro yöneticisi (sahibi) tarafından kullanılır, normal pet shop kullanıcılarına açık değil. Bir sorunun varsa destek@petstockpro.com'a yazabilirsin."
+4. Eğer soru "Kaynaklar"daki bilgiyle yeterince örtüşmüyorsa şu cevabı ver: "Bu konuyla ilgili PetStockPro kullanım kılavuzunda yeterli bilgi bulamadım. Detaylı yardım için info@petstockpro.com'a yazabilirsin."
+5. **Yetki ve süperadmin:** Eğer soru süperadmin yetkileri, bypass aksiyonları, hard delete, plan override, sayım rollback gibi yönetici özellikleri ile ilgiliyse şu cevabı ver: "Bu konu PetStockPro yöneticisi (sahibi) tarafından kullanılır, normal pet shop kullanıcılarına açık değil. Bir sorunun varsa info@petstockpro.com'a yazabilirsin."
 6. Kullanıcının sorusuyla doğrudan ilgili olmayan kaynakları görmezden gel.
 7. Cevabını kısa, net ve madde işaretleriyle yaz (gerekirse adım adım).
 8. **Navigasyon yönergesi (ÇOK ÖNEMLİ):** Kullanıcıyı bir sayfaya yönlendirirken SADECE sol menü adıyla söyle. URL veya path KESİNLİKLE yazma — / ile başlayan hiçbir şey (örn. /admin/products, /api/x). Kaynaklarda URL geçse bile cevabına KOYMA, atla.

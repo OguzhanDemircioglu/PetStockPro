@@ -53,10 +53,10 @@ export default function NotFound() {
         <p className="mt-8 text-[12px] text-ink-4">
           Bağlantı bozuk gibiyse{' '}
           <a
-            href="mailto:destek@petstockpro.com"
+            href="mailto:info@petstockpro.com"
             className="text-cat hover:underline"
           >
-            destek@petstockpro.com
+            info@petstockpro.com
           </a>{' '}
           adresine bildirebilirsin.
         </p>

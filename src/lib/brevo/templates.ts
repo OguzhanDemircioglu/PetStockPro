@@ -173,7 +173,7 @@ export function buildPasswordChangedTemplate(input: PasswordChangedTemplateInput
     timeStyle: 'short',
     timeZone: 'Europe/Istanbul',
   });
-  const supportUrl = input.supportUrl ?? 'mailto:destek@petstockpro.com';
+  const supportUrl = input.supportUrl ?? 'mailto:info@petstockpro.com';
 
   const html = emailShell(`
     <h2 style="margin:0 0 16px;font-size:22px;color:${BRAND_CART};letter-spacing:-.3px;">
@@ -258,7 +258,7 @@ export function buildAccountLockedTemplate(input: AccountLockedTemplateInput): V
     timeStyle: 'short',
     timeZone: 'Europe/Istanbul',
   });
-  const supportEmail = input.supportEmail ?? 'destek@petstockpro.com';
+  const supportEmail = input.supportEmail ?? 'info@petstockpro.com';
   const isPermanent = input.reason === 'BRUTE_FORCE_24H';
   const durationLabel = isPermanent ? '24 SAAT' : '1 saat';
 
@@ -445,7 +445,7 @@ export function buildEmailChangedFinalTemplate(input: EmailChangedFinalInput): V
     </table>
     <p style="margin:0 0 8px;font-size:12px;color:#5f6b7c;line-height:1.5;">
       Bundan sonra giriş için yeni e-postanı kullan. Sen yapmadıysan
-      <a href="mailto:destek@petstockpro.com" style="color:${BRAND_CART};font-weight:bold;">destek</a>
+      <a href="mailto:info@petstockpro.com" style="color:${BRAND_CART};font-weight:bold;">destek</a>
       ile iletişime geç.
     </p>
   `);
@@ -453,7 +453,7 @@ export function buildEmailChangedFinalTemplate(input: EmailChangedFinalInput): V
   return {
     subject: 'PetStockPro · ✓ E-posta değiştirildi',
     htmlContent: html,
-    textContent: `E-posta değişikliği tamamlandı\n\nEski: ${input.oldEmail}\nYeni: ${input.newEmail}\n\nGiriş için yeni e-postanı kullan. Sen yapmadıysan destek@petstockpro.com\n\n— © 2026 PetStockPro`,
+    textContent: `E-posta değişikliği tamamlandı\n\nEski: ${input.oldEmail}\nYeni: ${input.newEmail}\n\nGiriş için yeni e-postanı kullan. Sen yapmadıysan info@petstockpro.com\n\n— © 2026 PetStockPro`,
   };
 }
 

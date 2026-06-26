@@ -81,10 +81,10 @@ export default function ErrorBoundary({ error, reset }: Props) {
         <p className="mt-8 text-[12px] text-ink-4">
           Destek:{' '}
           <a
-            href="mailto:destek@petstockpro.com"
+            href="mailto:info@petstockpro.com"
             className="text-cat hover:underline"
           >
-            destek@petstockpro.com
+            info@petstockpro.com
           </a>
         </p>
       </div>

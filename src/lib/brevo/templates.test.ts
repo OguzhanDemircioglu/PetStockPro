@@ -137,7 +137,7 @@ describe('buildPasswordChangedTemplate', () => {
 
   it('destek URL default mailto', () => {
     const t = buildPasswordChangedTemplate(sampleInput);
-    expect(t.htmlContent).toContain('mailto:destek@petstockpro.com');
+    expect(t.htmlContent).toContain('mailto:info@petstockpro.com');
   });
 
   it('userName null ise generic greeting', () => {
@@ -149,7 +149,7 @@ describe('buildPasswordChangedTemplate', () => {
   it('text fallback IP ve uyarı içerir', () => {
     const t = buildPasswordChangedTemplate(sampleInput);
     expect(t.textContent).toContain('203.0.113.42');
-    expect(t.textContent).toContain('destek@petstockpro.com');
+    expect(t.textContent).toContain('info@petstockpro.com');
   });
 });
 
@@ -213,6 +213,6 @@ describe('buildEmailChangedFinalTemplate', () => {
     const t = buildEmailChangedFinalTemplate({ oldEmail: 'old@ps.com', newEmail: 'new@ps.com' });
     expect(t.htmlContent).toContain('old@ps.com');
     expect(t.htmlContent).toContain('new@ps.com');
-    expect(t.htmlContent).toContain('destek@petstockpro.com');
+    expect(t.htmlContent).toContain('info@petstockpro.com');
   });
 });

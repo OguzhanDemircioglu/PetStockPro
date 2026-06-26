@@ -59,7 +59,7 @@ describe('buildSystemPrompt', () => {
 
   it('kapsam dışı / yetersiz bilgi durumunda destek emailini telkin eder', () => {
     const prompt = buildSystemPrompt([mockChunk()]);
-    expect(prompt).toContain('destek@petstockpro.com');
+    expect(prompt).toContain('info@petstockpro.com');
     expect(prompt).toMatch(/yeterince |yeterli bilgi bulamadım/);
   });
 
@@ -71,7 +71,7 @@ describe('buildSystemPrompt', () => {
     const prompt = buildSystemPrompt([mockChunk()]);
     expect(prompt).toMatch(/Halüsinasyon|halüsinasyon/);
     expect(prompt).toMatch(/süperadmin|yönetici/);
-    expect(prompt).toContain('destek@petstockpro.com');
+    expect(prompt).toContain('info@petstockpro.com');
   });
 
   it('sidebar navigasyon yönergesi içerir (URL yerine sol menü)', () => {
