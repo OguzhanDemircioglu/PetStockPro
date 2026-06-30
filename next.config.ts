@@ -22,8 +22,12 @@ const withBundleAnalyzer = bundleAnalyzer({
  *   - Supabase: REST + Realtime (https/wss *.supabase.co)
  *   - Brevo: SMTP webhook (https *.brevo.com — server-side)
  *   - PayTR: ödeme iframe (https://www.paytr.com/odeme/guvenli/<token>) — BROWSER-SIDE,
- *     frame-src + script-src (iframeResizer.min.js) izin gerekir. 3D Secure adımı
- *     PayTR iframe'inin KENDİ içinde olur (banka domain'leri bizim CSP'ye eklenmez).
+ *     frame-src + script-src (iframeResizer.min.js) izin gerekir.
+ *   - 3D Secure (CANLI mod): PayTR iframe içinden BKM ortak güvenli ödeme sayfasına
+ *     (goguvenliodeme.bkm.com.tr) frame açılır → frame-src + form-action'a *.bkm.com.tr
+ *     gerekir. (TEST modunda 3DS PayTR içinde simüle olduğu için fark edilmedi; canlıda
+ *     ERR_BLOCKED_BY_CSP verdi — 2026-06-30.) Bankanın kendi ACS domaini farklıysa o da
+ *     buraya eklenir.
  *   - Nilvera: e-Arşiv API (server-side, browser değil)
  *   - Telegram: bot API (server-side, browser değil)
  *   - Cloudflare Turnstile: bot koruma widget (https challenges.cloudflare.com)
@@ -55,9 +59,19 @@ function buildCsp(): string {
       'https://*.r2.cloudflarestorage.com',
       'https://*.r2.dev',
     ].join(' '),
-    "frame-src 'self' https://challenges.cloudflare.com https://www.paytr.com https://paytr.com",
+    'frame-src ' +
+      [
+        "'self'",
+        'https://challenges.cloudflare.com',
+        'https://www.paytr.com',
+        'https://paytr.com',
+        'https://*.paytr.com',
+        // 3D Secure (canlı): BKM ortak güvenli ödeme sayfası + alt domainler
+        'https://goguvenliodeme.bkm.com.tr',
+        'https://*.bkm.com.tr',
+      ].join(' '),
     "frame-ancestors 'none'",
-    "form-action 'self'",
+    "form-action 'self' https://www.paytr.com https://*.paytr.com https://*.bkm.com.tr",
     "base-uri 'self'",
     "object-src 'none'",
     'upgrade-insecure-requests',
