@@ -13,6 +13,12 @@
  *     status=expired yapmak çekimi kesin durdurur. Kalan ödenmiş gün YANAR (iade yok).
  *   - Soft-delete geri alınabilir (süperadmin restoreCompany + 7 gün grace) ama
  *     kullanıcıya self-restore YOK.
+ *   - E-POSTA SERBEST BIRAKILIR: tenant'ın tüm kullanıcılarının e-postası + PII'si
+ *     anonimleştirilir → aynı e-posta ile TEKRAR KAYIT olunabilir (KVKK silme hakkı).
+ *     Gerçek satır-silme bilinçli olarak İMKÂNSIZ: audit_logs + stock_movements
+ *     immutability trigger (0033) DELETE'i RAISE EXCEPTION ile durdurur + invoices/
+ *     movements FK 'restrict' (KVKK 5y / vergi 10y). "Komple silme" = PII erasure +
+ *     e-posta release; finansal/denetim iskeleti yasal olarak korunur.
  *
  * Bağlı tüketiciler:
  *   - auth: deletedAt dolu tenant'ın login'i engellenir (authorizeCredentials).
@@ -20,7 +26,7 @@
  *   - vitrin public + süperadmin tenant listesi: deletedAt filtreleri (mevcut).
  */
 
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { DbClient } from '@/lib/db/client';
 import { companies, subscriptions, users } from '@/db/schema';
 import { verifyPassword } from '@/lib/auth/password';
@@ -133,7 +139,29 @@ export async function deleteOwnAccount(
         );
       }
 
-      // 5b. Plan FREE + company soft-delete
+      // 5b. PII erasure + e-posta serbest bırak (KVKK silme hakkı + aynı e-posta ile
+      //     tekrar kayıt). Tenant'ın TÜM kullanıcılarının e-postası benzersiz bir
+      //     'deleted_<id>@deleted.invalid'e çevrilir + kimlik/PII temizlenir. users.email
+      //     UNIQUE artık orijinali serbest bırakır → registerNewTenant aynı e-postayı kabul eder.
+      //     (Satır FK'leri — audit/movement — immutability trigger nedeniyle KALIR; anonim iskelet.)
+      await tx
+        .update(users)
+        .set({
+          email: sql`concat('deleted_', ${users.id}, '@deleted.invalid')`,
+          passwordHash: null,
+          name: null,
+          pendingEmail: null,
+          pendingEmailToken: null,
+          emailVerificationToken: null,
+          passwordResetToken: null,
+          twoFactorSecret: null,
+          twoFactorSetupSecret: null,
+          twoFactorRecoveryCodes: null,
+          updatedAt: now,
+        })
+        .where(eq(users.companyId, companyId));
+
+      // 5c. Plan FREE + company soft-delete
       await tx
         .update(companies)
         .set({ plan: 'FREE', deletedAt: now, updatedAt: now })

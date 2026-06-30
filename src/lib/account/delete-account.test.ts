@@ -19,6 +19,7 @@ function makeDb(data: MockData) {
   const calls = {
     txRan: false,
     subUpdates: [] as Record<string, unknown>[],
+    userUpdates: [] as Record<string, unknown>[],
     companyUpdates: [] as Record<string, unknown>[],
   };
   function rowsFor(table: unknown): unknown[] {
@@ -62,7 +63,13 @@ function makeDb(data: MockData) {
   const txClient = {
     select: () => selectBuilder(),
     update(table: unknown) {
-      return updateBuilder(table === subscriptions ? calls.subUpdates : calls.companyUpdates);
+      const sink =
+        table === subscriptions
+          ? calls.subUpdates
+          : table === users
+            ? calls.userUpdates
+            : calls.companyUpdates;
+      return updateBuilder(sink);
     },
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -136,6 +143,11 @@ describe('deleteOwnAccount', () => {
     expect(calls.companyUpdates).toHaveLength(1);
     expect(calls.companyUpdates[0].deletedAt).toEqual(NOW);
     expect(calls.companyUpdates[0].plan).toBe('FREE');
+    // E-posta serbest bırakıldı (anonimleştirme) + kimlik/PII temizlendi
+    expect(calls.userUpdates).toHaveLength(1);
+    expect('email' in calls.userUpdates[0]).toBe(true);
+    expect(calls.userUpdates[0].passwordHash).toBeNull();
+    expect(calls.userUpdates[0].name).toBeNull();
   });
 
   it('happy (abonelik yok) → company soft-delete, abonelik update yok', async () => {
@@ -148,6 +160,7 @@ describe('deleteOwnAccount', () => {
     const res = await deleteOwnAccount({ userId: 'u-1', password: 'p' }, db, NOW);
     expect(res.ok).toBe(true);
     expect(calls.subUpdates).toHaveLength(0);
+    expect(calls.userUpdates).toHaveLength(1); // e-posta yine serbest bırakılır
     expect(calls.companyUpdates[0].deletedAt).toEqual(NOW);
   });
 });
