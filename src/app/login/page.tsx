@@ -1,7 +1,8 @@
 'use client';
 
-import { useActionState, useRef, useState } from 'react';
+import { Suspense, useActionState, useRef, useState } from 'react';
 import Image from 'next/image';
+import { useSearchParams } from 'next/navigation';
 import { Package, Store, BarChart3, Bot, type LucideIcon } from 'lucide-react';
 import { extractRecoveryCodesFromText } from '@/lib/auth/recovery-codes';
 import { useSwalOnError, useSwalOnErrorString } from '@/lib/ui/use-swal-on-error';
@@ -15,6 +16,23 @@ const HERO_FEATURES: { title: string; sub: string; icon: LucideIcon }[] = [
   { icon: BarChart3, title: '6 Canlı Rapor', sub: 'Kâr-zarar, KDV ve en çok satanlar' },
   { icon: Bot, title: 'AI Asistan', sub: 'Sipariş, transfer, indirimde akıllı öneri' },
 ];
+
+/**
+ * Hesap silindikten sonra (/login?deleted=1) gösterilen onay bildirimi.
+ * useSearchParams Suspense gerektirir (Next 16) — çağıran <Suspense> ile sarar.
+ */
+function DeletedNotice() {
+  const params = useSearchParams();
+  if (params.get('deleted') !== '1') return null;
+  return (
+    <div
+      role="status"
+      className="mt-6 rounded-xl border border-arrow/40 bg-arrow-soft px-4 py-3 text-sm font-bold text-arrow-7"
+    >
+      ✅ Hesabın silindi. Tekrar giriş yapamazsın. Yardım için bizimle iletişime geçebilirsin.
+    </div>
+  );
+}
 
 /**
  * Login Page — Sprint 2.1
@@ -195,6 +213,10 @@ export default function LoginPage() {
           <p className="mt-2 text-[15px] leading-normal text-ink-3">
             Pet shop&apos;unu yönet — stok, satış, vitrin tek panelde.
           </p>
+
+          <Suspense fallback={null}>
+            <DeletedNotice />
+          </Suspense>
 
           {/* 2FA prompt banner */}
           {state?.requires2fa && !state.error && (

@@ -180,8 +180,12 @@ async function expireDueSubscriptions(db: DbClient, now: Date): Promise<number> 
   const rows = await db
     .select({ id: subscriptions.id, companyId: subscriptions.companyId })
     .from(subscriptions)
+    .leftJoin(companies, eq(companies.id, subscriptions.companyId))
     .where(
       and(
+        // Soft-delete edilmiş tenant'ı expire etme (downgrade e-postası + vitrin
+        // reconcile silinmiş tenant'a tetiklenmesin) — guard, silme akışını tamamlar.
+        isNull(companies.deletedAt),
         inArray(subscriptions.status, ['active', 'past_due', 'cancelled']),
         lte(subscriptions.currentPeriodEnd, now),
         or(
@@ -263,16 +267,21 @@ async function findDueSubscriptions(db: DbClient, now: Date): Promise<DueRow[]> 
       and(eq(users.companyId, subscriptions.companyId), eq(users.role, 'BAYI_SAHIBI')),
     )
     .where(
-      or(
-        and(
-          eq(subscriptions.status, 'active'),
-          eq(subscriptions.cancelAtPeriodEnd, false),
-          lte(subscriptions.currentPeriodEnd, now),
-        ),
-        and(
-          eq(subscriptions.status, 'past_due'),
-          isNotNull(subscriptions.nextRetryAt),
-          lte(subscriptions.nextRetryAt, now),
+      and(
+        // Soft-delete edilmiş tenant (sahip "Hesabımı sil" yaptı) ASLA çekilmez —
+        // defense in depth (silme akışı aboneliği zaten 'expired' yapar).
+        isNull(companies.deletedAt),
+        or(
+          and(
+            eq(subscriptions.status, 'active'),
+            eq(subscriptions.cancelAtPeriodEnd, false),
+            lte(subscriptions.currentPeriodEnd, now),
+          ),
+          and(
+            eq(subscriptions.status, 'past_due'),
+            isNotNull(subscriptions.nextRetryAt),
+            lte(subscriptions.nextRetryAt, now),
+          ),
         ),
       ),
     )

@@ -4,8 +4,10 @@ import { auth } from '@/lib/auth/auth';
 import { db } from '@/lib/db/client';
 import { users } from '@/db/schema';
 import { SettingsShell } from '@/components/settings-shell';
+import { hasActivePaidSubscription } from '@/lib/account/delete-account';
 import { AccountForm } from './form';
 import { SecurityForms } from '../security/forms';
+import { DeleteAccount } from './delete-account';
 
 /**
  * /admin/account — Hesap & Güvenlik.
@@ -48,6 +50,13 @@ export default async function AccountPage({
     ? user.twoFactorRecoveryCodes.filter((c) => !c.usedAt).length
     : 0;
 
+  // "Hesabımı sil" yalnızca tenant sahibine. SUPERADMIN (companyId=NULL) +
+  // STAFF/OBSERVER görmez. Sahipse aktif abonelik durumunu uyarı için çek.
+  const showDelete = session.user.role === 'BAYI_SAHIBI' && !!session.user.companyId;
+  const hasActiveSub = showDelete
+    ? await hasActivePaidSubscription(session.user.companyId as string, db)
+    : false;
+
   return (
     <SettingsShell
       current="account"
@@ -70,6 +79,11 @@ export default async function AccountPage({
             just2faDisabled={just2faDisabled}
           />
         </div>
+        {showDelete && (
+          <div className="max-w-2xl border-t border-line pt-8">
+            <DeleteAccount hasActiveSubscription={hasActiveSub} />
+          </div>
+        )}
       </div>
     </SettingsShell>
   );

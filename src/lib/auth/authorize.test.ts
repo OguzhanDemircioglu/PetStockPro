@@ -13,6 +13,7 @@ import {
   InvalidCredentialsError,
 } from './errors';
 import type { DbClient } from '@/lib/db/client';
+import { companies } from '@/db/schema';
 import type { RecoveryCode } from '@/db/schema';
 
 /**
@@ -37,7 +38,10 @@ type MockUserRow = {
   twoFactorRecoveryCodes?: RecoveryCode[] | null;
 };
 
-function makeMockDb(user: MockUserRow | null): {
+function makeMockDb(
+  user: MockUserRow | null,
+  companyRow?: { deletedAt: Date | null },
+): {
   db: DbClient;
   updateSpy: ReturnType<typeof vi.fn>;
 } {
@@ -45,9 +49,21 @@ function makeMockDb(user: MockUserRow | null): {
   const setSpy = vi.fn().mockReturnThis();
   const whereSpy = vi.fn().mockResolvedValue([]);
 
-  const limitSpy = vi.fn().mockResolvedValue(user ? [user] : []);
+  // Hangi tablodan SELECT yapıldığını izle → companies lookup'ı (deletedAt guard)
+  // users lookup'ından ayrı satır döndürebilelim. companyRow verilmezse silinmemiş
+  // varsayılır (deletedAt:null) → mevcut testler etkilenmez.
+  let lastTable: unknown = null;
+  const limitSpy = vi.fn().mockImplementation(() => {
+    if (lastTable === companies) {
+      return Promise.resolve([companyRow ?? { deletedAt: null }]);
+    }
+    return Promise.resolve(user ? [user] : []);
+  });
   const selectWhereSpy = vi.fn().mockReturnValue({ limit: limitSpy });
-  const fromSpy = vi.fn().mockReturnValue({ where: selectWhereSpy });
+  const fromSpy = vi.fn().mockImplementation((t: unknown) => {
+    lastTable = t;
+    return { where: selectWhereSpy };
+  });
   const selectSpy = vi.fn().mockReturnValue({ from: fromSpy });
 
   const updateChain = vi.fn().mockReturnValue({
@@ -153,6 +169,37 @@ describe('authorizeCredentials', () => {
         NOW,
       );
       expect(result).toBeNull();
+    });
+  });
+
+  describe('tenant soft-delete (Hesabımı sil)', () => {
+    it('company.deletedAt dolu → null (login engelli, DB update yok)', async () => {
+      const user = await makeValidUser();
+      const { db, updateSpy } = makeMockDb(user, { deletedAt: new Date('2026-06-20') });
+
+      const result = await authorizeCredentials(
+        { email: user.email, password: 'CorrectPass123' },
+        db,
+        NOW,
+      );
+
+      expect(result).toBeNull();
+      // Silinmiş tenant: şifre verify + failed-count update'e hiç ulaşılmaz
+      expect(updateSpy).not.toHaveBeenCalled();
+    });
+
+    it('company.deletedAt NULL → login normal devam (doğru şifre)', async () => {
+      const user = await makeValidUser();
+      const { db } = makeMockDb(user, { deletedAt: null });
+
+      const result = await authorizeCredentials(
+        { email: user.email, password: 'CorrectPass123' },
+        db,
+        NOW,
+      );
+
+      expect(result).not.toBeNull();
+      expect(result?.id).toBe('user-uuid-1');
     });
   });
 

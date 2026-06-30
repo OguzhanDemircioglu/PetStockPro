@@ -43,18 +43,19 @@ function makeDb(config: { dueRows?: DueRow[]; expireRows?: { id: string; company
   }
   function selectBuilder() {
     let fromTable: unknown = null;
-    let hasJoin = false;
+    // Due-query ile expire-query'i ayırt et: yalnızca findDueSubscriptions `.for('update')`
+    // çağırır. (Her ikisi de artık companies leftJoin'ler — deletedAt guard — bu yüzden
+    // join varlığı ayırt edici DEĞİL.)
+    let usedFor = false;
     const b: Record<string, unknown> = {
       from(t: unknown) {
         fromTable = t;
         return b;
       },
       leftJoin() {
-        hasJoin = true;
         return b;
       },
       innerJoin() {
-        hasJoin = true;
         return b;
       },
       where() {
@@ -64,6 +65,7 @@ function makeDb(config: { dueRows?: DueRow[]; expireRows?: { id: string; company
         return b;
       },
       for() {
+        usedFor = true;
         return b;
       },
       limit() {
@@ -75,7 +77,7 @@ function makeDb(config: { dueRows?: DueRow[]; expireRows?: { id: string; company
       then(resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) {
         let result: unknown[] = [];
         if (fromTable === subscriptions) {
-          result = hasJoin ? (config.dueRows ?? []) : (config.expireRows ?? []);
+          result = usedFor ? (config.dueRows ?? []) : (config.expireRows ?? []);
         }
         return Promise.resolve(result).then(resolve, reject);
       },

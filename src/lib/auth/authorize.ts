@@ -34,7 +34,7 @@ import { buildAccountLockedTemplate } from '@/lib/brevo/templates';
 import { sendTelegramAlert } from '@/lib/telegram/client';
 import { buildAccountLockedAlert } from '@/lib/telegram/messages';
 import type { DbClient } from '@/lib/db/client';
-import { users } from '@/db/schema';
+import { companies, users } from '@/db/schema';
 
 /**
  * Authorize başarılıysa Auth.js'in beklediği user shape.
@@ -72,6 +72,20 @@ export async function authorizeCredentials(
   const user = userRows[0];
   if (!user) {
     return null; // enumeration koruma — kullanıcı yok mesajı vermeyiz
+  }
+
+  // 2.5 Tenant soft-delete? (sahip "Hesabımı sil" yaptı → companies.deletedAt dolu)
+  // Silinmiş tenant'ın HİÇBİR kullanıcısı (sahip + STAFF/OBSERVER) login olamaz.
+  // SUPERADMIN companyId=NULL → bu blok atlanır. Generic null (enumeration koruma).
+  if (user.companyId) {
+    const companyRows = await db
+      .select({ deletedAt: companies.deletedAt })
+      .from(companies)
+      .where(eq(companies.id, user.companyId))
+      .limit(1);
+    if (companyRows[0]?.deletedAt) {
+      return null;
+    }
   }
 
   // 3. Locked?
