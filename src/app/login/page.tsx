@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Package, Store, BarChart3, Bot, type LucideIcon } from 'lucide-react';
 import { extractRecoveryCodesFromText } from '@/lib/auth/recovery-codes';
 import { useSwalOnError, useSwalOnErrorString } from '@/lib/ui/use-swal-on-error';
+import { stripSpacesOnInput } from '@/lib/ui/no-space-input';
 import { HeroDemoButtons } from '@/components/auth/hero-demo-buttons';
 import { loginAction, type LoginState } from './actions';
 
@@ -256,6 +257,7 @@ export default function LoginPage() {
                 readOnly={state?.requires2fa}
                 defaultValue={state?.email ?? ''}
                 disabled={pending}
+                onChange={stripSpacesOnInput}
                 aria-invalid={hasError || undefined}
                 className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink transition-all focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15 read-only:bg-line-soft"
               />
@@ -275,6 +277,7 @@ export default function LoginPage() {
                   required
                   defaultValue={state?.password ?? ''}
                   disabled={pending}
+                  onChange={stripSpacesOnInput}
                   aria-invalid={hasError || undefined}
                   className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 pr-12 text-sm text-ink transition-all focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />

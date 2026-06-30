@@ -4,6 +4,7 @@ import { useActionState, useState } from 'react';
 import Image from 'next/image';
 import { Package, Store, BarChart3, Bot, type LucideIcon } from 'lucide-react';
 import { useSwalOnError } from '@/lib/ui/use-swal-on-error';
+import { stripSpacesOnInput } from '@/lib/ui/no-space-input';
 import { HeroDemoButtons } from '@/components/auth/hero-demo-buttons';
 import { registerAction, type RegisterState } from './actions';
 
@@ -176,6 +177,7 @@ export default function RegisterPage() {
                 autoComplete="email"
                 required
                 disabled={pending}
+                onChange={stripSpacesOnInput}
                 aria-invalid={hasError || undefined}
                 className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 text-sm text-ink transition-all focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
               />
@@ -194,6 +196,7 @@ export default function RegisterPage() {
                   autoComplete="new-password"
                   required
                   disabled={pending}
+                  onChange={stripSpacesOnInput}
                   aria-invalid={hasError || undefined}
                   className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 pr-12 text-sm text-ink transition-all focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
@@ -238,6 +241,7 @@ export default function RegisterPage() {
                   autoComplete="new-password"
                   required
                   disabled={pending}
+                  onChange={stripSpacesOnInput}
                   aria-invalid={hasError || undefined}
                   className="w-full rounded-xl border-[1.5px] border-line bg-white px-4 py-3 pr-12 text-sm text-ink transition-all focus:border-cat focus:outline-none focus:ring-4 focus:ring-cat/15"
                 />
