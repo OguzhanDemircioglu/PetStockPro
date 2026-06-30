@@ -23,11 +23,11 @@ const withBundleAnalyzer = bundleAnalyzer({
  *   - Brevo: SMTP webhook (https *.brevo.com — server-side)
  *   - PayTR: ödeme iframe (https://www.paytr.com/odeme/guvenli/<token>) — BROWSER-SIDE,
  *     frame-src + script-src (iframeResizer.min.js) izin gerekir.
- *   - 3D Secure (CANLI mod): PayTR iframe içinden BKM ortak güvenli ödeme sayfasına
- *     (goguvenliodeme.bkm.com.tr) frame açılır → frame-src + form-action'a *.bkm.com.tr
- *     gerekir. (TEST modunda 3DS PayTR içinde simüle olduğu için fark edilmedi; canlıda
- *     ERR_BLOCKED_BY_CSP verdi — 2026-06-30.) Bankanın kendi ACS domaini farklıysa o da
- *     buraya eklenir.
+ *   - 3D Secure (CANLI mod): PayTR iframe içinden kartın BANKASINA göre değişen bir ACS
+ *     domaininde frame açılır (BKM, VakıfBank, Garanti, İş, Akbank... her biri farklı,
+ *     öngörülemez). TEST modunda PayTR içinde simüle olduğu için fark edilmedi; canlıda
+ *     bankaya göre ERR_BLOCKED_BY_CSP verdi (2026-06-30). Allowlist sürdürülemez → frame-src
+ *     ve form-action tüm HTTPS'e açıldı (aşağıda gerekçe).
  *   - Nilvera: e-Arşiv API (server-side, browser değil)
  *   - Telegram: bot API (server-side, browser değil)
  *   - Cloudflare Turnstile: bot koruma widget (https challenges.cloudflare.com)
@@ -43,7 +43,17 @@ const withBundleAnalyzer = bundleAnalyzer({
  *
  * Strict: frame-ancestors 'none' clickjacking koruması (X-Frame-Options'tan üstün).
  */
-function buildCsp(): string {
+/**
+ * @param opts.paymentPage true ise YALNIZ ödeme sayfası (/admin/settings/billing) için profil:
+ *   frame-src + form-action `https:` (PayTR iframe'inin 3DS adımında kartın bankasına göre
+ *   ÖNGÖRÜLEMEZ ACS/acquirer domaine — BKM, VakıfBank gateway, Garanti/İş/Akbank... — navigate
+ *   etmesine izin). PayTR iframe'i bizim DOĞRUDAN çocuğumuz olduğu için onu banka domainine
+ *   götüren navigasyonu BİZİM frame-src'imiz yönetir; tek tek allowlist sürdürülemez.
+ *   Diğer tüm sayfalarda frame-src yalnız Turnstile, form-action 'self' (SIKI).
+ *   Detaylı gerekçe: docs/PLAN-PAYTR-3DS-CSP.md.
+ */
+function buildCsp(opts: { paymentPage?: boolean } = {}): string {
+  const isPayment = opts.paymentPage === true;
   const directives: string[] = [
     "default-src 'self'",
     `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://challenges.cloudflare.com https://www.paytr.com`,
@@ -59,19 +69,11 @@ function buildCsp(): string {
       'https://*.r2.cloudflarestorage.com',
       'https://*.r2.dev',
     ].join(' '),
-    'frame-src ' +
-      [
-        "'self'",
-        'https://challenges.cloudflare.com',
-        'https://www.paytr.com',
-        'https://paytr.com',
-        'https://*.paytr.com',
-        // 3D Secure (canlı): BKM ortak güvenli ödeme sayfası + alt domainler
-        'https://goguvenliodeme.bkm.com.tr',
-        'https://*.bkm.com.tr',
-      ].join(' '),
+    isPayment
+      ? "frame-src 'self' https:"
+      : "frame-src 'self' https://challenges.cloudflare.com",
     "frame-ancestors 'none'",
-    "form-action 'self' https://www.paytr.com https://*.paytr.com https://*.bkm.com.tr",
+    isPayment ? "form-action 'self' https:" : "form-action 'self'",
     "base-uri 'self'",
     "object-src 'none'",
     'upgrade-insecure-requests',
@@ -132,20 +134,31 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // Güvenlik header'ları — CSP 2026-05-17 tightened
+  // Güvenlik header'ları. CSP iki profil (docs/PLAN-PAYTR-3DS-CSP.md):
+  //   - /admin/settings/billing (ödeme): frame-src/form-action gevşek (3DS banka frame'leri)
+  //   - diğer her yer: sıkı
+  // Kurallar KARŞILIKLI DIŞLAYAN (negatif lookahead) — aynı path birden çok CSP header alırsa
+  // tarayıcı KESİŞİMİ uygular (en katı kazanır) → gevşetme işe yaramazdı. Bu yüzden ödeme
+  // path'i strict kuralının dışında bırakılır → her path tam olarak BİR CSP header alır.
   async headers() {
+    const securityHeaders = [
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(self)' },
+      { key: 'X-DNS-Prefetch-Control', value: 'on' },
+    ];
+    const csp = (paymentPage: boolean) => ({
+      key: 'Content-Security-Policy',
+      value: buildCsp({ paymentPage }),
+    });
     return [
-      {
-        source: '/(.*)',
-        headers: [
-          { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
-          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(self)' },
-          { key: 'X-DNS-Prefetch-Control', value: 'on' },
-          { key: 'Content-Security-Policy', value: buildCsp() },
-        ],
-      },
+      // Ödeme sayfası (tam yol) — gevşek frame-src/form-action
+      { source: '/admin/settings/billing', headers: [...securityHeaders, csp(true)] },
+      // Ödeme alt-yolları + trailing slash — aynı gevşek profil
+      { source: '/admin/settings/billing/:path*', headers: [...securityHeaders, csp(true)] },
+      // Diğer her şey — sıkı (billing prefix'i hariç → çift CSP header önlenir)
+      { source: '/((?!admin/settings/billing).*)', headers: [...securityHeaders, csp(false)] },
     ];
   },
 };
