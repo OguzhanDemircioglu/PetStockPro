@@ -13,12 +13,14 @@
  *     status=expired yapmak çekimi kesin durdurur. Kalan ödenmiş gün YANAR (iade yok).
  *   - Soft-delete geri alınabilir (süperadmin restoreCompany + 7 gün grace) ama
  *     kullanıcıya self-restore YOK.
- *   - E-POSTA SERBEST BIRAKILIR: tenant'ın tüm kullanıcılarının e-postası + PII'si
+ *   - OPERASYONEL VERİ FİZİKSEL SİLİNİR: ürün/varyant/şube/stok hareketi/sayım/
+ *     envanter/vitrin/AI/bildirim/oturum/yetki — hepsi gerçekten silinir (purge).
+ *     stock_movements değişmez defter olduğu için migration 0040 ile tek istisna:
+ *     SET LOCAL app.purge_mode='on' yalnız bu tx'te DELETE'e izin verir.
+ *   - E-POSTA SERBEST BIRAKILIR: tüm kullanıcı satırlarının e-postası + PII'si
  *     anonimleştirilir → aynı e-posta ile TEKRAR KAYIT olunabilir (KVKK silme hakkı).
- *     Gerçek satır-silme bilinçli olarak İMKÂNSIZ: audit_logs + stock_movements
- *     immutability trigger (0033) DELETE'i RAISE EXCEPTION ile durdurur + invoices/
- *     movements FK 'restrict' (KVKK 5y / vergi 10y). "Komple silme" = PII erasure +
- *     e-posta release; finansal/denetim iskeleti yasal olarak korunur.
+ *   - YASAL İSKELET KALIR: subscriptions + invoices + audit_logs (vergi 10y / KVKK)
+ *     + users/company anonim satırları (audit/invoice FK 'restrict' onları sabitler).
  *
  * Bağlı tüketiciler:
  *   - auth: deletedAt dolu tenant'ın login'i engellenir (authorizeCredentials).
@@ -56,9 +58,40 @@ export interface DeleteOwnAccountInput {
   password: string;
 }
 
+/** Drizzle transaction client tipi (db.transaction callback parametresi). */
+type Tx = Parameters<Parameters<DbClient['transaction']>[0]>[0];
+
 /**
- * Tenant sahibinin kendi hesabını silmesi. Atomik: abonelik sonlandır + plan FREE +
- * company soft-delete + audit. Tek transaction (kısmi silme imkânsız).
+ * Tenant'ın operasyonel verisini FK-güvenli sırada (children → parents) FİZİKSEL siler.
+ * KEEP: subscriptions, invoices, audit_logs (yasal/finansal) + users/company (anonim
+ * iskelet). stock_movements silinebilmesi için çağıran tx'te SET LOCAL app.purge_mode='on'
+ * olmalı (migration 0040 — değişmez defterin tek istisnası: hesap purge'ü).
+ */
+async function purgeTenantOperationalData(tx: Tx, companyId: string): Promise<void> {
+  await tx.execute(sql`DELETE FROM petstockpro.stock_movements WHERE company_id = ${companyId}`);
+  await tx.execute(sql`DELETE FROM petstockpro.stocktakes WHERE company_id = ${companyId}`); // cascade: stocktake_items
+  await tx.execute(sql`DELETE FROM petstockpro.vitrin_whatsapp_feedback WHERE company_id = ${companyId}`);
+  await tx.execute(sql`DELETE FROM petstockpro.vitrin_reports WHERE company_id = ${companyId}`);
+  await tx.execute(sql`DELETE FROM petstockpro.vitrin_events WHERE company_id = ${companyId}`);
+  await tx.execute(sql`DELETE FROM petstockpro.notifications WHERE company_id = ${companyId}`);
+  await tx.execute(sql`DELETE FROM petstockpro.ai_messages WHERE company_id = ${companyId}`);
+  await tx.execute(sql`DELETE FROM petstockpro.ai_usage WHERE company_id = ${companyId}`);
+  await tx.execute(sql`DELETE FROM petstockpro.storefront_settings WHERE company_id = ${companyId}`);
+  await tx.execute(sql`DELETE FROM petstockpro.branch_inventory WHERE company_id = ${companyId}`);
+  await tx.execute(
+    sql`DELETE FROM petstockpro.user_permissions WHERE user_id IN (SELECT id FROM petstockpro.users WHERE company_id = ${companyId})`,
+  );
+  await tx.execute(
+    sql`DELETE FROM petstockpro.sessions WHERE user_id IN (SELECT id FROM petstockpro.users WHERE company_id = ${companyId})`,
+  );
+  await tx.execute(sql`DELETE FROM petstockpro.products WHERE company_id = ${companyId}`); // cascade: product_variants, product_images
+  await tx.execute(sql`DELETE FROM petstockpro.suppliers WHERE company_id = ${companyId}`);
+  await tx.execute(sql`DELETE FROM petstockpro.branches WHERE company_id = ${companyId}`);
+}
+
+/**
+ * Tenant sahibinin kendi hesabını silmesi. Atomik: abonelik sonlandır + operasyonel veri
+ * FİZİKSEL purge + e-posta release/anonimleştir + company soft-delete + audit. Tek transaction.
  */
 export async function deleteOwnAccount(
   input: DeleteOwnAccountInput,
@@ -103,7 +136,11 @@ export async function deleteOwnAccount(
   // 5. Tek transaction
   try {
     await db.transaction(async (tx) => {
-      // 5a. Canlı abonelik(ler)i anında sonlandır (kalan ödenmiş gün yanar).
+      // 5a. Immutable ledger purge-mode aç (YALNIZ bu tx) — stock_movements fiziksel
+      //     silinebilsin (migration 0040). SET LOCAL tx commit/rollback'te sıfırlanır.
+      await tx.execute(sql`SET LOCAL app.purge_mode = 'on'`);
+
+      // 5b. Canlı abonelik(ler)i anında sonlandır (kalan ödenmiş gün yanar). KEEP — yasal.
       //     status=expired → findDueSubscriptions 'due' saymaz → çekim imkânsız.
       const liveSubs = await tx
         .select({ id: subscriptions.id })
@@ -139,17 +176,23 @@ export async function deleteOwnAccount(
         );
       }
 
-      // 5b. PII erasure + e-posta serbest bırak (KVKK silme hakkı + aynı e-posta ile
+      // 5c. Operasyonel veriyi FİZİKSEL purge et (ürün/varyant/şube/stok/sayım/vitrin/
+      //     AI/oturum/yetki...). Yalnız subscriptions/invoices/audit_logs + anonim
+      //     users/company kalır.
+      await purgeTenantOperationalData(tx, companyId);
+
+      // 5d. PII erasure + e-posta serbest bırak (KVKK silme hakkı + aynı e-posta ile
       //     tekrar kayıt). Tenant'ın TÜM kullanıcılarının e-postası benzersiz bir
       //     'deleted_<id>@deleted.invalid'e çevrilir + kimlik/PII temizlenir. users.email
       //     UNIQUE artık orijinali serbest bırakır → registerNewTenant aynı e-postayı kabul eder.
-      //     (Satır FK'leri — audit/movement — immutability trigger nedeniyle KALIR; anonim iskelet.)
+      //     (users satırı audit_logs.userId RESTRICT nedeniyle KALIR; anonim iskelet.)
       await tx
         .update(users)
         .set({
           email: sql`concat('deleted_', ${users.id}, '@deleted.invalid')`,
           passwordHash: null,
           name: null,
+          branchId: null,
           pendingEmail: null,
           pendingEmailToken: null,
           emailVerificationToken: null,

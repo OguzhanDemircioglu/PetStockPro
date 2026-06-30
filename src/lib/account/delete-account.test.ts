@@ -18,6 +18,7 @@ interface MockData {
 function makeDb(data: MockData) {
   const calls = {
     txRan: false,
+    executeCount: 0, // SET LOCAL purge_mode + operasyonel purge DELETE'leri
     subUpdates: [] as Record<string, unknown>[],
     userUpdates: [] as Record<string, unknown>[],
     companyUpdates: [] as Record<string, unknown>[],
@@ -70,6 +71,10 @@ function makeDb(data: MockData) {
             ? calls.userUpdates
             : calls.companyUpdates;
       return updateBuilder(sink);
+    },
+    execute() {
+      calls.executeCount++;
+      return Promise.resolve([]);
     },
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -148,6 +153,9 @@ describe('deleteOwnAccount', () => {
     expect('email' in calls.userUpdates[0]).toBe(true);
     expect(calls.userUpdates[0].passwordHash).toBeNull();
     expect(calls.userUpdates[0].name).toBeNull();
+    expect(calls.userUpdates[0].branchId).toBeNull();
+    // Operasyonel purge çalıştı: SET LOCAL purge_mode + 15 DELETE = 16 execute
+    expect(calls.executeCount).toBeGreaterThanOrEqual(16);
   });
 
   it('happy (abonelik yok) → company soft-delete, abonelik update yok', async () => {
