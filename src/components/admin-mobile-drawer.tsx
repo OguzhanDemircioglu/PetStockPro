@@ -58,6 +58,10 @@ export function AdminMobileDrawer({
     isImpersonating,
   });
 
+  // SUPERADMIN kendi bağlamında (impersonation OFF) bir tenant değil — kendine ait
+  // plan/abonelik kartı gösterilmez. Impersonation aktifse o tenant'ın planı görünür.
+  const showPlanCard = !isSuperadmin || isImpersonating;
+
   // Route değişince drawer'ı kapat (link tıklayınca otomatik kapanma).
   useEffect(() => {
     if (lastPathRef.current !== pathname && open) {
@@ -216,8 +220,10 @@ export function AdminMobileDrawer({
           ))}
         </nav>
 
-        {/* Plan card — tüm kart tıklanabilir → /admin/settings/billing (abonelik planları) */}
+        {/* Plan card — tüm kart tıklanabilir → /admin/settings/billing (abonelik planları).
+            SUPERADMIN kendi bağlamında (impersonation OFF) tenant değil → gizli. */}
         <div className="border-t border-line bg-line-soft/30 p-3">
+          {showPlanCard && (
           <Link
             href={'/admin/settings/billing' as never}
             onClick={onClose}
@@ -258,6 +264,7 @@ export function AdminMobileDrawer({
               {plan === 'FREE' ? "PRO'ya geç →" : 'Aboneliği yönet →'}
             </span>
           </Link>
+          )}
 
           {/* Logout — mobile drawer'da topbar logout butonu sm altında gizli */}
           <form action={logoutAction} className="mt-3">

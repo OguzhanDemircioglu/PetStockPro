@@ -44,6 +44,9 @@ export function AdminSidebar({
   const usagePct =
     productLimit > 0 ? Math.min(100, (productCount / productLimit) * 100) : 0;
   const isNearLimit = productLimit > 0 && usagePct >= 80;
+  // SUPERADMIN kendi bağlamında (impersonation OFF) bir tenant değil — kendine ait
+  // plan/abonelik kartı gösterilmez. Impersonation aktifse o tenant'ın planı görünür.
+  const showPlanCard = !isSuperadmin || isImpersonating;
 
   const groups = buildSidebarGroups({
     lowStockCount,
@@ -151,7 +154,9 @@ export function AdminSidebar({
 
       {/* Plan card — gradient cart bg, dark-safe (white text fixed).
           Tüm kart tıklanabilir → /admin/settings/billing (abonelik planları).
-          shrink-0 + nav flex-1 sayesinde her zaman dipte ve görünür kalır. */}
+          shrink-0 + nav flex-1 sayesinde her zaman dipte ve görünür kalır.
+          SUPERADMIN kendi bağlamında (impersonation OFF) tenant değil → gizli. */}
+      {showPlanCard && (
       <Link
         href={'/admin/settings/billing' as never}
         data-testid="sidebar-plan-card"
@@ -203,6 +208,7 @@ export function AdminSidebar({
           {plan === 'FREE' ? "PRO'ya geç →" : 'Aboneliği yönet →'}
         </span>
       </Link>
+      )}
 
       {/* Footer mini */}
       <p className="mt-3 shrink-0 text-center text-[10.5px] text-ink-4">
