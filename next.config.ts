@@ -68,6 +68,9 @@ function buildCsp(opts: { paymentPage?: boolean } = {}): string {
       'https://*.ingest.sentry.io',
       'https://*.r2.cloudflarestorage.com',
       'https://*.r2.dev',
+      // Ödeme sayfası: PayTR iframeResizer.min.js sourcemap (.map) fetch'i (devtools açıkken
+      // konsol hatası vermesin). Fonksiyonel değil ama "detay atlanmasın" temizliği.
+      ...(isPayment ? ['https://www.paytr.com'] : []),
     ].join(' '),
     isPayment
       ? "frame-src 'self' https:"
