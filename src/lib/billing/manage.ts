@@ -1,12 +1,14 @@
 /**
- * Billing yönetimi — iptal + yeniden etkinleştir (Faz 4).
+ * Billing yönetimi — iptal + yeniden etkinleştir + dönem-sonu plan değişimi (Faz 4).
  *
  * İptal: cancelAtPeriodEnd=true → dönem sonuna kadar aktif kalır, sonra cron
  *        (runBillingRenewals) expire eder + plan FREE. Anında kesinti YOK (ödenen dönem hakkı).
  * Yeniden etkinleştir: dönem içindeyse iptali geri al.
+ * schedulePlanChange (H2): PRO↔PRO+ dönem-sonu geçiş, proration YOK — kullanıcı kararı
+ *   (2026-07-02) sonrası SADECE downgrade (PRO+→PRO) burada kalır. Upgrade (PRO→PRO+)
+ *   artık ANINDA + prorated — bkz. [[upgrade-now]] (upgrade-now.ts).
  *
- * Plan değişikliği (upgrade/downgrade proration) + kart güncelleme: kapsam dışı
- * (PLAN-PAYTR-NILVERA §6) — sonraki faz.
+ * Kart güncelleme: kapsam dışı (PLAN-PAYTR-NILVERA §6) — sonraki faz.
  */
 
 import { and, desc, eq, inArray, isNotNull } from 'drizzle-orm';

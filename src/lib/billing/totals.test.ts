@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeInvoiceTotals, addMonths, SUBSCRIPTION_VAT_RATE } from './totals';
+import { computeInvoiceTotals, addMonths, computeProration, SUBSCRIPTION_VAT_RATE } from './totals';
 
 describe('computeInvoiceTotals', () => {
   it('PRO 1.000₺ KDV dahil → matrah 833.33 + vat 166.67 (penny-safe)', () => {
@@ -85,5 +85,43 @@ describe('addMonths', () => {
   it('aylık abonelik için 12 ay (yıllık period)', () => {
     const d = new Date('2026-05-15T10:00:00Z');
     expect(addMonths(d, 12).toISOString().slice(0, 10)).toBe('2027-05-15');
+  });
+});
+
+describe('computeProration', () => {
+  const periodStart = new Date('2026-07-01T00:00:00.000Z');
+  const periodEnd = new Date('2026-07-31T00:00:00.000Z'); // 30 günlük dönem
+
+  it('dönemin tam ortasında (15 gün kaldı) → farkın yarısı', () => {
+    const now = new Date('2026-07-16T00:00:00.000Z');
+    expect(computeProration(1000, 2000, periodStart, periodEnd, now)).toBe(500);
+  });
+
+  it('dönem henüz başlamamışsa (now = periodStart) → farkın TAMAMI', () => {
+    expect(computeProration(1000, 2000, periodStart, periodEnd, periodStart)).toBe(1000);
+  });
+
+  it('dönem tam bittiyse (now = periodEnd) → 0', () => {
+    expect(computeProration(1000, 2000, periodStart, periodEnd, periodEnd)).toBe(0);
+  });
+
+  it('now periodEnd\'i geçmişse (clamp) → 0, negatif dönmez', () => {
+    const past = new Date('2026-08-15T00:00:00.000Z');
+    expect(computeProration(1000, 2000, periodStart, periodEnd, past)).toBe(0);
+  });
+
+  it('now periodStart\'tan önceyse (clamp) → farkın TAMAMI, 100%\'ü aşmaz', () => {
+    const before = new Date('2026-06-01T00:00:00.000Z');
+    expect(computeProration(1000, 2000, periodStart, periodEnd, before)).toBe(1000);
+  });
+
+  it('periodEnd <= periodStart → throw', () => {
+    expect(() => computeProration(1000, 2000, periodEnd, periodStart, periodStart)).toThrow(/Geçersiz dönem/);
+  });
+
+  it('penny-safe yuvarlama (30 günün 1 günü, 1000₺ fark)', () => {
+    const now = new Date('2026-07-30T00:00:00.000Z'); // 1 gün kaldı
+    // 1000 * (1/30) = 33.333... → 33.33
+    expect(computeProration(1000, 2000, periodStart, periodEnd, now)).toBe(33.33);
   });
 });

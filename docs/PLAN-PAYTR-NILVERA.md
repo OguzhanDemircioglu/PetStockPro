@@ -255,8 +255,12 @@ PetStockPro'da **otomatik iade akışı YOK** (MVP — para akışı PayTR'da). 
 
 **Adımlar:** (a) PayTR Mağaza Panel → İşlemler → ilgili `merchant_oid`'i bul → **İade Et**. (b) İlgili `invoices` satırını süperadmin DB Inspector'dan kontrol et/not düş. (c) Gerekirse Nilvera'dan faturayı **iptal et** (`cancelNilveraInvoice`, 3 gün içinde — `src/lib/nilvera/invoice.ts`). Chargeback'te PayTR e-posta ile bilgilendirir; itiraz belgesi PayTR panelinden yüklenir.
 
-### 9.3 Dönem-sonu plan değişimi (H2)
-`subscriptions.pending_plan` (PRO↔PRO+). Anlık tahsilat YOK; değişim **bir sonraki yenilemede** geçerli (proration yok). Renewal çekimden ÖNCE yeni plan fiyatını uygular (`effectivePlanAndAmount`) → callback'te `plan`+`amountTry` güncellenir, `pendingPlan` temizlenir. Böylece **yükseltmeden sonra eski (düşük) tutar asla çekilmez**. UI: `/admin/settings/billing` → "Plan değiştir" + "📅 X tarihinde geçecek (iptal et)".
+### 9.3 Plan değişimi — upgrade ANINDA (proration), downgrade dönem-sonu (H2)
+
+**Kullanıcı kararı (2026-07-02) — H2 revize:** eski "her iki yönde de dönem-sonu, proration yok" kararı SADECE downgrade'de kaldı. Upgrade (PRO→PRO+) artık dönem sonunu beklemez.
+
+- **Upgrade (PRO→PRO+):** `upgradeSubscriptionNow` (`src/lib/billing/upgrade-now.ts`). Kalan güne göre oranlı fark (`computeProration`, totals.ts) saklı karttan ANINDA çekilir (PayTR `chargeSavedCard`, non3d). Başarılıysa `subscriptions.plan`+`companies.plan` hemen güncellenir — **dönem tarihleri DEĞİŞMEZ** (`currentPeriodStart`/`End` aynı kalır), bir sonraki yenileme aynı günde artık PRO+'ın TAM fiyatından çekilir (`amountTry` güncellenir). Prorated fark için ayrı bir `invoices` satırı (periodStart=now, periodEnd=eski currentPeriodEnd) + Nilvera'ya ayrı fatura kesilir. Çekim başarısız/wait_callback → HİÇBİR ŞEY değişmez (fail-safe). UI: `/admin/settings/billing` → önce `previewUpgradeNowAction` ile tutar önizlenir, `window.confirm` sonrası `upgradeNowAction` çeker.
+- **Downgrade (PRO+→PRO):** `subscriptions.pending_plan` (`schedulePlanChange`, manage.ts) — eski davranış aynen korunur. Anlık tahsilat/iade YOK; değişim **bir sonraki yenilemede** geçerli. Renewal çekimden ÖNCE yeni plan fiyatını uygular (`effectivePlanAndAmount`) → callback'te `plan`+`amountTry` güncellenir, `pendingPlan` temizlenir. UI: "Plan değiştir (dönem sonunda)" + "📅 X tarihinde geçecek (iptal et)".
 
 ### 9.4 Downgrade vitrin mutabakatı (I2)
 Abonelik expire → FREE olunca FREE vitrin limitini (10) aşan ürünler otomatik vitrin'den çekilir (`vitrinAutoUnpublishedReason='plan_downgrade'`, en eskiler). Ürünler **silinmez**; PRO'ya dönünce tekrar yayınlanabilir.

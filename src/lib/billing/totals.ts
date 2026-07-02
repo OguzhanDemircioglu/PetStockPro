@@ -75,3 +75,29 @@ export function addMonths(date: Date, months: number): Date {
   d.setMonth(d.getMonth() + months);
   return d;
 }
+
+/**
+ * Dönem içi plan yükseltmesinde (PRO→PRO+) fiyat farkının kalan güne göre
+ * oranlı (prorated) tutarı — dönem tarihleri DEĞİŞMEZ, sadece bu tek seferlik
+ * fark tahsil edilir (kullanıcı kararı 2026-07-02: anlık upgrade + proration).
+ *
+ * fraction = kalan_ms / toplam_dönem_ms (now dönem dışındaysa 0..1'e clamp).
+ * @returns TRY, 2 ondalık, >= 0 — çağıran taraf targetAmountTry > currentAmountTry
+ *   garantiler (downgrade bu fonksiyondan geçmez, schedulePlanChange kullanır).
+ */
+export function computeProration(
+  currentAmountTry: number,
+  targetAmountTry: number,
+  periodStart: Date,
+  periodEnd: Date,
+  now: Date,
+): number {
+  const totalMs = periodEnd.getTime() - periodStart.getTime();
+  if (!Number.isFinite(totalMs) || totalMs <= 0) {
+    throw new Error("Geçersiz dönem: periodEnd periodStart'tan sonra olmalı");
+  }
+  const remainingMs = Math.min(Math.max(periodEnd.getTime() - now.getTime(), 0), totalMs);
+  const fraction = remainingMs / totalMs;
+  const diff = targetAmountTry - currentAmountTry;
+  return Math.round(diff * fraction * 100) / 100;
+}

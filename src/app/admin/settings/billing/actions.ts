@@ -12,6 +12,9 @@ import {
   schedulePlanChange,
   cancelScheduledPlanChange,
 } from '@/lib/billing/manage';
+import { previewUpgradeNow, upgradeSubscriptionNow } from '@/lib/billing/upgrade-now';
+import { resolveAndIssueInvoice } from '@/lib/nilvera/invoice';
+import { isNilveraConfigured } from '@/lib/nilvera/config';
 import { isPaytrConfigured } from '@/lib/paytr/config';
 import { revalidatePath } from 'next/cache';
 
@@ -129,6 +132,47 @@ export async function cancelScheduledPlanChangeAction(): Promise<{ ok: boolean; 
   const companyId = session.user.companyId;
   const res = await withTenant(companyId, (tx) => cancelScheduledPlanChange(companyId, tx));
   if (!res.ok) return { ok: false, error: 'Bekleyen plan değişikliği yok.' };
+  revalidatePath('/admin/settings/billing');
+  return { ok: true };
+}
+
+const UPGRADE_REASON_MESSAGES: Record<string, string> = {
+  not_found: 'Aktif abonelik bulunamadı.',
+  same_plan: 'Zaten bu plandasınız.',
+  not_upgrade: 'Bu bir yükseltme değil — dönem sonu plan değişikliğini kullan.',
+  no_saved_card: 'Kayıtlı kart bulunamadı — kartını yeniden gir.',
+  charge_failed: 'Kart çekimi başarısız oldu.',
+  charge_pending: 'Ödeme bankada onay bekliyor, birkaç dakika sonra tekrar dene.',
+};
+
+export interface UpgradePreviewState {
+  ok: boolean;
+  proratedAmount?: number;
+  daysRemaining?: number;
+  error?: string;
+}
+
+/** PRO→PRO+ anlık yükseltmede çekilecek prorated tutarı önizle (kart ÇEKMEZ). */
+export async function previewUpgradeNowAction(targetPlan: PaidPlan): Promise<UpgradePreviewState> {
+  const session = await auth();
+  if (!session?.user?.companyId) return { ok: false, error: 'Oturum bulunamadı.' };
+  const res = await previewUpgradeNow(session.user.companyId, targetPlan, db);
+  if (!res.ok) return { ok: false, error: UPGRADE_REASON_MESSAGES[res.reason ?? ''] ?? 'İşlem yapılamadı.' };
+  return { ok: true, proratedAmount: res.proratedAmount, daysRemaining: res.daysRemaining };
+}
+
+/**
+ * PRO→PRO+ ANINDA yükselt — kayıtlı karttan prorated farkı çeker, başarılıysa plan
+ * hemen açılır (dönem tarihleri değişmez). Kullanıcı kararı (2026-07-02).
+ */
+export async function upgradeNowAction(targetPlan: PaidPlan): Promise<{ ok: boolean; error?: string }> {
+  const session = await auth();
+  if (!session?.user?.companyId) return { ok: false, error: 'Oturum bulunamadı.' };
+
+  const res = await upgradeSubscriptionNow(session.user.companyId, targetPlan, db, {
+    nilvera: isNilveraConfigured() ? { issueInvoice: resolveAndIssueInvoice } : undefined,
+  });
+  if (!res.ok) return { ok: false, error: UPGRADE_REASON_MESSAGES[res.reason ?? ''] ?? 'İşlem yapılamadı.' };
   revalidatePath('/admin/settings/billing');
   return { ok: true };
 }
