@@ -26,6 +26,14 @@ const nilveraEnvSchema = z.object({
   // 3 karakterli seri (ör. "PSP"). Nilvera sıra numarasını otomatik üretir.
   // Test hesabında "ABC" gibi hazır seriler tanımlıdır; production'da kendi serimiz.
   NILVERA_SERIE: z.string().min(1).optional(),
+
+  // e-Fatura serisi — Nilvera portalında e-Arşiv'den AYRI tanımlanır (2026-07-02 keşfi:
+  // aynı hesapta iki farklı seri adı var). NILVERA_SERIE ile fallback YAPILMAZ — yanlış
+  // seri Nilvera'dan aynı "Seri Firmaya Tanımlı Değil" hatasını üretir, bilinçli boş
+  // bırakılıp createEInvoice net bir hata fırlatır (e-Fatura mükellefi resolveAndIssueInvoice
+  // yönlendirmesinde daha az sık, ama satır çıkarsa fatura pending'te takılıp kalmasın diye
+  // erken açık hata tercih edildi).
+  NILVERA_SERIE_EFATURA: z.string().min(1).optional(),
 });
 
 export type NilveraConfig = z.infer<typeof nilveraEnvSchema>;
@@ -49,6 +57,7 @@ export function getNilveraConfig(): NilveraConfig {
     NILVERA_SELLER_VKN: emptyToUndefined(process.env.NILVERA_SELLER_VKN),
     NILVERA_SELLER_TITLE: emptyToUndefined(process.env.NILVERA_SELLER_TITLE),
     NILVERA_SERIE: emptyToUndefined(process.env.NILVERA_SERIE),
+    NILVERA_SERIE_EFATURA: emptyToUndefined(process.env.NILVERA_SERIE_EFATURA),
   });
 
   if (!parsed.success) {

@@ -143,12 +143,19 @@ function buildInvoiceModel(
   };
 }
 
-/** input.series ?? NILVERA_SERIE env. Yoksa hata. */
-function resolveSeries(input: NilveraInvoiceCreateRequest): string {
-  const series = input.series ?? getNilveraConfig().NILVERA_SERIE;
+/**
+ * input.series ?? ilgili env (kind'e göre). e-Arşiv ve e-Fatura Nilvera portalında AYRI
+ * seri adlarıyla tanımlanır (2026-07-02 keşfi) — birbirine fallback YAPILMAZ, yanlış seri
+ * Nilvera'dan aynı "Seri Firmaya Tanımlı Değil" hatasını üretip fatura yine pending kalır.
+ */
+function resolveSeries(input: NilveraInvoiceCreateRequest, kind: 'earsiv' | 'efatura'): string {
+  const cfg = getNilveraConfig();
+  const envSerie = kind === 'efatura' ? cfg.NILVERA_SERIE_EFATURA : cfg.NILVERA_SERIE;
+  const series = input.series ?? envSerie;
   if (!series) {
+    const envName = kind === 'efatura' ? 'NILVERA_SERIE_EFATURA' : 'NILVERA_SERIE';
     throw new Error(
-      'Nilvera fatura serisi yok — input.series veya NILVERA_SERIE env gerekli (firmaya tanımlı 3-karakter seri).',
+      `Nilvera ${kind === 'efatura' ? 'e-Fatura' : 'e-Arşiv'} serisi yok — input.series veya ${envName} env gerekli (Nilvera portalda firmaya tanımlı 3-karakter seri).`,
     );
   }
   return series;
@@ -191,7 +198,7 @@ export async function createNilveraInvoice(
   input: NilveraInvoiceCreateRequest,
 ): Promise<NilveraInvoiceResult> {
   const validated = nilveraInvoiceCreateRequestSchema.parse(input);
-  const series = resolveSeries(validated);
+  const series = resolveSeries(validated, 'earsiv');
   const uuid = resolveUuid(validated.externalRef);
 
   const model = buildInvoiceModel(validated, series, uuid);
@@ -241,7 +248,7 @@ export async function createEInvoice(
     throw new Error('e-Fatura için CustomerAlias (etiket) zorunlu.');
   }
   const validated = nilveraInvoiceCreateRequestSchema.parse(input);
-  const series = resolveSeries(validated);
+  const series = resolveSeries(validated, 'efatura');
   const uuid = resolveUuid(validated.externalRef);
 
   const model = buildInvoiceModel(validated, series, uuid);

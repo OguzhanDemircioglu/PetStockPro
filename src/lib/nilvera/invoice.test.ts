@@ -52,6 +52,7 @@ describe('nilvera invoice operations', () => {
     vi.stubEnv('NILVERA_SELLER_VKN', '1234567890');
     vi.stubEnv('NILVERA_BASE_URL', 'https://apitest.nilvera.com');
     vi.stubEnv('NILVERA_SERIE', 'PSP');
+    vi.stubEnv('NILVERA_SERIE_EFATURA', 'EFT');
     _resetNilveraConfigCache();
   });
 
@@ -264,6 +265,30 @@ describe('nilvera invoice operations', () => {
     it('boş alias → throw (fetch yok)', async () => {
       const fetchSpy = vi.spyOn(globalThis, 'fetch');
       await expect(createEInvoice(validInvoiceInput, '')).rejects.toThrow(/etiket|alias|CustomerAlias/i);
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it('series input yoksa NILVERA_SERIE_EFATURA env kullanılır (NILVERA_SERIE\'den AYRI)', async () => {
+      vi.stubEnv('NILVERA_SERIE_EFATURA', 'EFT');
+      _resetNilveraConfigCache();
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        makeMockResponse(200, validSendResponse),
+      );
+
+      const { series: _omit, ...noSeries } = validInvoiceInput;
+      await createEInvoice(noSeries, 'urn:mail:pk@mavi.com');
+
+      const body = JSON.parse((fetchSpy.mock.calls[0][1] as RequestInit).body as string);
+      // e-Arşiv env'i (PSP, beforeEach'te stub'lı) DEĞİL, e-Fatura'ya özel seri kullanılır
+      expect(body.EInvoice.InvoiceInfo.InvoiceSerieOrNumber).toBe('EFT');
+    });
+
+    it('NILVERA_SERIE_EFATURA tanımsızsa NILVERA_SERIE\'ye fallback YAPILMAZ → throw', async () => {
+      vi.stubEnv('NILVERA_SERIE_EFATURA', '');
+      _resetNilveraConfigCache();
+      const fetchSpy = vi.spyOn(globalThis, 'fetch');
+      const { series: _omit, ...noSeries } = validInvoiceInput;
+      await expect(createEInvoice(noSeries, 'urn:mail:pk@mavi.com')).rejects.toThrow(/e-Fatura serisi/i);
       expect(fetchSpy).not.toHaveBeenCalled();
     });
   });
