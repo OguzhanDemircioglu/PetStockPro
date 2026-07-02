@@ -224,8 +224,10 @@ export function AdminMobileDrawer({
             SUPERADMIN kendi bağlamında (impersonation OFF) tenant değil → gizli. */}
         <div className="border-t border-line bg-line-soft/30 p-3">
           {showPlanCard && (
-          <Link
-            href={'/admin/settings/billing' as never}
+          // Tam sayfa geçişi kasıtlı — bkz. admin-sidebar.tsx aynı Link'teki not
+          // (PayTR iframe CSP'si client-side navigasyonda yenilenmiyor).
+          <a
+            href="/admin/settings/billing"
             onClick={onClose}
             data-testid="drawer-plan-card"
             className="group relative block overflow-hidden rounded-2xl bg-gradient-to-br from-cart to-cart-7 p-3 text-white shadow-[0_8px_24px_rgba(26,85,136,.32)]"
@@ -263,7 +265,7 @@ export function AdminMobileDrawer({
             <span className="mt-2 block rounded-[9px] bg-white/18 px-2.5 py-2 text-center text-[12.5px] font-bold text-white transition-colors group-hover:bg-white/30">
               {plan === 'FREE' ? "PRO'ya geç →" : 'Aboneliği yönet →'}
             </span>
-          </Link>
+          </a>
           )}
 
           {/* Logout — mobile drawer'da topbar logout butonu sm altında gizli */}

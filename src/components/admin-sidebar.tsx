@@ -157,8 +157,12 @@ export function AdminSidebar({
           shrink-0 + nav flex-1 sayesinde her zaman dipte ve görünür kalır.
           SUPERADMIN kendi bağlamında (impersonation OFF) tenant değil → gizli. */}
       {showPlanCard && (
-      <Link
-        href={'/admin/settings/billing' as never}
+      // Tam sayfa geçişi kasıtlı: /admin/settings/billing PayTR iframe için gevşek CSP
+      // header'ı taşır (bkz. next.config.ts). Next.js <Link> client-side navigasyon
+      // yaptığı için tarayıcı bu sayfaya geçerken header'ı yeniden çekmez ve sıkı CSP'yi
+      // korumaya devam eder → PayTR iframe ERR_BLOCKED_BY_CSP ile bloklanır.
+      <a
+        href="/admin/settings/billing"
         data-testid="sidebar-plan-card"
         className="group relative mt-3 block shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br from-cart to-cart-7 p-3.5 text-white shadow-[0_8px_24px_rgba(26,85,136,.32)] transition-transform hover:-translate-y-0.5"
       >
@@ -207,7 +211,7 @@ export function AdminSidebar({
         <span className="relative mt-3 block rounded-[9px] bg-white/18 px-2.5 py-2 text-center text-[13px] font-bold text-white transition-colors group-hover:bg-white/30">
           {plan === 'FREE' ? "PRO'ya geç →" : 'Aboneliği yönet →'}
         </span>
-      </Link>
+      </a>
       )}
 
       {/* Footer mini */}

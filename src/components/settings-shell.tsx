@@ -90,22 +90,42 @@ function SettingsNav({ current }: { current: SettingsSection }) {
     >
       {NAV.map((item) => {
         const isActive = item.key === current;
+        const className = isActive
+          ? 'inline-flex shrink-0 items-center gap-2 rounded-xl border border-cat bg-cat-soft px-3 py-2 text-[13px] font-bold text-cart shadow-[var(--shadow-sm)] sm:px-4 sm:py-2.5 sm:text-sm lg:flex'
+          : 'inline-flex shrink-0 items-center gap-2 rounded-xl border border-transparent px-3 py-2 text-[13px] text-ink-2 hover:border-line hover:bg-paper sm:px-4 sm:py-2.5 sm:text-sm lg:flex';
+        const content = (
+          <>
+            <span aria-hidden className="text-base sm:text-lg">
+              {item.emoji}
+            </span>
+            <span className="truncate">{item.label}</span>
+          </>
+        );
+        // billing: tam sayfa geçişi kasıtlı — PayTR iframe gevşek CSP header'ı client-side
+        // navigasyonda yenilenmiyor, <a> ile taze fetch garanti edilir (diğer item'larda
+        // CSP farkı yok, SPA hızı korunur).
+        if (item.key === 'billing') {
+          return (
+            <a
+              key={item.key}
+              href={item.href}
+              aria-current={isActive ? 'page' : undefined}
+              data-settings-link={item.key}
+              className={className}
+            >
+              {content}
+            </a>
+          );
+        }
         return (
           <Link
             key={item.key}
             href={item.href as never}
             aria-current={isActive ? 'page' : undefined}
             data-settings-link={item.key}
-            className={
-              isActive
-                ? 'inline-flex shrink-0 items-center gap-2 rounded-xl border border-cat bg-cat-soft px-3 py-2 text-[13px] font-bold text-cart shadow-[var(--shadow-sm)] sm:px-4 sm:py-2.5 sm:text-sm lg:flex'
-                : 'inline-flex shrink-0 items-center gap-2 rounded-xl border border-transparent px-3 py-2 text-[13px] text-ink-2 hover:border-line hover:bg-paper sm:px-4 sm:py-2.5 sm:text-sm lg:flex'
-            }
+            className={className}
           >
-            <span aria-hidden className="text-base sm:text-lg">
-              {item.emoji}
-            </span>
-            <span className="truncate">{item.label}</span>
+            {content}
           </Link>
         );
       })}
