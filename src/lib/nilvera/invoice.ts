@@ -159,6 +159,26 @@ function resolveUuid(externalRef: string): string {
   return UUID_RE.test(externalRef) ? externalRef : crypto.randomUUID();
 }
 
+/**
+ * Nihai tüketici e-Arşiv'de GİB CustomerInfo.Name'i "Ad Soyad" (boşluklu) ister —
+ * bireysel müşteri olarak işlenir. Bizim `title` şirket/marka adı (companies.name),
+ * çoğu pet shop markası TEK KELİME ("Miyav", "Waggy") → Nilvera 400 ile reddeder
+ * ("Ad Soyad Arasında Bir Boşluk Olmalıdır", prod olay 2026-07-02). Yeni kullanıcı
+ * verisi istemeden (self-service kalsın) boşluksuzsa nötr sabit sonek eklenir.
+ */
+function ensureCustomerNameHasSpace(title: string): string {
+  const t = title.trim();
+  return t.includes(' ') ? t : `${t} Pet Shop`;
+}
+
+/** Nihai tüketici (TaxNumber=NIHAI_TUKETICI_TAX_NUMBER) isteği — Name boşluk garantili. */
+function toNihaiTuketiciRequest(input: IssueInvoiceInput): NilveraInvoiceCreateRequest {
+  return toCreateRequest(
+    { ...input, customer: { ...input.customer, title: ensureCustomerNameHasSpace(input.customer.title) } },
+    NIHAI_TUKETICI_TAX_NUMBER,
+  );
+}
+
 // ── e-Arşiv ────────────────────────────────────────────────────────────
 
 /**
@@ -306,7 +326,7 @@ export async function resolveAndIssueInvoice(
 
   // Vergi no yok → nihai tüketici e-Arşiv (ad + adres yeterli)
   if (!tax) {
-    const res = await createNilveraInvoice(toCreateRequest(input, NIHAI_TUKETICI_TAX_NUMBER));
+    const res = await createNilveraInvoice(toNihaiTuketiciRequest(input));
     return { ...res, kind: 'earsiv' };
   }
 
@@ -317,7 +337,7 @@ export async function resolveAndIssueInvoice(
   // checkTaxpayer ağ/5xx hatasında 'invalid' DÖNMEZ, throw eder → o durum bu daldan
   // geçmez, yukarı propage olur (caller pending bırakır + reconcile retry).
   if (result.kind === 'invalid') {
-    const res = await createNilveraInvoice(toCreateRequest(input, NIHAI_TUKETICI_TAX_NUMBER));
+    const res = await createNilveraInvoice(toNihaiTuketiciRequest(input));
     return { ...res, kind: 'earsiv' };
   }
 

@@ -297,6 +297,35 @@ describe('nilvera invoice operations', () => {
       expect(body.ArchiveInvoice.CustomerInfo.TaxNumber).toBe(NIHAI_TUKETICI_TAX_NUMBER);
     });
 
+    it('vergi no yok + tek kelime ünvan → Name\'e boşluklu sonek eklenir (GİB Ad Soyad şartı)', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        makeMockResponse(200, validSendResponse),
+      );
+
+      await resolveAndIssueInvoice(
+        { ...baseIssueInput, customer: { taxNumber: null, title: 'sda486', city: 'İzmir' } },
+        { checkTaxpayer: vi.fn() },
+      );
+
+      const body = JSON.parse((fetchSpy.mock.calls[0][1] as RequestInit).body as string);
+      expect(body.ArchiveInvoice.CustomerInfo.Name).toBe('sda486 Pet Shop');
+    });
+
+    it('checkTaxpayer invalid + tek kelime ünvan → Name\'e boşluklu sonek eklenir', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        makeMockResponse(200, validSendResponse),
+      );
+      const check = vi.fn().mockResolvedValue({ kind: 'invalid', title: null, alias: null });
+
+      await resolveAndIssueInvoice(
+        { ...baseIssueInput, customer: { taxNumber: '9999999999', title: 'Miyav', city: 'İzmir' } },
+        { checkTaxpayer: check },
+      );
+
+      const body = JSON.parse((fetchSpy.mock.calls[0][1] as RequestInit).body as string);
+      expect(body.ArchiveInvoice.CustomerInfo.Name).toBe('Miyav Pet Shop');
+    });
+
     it('VKN + checkTaxpayer efatura → createEInvoice (etikete)', async () => {
       const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
         makeMockResponse(200, validSendResponse),
