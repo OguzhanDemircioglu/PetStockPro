@@ -7,8 +7,8 @@ import { subscriptions, companies, users, invoices } from '@/db/schema';
 import { PLAN_LIMITS } from '@/lib/constants/plan-limits';
 import type { PaytrChargeResponse } from '@/lib/paytr/types';
 
-// Fiyatlar PLAN_LIMITS'ten canlı okunur — şu an geçici test fiyatları (10/20₺, bkz.
-// plan-limits.ts yorumları); "gerçek" fiyatlara (1000/2000) dönünce test kırılmaz.
+// Fiyatlar PLAN_LIMITS'ten canlı okunur (PRO 1000 / PRO+ 2000₺) — hardcode YOK,
+// fiyat değişse de test kırılmaz.
 const PRO_PRICE = PLAN_LIMITS.PRO.priceMonthlyTry;
 const PRO_PLUS_PRICE = PLAN_LIMITS.PRO_PLUS.priceMonthlyTry;
 const DIFF = PRO_PLUS_PRICE - PRO_PRICE;

@@ -23,23 +23,22 @@ describe('PLAN_LIMITS', () => {
     expect(PLAN_LIMITS.FREE.priceMonthlyTry).toBe(0);
     expect(PLAN_LIMITS.FREE.priceMonthlyUsd).toBe(0);
   });
-  // ⚠️ priceMonthlyTry GEÇİCİ TEST FİYATI (PRO 10 / PRO+ 20) — gerçek 1000/2000, lansman öncesi geri al.
-  it('PRO = 500 ürün / 500 vitrin / ∞ şube / Excel + raporlar / 10₺ test / 20$', () => {
+  it('PRO = 500 ürün / 500 vitrin / ∞ şube / Excel + raporlar / 1000₺ / 20$', () => {
     expect(PLAN_LIMITS.PRO.productLimit).toBe(500);
     expect(PLAN_LIMITS.PRO.vitrinLimit).toBe(500);
     expect(PLAN_LIMITS.PRO.branchLimit).toBe(Infinity);
     expect(PLAN_LIMITS.PRO.excelImport).toBe(true);
     expect(PLAN_LIMITS.PRO.advancedReports).toBe(true);
-    expect(PLAN_LIMITS.PRO.priceMonthlyTry).toBe(10);
+    expect(PLAN_LIMITS.PRO.priceMonthlyTry).toBe(1000);
     expect(PLAN_LIMITS.PRO.priceMonthlyUsd).toBe(20);
   });
-  it('PRO_PLUS = ∞ hepsi / 20₺ test / 50$', () => {
+  it('PRO_PLUS = ∞ hepsi / 2000₺ / 50$', () => {
     expect(PLAN_LIMITS.PRO_PLUS.productLimit).toBe(Infinity);
     expect(PLAN_LIMITS.PRO_PLUS.vitrinLimit).toBe(Infinity);
     expect(PLAN_LIMITS.PRO_PLUS.branchLimit).toBe(Infinity);
     expect(PLAN_LIMITS.PRO_PLUS.excelImport).toBe(true);
     expect(PLAN_LIMITS.PRO_PLUS.advancedReports).toBe(true);
-    expect(PLAN_LIMITS.PRO_PLUS.priceMonthlyTry).toBe(20);
+    expect(PLAN_LIMITS.PRO_PLUS.priceMonthlyTry).toBe(2000);
     expect(PLAN_LIMITS.PRO_PLUS.priceMonthlyUsd).toBe(50);
   });
 });
@@ -106,6 +105,6 @@ describe('planBranchLimitDisplay', () => {
 
 describe('planPrice', () => {
   it('FREE = 0', () => expect(planPrice('FREE')).toBe(0));
-  it('PRO = 10 (test fiyatı)', () => expect(planPrice('PRO')).toBe(10));
-  it('PRO_PLUS = 20 (test fiyatı)', () => expect(planPrice('PRO_PLUS')).toBe(20));
+  it('PRO = 1000', () => expect(planPrice('PRO')).toBe(1000));
+  it('PRO_PLUS = 2000', () => expect(planPrice('PRO_PLUS')).toBe(2000));
 });

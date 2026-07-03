@@ -4,6 +4,7 @@ vi.mock('@/lib/audit/log', () => ({ writeAuditLog: vi.fn(), writeAuditLogAsync: 
 
 import { runBillingRenewals } from './renewals';
 import { subscriptions, companies, users } from '@/db/schema';
+import { PLAN_LIMITS } from '@/lib/constants/plan-limits';
 
 interface DueRow {
   id: string;
@@ -140,16 +141,16 @@ describe('runBillingRenewals', () => {
     expect(charge).not.toHaveBeenCalled();
   });
 
-  it('H2: pendingPlan set → yeni plan fiyatı çekilir (PRO_PLUS = 200000 kuruş... test fiyatıyla)', async () => {
-    // amountTry eski plan snapshot'ı (1000) AMA pendingPlan=PRO_PLUS → PLAN_LIMITS fiyatı kullanılır.
-    const { db } = makeDb({ dueRows: [dueRow({ plan: 'PRO', pendingPlan: 'PRO_PLUS', amountTry: '10.00' })] });
+  it('H2: pendingPlan set → yeni plan fiyatı çekilir (snapshot DEĞİL, PLAN_LIMITS)', async () => {
+    // amountTry eski plan snapshot'ı AMA pendingPlan=PRO_PLUS → PLAN_LIMITS.PRO_PLUS fiyatı kullanılır.
+    const { db } = makeDb({ dueRows: [dueRow({ plan: 'PRO', pendingPlan: 'PRO_PLUS', amountTry: '500.00' })] });
     const charge = vi.fn().mockResolvedValue({ status: 'success' });
     const processCallback = vi.fn().mockResolvedValue({ outcome: 'payment_succeeded' });
 
     await runBillingRenewals({ db, charge, processCallback, now });
 
-    // PLAN_LIMITS.PRO_PLUS.priceMonthlyTry (test fiyatı 20) × 100 = 2000 kuruş — amountTry(10) DEĞİL.
-    expect(charge.mock.calls[0][0].paymentAmount).toBe(2000);
+    // Fiyat-agnostik: PLAN_LIMITS.PRO_PLUS.priceMonthlyTry × 100 kuruş — amountTry snapshot'ı DEĞİL.
+    expect(charge.mock.calls[0][0].paymentAmount).toBe(Math.round(PLAN_LIMITS.PRO_PLUS.priceMonthlyTry * 100));
   });
 
   it('active due + charge success → renewed 1 + processCallback success', async () => {

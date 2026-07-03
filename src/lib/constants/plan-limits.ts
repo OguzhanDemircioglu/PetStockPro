@@ -59,7 +59,7 @@ export const PLAN_LIMITS: Record<'FREE' | 'PRO' | 'PRO_PLUS', PlanFeatures> = {
     branchLimit: Infinity,
     excelImport: true,
     advancedReports: true,
-    priceMonthlyTry: 10, // ⚠️ GEÇİCİ TEST FİYATI (ödeme akışı testi) — GERÇEK: 1000. Lansman öncesi geri al.
+    priceMonthlyTry: 1000,
     priceMonthlyUsd: 20,
   },
   PRO_PLUS: {
@@ -68,7 +68,7 @@ export const PLAN_LIMITS: Record<'FREE' | 'PRO' | 'PRO_PLUS', PlanFeatures> = {
     branchLimit: Infinity,
     excelImport: true,
     advancedReports: true,
-    priceMonthlyTry: 20, // ⚠️ GEÇİCİ TEST FİYATI (ödeme akışı testi) — GERÇEK: 2000. Lansman öncesi geri al.
+    priceMonthlyTry: 2000,
     priceMonthlyUsd: 50,
   },
 } as const;
