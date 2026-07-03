@@ -1,9 +1,10 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { PLAN_LABELS } from '@/lib/constants/plan-limits';
 import { swalConfirm, swalToast } from '@/lib/ui/swal';
+import { PaytrIframeModal } from './paytr-iframe-modal';
 import {
   cancelSubscriptionAction,
   reactivateSubscriptionAction,
@@ -11,6 +12,7 @@ import {
   cancelScheduledPlanChangeAction,
   previewUpgradeNowAction,
   upgradeNowAction,
+  startUpgradeCheckoutAction,
 } from './actions';
 
 interface Props {
@@ -24,6 +26,7 @@ interface Props {
 
 export function SubscriptionActions({ cancelScheduled, currentPlan, pendingPlan, periodEndLabel }: Props) {
   const [pending, startTransition] = useTransition();
+  const [iframeUrl, setIframeUrl] = useState<string | null>(null);
   const router = useRouter();
 
   const otherPlan: 'PRO' | 'PRO_PLUS' = currentPlan === 'PRO' ? 'PRO_PLUS' : 'PRO';
@@ -64,19 +67,35 @@ export function SubscriptionActions({ cancelScheduled, currentPlan, pendingPlan,
       const amount = (preview.proratedAmount ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 });
       const confirmed = await swalConfirm(
         `${PLAN_LABELS[otherPlan]} planına hemen yükselt`,
-        `Kalan ${preview.daysRemaining} gün için ${amount} ₺ kayıtlı kartından hemen çekilecek ve planın anında ${PLAN_LABELS[otherPlan]} olacak.`,
+        `Kalan ${preview.daysRemaining} gün için ${amount} ₺ tahsil edilecek ve planın anında ${PLAN_LABELS[otherPlan]} olacak.`,
         'Evet, yükselt',
         'Vazgeç',
         'question',
       );
       if (!confirmed) return;
+
+      // 1) Saklı kart varsa: prorated farkı anında çek + planı uygula.
       const res = await upgradeNowAction(otherPlan);
       if (res.ok) {
         await swalToast('Planın yükseltildi 🎉', undefined, 'success');
         router.refresh();
-      } else {
-        await swalToast(res.error ?? 'İşlem başarısız.', undefined, 'error');
+        return;
       }
+      // 2) Saklı kart YOKSA: kart formunu (PayTR iframe) aç — prorated fark iframe'de tahsil edilir.
+      if (res.reason === 'no_saved_card') {
+        const checkout = await startUpgradeCheckoutAction(otherPlan);
+        if (checkout.applied) {
+          await swalToast('Planın yükseltildi 🎉', undefined, 'success');
+          router.refresh();
+        } else if (checkout.ok && checkout.iframeUrl) {
+          setIframeUrl(checkout.iframeUrl);
+        } else {
+          await swalToast(checkout.error ?? 'İşlem başarısız.', undefined, 'error');
+        }
+        return;
+      }
+      // 3) Diğer hatalar: sade toast.
+      await swalToast(res.error ?? 'İşlem başarısız.', undefined, 'error');
     });
   }
 
@@ -147,6 +166,9 @@ export function SubscriptionActions({ cancelScheduled, currentPlan, pendingPlan,
           {pending ? '…' : 'Aboneliği iptal et'}
         </button>
       )}
+
+      {/* Saklı kart yokken yükseltme: PayTR kart formu (prorated fark) */}
+      {iframeUrl && <PaytrIframeModal iframeUrl={iframeUrl} onClose={() => setIframeUrl(null)} />}
     </div>
   );
 }

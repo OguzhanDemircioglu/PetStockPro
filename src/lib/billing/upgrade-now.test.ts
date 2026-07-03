@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/lib/audit/log', () => ({ writeAuditLog: vi.fn(), writeAuditLogAsync: vi.fn() }));
 
-import { previewUpgradeNow, upgradeSubscriptionNow } from './upgrade-now';
+import { previewUpgradeNow, upgradeSubscriptionNow, startUpgradeCheckout } from './upgrade-now';
 import { subscriptions, companies, users, invoices } from '@/db/schema';
 import { PLAN_LIMITS } from '@/lib/constants/plan-limits';
 import type { PaytrChargeResponse } from '@/lib/paytr/types';
@@ -259,5 +259,57 @@ describe('upgradeSubscriptionNow', () => {
     });
     expect(res.ok).toBe(true); // ödeme + plan değişimi zaten başarılı — Nilvera best-effort
     expect(calls.invoiceUpdates[0]).toMatchObject({ lastNilveraError: 'Nilvera 500' });
+  });
+});
+
+describe('startUpgradeCheckout (saklı kart yokken iframe)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('prorated>0 → iframeUrl + pending_upgrade set + createToken prorated tutar/store_card ile', async () => {
+    const { db, calls } = makeDb({ subRow: subRow({ paytrUtoken: 'utok-1' }) });
+    const createToken = vi.fn().mockResolvedValue('tok-abc');
+    const res = await startUpgradeCheckout('comp-1', 'PRO_PLUS', db, { createToken, now, userIp: '9.9.9.9' });
+
+    expect(res.ok).toBe(true);
+    expect(res.iframeUrl).toContain('tok-abc');
+    expect(res.proratedAmount).toBe(HALF_PRORATION);
+    // pending_upgrade set (callback bu oid'i tanır; pending_merchant_oid'e DOKUNMAZ → yenileme etkilenmez)
+    expect(calls.subUpdates[0]).toMatchObject({ pendingUpgradeAmountTry: HALF_PRORATION.toFixed(2) });
+    expect(calls.subUpdates[0].pendingUpgradeOid).toBeTruthy();
+    expect(calls.subUpdates[0]).not.toHaveProperty('pendingMerchantOid');
+    expect(createToken).toHaveBeenCalledWith(
+      expect.objectContaining({
+        paymentAmount: Math.round(HALF_PRORATION * 100),
+        storeCard: 1,
+        userIp: '9.9.9.9',
+      }),
+    );
+  });
+
+  it('prorated<=0 (dönem sonu) → applied, plan hemen uygulanır, createToken çağrılmaz', async () => {
+    const periodEnd = new Date('2026-07-31T00:00:00.000Z');
+    const { db, calls } = makeDb({ subRow: subRow({ currentPeriodEnd: periodEnd, paytrUtoken: 'utok-1' }) });
+    const createToken = vi.fn();
+    const res = await startUpgradeCheckout('comp-1', 'PRO_PLUS', db, { createToken, now: () => periodEnd });
+
+    expect(res).toMatchObject({ ok: true, applied: true, proratedAmount: 0 });
+    expect(createToken).not.toHaveBeenCalled();
+    expect(calls.subUpdates[0]).toMatchObject({ plan: 'PRO_PLUS' }); // applyUpgradeInTx uyguladı
+    expect(calls.invoiceInserts).toHaveLength(0);
+  });
+
+  it('aktif abonelik yoksa → not_found, createToken çağrılmaz', async () => {
+    const { db } = makeDb({ subRow: null });
+    const createToken = vi.fn();
+    const res = await startUpgradeCheckout('comp-1', 'PRO_PLUS', db, { createToken, now });
+    expect(res).toEqual({ ok: false, reason: 'not_found' });
+    expect(createToken).not.toHaveBeenCalled();
+  });
+
+  it('downgrade (hedef fiyat düşük) → not_upgrade', async () => {
+    const { db } = makeDb({ subRow: subRow({ plan: 'PRO_PLUS', amountTry: PRO_PLUS_PRICE.toFixed(2) }) });
+    const createToken = vi.fn();
+    const res = await startUpgradeCheckout('comp-1', 'PRO', db, { createToken, now });
+    expect(res).toEqual({ ok: false, reason: 'not_upgrade' });
   });
 });

@@ -26,6 +26,7 @@ import { writeAuditLog } from '@/lib/audit/log';
 import { resolveAndIssueInvoice } from '@/lib/nilvera/invoice';
 import { loadInvoiceCustomer } from './invoice-customer';
 import { processedWebhooks, subscriptions, invoices, companies, users } from '@/db/schema';
+import { applyUpgradeInTx, type UpgradeTx } from './upgrade-now';
 import { addMonths, computeInvoiceTotals, type InvoiceTotals } from './totals';
 import { alertPaymentAnomaly, alertDunning, type PaymentAnomalyInput } from './alerts';
 import { sendDunningEmail } from './emails';
@@ -111,7 +112,14 @@ interface SubscriptionRow {
 /** Transaction içinden dönen sonuç + (varsa) post-tx Nilvera bağlamı + post-tx alert. */
 interface TxOutcome {
   result: PaytrCallbackResult;
-  nilveraCtx?: { invoiceId: string; companyId: string; plan: 'FREE' | 'PRO' | 'PRO_PLUS'; totals: InvoiceTotals };
+  nilveraCtx?: {
+    invoiceId: string;
+    companyId: string;
+    plan: 'FREE' | 'PRO' | 'PRO_PLUS';
+    totals: InvoiceTotals;
+    /** true → prorated dönem-içi yükseltme faturası (Nilvera satır etiketi farklı). */
+    isUpgrade?: boolean;
+  };
   /** Tx commit sonrası gönderilecek süperadmin alert (network çağrısı tx DIŞINDA). */
   alert?: PaymentAnomalyInput;
   /** Tx commit sonrası dunning bildirimi (yenileme başarısız) — Telegram + kullanıcı e-postası. */
@@ -174,7 +182,16 @@ async function processInTransaction(input: PaytrCallbackInput, tx: Tx, now: Date
     processedAt: now,
   });
 
-  // 2. Subscription lookup
+  // 1.5 UPGRADE ödemesi mi? — saklı kart YOKKEN iframe ile dönem-içi PRO→PRO+ (İZOLE yol,
+  //     pending_upgrade_oid ile eşleşir; pending_merchant_oid yenileme/checkout yolunu HİÇ
+  //     etkilemez). Prorated tutar doğrulanır, plan uygulanır (dönem KORUNUR), kart saklanır.
+  const upgSub = await findSubByPendingUpgradeOid(tx, input.merchantOid);
+  if (upgSub) {
+    const ownerUserId = await findCompanyOwner(tx, upgSub.companyId);
+    return applyUpgradePayment(input, upgSub, ownerUserId, tx, now);
+  }
+
+  // 2. Subscription lookup (yenileme / ilk checkout)
   const sub = await findSubscriptionByPendingOid(tx, input.merchantOid);
   if (!sub) {
     return {
@@ -269,6 +286,143 @@ async function findCompanyOwner(tx: Tx, companyId: string): Promise<string | nul
     .where(eq(users.companyId, companyId))
     .limit(1);
   return anyUser[0]?.id ?? null;
+}
+
+// ── UPGRADE (iframe, saklı kart YOKKEN) — İZOLE yol ─────────────
+
+interface UpgradeSubRow {
+  id: string;
+  companyId: string;
+  plan: 'FREE' | 'PRO' | 'PRO_PLUS';
+  currentPeriodEnd: Date;
+  pendingUpgradeAmountTry: string | null;
+}
+
+async function findSubByPendingUpgradeOid(tx: Tx, merchantOid: string): Promise<UpgradeSubRow | null> {
+  const rows = await tx
+    .select({
+      id: subscriptions.id,
+      companyId: subscriptions.companyId,
+      plan: subscriptions.plan,
+      currentPeriodEnd: subscriptions.currentPeriodEnd,
+      pendingUpgradeAmountTry: subscriptions.pendingUpgradeAmountTry,
+    })
+    .from(subscriptions)
+    .where(eq(subscriptions.pendingUpgradeOid, merchantOid))
+    .limit(1);
+  return (rows[0] as UpgradeSubRow) ?? null;
+}
+
+/**
+ * Dönem-içi PRO→PRO+ iframe ödemesi callback'i. Sadece PRO→PRO_PLUS yükseltmesi olduğundan
+ * hedef plan türetilir. Prorated tutar pending_upgrade_amount_try ile doğrulanır (manipülasyon
+ * koruması). Başarı → applyUpgradeInTx (dönem KORUNUR) + kart saklanır + pending temizlenir;
+ * başarısız/uyuşmazsa plan PRO kalır, pending temizlenir (dunning YOK — bu bir yenileme değil).
+ */
+async function applyUpgradePayment(
+  input: PaytrCallbackInput,
+  upg: UpgradeSubRow,
+  ownerUserId: string | null,
+  tx: Tx,
+  now: Date,
+): Promise<TxOutcome> {
+  const clearPending = { pendingUpgradeOid: null, pendingUpgradeAmountTry: null, updatedAt: now };
+  const ownerMissingAlert: PaymentAnomalyInput | undefined = ownerUserId
+    ? undefined
+    : { kind: 'owner_missing', merchantOid: input.merchantOid, companyId: upg.companyId, subscriptionId: upg.id };
+
+  // Ödeme başarısız (kart iframe'de reddedildi) → plan PRO kalır, pending temizlenir. Dunning YOK.
+  if (input.status === 'failed') {
+    await tx.update(subscriptions).set(clearPending).where(eq(subscriptions.id, upg.id));
+    if (ownerUserId) {
+      await writeAuditLog(
+        {
+          companyId: upg.companyId,
+          userId: ownerUserId,
+          action: 'subscription.upgrade_failed',
+          entityType: 'subscription',
+          entityId: upg.id,
+          afterState: { reason: input.failedReason ?? null, merchantOid: input.merchantOid },
+        },
+        tx,
+        now,
+      );
+    }
+    return {
+      result: { outcome: 'payment_failed', merchantOid: input.merchantOid, subscriptionId: upg.id },
+      alert: ownerMissingAlert,
+    };
+  }
+
+  // Başarı → prorated tutar doğrula. Uyuşmazsa plan AÇILMAZ + alert + pending temizle.
+  const expectedKurus = Math.round(Number(upg.pendingUpgradeAmountTry ?? '0') * 100);
+  const gotKurus = Number(input.totalAmount);
+  if (!Number.isFinite(gotKurus) || gotKurus !== expectedKurus) {
+    await tx.update(subscriptions).set(clearPending).where(eq(subscriptions.id, upg.id));
+    if (ownerUserId) {
+      await writeAuditLog(
+        {
+          companyId: upg.companyId,
+          userId: ownerUserId,
+          action: 'subscription.amount_mismatch',
+          entityType: 'subscription',
+          entityId: upg.id,
+          afterState: {
+            expectedKurus,
+            gotKurus: input.totalAmount,
+            merchantOid: input.merchantOid,
+            context: 'upgrade',
+          },
+        },
+        tx,
+        now,
+      );
+    }
+    return {
+      result: { outcome: 'amount_mismatch', merchantOid: input.merchantOid, subscriptionId: upg.id },
+      alert: {
+        kind: 'amount_mismatch',
+        merchantOid: input.merchantOid,
+        companyId: upg.companyId,
+        subscriptionId: upg.id,
+        detail: `upgrade: beklenen ${expectedKurus} kuruş, gelen ${input.totalAmount}`,
+      },
+    };
+  }
+
+  // Tutar doğru → planı uygula (dönem KORUNUR) + kart sakla + pending temizle.
+  const targetPlan = 'PRO_PLUS' as const;
+  const targetAmount = PLAN_LIMITS.PRO_PLUS.priceMonthlyTry;
+  const proratedAmount = Number(upg.pendingUpgradeAmountTry ?? '0');
+  const fromPlan = upg.plan === 'PRO_PLUS' ? 'PRO_PLUS' : 'PRO';
+
+  const { invoiceId } = await applyUpgradeInTx(tx as unknown as UpgradeTx, {
+    companyId: upg.companyId,
+    subscriptionId: upg.id,
+    fromPlan,
+    targetPlan,
+    targetAmountTry: targetAmount,
+    proratedAmount,
+    periodEnd: upg.currentPeriodEnd,
+    now,
+    merchantOid: input.merchantOid,
+    extraSubSet: {
+      pendingUpgradeOid: null,
+      pendingUpgradeAmountTry: null,
+      ...(input.card?.utoken ? { paytrUtoken: input.card.utoken } : {}),
+      ...(input.card?.ctoken ? { paytrCtoken: input.card.ctoken } : {}),
+      ...(input.card?.masked ? { paytrCardMasked: input.card.masked } : {}),
+      ...(input.card?.brand ? { paytrCardBrand: input.card.brand } : {}),
+    },
+  });
+
+  return {
+    result: { outcome: 'payment_succeeded', merchantOid: input.merchantOid, subscriptionId: upg.id, invoiceId },
+    nilveraCtx: invoiceId
+      ? { invoiceId, companyId: upg.companyId, plan: targetPlan, totals: computeInvoiceTotals(proratedAmount), isUpgrade: true }
+      : undefined,
+    alert: ownerMissingAlert,
+  };
 }
 
 // ── Success (tx içi) ───────────────────────────────────────────
@@ -456,7 +610,13 @@ async function applyFailure(
 
 async function issueAndRecordNilvera(
   deps: OrchestratorDeps,
-  ctx: { invoiceId: string; companyId: string; plan: 'FREE' | 'PRO' | 'PRO_PLUS'; totals: InvoiceTotals },
+  ctx: {
+    invoiceId: string;
+    companyId: string;
+    plan: 'FREE' | 'PRO' | 'PRO_PLUS';
+    totals: InvoiceTotals;
+    isUpgrade?: boolean;
+  },
   now: Date,
 ): Promise<{ nilveraInvoiceId?: string; nilveraError?: string }> {
   try {
@@ -472,7 +632,14 @@ async function issueAndRecordNilvera(
       invoiceDate: now.toISOString(),
       customer,
       lines: [
-        { name: `PetStockPro ${ctx.plan} planı (aylık abonelik)`, quantity: 1, unitPrice: ctx.totals.matrah, vatRate: 20 },
+        {
+          name: ctx.isUpgrade
+            ? `PetStockPro ${ctx.plan} planına yükseltme (dönem içi fark)`
+            : `PetStockPro ${ctx.plan} planı (aylık abonelik)`,
+          quantity: 1,
+          unitPrice: ctx.totals.matrah,
+          vatRate: 20,
+        },
       ],
       currency: 'TRY',
     });

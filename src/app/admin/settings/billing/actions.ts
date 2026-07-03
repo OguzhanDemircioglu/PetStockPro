@@ -12,7 +12,12 @@ import {
   schedulePlanChange,
   cancelScheduledPlanChange,
 } from '@/lib/billing/manage';
-import { previewUpgradeNow, upgradeSubscriptionNow } from '@/lib/billing/upgrade-now';
+import {
+  previewUpgradeNow,
+  upgradeSubscriptionNow,
+  startUpgradeCheckout,
+  type UpgradeNowReason,
+} from '@/lib/billing/upgrade-now';
 import { resolveAndIssueInvoice } from '@/lib/nilvera/invoice';
 import { isNilveraConfigured } from '@/lib/nilvera/config';
 import { isPaytrConfigured } from '@/lib/paytr/config';
@@ -173,7 +178,9 @@ export async function previewUpgradeNowAction(targetPlan: PaidPlan): Promise<Upg
  * PRO→PRO+ ANINDA yükselt — kayıtlı karttan prorated farkı çeker, başarılıysa plan
  * hemen açılır (dönem tarihleri değişmez). Kullanıcı kararı (2026-07-02).
  */
-export async function upgradeNowAction(targetPlan: PaidPlan): Promise<{ ok: boolean; error?: string }> {
+export async function upgradeNowAction(
+  targetPlan: PaidPlan,
+): Promise<{ ok: boolean; error?: string; reason?: UpgradeNowReason }> {
   const session = await auth();
   if (!session?.user?.companyId) return { ok: false, error: 'Oturum bulunamadı, tekrar giriş yapın.' };
 
@@ -184,8 +191,9 @@ export async function upgradeNowAction(targetPlan: PaidPlan): Promise<{ ok: bool
     if (!res.ok) {
       // Kullanıcıya SADE, sabit Türkçe mesaj (UPGRADE_REASON_MESSAGES). PayTR'ın ham teknik
       // sebebi (res.message) kullanıcıya GÖSTERİLMEZ — yalnız sunucu loguna yazılır.
+      // reason client'a da döner: 'no_saved_card' ise UI iframe kart formuna düşer.
       if (res.message) console.error('upgradeNowAction reason detail:', res.reason, res.message);
-      return { ok: false, error: UPGRADE_REASON_MESSAGES[res.reason ?? ''] ?? 'İşlem yapılamadı.' };
+      return { ok: false, error: UPGRADE_REASON_MESSAGES[res.reason ?? ''] ?? 'İşlem yapılamadı.', reason: res.reason };
     }
     revalidatePath('/admin/settings/billing');
     return { ok: true };
@@ -196,5 +204,42 @@ export async function upgradeNowAction(targetPlan: PaidPlan): Promise<{ ok: bool
     //   patlıyordu). Kullanıcıya SADE mesaj; teknik ayrıntı yalnız sunucu logunda (Vercel).
     console.error('upgradeNowAction failed', err);
     return { ok: false, error: 'Yükseltme tamamlanamadı, lütfen tekrar deneyin.' };
+  }
+}
+
+export interface UpgradeCheckoutState {
+  ok: boolean;
+  /** Ödeme gerekiyorsa PayTR iframe URL'i (kart formu). */
+  iframeUrl?: string;
+  /** prorated<=0 → ödeme gerekmeden uygulandı (iframe gösterme, sayfayı yenile). */
+  applied?: boolean;
+  error?: string;
+}
+
+/**
+ * SAKLI KART YOKKEN dönem-içi PRO→PRO+: kullanıcı kartını PayTR iframe'inde girer, prorated
+ * fark iframe'de tahsil edilir; ödeme callback'i planı uygular (dönem korunur) + kartı saklar.
+ * upgradeNowAction 'no_saved_card' dönünce client bunu çağırır.
+ */
+export async function startUpgradeCheckoutAction(targetPlan: PaidPlan): Promise<UpgradeCheckoutState> {
+  const session = await auth();
+  if (!session?.user?.companyId) return { ok: false, error: 'Oturum bulunamadı, tekrar giriş yapın.' };
+  if (!isPaytrConfigured()) {
+    return { ok: false, error: 'Ödeme altyapısı henüz yapılandırılmadı (PayTR anahtarları eksik).' };
+  }
+
+  try {
+    const hdrs = await headers();
+    const userIp = (hdrs.get('x-forwarded-for')?.split(',')[0] ?? '127.0.0.1').trim();
+    const res = await startUpgradeCheckout(session.user.companyId, targetPlan, db, { userIp });
+    if (!res.ok) return { ok: false, error: UPGRADE_REASON_MESSAGES[res.reason ?? ''] ?? 'İşlem yapılamadı.' };
+    if (res.applied) {
+      revalidatePath('/admin/settings/billing');
+      return { ok: true, applied: true };
+    }
+    return { ok: true, iframeUrl: res.iframeUrl };
+  } catch (err) {
+    console.error('startUpgradeCheckoutAction failed', err);
+    return { ok: false, error: 'Yükseltme başlatılamadı, lütfen tekrar deneyin.' };
   }
 }

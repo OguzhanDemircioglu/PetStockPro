@@ -392,6 +392,12 @@ export const subscriptions = petstockproSchema.table('subscriptions', {
   paymentRetryCount: integer('payment_retry_count').notNull().default(0), // dunning sayacı
   nextRetryAt: timestamp('next_retry_at', { withTimezone: true }),         // sıradaki recurring deneme
 
+  // Dönem-içi PRO→PRO+ yükseltmesi iframe ile (saklı kart YOKSA). pending_merchant_oid
+  // (yenileme/ilk-checkout) yolundan İZOLE — callback bu oid'i tanıyıp prorated tutarı
+  // doğrular + planı uygular (dönem KORUNUR). Migration 0041.
+  pendingUpgradeOid: varchar('pending_upgrade_oid', { length: 64 }),
+  pendingUpgradeAmountTry: decimal('pending_upgrade_amount_try', { precision: 10, scale: 2 }), // prorated fark, KDV dahil
+
   // Ödeme döngüsü
   currentPeriodStart: timestamp('current_period_start', { withTimezone: true }).notNull(),
   currentPeriodEnd: timestamp('current_period_end', { withTimezone: true }).notNull(),
@@ -406,6 +412,7 @@ export const subscriptions = petstockproSchema.table('subscriptions', {
 }, (t) => [
   index('idx_subscriptions_company_status').on(t.companyId, t.status),
   index('idx_subscriptions_pending_oid').on(t.pendingMerchantOid),
+  index('idx_subscriptions_pending_upgrade_oid').on(t.pendingUpgradeOid),
   // Tek aktif abonelik per tenant — partial unique index
   uniqueIndex('one_active_subscription_per_tenant')
     .on(t.companyId)

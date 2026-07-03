@@ -22,12 +22,21 @@ import { subscriptions, companies, users, invoices } from '@/db/schema';
 import { writeAuditLog } from '@/lib/audit/log';
 import { resolveAndIssueInvoice } from '@/lib/nilvera/invoice';
 import { loadInvoiceCustomer } from './invoice-customer';
-import { chargeSavedCard, listSavedCards } from '@/lib/paytr/client';
-import { makeMerchantOid, toPaytrPhone } from './paytr-checkout';
+import {
+  chargeSavedCard,
+  listSavedCards,
+  createPaytrIframeToken,
+  paytrIframeUrl,
+} from '@/lib/paytr/client';
+import type { PaytrBasketItem } from '@/lib/paytr/types';
+import { makeMerchantOid, toPaytrPhone, deriveUtoken } from './paytr-checkout';
 import { computeProration, computeInvoiceTotals } from './totals';
 import { PLAN_LIMITS } from '@/lib/constants/plan-limits';
 
 type PaidPlan = 'PRO' | 'PRO_PLUS';
+
+/** Drizzle transaction client (db.transaction callback param) — applyUpgradeInTx paylaşımı için. */
+export type UpgradeTx = Parameters<Parameters<DbClient['transaction']>[0]>[0];
 
 export type UpgradeNowReason =
   | 'not_found'
@@ -134,6 +143,89 @@ export async function previewUpgradeNow(
   return { ok: true, proratedAmount, daysRemaining };
 }
 
+/**
+ * Ortak upgrade uygulama (tx İÇİ) — hem saklı-kart hızlı yolu (upgradeSubscriptionNow) hem
+ * iframe ödemesi callback'i (orchestrator processUpgradePayment) buradan geçer. Plan + fiyat
+ * güncellenir, DÖNEM TARİHLERİ DEĞİŞMEZ, prorated fatura (varsa) oluşturulur, audit yazılır.
+ *
+ * @param p.merchantOid — invoice.merchantOid'e yazılır (iframe callback yolunda dolu; saklı-kart
+ *   yolunda undefined → alan eklenmez, davranış eskisiyle aynı).
+ * @param p.extraSubSet — kart token'ları / pending_upgrade temizliği gibi ek subscription alanları.
+ * @returns oluşturulan invoice id (prorated>0 ise) — post-tx Nilvera için.
+ */
+export async function applyUpgradeInTx(
+  tx: UpgradeTx,
+  p: {
+    companyId: string;
+    subscriptionId: string;
+    fromPlan: PaidPlan;
+    targetPlan: PaidPlan;
+    targetAmountTry: number;
+    proratedAmount: number;
+    periodEnd: Date;
+    now: Date;
+    merchantOid?: string;
+    extraSubSet?: Record<string, unknown>;
+  },
+): Promise<{ invoiceId?: string }> {
+  await tx
+    .update(subscriptions)
+    .set({
+      plan: p.targetPlan,
+      amountTry: p.targetAmountTry.toFixed(2),
+      pendingPlan: null, // olası dönem-sonu planlanmış değişiklik artık gereksiz
+      updatedAt: p.now,
+      ...(p.extraSubSet ?? {}),
+    })
+    .where(eq(subscriptions.id, p.subscriptionId));
+
+  await tx.update(companies).set({ plan: p.targetPlan, updatedAt: p.now }).where(eq(companies.id, p.companyId));
+
+  let invoiceId: string | undefined;
+  if (p.proratedAmount > 0) {
+    const totals = computeInvoiceTotals(p.proratedAmount);
+    const invRows = await tx
+      .insert(invoices)
+      .values({
+        companyId: p.companyId,
+        subscriptionId: p.subscriptionId,
+        periodStart: p.now,
+        periodEnd: p.periodEnd,
+        amountMatrah: totals.matrah.toFixed(2),
+        vatAmount: totals.vat.toFixed(2),
+        amountTotal: totals.total.toFixed(2),
+        ...(p.merchantOid ? { merchantOid: p.merchantOid } : {}),
+        status: 'pending',
+        createdAt: p.now,
+        updatedAt: p.now,
+      })
+      .returning({ id: invoices.id });
+    invoiceId = invRows[0]?.id as string;
+  }
+
+  const ownerRows = await tx
+    .select({ id: users.id })
+    .from(users)
+    .where(and(eq(users.companyId, p.companyId), eq(users.role, 'BAYI_SAHIBI')))
+    .limit(1);
+  const ownerUserId = ownerRows[0]?.id;
+  if (ownerUserId) {
+    await writeAuditLog(
+      {
+        companyId: p.companyId,
+        userId: ownerUserId,
+        action: 'subscription.upgraded_immediate',
+        entityType: 'subscription',
+        entityId: p.subscriptionId,
+        afterState: { fromPlan: p.fromPlan, toPlan: p.targetPlan, proratedAmount: p.proratedAmount, invoiceId },
+      },
+      tx,
+      p.now,
+    );
+  }
+  return { invoiceId };
+}
+
 /** Kartı ANINDA çek (prorated fark) + başarılıysa plan/limitleri hemen aç. */
 export async function upgradeSubscriptionNow(
   companyId: string,
@@ -202,63 +294,17 @@ export async function upgradeSubscriptionNow(
   // Charge (varsa) başarılı — dönem tarihleri AYNI kalır, sadece plan + fiyat güncellenir.
   let invoiceId: string | undefined;
   await db.transaction(async (tx) => {
-    await tx
-      .update(subscriptions)
-      .set({
-        plan: targetPlan,
-        amountTry: v.targetAmount.toFixed(2),
-        pendingPlan: null, // olası dönem-sonu planlanmış değişiklik artık gereksiz
-        updatedAt: now,
-      })
-      .where(eq(subscriptions.id, sub!.id));
-
-    await tx.update(companies).set({ plan: targetPlan, updatedAt: now }).where(eq(companies.id, companyId));
-
-    if (proratedAmount > 0) {
-      const totals = computeInvoiceTotals(proratedAmount);
-      const invRows = await tx
-        .insert(invoices)
-        .values({
-          companyId,
-          subscriptionId: sub!.id,
-          periodStart: now,
-          periodEnd: sub!.currentPeriodEnd,
-          amountMatrah: totals.matrah.toFixed(2),
-          vatAmount: totals.vat.toFixed(2),
-          amountTotal: totals.total.toFixed(2),
-          status: 'pending',
-          createdAt: now,
-          updatedAt: now,
-        })
-        .returning({ id: invoices.id });
-      invoiceId = invRows[0]?.id as string;
-    }
-
-    const ownerRows = await tx
-      .select({ id: users.id })
-      .from(users)
-      .where(and(eq(users.companyId, companyId), eq(users.role, 'BAYI_SAHIBI')))
-      .limit(1);
-    const ownerUserId = ownerRows[0]?.id;
-    if (ownerUserId) {
-      await writeAuditLog(
-        {
-          companyId,
-          userId: ownerUserId,
-          action: 'subscription.upgraded_immediate',
-          entityType: 'subscription',
-          entityId: sub!.id,
-          afterState: {
-            fromPlan: sub!.plan,
-            toPlan: targetPlan,
-            proratedAmount,
-            invoiceId,
-          },
-        },
-        tx,
-        now,
-      );
-    }
+    const r = await applyUpgradeInTx(tx, {
+      companyId,
+      subscriptionId: sub!.id,
+      fromPlan: sub!.plan,
+      targetPlan,
+      targetAmountTry: v.targetAmount,
+      proratedAmount,
+      periodEnd: sub!.currentPeriodEnd,
+      now,
+    });
+    invoiceId = r.invoiceId;
   });
 
   // Nilvera — post-tx best-effort (dış ağ). Hata → invoice 'pending' kalır, invoice-reconcile
@@ -306,4 +352,107 @@ export async function upgradeSubscriptionNow(
   }
 
   return { ok: true, proratedAmount, invoiceId };
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Saklı kart YOKKEN: iframe ile prorated yükseltme (kullanıcı kartını girer)
+// ══════════════════════════════════════════════════════════════════════════════
+
+export interface StartUpgradeCheckoutResult {
+  ok: boolean;
+  reason?: UpgradeNowReason;
+  /** prorated<=0 → ödeme gerekmeden ANINDA uygulandı (iframe gösterme). */
+  applied?: boolean;
+  /** ödeme gerekiyorsa PayTR iframe URL'i (kart formu). */
+  iframeUrl?: string;
+  proratedAmount?: number;
+}
+
+export interface StartUpgradeCheckoutDeps {
+  createToken?: typeof createPaytrIframeToken;
+  now?: () => Date;
+  appUrl?: string;
+  userIp?: string;
+}
+
+/**
+ * SAKLI KART YOKKEN dönem-içi PRO→PRO+ yükseltmesi (kullanıcı kararı 2026-07-03):
+ * kullanıcı kartını PayTR iframe'inde girer, prorated fark iframe'de tahsil edilir.
+ *
+ * pending_upgrade_oid + pending_upgrade_amount_try set edilir (pending_merchant_oid'DEN AYRI →
+ * yenileme/checkout yolunu etkilemez). Ödeme callback'i (orchestrator processUpgradePayment)
+ * bu oid'i tanır, prorated tutarı doğrular, planı uygular (DÖNEM KORUNUR) + kartı saklar.
+ *
+ * prorated<=0 (dönem sonuna saniyeler kala) → ödeme gerekmez, plan anında uygulanır.
+ */
+export async function startUpgradeCheckout(
+  companyId: string,
+  targetPlan: PaidPlan,
+  db: DbClient,
+  deps: StartUpgradeCheckoutDeps = {},
+): Promise<StartUpgradeCheckoutResult> {
+  const now = deps.now?.() ?? new Date();
+  const createToken = deps.createToken ?? createPaytrIframeToken;
+  const appUrl = deps.appUrl ?? process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+
+  const sub = await findActiveSub(db, companyId);
+  const v = validateUpgrade(sub, targetPlan);
+  if (!v.ok) return { ok: false, reason: v.reason };
+
+  const proratedAmount = computeProration(
+    v.currentAmount,
+    v.targetAmount,
+    sub!.currentPeriodStart,
+    sub!.currentPeriodEnd,
+    now,
+  );
+
+  // Ödenecek fark yoksa → ödeme gerekmez, planı hemen uygula (saved-card yoluyla aynı sonuç).
+  if (proratedAmount <= 0) {
+    await db.transaction((tx) =>
+      applyUpgradeInTx(tx, {
+        companyId,
+        subscriptionId: sub!.id,
+        fromPlan: sub!.plan,
+        targetPlan,
+        targetAmountTry: v.targetAmount,
+        proratedAmount: 0,
+        periodEnd: sub!.currentPeriodEnd,
+        now,
+      }),
+    );
+    return { ok: true, applied: true, proratedAmount: 0 };
+  }
+
+  const merchantOid = makeMerchantOid();
+  await db
+    .update(subscriptions)
+    .set({
+      pendingUpgradeOid: merchantOid,
+      pendingUpgradeAmountTry: proratedAmount.toFixed(2),
+      updatedAt: now,
+    })
+    .where(eq(subscriptions.id, sub!.id));
+
+  const utoken = sub!.paytrUtoken ?? deriveUtoken(companyId);
+  const basket: PaytrBasketItem[] = [
+    [`PetStockPro ${targetPlan} yukseltme`, proratedAmount.toFixed(2), 1],
+  ];
+  const token = await createToken({
+    merchantOid,
+    email: sub!.ownerEmail ?? 'billing@petstockpro.com',
+    paymentAmount: Math.round(proratedAmount * 100),
+    userIp: deps.userIp ?? '127.0.0.1',
+    userName: sub!.companyName ?? 'PetStockPro',
+    userAddress: 'Türkiye',
+    userPhone: toPaytrPhone(sub!.whatsappPhone),
+    basket,
+    okUrl: `${appUrl}/admin/settings/billing?paytr=ok`,
+    failUrl: `${appUrl}/admin/settings/billing?paytr=fail`,
+    storeCard: 1,
+    utoken,
+    noInstallment: 1,
+  });
+
+  return { ok: true, iframeUrl: paytrIframeUrl(token), proratedAmount };
 }

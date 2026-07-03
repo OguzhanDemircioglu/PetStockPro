@@ -49,8 +49,18 @@ function subRow(over: Partial<SubRow> = {}): SubRow {
   };
 }
 
+interface UpgradeSubRow {
+  id: string;
+  companyId: string;
+  plan: 'FREE' | 'PRO' | 'PRO_PLUS';
+  currentPeriodEnd: Date;
+  pendingUpgradeAmountTry: string | null;
+}
+
 interface DbConfig {
   subRow?: SubRow | null;
+  /** pending_upgrade_oid lookup sonucu — set edilmezse null (upgrade dalı tetiklenmez). */
+  upgradeSubRow?: UpgradeSubRow | null;
   ownerId?: string | null;
   company?: { name: string; vatNo: string | null; email?: string | null } | null;
   duplicateWebhook?: boolean;
@@ -99,7 +109,11 @@ function makeDb(config: DbConfig) {
         },
       };
     },
-    select() {
+    select(projection?: Record<string, unknown>) {
+      // subscriptions üzerinde iki ayrı lookup var: pending_upgrade_oid (yeni, izole) ve
+      // pending_merchant_oid (yenileme/checkout). Projeksiyonda pendingUpgradeAmountTry varsa
+      // upgrade lookup'tır → config.upgradeSubRow (set edilmezse null → dal tetiklenmez).
+      const isUpgradeLookup = !!projection && 'pendingUpgradeAmountTry' in projection;
       return {
         from(table: unknown) {
           // leftJoin opsiyonel (loadInvoiceCustomer cities/districts join'ler) — chainable.
@@ -108,7 +122,12 @@ function makeDb(config: DbConfig) {
             where() {
               return {
                 limit() {
-                  if (table === subscriptions) return Promise.resolve(config.subRow ? [config.subRow] : []);
+                  if (table === subscriptions) {
+                    if (isUpgradeLookup) {
+                      return Promise.resolve(config.upgradeSubRow ? [config.upgradeSubRow] : []);
+                    }
+                    return Promise.resolve(config.subRow ? [config.subRow] : []);
+                  }
                   if (table === users) return Promise.resolve(ownerId ? [{ id: ownerId }] : []);
                   if (table === companies) return Promise.resolve(config.company ? [config.company] : []);
                   return Promise.resolve([]);
@@ -344,5 +363,87 @@ describe('processPaytrCallback', () => {
     expect(res.outcome).toBe('payment_succeeded');
     expect(calls.invoiceInsert).toHaveLength(1);
     expect(res.nilveraInvoiceId).toBeUndefined();
+  });
+});
+
+// ── UPGRADE (iframe, saklı kart YOKKEN) — İZOLE yol ─────────────
+describe('processPaytrCallback — upgrade (iframe, saklı kart yok)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  function upgSub(over: Partial<UpgradeSubRow> = {}): UpgradeSubRow {
+    return {
+      id: 'sub-1',
+      companyId: 'comp-1',
+      plan: 'PRO',
+      currentPeriodEnd: new Date('2026-07-10T12:00:00.000Z'),
+      pendingUpgradeAmountTry: '500.00', // beklenen prorated = 50000 kuruş
+      ...over,
+    };
+  }
+
+  const upgInput: PaytrCallbackInput = {
+    merchantOid: 'PSPUPG-OID',
+    status: 'success',
+    totalAmount: '50000', // 500,00₺ prorated fark
+    card: { utoken: 'utok-up' },
+    rawPayload: { merchant_oid: 'PSPUPG-OID' },
+  };
+
+  it('success → PRO_PLUS uygulanır, DÖNEM DEĞİŞMEZ, prorated invoice, kart saklanır, pending temizlenir', async () => {
+    const { db, calls } = makeDb({ upgradeSubRow: upgSub() });
+    const res = await processPaytrCallback(upgInput, { db, now });
+
+    expect(res.outcome).toBe('payment_succeeded');
+    const subUpd = calls.updates.find((u) => u.table === 'subscriptions')!;
+    expect(subUpd.vals.plan).toBe('PRO_PLUS');
+    expect(subUpd.vals.amountTry).toBe(PLAN_LIMITS.PRO_PLUS.priceMonthlyTry.toFixed(2));
+    expect(subUpd.vals.pendingUpgradeOid).toBeNull();
+    expect(subUpd.vals.pendingUpgradeAmountTry).toBeNull();
+    expect(subUpd.vals.paytrUtoken).toBe('utok-up'); // kart saklandı (gelecek yenileme/upgrade için)
+    // dönem tarihleri DOKUNULMADI (yükseltme dönem-içi)
+    expect(subUpd.vals.currentPeriodStart).toBeUndefined();
+    expect(subUpd.vals.currentPeriodEnd).toBeUndefined();
+    expect(calls.updates.find((u) => u.table === 'companies')!.vals.plan).toBe('PRO_PLUS');
+    expect(calls.invoiceInsert[0].merchantOid).toBe('PSPUPG-OID');
+    expect(calls.invoiceInsert[0].amountTotal).toBe('500.00');
+    expect(auditAction()).toBe('subscription.upgraded_immediate');
+  });
+
+  it('success + Nilvera → satır "yükseltme (dönem içi fark)" etiketiyle kesilir', async () => {
+    const { db } = makeDb({ upgradeSubRow: upgSub(), company: { name: 'Pet A', vatNo: '1234567890' } });
+    const nilvera = { issueInvoice: vi.fn().mockResolvedValue({ invoiceId: 'nv-up', kind: 'earsiv' }) };
+    const res = await processPaytrCallback(upgInput, { db, nilvera, now });
+
+    expect(res.outcome).toBe('payment_succeeded');
+    const line = (nilvera.issueInvoice.mock.calls[0][0] as { lines: { name: string }[] }).lines[0];
+    expect(line.name).toContain('yükseltme');
+  });
+
+  it('failed (kart reddedildi) → plan PRO kalır, pending temizlenir, dunning YOK, audit upgrade_failed', async () => {
+    const { db, calls } = makeDb({ upgradeSubRow: upgSub() });
+    const res = await processPaytrCallback(
+      { ...upgInput, status: 'failed', failedReason: 'kart reddedildi' },
+      { db, now },
+    );
+
+    expect(res.outcome).toBe('payment_failed');
+    const subUpd = calls.updates.find((u) => u.table === 'subscriptions')!;
+    expect(subUpd.vals.pendingUpgradeOid).toBeNull();
+    expect(subUpd.vals.plan).toBeUndefined(); // plan DEĞİŞMEDİ (PRO kaldı)
+    expect(calls.invoiceInsert).toHaveLength(0);
+    expect(auditAction()).toBe('subscription.upgrade_failed');
+    expect(alertDunning).not.toHaveBeenCalled(); // yenileme değil → dunning yok
+  });
+
+  it('tutar uyuşmazlığı → amount_mismatch, plan uygulanmaz, pending temizlenir + alert', async () => {
+    const { db, calls } = makeDb({ upgradeSubRow: upgSub({ pendingUpgradeAmountTry: '500.00' }) });
+    const res = await processPaytrCallback({ ...upgInput, totalAmount: '40000' }, { db, now }); // 400₺ geldi, 500 bekleniyordu
+
+    expect(res.outcome).toBe('amount_mismatch');
+    const subUpd = calls.updates.find((u) => u.table === 'subscriptions')!;
+    expect(subUpd.vals.pendingUpgradeOid).toBeNull();
+    expect(subUpd.vals.plan).toBeUndefined();
+    expect(calls.invoiceInsert).toHaveLength(0);
+    expect(alertPaymentAnomaly).toHaveBeenCalledWith(expect.objectContaining({ kind: 'amount_mismatch' }));
   });
 });
