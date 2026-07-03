@@ -155,10 +155,18 @@ export interface UpgradePreviewState {
 /** PRO→PRO+ anlık yükseltmede çekilecek prorated tutarı önizle (kart ÇEKMEZ). */
 export async function previewUpgradeNowAction(targetPlan: PaidPlan): Promise<UpgradePreviewState> {
   const session = await auth();
-  if (!session?.user?.companyId) return { ok: false, error: 'Oturum bulunamadı.' };
-  const res = await previewUpgradeNow(session.user.companyId, targetPlan, db);
-  if (!res.ok) return { ok: false, error: UPGRADE_REASON_MESSAGES[res.reason ?? ''] ?? 'İşlem yapılamadı.' };
-  return { ok: true, proratedAmount: res.proratedAmount, daysRemaining: res.daysRemaining };
+  if (!session?.user?.companyId) return { ok: false, error: 'Oturum bulunamadı, tekrar giriş yapın.' };
+  try {
+    const res = await previewUpgradeNow(session.user.companyId, targetPlan, db);
+    if (!res.ok) return { ok: false, error: UPGRADE_REASON_MESSAGES[res.reason ?? ''] ?? 'İşlem yapılamadı.' };
+    return { ok: true, proratedAmount: res.proratedAmount, daysRemaining: res.daysRemaining };
+  } catch (err) {
+    // previewUpgradeNow → findActiveSub (DB) veya listSavedCards yolu değil ama DB throw'u
+    // olabilir. Ham throw server action'da 500 + error-boundary çökmesine yol açardı; friendly
+    // mesaja çevir (startCheckoutAction ile aynı savunma).
+    console.error('previewUpgradeNowAction failed', err);
+    return { ok: false, error: 'Yükseltme tutarı hesaplanamadı, lütfen tekrar dene.' };
+  }
 }
 
 /**
@@ -167,12 +175,26 @@ export async function previewUpgradeNowAction(targetPlan: PaidPlan): Promise<Upg
  */
 export async function upgradeNowAction(targetPlan: PaidPlan): Promise<{ ok: boolean; error?: string }> {
   const session = await auth();
-  if (!session?.user?.companyId) return { ok: false, error: 'Oturum bulunamadı.' };
+  if (!session?.user?.companyId) return { ok: false, error: 'Oturum bulunamadı, tekrar giriş yapın.' };
 
-  const res = await upgradeSubscriptionNow(session.user.companyId, targetPlan, db, {
-    nilvera: isNilveraConfigured() ? { issueInvoice: resolveAndIssueInvoice } : undefined,
-  });
-  if (!res.ok) return { ok: false, error: UPGRADE_REASON_MESSAGES[res.reason ?? ''] ?? 'İşlem yapılamadı.' };
-  revalidatePath('/admin/settings/billing');
-  return { ok: true };
+  try {
+    const res = await upgradeSubscriptionNow(session.user.companyId, targetPlan, db, {
+      nilvera: isNilveraConfigured() ? { issueInvoice: resolveAndIssueInvoice } : undefined,
+    });
+    if (!res.ok) {
+      const base = UPGRADE_REASON_MESSAGES[res.reason ?? ''] ?? 'İşlem yapılamadı.';
+      // charge_failed'da PayTR'ın döndürdüğü sebebi (res.message) parantez içinde ekle.
+      return { ok: false, error: res.message ? `${base} (${res.message})` : base };
+    }
+    revalidatePath('/admin/settings/billing');
+    return { ok: true };
+  } catch (err) {
+    // ⚠ upgradeSubscriptionNow, chargeSavedCard/listSavedCards'ı çağırır; bunlar ağ/parse/config
+    //   veya (saved-cards) status≠success durumunda PaytrApiError THROW eder. try/catch olmadan bu
+    //   throw server action'ı 500'e düşürüp "Server Components render" error-boundary çökmesine
+    //   yol açıyordu (bug: PRO→PRO+ ekranı patlıyordu). Gerçek sebebi mesaja koy (teşhis için).
+    console.error('upgradeNowAction failed', err);
+    const detail = err instanceof Error ? err.message : 'bilinmeyen hata';
+    return { ok: false, error: `Yükseltme tamamlanamadı: ${detail}` };
+  }
 }

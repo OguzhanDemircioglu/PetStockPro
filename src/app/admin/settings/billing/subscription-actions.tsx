@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { PLAN_LABELS } from '@/lib/constants/plan-limits';
+import { swalConfirm, swalToast } from '@/lib/ui/swal';
 import {
   cancelSubscriptionAction,
   reactivateSubscriptionAction,
@@ -23,59 +24,64 @@ interface Props {
 
 export function SubscriptionActions({ cancelScheduled, currentPlan, pendingPlan, periodEndLabel }: Props) {
   const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const otherPlan: 'PRO' | 'PRO_PLUS' = currentPlan === 'PRO' ? 'PRO_PLUS' : 'PRO';
   const isUpgrade = otherPlan === 'PRO_PLUS';
 
+  /** Action'ı çalıştır; hatayı sağ üst SWAL toast ile göster (2026-05-20: banner YOK). */
   function run(fn: () => Promise<{ ok: boolean; error?: string }>) {
-    setError(null);
     startTransition(async () => {
       const res = await fn();
       if (res.ok) router.refresh();
-      else setError(res.error ?? 'İşlem başarısız.');
+      else await swalToast(res.error ?? 'İşlem başarısız.', undefined, 'error');
     });
   }
 
   function doCancel() {
-    if (
-      !window.confirm(
-        'Aboneliğini iptal etmek istediğine emin misin? Dönem sonuna kadar aktif kalır, sonra FREE plana düşersin.',
-      )
-    )
-      return;
-    run(cancelSubscriptionAction);
+    startTransition(async () => {
+      const ok = await swalConfirm(
+        'Aboneliği iptal et?',
+        'Dönem sonuna kadar aktif kalır, sonra FREE plana düşersin.',
+        'Evet, iptal et',
+        'Vazgeç',
+      );
+      if (!ok) return;
+      const res = await cancelSubscriptionAction();
+      if (res.ok) router.refresh();
+      else await swalToast(res.error ?? 'İşlem başarısız.', undefined, 'error');
+    });
   }
 
   /** Upgrade (PRO→PRO+): önce prorated tutarı önizle, sonra onaylayınca kartı ANINDA çek. */
   function doUpgradeNow() {
-    setError(null);
     startTransition(async () => {
       const preview = await previewUpgradeNowAction(otherPlan);
       if (!preview.ok) {
-        setError(preview.error ?? 'İşlem yapılamadı.');
+        await swalToast(preview.error ?? 'İşlem yapılamadı.', undefined, 'error');
         return;
       }
       const amount = (preview.proratedAmount ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 });
-      const confirmed = window.confirm(
-        `Kalan ${preview.daysRemaining} gün için ${amount} ₺ kayıtlı kartından hemen çekilecek ve ${PLAN_LABELS[otherPlan]} planına şimdi geçeceksin. Onaylıyor musun?`,
+      const confirmed = await swalConfirm(
+        `${PLAN_LABELS[otherPlan]} planına hemen yükselt`,
+        `Kalan ${preview.daysRemaining} gün için ${amount} ₺ kayıtlı kartından hemen çekilecek ve planın anında ${PLAN_LABELS[otherPlan]} olacak.`,
+        'Evet, yükselt',
+        'Vazgeç',
+        'question',
       );
       if (!confirmed) return;
       const res = await upgradeNowAction(otherPlan);
-      if (res.ok) router.refresh();
-      else setError(res.error ?? 'İşlem başarısız.');
+      if (res.ok) {
+        await swalToast('Planın yükseltildi 🎉', undefined, 'success');
+        router.refresh();
+      } else {
+        await swalToast(res.error ?? 'İşlem başarısız.', undefined, 'error');
+      }
     });
   }
 
   return (
     <div className="flex flex-col items-start gap-3">
-      {error && (
-        <p role="alert" data-testid="manage-error" className="text-sm text-danger-7">
-          ⚠ {error}
-        </p>
-      )}
-
       {/* Plan değişimi (dönem sonu, proration yok) — iptal planlanmadıysa göster */}
       {!cancelScheduled &&
         (pendingPlan ? (
