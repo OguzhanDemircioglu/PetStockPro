@@ -76,8 +76,9 @@ export async function startCheckoutAction(plan: PaidPlan): Promise<CheckoutActio
     if (err instanceof CheckoutError && err.code === 'already_subscribed') {
       return { ok: false, error: 'Zaten aktif aboneliğiniz var.' };
     }
-    const msg = err instanceof Error ? err.message : 'Ödeme başlatılamadı.';
-    return { ok: false, error: msg };
+    // Ham hata (PayTR/DB) kullanıcıya sızmaz — sade mesaj + sunucu logu (2026-07-03).
+    console.error('startCheckoutAction failed', err);
+    return { ok: false, error: 'Ödeme başlatılamadı, lütfen tekrar deneyin.' };
   }
 }
 
@@ -161,11 +162,10 @@ export async function previewUpgradeNowAction(targetPlan: PaidPlan): Promise<Upg
     if (!res.ok) return { ok: false, error: UPGRADE_REASON_MESSAGES[res.reason ?? ''] ?? 'İşlem yapılamadı.' };
     return { ok: true, proratedAmount: res.proratedAmount, daysRemaining: res.daysRemaining };
   } catch (err) {
-    // previewUpgradeNow → findActiveSub (DB) veya listSavedCards yolu değil ama DB throw'u
-    // olabilir. Ham throw server action'da 500 + error-boundary çökmesine yol açardı; friendly
-    // mesaja çevir (startCheckoutAction ile aynı savunma).
+    // Ham throw server action'da 500 + error-boundary çökmesine yol açardı; friendly mesaja çevir.
+    // Teknik ayrıntı YALNIZ sunucu loguna (kullanıcıya sızmaz — sade mesaj isteği 2026-07-03).
     console.error('previewUpgradeNowAction failed', err);
-    return { ok: false, error: 'Yükseltme tutarı hesaplanamadı, lütfen tekrar dene.' };
+    return { ok: false, error: 'Yükseltme tutarı hesaplanamadı, lütfen tekrar deneyin.' };
   }
 }
 
@@ -182,19 +182,19 @@ export async function upgradeNowAction(targetPlan: PaidPlan): Promise<{ ok: bool
       nilvera: isNilveraConfigured() ? { issueInvoice: resolveAndIssueInvoice } : undefined,
     });
     if (!res.ok) {
-      const base = UPGRADE_REASON_MESSAGES[res.reason ?? ''] ?? 'İşlem yapılamadı.';
-      // charge_failed'da PayTR'ın döndürdüğü sebebi (res.message) parantez içinde ekle.
-      return { ok: false, error: res.message ? `${base} (${res.message})` : base };
+      // Kullanıcıya SADE, sabit Türkçe mesaj (UPGRADE_REASON_MESSAGES). PayTR'ın ham teknik
+      // sebebi (res.message) kullanıcıya GÖSTERİLMEZ — yalnız sunucu loguna yazılır.
+      if (res.message) console.error('upgradeNowAction reason detail:', res.reason, res.message);
+      return { ok: false, error: UPGRADE_REASON_MESSAGES[res.reason ?? ''] ?? 'İşlem yapılamadı.' };
     }
     revalidatePath('/admin/settings/billing');
     return { ok: true };
   } catch (err) {
     // ⚠ upgradeSubscriptionNow, chargeSavedCard/listSavedCards'ı çağırır; bunlar ağ/parse/config
-    //   veya (saved-cards) status≠success durumunda PaytrApiError THROW eder. try/catch olmadan bu
-    //   throw server action'ı 500'e düşürüp "Server Components render" error-boundary çökmesine
-    //   yol açıyordu (bug: PRO→PRO+ ekranı patlıyordu). Gerçek sebebi mesaja koy (teşhis için).
+    //   veya (saved-cards) hata durumunda PaytrApiError THROW eder. try/catch olmadan bu throw
+    //   server action'ı 500'e düşürüp error-boundary çökmesine yol açıyordu (PRO→PRO+ ekranı
+    //   patlıyordu). Kullanıcıya SADE mesaj; teknik ayrıntı yalnız sunucu logunda (Vercel).
     console.error('upgradeNowAction failed', err);
-    const detail = err instanceof Error ? err.message : 'bilinmeyen hata';
-    return { ok: false, error: `Yükseltme tamamlanamadı: ${detail}` };
+    return { ok: false, error: 'Yükseltme tamamlanamadı, lütfen tekrar deneyin.' };
   }
 }
