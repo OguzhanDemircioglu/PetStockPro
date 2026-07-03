@@ -64,7 +64,12 @@ export const paytrChargeResponseSchema = z
 export type PaytrChargeResponse = z.infer<typeof paytrChargeResponseSchema>;
 
 /**
- * Kayıtlı Kart Listesi yanıtındaki tek kart.
+ * Kayıtlı Kart Listesi yanıtındaki tek kart (/odeme/capi/list).
+ *
+ * ⚠ PayTR'ın BAŞARI yanıtı, bu kartların DÜZ DİZİSİdir: `[{ ctoken, last_4, ... }]`
+ *   (üstte `status`/`cards` sarmalı YOK — resmi doc: kayitli-kart-listesi). Boş eşleşmede
+ *   `{}` veya `[]`, hatada `{ status:'error', err_msg }` döner. Normalize + doğrulama
+ *   `listSavedCards` (client.ts) içinde yapılır; bu şema yalnız tek kartı doğrular.
  */
 export const paytrSavedCardSchema = z
   .object({
@@ -78,14 +83,3 @@ export const paytrSavedCardSchema = z
   })
   .passthrough();
 export type PaytrSavedCard = z.infer<typeof paytrSavedCardSchema>;
-
-/**
- * Kayıtlı Kart Listesi yanıtı (/odeme/capi/list).
- */
-export const paytrSavedCardsResponseSchema = z
-  .object({
-    status: z.string(),
-    cards: z.array(paytrSavedCardSchema).optional(),
-  })
-  .passthrough();
-export type PaytrSavedCardsResponse = z.infer<typeof paytrSavedCardsResponseSchema>;

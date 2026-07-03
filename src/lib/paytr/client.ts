@@ -16,7 +16,7 @@ import { buildPaytrTokenHash, buildPaytrRecurringHash, buildPaytrSavedCardsHash 
 import {
   paytrGetTokenResponseSchema,
   paytrChargeResponseSchema,
-  paytrSavedCardsResponseSchema,
+  paytrSavedCardSchema,
   type PaytrBasketItem,
   type PaytrChargeResponse,
   type PaytrSavedCard,
@@ -348,17 +348,42 @@ export async function listSavedCards(utoken: string): Promise<PaytrSavedCard[]> 
     );
   }
 
-  const parsed = paytrSavedCardsResponseSchema.safeParse(json);
-  if (!parsed.success) {
-    throw new PaytrApiError(`PayTR saved-cards beklenmedik yanıt biçimi (HTTP ${response.status})`, {
-      httpStatus: response.status,
-    });
-  }
-  if (parsed.data.status !== 'success') {
-    throw new PaytrApiError(`PayTR saved-cards başarısız (status=${parsed.data.status})`, {
-      httpStatus: response.status,
-    });
+  // PayTR /odeme/capi/list yanıt biçimleri (resmi doc — kayitli-kart-listesi):
+  //   • Başarı → kartların DÜZ DİZİSİ: [{ ctoken, last_4, ... }]  (üstte status YOK)
+  //   • Boş    → {} veya []  ("eşleşme yoksa boş JSON")
+  //   • Hata   → { status: 'error', err_msg }
+  //   • (bazı sürümlerde { status:'success', cards:[...] } sarmalı da görülebilir)
+  // Eski kod sadece { status, cards } OBJESİ bekliyordu → gerçek başarı DİZİSİNİ
+  // reddedip "beklenmedik yanıt biçimi (HTTP 200)" throw ediyordu (prod bug 2026-07-03).
+
+  // 1) Hata objesi → err_msg ile throw (utoken geçersiz, kart saklama kapalı, vb.)
+  if (json && typeof json === 'object' && !Array.isArray(json)) {
+    const status = (json as Record<string, unknown>).status;
+    if (status === 'error' || status === 'failed') {
+      const errMsg = (json as Record<string, unknown>).err_msg;
+      throw new PaytrApiError(
+        `PayTR saved-cards hatası: ${typeof errMsg === 'string' ? errMsg : String(status)}`,
+        { httpStatus: response.status },
+      );
+    }
   }
 
-  return parsed.data.cards ?? [];
+  // 2) Ham kart listesini normalize et (düz dizi / {cards} sarmalı / tek kart objesi / boş)
+  let rawCards: unknown[] = [];
+  if (Array.isArray(json)) {
+    rawCards = json;
+  } else if (json && typeof json === 'object') {
+    const obj = json as Record<string, unknown>;
+    if (Array.isArray(obj.cards)) rawCards = obj.cards;
+    else if (typeof obj.ctoken === 'string') rawCards = [obj];
+    // else: boş {} → kayıtlı kart yok → []
+  }
+
+  // 3) Her kartı gevşek doğrula; yalnızca ctoken'ı olanları döndür.
+  const cards: PaytrSavedCard[] = [];
+  for (const c of rawCards) {
+    const r = paytrSavedCardSchema.safeParse(c);
+    if (r.success) cards.push(r.data);
+  }
+  return cards;
 }

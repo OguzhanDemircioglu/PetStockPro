@@ -344,14 +344,39 @@ describe('listSavedCards', () => {
     expect(body.get('paytr_token')).toBe(buildPaytrSavedCardsHash('utok-1', MERCHANT_KEY, MERCHANT_SALT));
   });
 
-  it('cards yoksa → boş dizi', async () => {
+  // PayTR'ın DOKÜMANLI gerçek başarı biçimi: kartların DÜZ DİZİSİ (üstte status yok).
+  // Eski şema bunu reddedip "beklenmedik yanıt biçimi (HTTP 200)" throw ediyordu (prod bug).
+  it('PayTR gerçek format: düz kart dizisi → parse edilir (regresyon: prod 500)', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      jsonResponse([
+        { ctoken: 'ctok-A', last_4: '0008', month: '05', year: '28', c_bank: 'Yapı Kredi', schema: 'VISA' },
+        { ctoken: 'ctok-B', last_4: '4242', schema: 'MASTERCARD' },
+      ]),
+    );
+    const cards = await listSavedCards('utok-1');
+    expect(cards).toHaveLength(2);
+    expect(cards[0].ctoken).toBe('ctok-A');
+    expect(cards[1].ctoken).toBe('ctok-B');
+  });
+
+  it('cards yoksa (obje sarmalı) → boş dizi', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse({ status: 'success' }));
     expect(await listSavedCards('utok-1')).toEqual([]);
   });
 
-  it('status error → PaytrApiError', async () => {
+  it('eşleşme yoksa boş JSON {} → boş dizi', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse({}));
+    expect(await listSavedCards('utok-1')).toEqual([]);
+  });
+
+  it('boş dizi [] → boş dizi', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse([]));
+    expect(await listSavedCards('utok-1')).toEqual([]);
+  });
+
+  it('status error → PaytrApiError (err_msg mesaja girer)', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse({ status: 'error', err_msg: 'utoken yok' }));
-    await expect(listSavedCards('utok-1')).rejects.toBeInstanceOf(PaytrApiError);
+    await expect(listSavedCards('utok-1')).rejects.toThrow(/utoken yok/);
   });
 
   it('ağ hatası → PaytrApiError', async () => {
