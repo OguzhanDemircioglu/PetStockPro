@@ -13,10 +13,9 @@ const PRO_PRICE = PLAN_LIMITS.PRO.priceMonthlyTry;
 const PRO_PLUS_PRICE = PLAN_LIMITS.PRO_PLUS.priceMonthlyTry;
 const DIFF = PRO_PLUS_PRICE - PRO_PRICE;
 
-const NOW = new Date('2026-07-16T00:00:00.000Z'); // 15 gün kaldı (30 günlük dönem, tam yarı)
+const NOW = new Date('2026-07-16T00:00:00.000Z'); // dönemin tam ortası (15/30 gün) — artık tutarı ETKİLEMEZ
 const now = () => NOW;
-// (PRO_PLUS-PRO) * (15/30) — dönemin tam ortasında farkın yarısı
-const HALF_PRORATION = Math.round(DIFF * 0.5 * 100) / 100;
+// Proration KALDIRILDI (2026-07-03): yükseltme tutarı hep TAM fark = DIFF (dönem pozisyonundan bağımsız).
 
 interface SubRow {
   id: string;
@@ -136,11 +135,11 @@ describe('previewUpgradeNow', () => {
     expect(res).toEqual({ ok: false, reason: 'not_upgrade' });
   });
 
-  it('dönemin tam ortasında → farkın yarısı prorated', async () => {
+  it('dönem pozisyonundan bağımsız TAM fark döner (proration YOK)', async () => {
     const { db } = makeDb({ subRow: subRow() });
     const res = await previewUpgradeNow('comp-1', 'PRO_PLUS', db, { now });
     expect(res.ok).toBe(true);
-    expect(res.proratedAmount).toBe(HALF_PRORATION);
+    expect(res.proratedAmount).toBe(DIFF); // dönemin ortasında bile yarım değil, TAM fark
     expect(res.daysRemaining).toBe(15);
   });
 });
@@ -172,7 +171,7 @@ describe('upgradeSubscriptionNow', () => {
     expect(res).toEqual({
       ok: false,
       reason: 'charge_failed',
-      proratedAmount: HALF_PRORATION,
+      proratedAmount: DIFF,
       message: 'kart reddedildi',
     });
     expect(calls.subUpdates).toHaveLength(0);
@@ -183,7 +182,7 @@ describe('upgradeSubscriptionNow', () => {
     const { db, calls } = makeDb({ subRow: subRow() });
     const charge = vi.fn().mockResolvedValue(chargeResp({ status: 'wait_callback' }));
     const res = await upgradeSubscriptionNow('comp-1', 'PRO_PLUS', db, { charge, now });
-    expect(res).toEqual({ ok: false, reason: 'charge_pending', proratedAmount: HALF_PRORATION });
+    expect(res).toEqual({ ok: false, reason: 'charge_pending', proratedAmount: DIFF });
     expect(calls.subUpdates).toHaveLength(0);
   });
 
@@ -193,10 +192,10 @@ describe('upgradeSubscriptionNow', () => {
     const res = await upgradeSubscriptionNow('comp-1', 'PRO_PLUS', db, { charge, now });
 
     expect(res.ok).toBe(true);
-    expect(res.proratedAmount).toBe(HALF_PRORATION);
+    expect(res.proratedAmount).toBe(DIFF);
     expect(charge).toHaveBeenCalledWith(
       expect.objectContaining({
-        paymentAmount: Math.round(HALF_PRORATION * 100),
+        paymentAmount: Math.round(DIFF * 100),
         ctoken: 'ctok-1',
         utoken: 'utok-1',
       }),
@@ -210,20 +209,20 @@ describe('upgradeSubscriptionNow', () => {
     expect(calls.subUpdates[0]).not.toHaveProperty('currentPeriodStart');
     expect(calls.subUpdates[0]).not.toHaveProperty('currentPeriodEnd');
     expect(calls.companyUpdates[0]).toMatchObject({ plan: 'PRO_PLUS' });
-    expect(calls.invoiceInserts[0]).toMatchObject({ amountTotal: HALF_PRORATION.toFixed(2), companyId: 'comp-1' });
+    expect(calls.invoiceInserts[0]).toMatchObject({ amountTotal: DIFF.toFixed(2), companyId: 'comp-1' });
   });
 
-  it('prorated tutar 0 ise (dönem sonuna saniyeler kala) kart çekilmez, sadece plan uygulanır', async () => {
+  it('dönem sonunda BİLE tam fark çekilir (proration YOK)', async () => {
     const periodEnd = new Date('2026-07-31T00:00:00.000Z');
     const { db, calls } = makeDb({ subRow: subRow({ currentPeriodEnd: periodEnd }) });
-    const charge = vi.fn();
+    const charge = vi.fn().mockResolvedValue(chargeResp());
     const res = await upgradeSubscriptionNow('comp-1', 'PRO_PLUS', db, { charge, now: () => periodEnd });
 
-    expect(charge).not.toHaveBeenCalled();
     expect(res.ok).toBe(true);
-    expect(res.proratedAmount).toBe(0);
+    expect(res.proratedAmount).toBe(DIFF); // dönem sonunda bile 0 DEĞİL — tam fark
+    expect(charge).toHaveBeenCalledWith(expect.objectContaining({ paymentAmount: Math.round(DIFF * 100) }));
     expect(calls.subUpdates[0]).toMatchObject({ plan: 'PRO_PLUS' });
-    expect(calls.invoiceInserts).toHaveLength(0); // 0₺ fatura oluşturulmaz
+    expect(calls.invoiceInserts[0]).toMatchObject({ amountTotal: DIFF.toFixed(2) });
   });
 
   it('Nilvera başarılı → invoice issued olarak işaretlenir', async () => {
@@ -272,30 +271,32 @@ describe('startUpgradeCheckout (saklı kart yokken iframe)', () => {
 
     expect(res.ok).toBe(true);
     expect(res.iframeUrl).toContain('tok-abc');
-    expect(res.proratedAmount).toBe(HALF_PRORATION);
+    expect(res.proratedAmount).toBe(DIFF);
     // pending_upgrade set (callback bu oid'i tanır; pending_merchant_oid'e DOKUNMAZ → yenileme etkilenmez)
-    expect(calls.subUpdates[0]).toMatchObject({ pendingUpgradeAmountTry: HALF_PRORATION.toFixed(2) });
+    expect(calls.subUpdates[0]).toMatchObject({ pendingUpgradeAmountTry: DIFF.toFixed(2) });
     expect(calls.subUpdates[0].pendingUpgradeOid).toBeTruthy();
     expect(calls.subUpdates[0]).not.toHaveProperty('pendingMerchantOid');
     expect(createToken).toHaveBeenCalledWith(
       expect.objectContaining({
-        paymentAmount: Math.round(HALF_PRORATION * 100),
+        paymentAmount: Math.round(DIFF * 100),
         storeCard: 1,
         userIp: '9.9.9.9',
       }),
     );
   });
 
-  it('prorated<=0 (dönem sonu) → applied, plan hemen uygulanır, createToken çağrılmaz', async () => {
+  it('dönem sonunda BİLE iframe + tam fark (proration yok → tutar 0 olmaz)', async () => {
     const periodEnd = new Date('2026-07-31T00:00:00.000Z');
     const { db, calls } = makeDb({ subRow: subRow({ currentPeriodEnd: periodEnd, paytrUtoken: 'utok-1' }) });
-    const createToken = vi.fn();
+    const createToken = vi.fn().mockResolvedValue('tok-x');
     const res = await startUpgradeCheckout('comp-1', 'PRO_PLUS', db, { createToken, now: () => periodEnd });
 
-    expect(res).toMatchObject({ ok: true, applied: true, proratedAmount: 0 });
-    expect(createToken).not.toHaveBeenCalled();
-    expect(calls.subUpdates[0]).toMatchObject({ plan: 'PRO_PLUS' }); // applyUpgradeInTx uyguladı
-    expect(calls.invoiceInserts).toHaveLength(0);
+    expect(res.ok).toBe(true);
+    expect(res.applied).toBeUndefined(); // tutar 0 değil → iframe yolu
+    expect(res.proratedAmount).toBe(DIFF);
+    expect(res.iframeUrl).toContain('tok-x');
+    expect(createToken).toHaveBeenCalledWith(expect.objectContaining({ paymentAmount: Math.round(DIFF * 100) }));
+    expect(calls.subUpdates[0]).toMatchObject({ pendingUpgradeAmountTry: DIFF.toFixed(2) });
   });
 
   it('aktif abonelik yoksa → not_found, createToken çağrılmaz', async () => {

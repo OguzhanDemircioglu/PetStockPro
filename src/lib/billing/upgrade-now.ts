@@ -30,7 +30,7 @@ import {
 } from '@/lib/paytr/client';
 import type { PaytrBasketItem } from '@/lib/paytr/types';
 import { makeMerchantOid, toPaytrPhone, deriveUtoken } from './paytr-checkout';
-import { computeProration, computeInvoiceTotals } from './totals';
+import { computeInvoiceTotals } from './totals';
 import { PLAN_LIMITS } from '@/lib/constants/plan-limits';
 
 type PaidPlan = 'PRO' | 'PRO_PLUS';
@@ -130,13 +130,8 @@ export async function previewUpgradeNow(
   const v = validateUpgrade(sub, targetPlan);
   if (!v.ok) return { ok: false, reason: v.reason };
 
-  const proratedAmount = computeProration(
-    v.currentAmount,
-    v.targetAmount,
-    sub!.currentPeriodStart,
-    sub!.currentPeriodEnd,
-    now,
-  );
+  // Tam fark (proration YOK — kullanıcı kararı 2026-07-03): PRO+ − PRO. Geçen gün DÜŞÜLMEZ.
+  const proratedAmount = v.targetAmount - v.currentAmount;
   const daysRemaining = Math.ceil(
     Math.max(sub!.currentPeriodEnd.getTime() - now.getTime(), 0) / (24 * 60 * 60 * 1000),
   );
@@ -249,16 +244,11 @@ export async function upgradeSubscriptionNow(
   }
   if (!ctoken || !sub!.paytrUtoken) return { ok: false, reason: 'no_saved_card' };
 
-  const proratedAmount = computeProration(
-    v.currentAmount,
-    v.targetAmount,
-    sub!.currentPeriodStart,
-    sub!.currentPeriodEnd,
-    now,
-  );
+  // Tam fark (proration YOK — kullanıcı kararı 2026-07-03): PRO+ − PRO. Geçerli upgrade'de hep > 0.
+  const proratedAmount = v.targetAmount - v.currentAmount;
 
-  // Ödenecek gerçek bir fark yoksa (dönem sonuna saniyeler kala) çekim yapmadan uygula —
-  // 0₺ kart çekimi PayTR'da anlamsız/reddedilir, fatura da gereksiz.
+  // Guard defansif: geçerli upgrade'de fark hep > 0, ama 0 gelirse 0₺ kart çekimi yapma
+  // (PayTR reddeder), doğrudan planı uygula.
   if (proratedAmount > 0) {
     const merchantOid = makeMerchantOid();
     const res = await charge({
@@ -399,15 +389,10 @@ export async function startUpgradeCheckout(
   const v = validateUpgrade(sub, targetPlan);
   if (!v.ok) return { ok: false, reason: v.reason };
 
-  const proratedAmount = computeProration(
-    v.currentAmount,
-    v.targetAmount,
-    sub!.currentPeriodStart,
-    sub!.currentPeriodEnd,
-    now,
-  );
+  // Tam fark (proration YOK — kullanıcı kararı 2026-07-03): PRO+ − PRO. Geçerli upgrade'de hep > 0.
+  const proratedAmount = v.targetAmount - v.currentAmount;
 
-  // Ödenecek fark yoksa → ödeme gerekmez, planı hemen uygula (saved-card yoluyla aynı sonuç).
+  // Guard defansif (fark hep > 0): 0 gelirse iframe'de 0₺ tahsilat anlamsız → planı hemen uygula.
   if (proratedAmount <= 0) {
     await db.transaction((tx) =>
       applyUpgradeInTx(tx, {

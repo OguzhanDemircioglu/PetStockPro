@@ -396,7 +396,7 @@ export const subscriptions = petstockproSchema.table('subscriptions', {
   // (yenileme/ilk-checkout) yolundan İZOLE — callback bu oid'i tanıyıp prorated tutarı
   // doğrular + planı uygular (dönem KORUNUR). Migration 0041.
   pendingUpgradeOid: varchar('pending_upgrade_oid', { length: 64 }),
-  pendingUpgradeAmountTry: decimal('pending_upgrade_amount_try', { precision: 10, scale: 2 }), // prorated fark, KDV dahil
+  pendingUpgradeAmountTry: decimal('pending_upgrade_amount_try', { precision: 10, scale: 2 }), // yükseltme farkı (PRO+ − PRO, tam), KDV dahil
 
   // Ödeme döngüsü
   currentPeriodStart: timestamp('current_period_start', { withTimezone: true }).notNull(),

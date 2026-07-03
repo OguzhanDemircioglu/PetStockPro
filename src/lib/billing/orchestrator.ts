@@ -315,8 +315,8 @@ async function findSubByPendingUpgradeOid(tx: Tx, merchantOid: string): Promise<
 
 /**
  * Dönem-içi PRO→PRO+ iframe ödemesi callback'i. Sadece PRO→PRO_PLUS yükseltmesi olduğundan
- * hedef plan türetilir. Prorated tutar pending_upgrade_amount_try ile doğrulanır (manipülasyon
- * koruması). Başarı → applyUpgradeInTx (dönem KORUNUR) + kart saklanır + pending temizlenir;
+ * hedef plan türetilir. Yükseltme farkı (tam, proration YOK) pending_upgrade_amount_try ile
+ * doğrulanır (manipülasyon koruması). Başarı → applyUpgradeInTx (dönem KORUNUR) + kart saklanır;
  * başarısız/uyuşmazsa plan PRO kalır, pending temizlenir (dunning YOK — bu bir yenileme değil).
  */
 async function applyUpgradePayment(

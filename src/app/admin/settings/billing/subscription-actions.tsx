@@ -67,7 +67,7 @@ export function SubscriptionActions({ cancelScheduled, currentPlan, pendingPlan,
       const amount = (preview.proratedAmount ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 });
       const confirmed = await swalConfirm(
         `${PLAN_LABELS[otherPlan]} planına hemen yükselt`,
-        `Kalan ${preview.daysRemaining} gün için ${amount} ₺ tahsil edilecek ve planın anında ${PLAN_LABELS[otherPlan]} olacak.`,
+        `${PLAN_LABELS[currentPlan]} → ${PLAN_LABELS[otherPlan]} farkı olan ${amount} ₺ hemen tahsil edilecek ve planın anında ${PLAN_LABELS[otherPlan]} olacak. Sonraki yenilemede (~${preview.daysRemaining} gün sonra) tam ${PLAN_LABELS[otherPlan]} ücreti alınır.`,
         'Evet, yükselt',
         'Vazgeç',
         'question',
