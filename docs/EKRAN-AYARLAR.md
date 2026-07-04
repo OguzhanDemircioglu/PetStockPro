@@ -295,10 +295,11 @@ Aboneliği iptal et
   [⛔ Aboneliği Sonlandır]
   → Onay modal: "Dönem sonuna kadar aktif, sonra FREE'ye düşer"
 
-Yükseltme / Downgrade akışı (otoritatif: PLAN-KADEMELERI.md §5.3)
+Yükseltme / Downgrade akışı (otoritatif: PLAN-PAYTR-NILVERA.md §9.3)
   FREE → PRO       : Anında aktif (50→500 limit yükselir)
   FREE → PRO+      : Anında aktif (sınırsız)
-  PRO  → PRO+      : Anında aktif, prorated fark ücreti
+  PRO  → PRO+      : Anında aktif, TAM fark ücreti (2.000−1.000=1.000₺; proration YOK 2026-07-03).
+                     Saklı kart varsa otomatik çekim; yoksa PayTR iframe kart formu açılır.
   PRO+ → PRO       : Dönem sonunda aktif. 500 üstü ürünler `isActive=false` (pasif mod)
                      → vitrin'de zaten görünmezler. Tenant 30 gün içinde hangi 500
                      ürünü aktif tutmak istediğini seçer; seçim yapmazsa sistem

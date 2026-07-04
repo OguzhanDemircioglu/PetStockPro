@@ -213,6 +213,8 @@ if (activeCount + 1 > limit) {
 
 ## 5. Ödeme ve Yükseltme
 
+> **⚠ GÜNCEL (2026-07-04) — aşağıdaki §5.1 (manuel havale) + §5.2 (iyzico) tarihsel/GEÇERSİZ.** Canlı akış: **PayTR** otomatik tahsilat (recurring saklı kart + iframe, non3d) + **Nilvera** canlı e-Fatura/e-Arşiv (VKN yönlendirmeli). **Yükseltme (PRO→PRO+) ANINDA** — iki plan farkı (PRO+ 2.000 − PRO 1.000 = **1.000₺**; **proration YOK** 2026-07-03, geçen gün düşülmez) saklı karttan çekilir; saklı kart yoksa **PayTR iframe kart formu** açılır (migration 0041, `pending_upgrade_oid` izole). **Düşürme (PRO+→PRO) dönem sonunda** (§5.3). Deploy = Vercel, `petstockpro.com` canlı. **Otoritatif: `PLAN-PAYTR-NILVERA.md §9.3`.**
+
 ### 5.1 MVP (Manuel) — Sprint 0-12
 
 - Tenant talep eder → admin paneli > Ayarlar > Plan > "PRO'ya / PRO+'ya Yükselt"

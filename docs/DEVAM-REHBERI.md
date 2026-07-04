@@ -1,8 +1,10 @@
 # PetStockPro — Yeni Session Devam Rehberi
 
-**Tarih:** 2026-06-22 (Faz 1-5 TAMAMLANDI · **Faz 4B RLS RETROFIT — TÜM TENANT DOMAIN'LERİ TAMAMLANDI**)
+**Tarih:** 2026-07-04 (billing/ödeme session — PRO→PRO+ iframe yükseltme + proration KALDIRMA + gerçek fiyat + **PROD DEPLOY**)
 **Mevcut Branch:** `cray61` — origin ile **SYNC**
-**Son commit:** `a0eb581` feat(db): Faz 4B retrofit — telegram + onboarding (son tenant domain'ler) → withTenant
+**Son commit:** `104337f` revert(billing): test fiyatları 10/20 → gerçek **1.000/2.000₺** · **prod'a deploy edildi** (Vercel · `petstockpro.com` CANLI · smoke OK). Test **1970 pass** · Migration **41** (0041 pending_upgrade).
+
+> ⚠ **2026-07-04 billing session** (6 commit `85255c8`..`104337f`) ana "BURADAN DEVAM ET" işini (Faz 4B RLS Phase 2 cutover) **DEĞİŞTİRMEDİ** — o hâlâ sıradaki büyük iş (kullanıcı-gated). Billing session özeti + güncel prod durum: **CLAUDE.md üst özet** + otoritatif `docs/PLAN-PAYTR-NILVERA.md §9.3`. Kısaca: PRO→PRO+ anlık yükseltme artık **tam fark** (proration yok); saklı kart varsa otomatik çekim, yoksa **PayTR iframe** (migration 0041, `pending_upgrade_oid` izole). Deploy = **Vercel** (CF Workers bırakıldı), ödeme = **PayTR+Nilvera** canlı.
 
 ---
 

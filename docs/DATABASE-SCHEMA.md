@@ -1412,6 +1412,15 @@ export const subscriptions = pgTable('subscriptions', {
   // Fiyat snapshot — fiyat değişimi olursa eski tenant'ın korunan fiyatı (lifetime guarantee için audit)
   amountTry: decimal('amount_try', { precision: 10, scale: 2 }).notNull(),  // KDV dahil tutar
 
+  // ⚠ NOT: Bu tanım DESIGN-TIME snapshot; PROD KOD divergedir (kod + PLAN-PAYTR-NILVERA otoritatif).
+  //    iyzico → PayTR geçişiyle eklenen kolonlar (migration 0023+):
+  //      paytr_utoken / paytr_ctoken / paytr_card_masked / paytr_card_brand (recurring kart),
+  //      pending_merchant_oid (devam eden ödeme ↔ callback eşleşme), payment_retry_count, next_retry_at,
+  //      pending_plan (dönem-SONU plan değişimi — H2).
+  //    Dönem-İÇİ iframe yükseltme (2026-07-03, migration 0041) — saklı kart YOKKEN PRO→PRO+ tam farkını
+  //    PayTR iframe'de tahsil için, pending_merchant_oid'DEN İZOLE:
+  //      pending_upgrade_oid varchar(64), pending_upgrade_amount_try numeric(10,2)
+  //      + idx_subscriptions_pending_upgrade_oid.
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (t) => ({

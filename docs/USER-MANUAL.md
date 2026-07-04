@@ -2199,12 +2199,16 @@ PayTR yenileme başarısız olursa sistem otomatik tekrar dener (1., 3. ve 5. g�
 
 #### "PRO ile PRO+ arasında nasıl geçiş yaparım? Ne zaman ücret alınır?"
 
-Ayarlar → Abonelik'te "Plan değiştir" ile geçersin. **Geçiş dönem sonunda olur, anında değil:**
+Ayarlar → Abonelik'te geçersin. **Yükseltme (PRO → PRO+) ile düşürme (PRO+ → PRO) FARKLI çalışır:**
 
-- Geçiş anında **hiçbir ücret alınmaz** — sadece "X tarihinde geçecek" olarak işaretlenir (iptal edebilirsin).
-- **Dönem sonundaki yenilemede** yeni planın güncel ücreti çekilir (PRO+ için 2.000 ₺, PRO için 1.000 ₺).
-- Yükseltme sonrası **eski/düşük tutar bir daha asla çekilmez** — yenileme her zaman güncel planın fiyatını alır.
-- Oransal hesap (proration) yok: ödediğin ayı sonuna kadar mevcut planınla kullanırsın.
+**⬆ Yükseltme (PRO → PRO+) — ANINDA:**
+- "PRO+ planına hemen yükselt" dersin. İki plan arasındaki **fark** (PRO+ 2.000 − PRO 1.000 = **1.000 ₺**) hemen tahsil edilir ve planın **anında** PRO+ olur (dönem tarihlerin değişmez).
+- Kayıtlı kartın varsa fark **saklı karttan otomatik** çekilir; kartın kayıtlı değilse **kart formu (PayTR)** açılır, farkı orada ödersin.
+- Geçen günler düşülmez, her zaman **tam fark** alınır (oransal/proration hesabı yok). **Bir sonraki yenilemede** artık tam PRO+ ücreti (2.000 ₺) çekilir.
+
+**⬇ Düşürme (PRO+ → PRO) — DÖNEM SONUNDA:**
+- "PRO planına geç (dönem sonunda)" dersin. Geçiş anında **hiçbir ücret alınmaz/iade edilmez** — sadece "X tarihinde geçecek" işaretlenir (iptal edebilirsin).
+- Dönem sonundaki yenilemede yeni planın (PRO 1.000 ₺) ücreti çekilir; o zamana kadar PRO+ özelliklerini kullanmaya devam edersin.
 
 #### "Plan düşmesi sonrası fazla ürünlerime ne olur?"
 

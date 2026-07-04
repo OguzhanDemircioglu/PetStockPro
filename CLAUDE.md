@@ -33,6 +33,24 @@
 
 ## 🚀 YENİ SESSION'A GİRDİĞİNDE — İLK OKUMA SIRASI
 
+**2026-07-04 (billing/ödeme session) — PRO→PRO+ YÜKSELTME + PROD DEPLOY.** Son commit `104337f`, **prod'a deploy edildi** (Vercel, `petstockpro.com` CANLI · smoke OK). 6 commit (`85255c8`..`104337f`). Test **1970 pass** · typecheck/lint 0 error · Migration **41** (0041 pending_upgrade — prod Supabase + lokal Aiven'a apply edildi).
+
+**Bu session özeti:**
+1. **PRO→PRO+ çökme fix'i** (`85255c8`) — server action'da try/catch yoktu → PayTR throw'u ham 500 + "Server Components render" error-boundary çökmesine yol açıyordu. + native `window.confirm`/inline banner → `swalConfirm`/`swalToast` (SWAL konvansiyonu).
+2. **PayTR saved-cards parse fix** (`bb3ac4d`) — `/odeme/capi/list` BAŞARIDA kartların DÜZ DİZİSİni döndürür (`[{ctoken,...}]`); eski `{status,cards}` şeması diziyi reddedip `"beklenmedik yanıt biçimi (HTTP 200)"` throw ediyordu → polimorfik normalize + 5 test.
+3. **Sade hata mesajları** (`3f5aca6`) — ham PayTR/DB detayı artık kullanıcıya sızmaz, yalnız `console.error` (Vercel logu). Not: mojibake "YÃ¼kseltme" DevTools ham-yanıt görüntü artefaktıydı, gerçek SWAL toast doğru (browser doğrulandı).
+4. **Saklı-kart-YOK iframe yükseltme** (`20cbf39`) — migration 0041 (`pending_upgrade_oid`+`pending_upgrade_amount_try`, `pending_merchant_oid`'den **İZOLE**) + `startUpgradeCheckout` + orchestrator izole `applyUpgradePayment` dalı + `applyUpgradeInTx` paylaşımı + `PaytrIframeModal` (BillingCheckout ortak) + 8 test.
+5. **Proration KALDIRILDI** (`fdd9094`) — kullanıcı "9,95₺ kafa karıştırıcı" → her zaman **TAM fark** (PRO+ − PRO = 1.000₺). `computeProration` tested util olarak duruyor (geri dönülürse hazır).
+6. **Gerçek fiyatlar** (`104337f`) — geçici test 10/20₺ → **1.000/2.000₺** (`git revert 6ff139d` + `page.tsx` çakışma çözümü: marketing landing kaldırıldığından fiyat kartı yok).
+
+**Güncel PROD durum (CLAUDE.md gövdesindeki eski iyzico/CF Workers referansları GEÇERSİZ — bunlar otoritatif):**
+- **Deploy = Vercel** (CF Workers/OpenNext bırakıldı), `petstockpro.com` CANLI, `vercel deploy --prod` CLI (authed). Prod DB = **Supabase** (`rjzhnfqrynalklsnnuym`), lokal dev = **Aiven**.
+- **Ödeme = PayTR** (recurring saklı kart + iframe + non3d) + **Nilvera** (canlı e-Fatura/e-Arşiv, VKN doğrulama yönlendirmeli) — ikisi de CANLI.
+- **Fiyat:** FREE 0 / PRO **1.000₺** / PRO+ **2.000₺** (KDV dahil).
+- 2026-05-22 → 2026-07-04 arası ara-history **memory dosyalarında** (PayTR/Nilvera/Vercel/promo kaldırma — bkz. `MEMORY.md`). Otoritatif billing doc: `docs/PLAN-PAYTR-NILVERA.md` §9.3.
+
+---
+
 **2026-05-22 (AI Chatbot session) — AI CHATBOT TAMAMLANDI 7 fazda.** Son commit `ea082fb`. **6 commit yeni** (8deee93..ea082fb). 0 bekleyen commit. Test **1782 pass** (+133 yeni AI test) · typecheck/lint 0 error.
 
 **AI Chatbot session özeti (Faz 1-7):**
